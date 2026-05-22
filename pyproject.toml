@@ -1,0 +1,90 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fin-analytics"
+version = "0.1.0"
+description = "Personal Financial Data Warehouse - local-first analytics engine"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Cleidson" }]
+requires-python = ">=3.12"
+dependencies = [
+    "polars>=1.41,<2.0",
+    "duckdb>=1.5,<2.0",
+    "python-dotenv>=1.2,<2.0",
+    "pydantic>=2.13,<3.0",
+    "pydantic-settings>=2.14,<3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9.0",
+    "pytest-cov>=5.0,<6.0",
+    "ruff>=0.8,<1.0",
+    "mypy>=1.10,<2.0",
+    "pre-commit>=3.7,<4.0",
+]
+
+[project.scripts]
+fin = "fin_analytics.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fin_analytics"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "SIM",
+    "TCH",
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["fin_analytics"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["duckdb.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q --cov=src/fin_analytics --cov-report=term-missing"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["src/fin_analytics"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
