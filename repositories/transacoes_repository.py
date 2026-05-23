@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -86,6 +86,72 @@ class TransacoesRepository:
 				status VARCHAR NOT NULL,
 				execution_time_ms BIGINT NOT NULL
 			)
+			""",
+			"""
+			CREATE OR REPLACE VIEW vw_monthly_cashflow AS
+			WITH monthly_base AS (
+				SELECT
+					date_trunc('month', Data)::DATE AS period_start,
+					strftime(Data, '%Y-%m') AS period_key,
+					SUM(CASE WHEN Tipo = 'RECEITA' THEN Valor ELSE 0 END) AS receitas,
+					SUM(CASE WHEN Tipo = 'GASTO' THEN ABS(Valor) ELSE 0 END) AS gastos
+				FROM BASE_GERAL
+				GROUP BY 1, 2
+			)
+			SELECT
+				period_start,
+				period_key,
+				COALESCE(receitas, 0) AS receitas,
+				COALESCE(gastos, 0) AS gastos,
+				COALESCE(receitas, 0) - COALESCE(gastos, 0) AS saldo_liquido
+			FROM monthly_base
+			""",
+			"""
+			CREATE OR REPLACE VIEW vw_expenses_by_category AS
+			WITH category_base AS (
+				SELECT
+					Categoria AS categoria,
+					SUM(ABS(Valor)) AS total
+				FROM BASE_GERAL
+				WHERE Tipo = 'GASTO'
+				GROUP BY 1
+			),
+			category_totals AS (
+				SELECT SUM(total) AS total_expenses FROM category_base
+			)
+			SELECT
+				c.categoria,
+				c.total,
+				CASE
+					WHEN t.total_expenses IS NULL OR t.total_expenses = 0 THEN CAST(0 AS DECIMAL(18, 2))
+					ELSE ROUND((c.total / t.total_expenses) * 100, 2)
+				END AS percentual
+			FROM category_base c
+			CROSS JOIN category_totals t
+			ORDER BY c.total DESC, c.categoria
+			""",
+			"""
+			CREATE OR REPLACE VIEW vw_investments AS
+			WITH investment_rows AS (
+				SELECT
+					Descricao,
+					Valor,
+					Tipo,
+					Categoria
+				FROM BASE_GERAL
+				WHERE Tipo = 'INVESTIMENTO' OR Categoria = 'INVESTIMENTOS'
+			),
+			investment_summary AS (
+				SELECT
+					SUM(CASE WHEN regexp_matches(lower(Descricao), '(dividend|provento|jcp)') THEN ABS(Valor) ELSE 0 END) AS dividendos,
+					SUM(CASE WHEN NOT regexp_matches(lower(Descricao), '(dividend|provento|jcp)') THEN ABS(Valor) ELSE 0 END) AS aportes
+				FROM investment_rows
+			)
+			SELECT
+				COALESCE(aportes, 0) AS aportes,
+				COALESCE(dividendos, 0) AS dividendos,
+				COALESCE(aportes, 0) + COALESCE(dividendos, 0) AS total
+			FROM investment_summary
 			""",
 		)
 
@@ -208,6 +274,73 @@ class TransacoesRepository:
 		except Exception:
 			self._connection.execute("ROLLBACK")
 			raise
+
+	def fetch_transactions_by_period(self, start_date: date, end_date: date) -> duckdb.DuckDBPyRelation:
+		"""Fetch base transactions within an inclusive date range.
+
+		The method returns a DuckDB relation so callers can keep the query lazy.
+		"""
+
+		query = f"""
+			SELECT
+				ID_Unico,
+				Data,
+				Descricao,
+				Valor,
+				Tipo,
+				Categoria,
+				ArquivoOrigem,
+				Fonte,
+				CAST(processed_at AS TIMESTAMP) AS processed_at
+			FROM BASE_GERAL
+			WHERE Data BETWEEN DATE '{start_date.isoformat()}' AND DATE '{end_date.isoformat()}'
+			ORDER BY Data, ID_Unico
+		"""
+		return self._connection.sql(query)
+
+	def fetch_quarantine_transactions(self) -> duckdb.DuckDBPyRelation:
+		"""Fetch quarantined transactions without materializing them eagerly."""
+
+		return self._connection.sql(
+			"""
+			SELECT
+				ID_Unico,
+				Data,
+				Descricao,
+				Valor,
+				Tipo,
+				Categoria,
+				ArquivoOrigem,
+				Fonte,
+				CAST(processed_at AS TIMESTAMP) AS processed_at,
+				motivo_rejeicao
+			FROM QUARANTINE_TRANSACTIONS
+			ORDER BY processed_at DESC, Data DESC, ID_Unico DESC
+			"""
+		)
+
+	def fetch_latest_transactions(self, limit: int) -> duckdb.DuckDBPyRelation:
+		"""Fetch the most recent transactions from the curated base table."""
+
+		if limit <= 0:
+			raise ValueError("limit must be greater than zero")
+
+		query = f"""
+			SELECT
+				ID_Unico,
+				Data,
+				Descricao,
+				Valor,
+				Tipo,
+				Categoria,
+				ArquivoOrigem,
+				Fonte,
+				CAST(processed_at AS TIMESTAMP) AS processed_at
+			FROM BASE_GERAL
+			ORDER BY processed_at DESC, Data DESC, ID_Unico DESC
+			LIMIT {int(limit)}
+		"""
+		return self._connection.sql(query)
 
 	def _validate_transaction_frame(self, df_polars: pl.DataFrame) -> None:
 		"""Ensure the accepted transaction frame contains the required columns."""
