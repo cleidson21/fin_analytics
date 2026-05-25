@@ -16,6 +16,10 @@ dependencies = [
     "python-dotenv>=1.2,<2.0",
     "pydantic>=2.13,<3.0",
     "pydantic-settings>=2.14,<3.0",
+    "rapidfuzz>=3.0",
+    "yfinance>=0.2",
+    "brapi-python>=1.0",
+    "requests",
 ]
 
 [project.optional-dependencies]
