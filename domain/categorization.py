@@ -19,6 +19,7 @@ class CategorizationRule:
 	categoria: str
 	tipo: TipoTransacao
 	prioridade: int
+	descricao: str | None = None
 
 
 DEFAULT_CATEGORIAS_CSV: Final[Path] = Path(__file__).resolve().parents[1] / "config" / "categorias.csv"
@@ -43,16 +44,31 @@ class Categorizer:
 			reader = csv.DictReader(csv_file)
 			rules = [
 				CategorizationRule(
-					keyword=normalize_text(row["keyword"]),
-					categoria=normalize_text(row["categoria"]),
-					tipo=TipoTransacao(row["tipo"]),
-					prioridade=int(row["prioridade"]),
+					keyword=normalize_text(row.get("keyword", "")),
+					categoria=normalize_text(row.get("categoria", "")),
+					tipo=TipoTransacao(row.get("tipo", "")),
+					prioridade=int(row.get("prioridade", 0)),
+					descricao=row.get("descricao", "").strip() if row.get("descricao") else None,
 				)
 				for row in reader
 				if row.get("keyword") and row.get("categoria") and row.get("tipo") and row.get("prioridade")
 			]
 
 		return sorted(rules, key=lambda rule: (rule.prioridade, rule.keyword))
+
+	def get_category_description(self, categoria: str) -> str:
+		"""Return a human-friendly description for a given category.
+
+		If the taxonomy provides a `descricao` for any rule matching the
+		category, return it; otherwise fall back to the category label.
+		"""
+
+		normalized = normalize_text(categoria)
+		for rule in self._rules:
+			if rule.categoria and rule.categoria == normalized and rule.descricao:
+				return rule.descricao
+		# fallback to the original label if nothing more descriptive found
+		return categoria
 
 	def categorize(self, descricao: str) -> tuple[str | CategoriaFallback, TipoTransacao | str]:
 		"""Categorize a transaction description using the loaded keyword rules.

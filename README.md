@@ -79,6 +79,16 @@ Sempre que um novo extrato chegar:
 
 Isso permite reprocessar a pasta inteira sem duplicar dados.
 
+Se você alterar as regras de categorização e quiser recalcular tudo de novo, use:
+
+```powershell
+python etl/pipeline.py --rebuild
+```
+
+Esse modo limpa a base local e reaplica as regras atuais sobre tudo que estiver em `data/raw/`.
+
+O pipeline também aceita planilhas `.xlsx` de MyProfit, desde que elas estejam em `data/raw/` e tenham colunas equivalentes a `data`, `descricao` e `valor`.
+
 ## Funcionalidades do dashboard
 
 ### Barra lateral

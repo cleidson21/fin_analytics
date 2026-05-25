@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 import sys
+import argparse
 from pathlib import Path
 from typing import Any
 
@@ -61,7 +62,9 @@ class ETLPipeline:
 		"""Execute the pipeline over every CSV file found in ``raw_dir``."""
 
 		input_dir = raw_dir or self._settings.RAW_DIR
-		files = sorted(path for path in input_dir.rglob("*.csv") if path.is_file())
+		files = sorted(
+			path for path in input_dir.rglob("*") if path.is_file() and path.suffix.lower() in {".csv", ".xlsx", ".xls"}
+		)
 
 		summary = {
 			"files_seen": len(files),
@@ -203,10 +206,23 @@ class ETLPipeline:
 
 		self._repository.close()
 
+	def rebuild(self, raw_dir: Path | None = None) -> PipelineExecutionResult:
+		"""Clear the warehouse tables and rebuild everything from the raw folder."""
+
+		self._repository.clear_all_data()
+		return self.run(raw_dir=raw_dir)
+
 
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser(description="Run the FinAnalytics ETL pipeline.")
+	parser.add_argument("--raw-dir", type=Path, default=None, help="Optional raw data directory.")
+	parser.add_argument("--rebuild", action="store_true", help="Clear tables and rebuild from raw files.")
+	args = parser.parse_args()
 	pipeline = ETLPipeline()
 	try:
-		pipeline.run()
+		if args.rebuild:
+			pipeline.rebuild(raw_dir=args.raw_dir)
+		else:
+			pipeline.run(raw_dir=args.raw_dir)
 	finally:
 		pipeline.close()

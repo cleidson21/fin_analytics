@@ -7,6 +7,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Final
 
+import pandas as pd
 import polars as pl
 
 from config.constants import FonteDados
@@ -50,7 +51,7 @@ class DataExtractor:
 	"""
 
 	def read_bank_csv(self, file_path: Path, fonte: FonteDados) -> pl.DataFrame:
-		"""Read a bank CSV file and return a standardized Polars DataFrame.
+		"""Read a bank file and return a standardized Polars DataFrame.
 
 		Args:
 			file_path: Path to the source CSV file.
@@ -66,6 +67,18 @@ class DataExtractor:
 
 		if not file_path.exists():
 			raise FileNotFoundError(file_path)
+
+		if file_path.suffix.lower() in {".xlsx", ".xls"}:
+			try:
+				dataframe = pl.from_pandas(pd.read_excel(file_path, engine="openpyxl"))
+			except ImportError as exc:
+				raise ImportError(
+					"Reading Excel files requires the openpyxl package. Install it with `pip install openpyxl`."
+				) from exc
+			standardized = self._standardize_columns(dataframe)
+			standardized = self._normalize_myprofit_frame(standardized, fonte=fonte, file_path=file_path)
+			self._validate_essential_columns(standardized, file_path=file_path, fonte=fonte)
+			return standardized
 
 		raw_text = self._read_text_with_fallback(file_path)
 		cleaned_text = self._remove_blank_lines(raw_text)
@@ -83,6 +96,7 @@ class DataExtractor:
 		)
 
 		standardized = self._standardize_columns(dataframe)
+		standardized = self._normalize_myprofit_frame(standardized, fonte=fonte, file_path=file_path)
 		self._validate_essential_columns(standardized, file_path=file_path, fonte=fonte)
 		return standardized
 
@@ -137,6 +151,35 @@ class DataExtractor:
 			expressions.append(pl.col(original_name).alias(final_name))
 
 		return dataframe.select(expressions)
+
+	def _normalize_myprofit_frame(self, dataframe: pl.DataFrame, *, fonte: FonteDados, file_path: Path) -> pl.DataFrame:
+		"""Normalize MyProfit exports into the canonical transaction schema when possible."""
+
+		if fonte != FonteDados.MYPROFIT or dataframe.is_empty():
+			return dataframe
+
+		columns = set(dataframe.columns)
+		if {"ativo", "recebido", "data_pgto"}.issubset(columns):
+			return dataframe.select(
+				[
+					pl.col("data_pgto").alias("data"),
+					pl.concat_str([pl.lit("PROVENTO "), pl.col("ativo").cast(pl.Utf8)], separator="").alias("descricao"),
+					pl.col("recebido").alias("valor"),
+				]
+			)
+
+		portfolio_markers = {"total_investido", "total_atual", "ganho", "%_ganho", "%_patrimônio"}
+		if portfolio_markers.intersection(columns):
+			self._warn_ignored_myprofit_snapshot(file_path=file_path)
+			return pl.DataFrame(schema={"data": pl.Utf8, "descricao": pl.Utf8, "valor": pl.Utf8})
+
+		return dataframe
+
+	@staticmethod
+	def _warn_ignored_myprofit_snapshot(*, file_path: Path) -> None:
+		"""Emit a lightweight hint for MyProfit files that are portfolio snapshots, not transactions."""
+
+		print(f"Ignoring MyProfit portfolio snapshot (not a transaction feed): {file_path}")
 
 	@staticmethod
 	def _canonical_column_name(column_name: str) -> str:

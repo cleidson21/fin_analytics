@@ -42,3 +42,24 @@ class StatusProcessamento(str, Enum):
     ERRO = "ERRO"
     QUARENTENA = "QUARENTENA"
     IGNORADO = "IGNORADO"
+
+
+@unique
+class ClasseAtivo(str, Enum):
+    """Supported asset classes for the wealth layer."""
+
+    ACAO_BR = "ACAO_BR"
+    FII = "FII"
+    ETF_EUA = "ETF_EUA"
+    CRIPTO = "CRIPTO"
+    RENDA_FIXA = "RENDA_FIXA"
+    CAIXA = "CAIXA"
+
+
+@unique
+class StatusMeta(str, Enum):
+    """Lifecycle states for financial goals."""
+
+    ATIVA = "ATIVA"
+    CONCLUIDA = "CONCLUIDA"
+    PAUSADA = "PAUSADA"

@@ -42,6 +42,14 @@ class TransacoesRepository:
 
 		self._connection.close()
 
+	def clear_all_data(self) -> None:
+		"""Remove all persisted rows so the warehouse can be rebuilt from scratch."""
+
+		self.init_tables()
+		self._connection.execute("DELETE FROM BASE_GERAL")
+		self._connection.execute("DELETE FROM QUARANTINE_TRANSACTIONS")
+		self._connection.execute("DELETE FROM ETL_EXECUTIONS")
+
 	def init_tables(self) -> None:
 		"""Create the repository tables if they do not already exist."""
 
@@ -339,6 +347,22 @@ class TransacoesRepository:
 			FROM BASE_GERAL
 			ORDER BY processed_at DESC, Data DESC, ID_Unico DESC
 			LIMIT {int(limit)}
+		"""
+		return self._connection.sql(query)
+
+	def fetch_monthly_expenses_by_category(self, start_date: date, end_date: date) -> duckdb.DuckDBPyRelation:
+		"""Fetch monthly expense totals grouped by category for the given period."""
+
+		query = f"""
+			SELECT
+				strftime(Data, '%Y-%m') AS periodo,
+				Categoria AS categoria,
+				SUM(ABS(Valor)) AS total
+			FROM BASE_GERAL
+			WHERE Tipo = 'GASTO'
+				AND Data BETWEEN DATE '{start_date.isoformat()}' AND DATE '{end_date.isoformat()}'
+			GROUP BY 1, 2
+			ORDER BY 1, 3 DESC, 2
 		"""
 		return self._connection.sql(query)
 
