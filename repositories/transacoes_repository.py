@@ -178,11 +178,32 @@ class TransacoesRepository:
 
 		self._validate_transaction_frame(df_polars)
 
-		existing_ids = self._fetch_existing_ids()
-		if not existing_ids:
+		incoming_ids = df_polars.select(pl.col("ID_Unico").cast(pl.Utf8)).unique()
+		if incoming_ids.is_empty():
 			return df_polars.clone()
 
-		return df_polars.filter(~pl.col("ID_Unico").is_in(existing_ids))
+		self._connection.register("incoming_ids_tmp", incoming_ids.to_pandas())
+		try:
+			rows = self._connection.execute(
+				"""
+				SELECT i.ID_Unico
+				FROM incoming_ids_tmp i
+				LEFT JOIN (
+					SELECT ID_Unico FROM BASE_GERAL
+					UNION
+					SELECT ID_Unico FROM QUARANTINE_TRANSACTIONS
+				) e ON e.ID_Unico = i.ID_Unico
+				WHERE e.ID_Unico IS NULL
+				""",
+			).fetchall()
+		finally:
+			self._connection.unregister("incoming_ids_tmp")
+
+		if not rows:
+			return df_polars.head(0)
+
+		allowed_ids = [str(row[0]) for row in rows]
+		return df_polars.filter(pl.col("ID_Unico").is_in(allowed_ids))
 
 	def bulk_insert(
 		self,
@@ -366,6 +387,140 @@ class TransacoesRepository:
 		"""
 		return self._connection.sql(query)
 
+	def count_etl_executions(self) -> int:
+		"""Return the total number of ETL executions persisted."""
+
+		row = self._connection.execute("SELECT COUNT(*) FROM ETL_EXECUTIONS").fetchone()
+		return int(row[0] if row else 0)
+
+	def count_quarantine_transactions(self) -> int:
+		"""Return the total number of quarantined transactions."""
+
+		row = self._connection.execute("SELECT COUNT(*) FROM QUARANTINE_TRANSACTIONS").fetchone()
+		return int(row[0] if row else 0)
+
+	def count_processed_files(self) -> int:
+		"""Return the number of distinct successfully processed source files."""
+
+		row = self._connection.execute(
+			"""
+			SELECT COUNT(DISTINCT source_file)
+			FROM ETL_EXECUTIONS
+			WHERE status = ?
+			""",
+			[StatusProcessamento.SUCESSO.value],
+		).fetchone()
+		return int(row[0] if row else 0)
+
+	def fetch_latest_etl_execution(self) -> tuple[str, str, datetime] | None:
+		"""Return latest ETL execution status, source file and finish timestamp."""
+
+		row = self._connection.execute(
+			"""
+			SELECT status, source_file, finished_at
+			FROM ETL_EXECUTIONS
+			ORDER BY finished_at DESC
+			LIMIT 1
+			""",
+		).fetchone()
+		if row is None:
+			return None
+		return (str(row[0]), str(row[1]), row[2])
+
+	def fetch_quarantine_records(self, limit: int = 200) -> list[dict[str, Any]]:
+		"""Return quarantined records as dictionaries for admin workflows."""
+
+		rows = self._connection.execute(
+			"""
+			SELECT
+				ID_Unico,
+				Data,
+				Descricao,
+				Valor,
+				Tipo,
+				Categoria,
+				ArquivoOrigem,
+				Fonte,
+				processed_at,
+				motivo_rejeicao
+			FROM QUARANTINE_TRANSACTIONS
+			ORDER BY processed_at DESC, Data DESC, ID_Unico DESC
+			LIMIT ?
+			""",
+			[max(int(limit), 1)],
+		).fetchall()
+		return [
+			{
+				"ID_Unico": row[0],
+				"Data": row[1],
+				"Descricao": row[2],
+				"Valor": row[3],
+				"Tipo": row[4],
+				"Categoria": row[5],
+				"ArquivoOrigem": row[6],
+				"Fonte": row[7],
+				"processed_at": row[8],
+				"motivo_rejeicao": row[9],
+			}
+			for row in rows
+		]
+
+	def promote_quarantine_transaction(
+		self,
+		*,
+		transaction_id: str,
+		tipo: str,
+		categoria: str,
+	) -> None:
+		"""Move one quarantined transaction into ``BASE_GERAL`` atomically."""
+
+		row = self._connection.execute(
+			"""
+			SELECT ID_Unico, Data, Descricao, Valor, ArquivoOrigem, Fonte, processed_at
+			FROM QUARANTINE_TRANSACTIONS
+			WHERE ID_Unico = ?
+			LIMIT 1
+			""",
+			[transaction_id],
+		).fetchone()
+		if row is None:
+			raise KeyError(f"Quarantine transaction not found: {transaction_id}")
+
+		self._connection.execute("BEGIN TRANSACTION")
+		try:
+			self._connection.execute(
+				"""
+				INSERT INTO BASE_GERAL (
+					ID_Unico,
+					Data,
+					Descricao,
+					Valor,
+					Tipo,
+					Categoria,
+					ArquivoOrigem,
+					Fonte,
+					processed_at
+				)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				""",
+				[
+					row[0],
+					row[1],
+					row[2],
+					row[3],
+					tipo,
+					categoria,
+					row[4],
+					row[5],
+					row[6],
+				],
+			)
+			self._connection.execute("DELETE FROM QUARANTINE_TRANSACTIONS WHERE ID_Unico = ?", [transaction_id])
+			self._connection.execute("COMMIT")
+		except Exception:
+			self._connection.execute("ROLLBACK")
+			raise
+
 	def _validate_transaction_frame(self, df_polars: pl.DataFrame) -> None:
 		"""Ensure the accepted transaction frame contains the required columns."""
 
@@ -532,16 +687,6 @@ class TransacoesRepository:
 			return value.replace(tzinfo=UTC)
 
 		return value.astimezone(UTC)
-
-	def _fetch_existing_ids(self) -> set[str]:
-		"""Fetch every persisted transaction identifier from both tables."""
-
-		query = """
-			SELECT ID_Unico FROM BASE_GERAL
-			UNION
-			SELECT ID_Unico FROM QUARANTINE_TRANSACTIONS
-		"""
-		return {str(row[0]) for row in self._connection.execute(query).fetchall()}
 
 	def _insert_rows(self, *, table_name: str, columns: tuple[str, ...], df: pl.DataFrame) -> None:
 		"""Insert a normalized frame using DuckDB executemany inside a transaction."""
