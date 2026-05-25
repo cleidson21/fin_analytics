@@ -9,6 +9,7 @@ import polars as pl
 
 from config.constants import CategoriaFallback, FonteDados, TipoTransacao
 from domain.categorization import Categorizer
+from services.smart_categorizer import SmartCategorizer
 from utils.hashing import generate_deterministic_hash
 from utils.normalization import normalize_text
 
@@ -19,6 +20,10 @@ OUTPUT_COLUMNS: Final[tuple[str, ...]] = (
 	"Valor",
 	"Tipo",
 	"Categoria",
+	"MacroCategoria",
+	"Subcategoria",
+	"TipoFinanceiro",
+	"Essencialidade",
 	"ArquivoOrigem",
 	"Fonte",
 	"processed_at",
@@ -34,8 +39,9 @@ _DATE_PARSE_FORMATS: Final[tuple[str, ...]] = (
 class DataTransformer:
 	"""Transform standardized raw data into the financial domain schema."""
 
-	def __init__(self, categorizer: Categorizer) -> None:
-		self._categorizer = categorizer
+	def __init__(self, categorizer: Categorizer | None = None) -> None:
+		self._categorizer = categorizer if isinstance(categorizer, Categorizer) else Categorizer()
+		self._smart_categorizer = SmartCategorizer()
 
 	def process_raw_data(self, df: pl.DataFrame, fonte: FonteDados, file_name: str) -> pl.DataFrame:
 		"""Transform raw records into the ``TransacaoFinanceira`` shape.
@@ -57,9 +63,16 @@ class DataTransformer:
 			self._normalize_amount_expression().alias("valor_numerico"),
 		)
 
+		category_mapping = self._category_mapping(enriched)
+		type_mapping = self._type_mapping(enriched)
+
 		enriched = enriched.with_columns(
-			pl.col("descricao_normalizada").replace(self._category_mapping(enriched)).alias("Categoria"),
-			pl.col("descricao_normalizada").replace(self._type_mapping(enriched)).alias("Tipo"),
+			pl.col("descricao_normalizada").replace(self._mapping_values(category_mapping, "Categoria")).alias("Categoria"),
+			pl.col("descricao_normalizada").replace(self._mapping_values(category_mapping, "MacroCategoria")).alias("MacroCategoria"),
+			pl.col("descricao_normalizada").replace(self._mapping_values(category_mapping, "Subcategoria")).alias("Subcategoria"),
+			pl.col("descricao_normalizada").replace(self._mapping_values(category_mapping, "TipoFinanceiro")).alias("TipoFinanceiro"),
+			pl.col("descricao_normalizada").replace(self._mapping_values(category_mapping, "Essencialidade")).alias("Essencialidade"),
+			pl.col("descricao_normalizada").replace(type_mapping).alias("Tipo"),
 		)
 
 		enriched = enriched.with_columns(
@@ -99,6 +112,10 @@ class DataTransformer:
 				pl.col("Valor").cast(pl.Decimal(18, 2)),
 				pl.col("Tipo"),
 				pl.col("Categoria"),
+				pl.col("MacroCategoria"),
+				pl.col("Subcategoria"),
+				pl.col("TipoFinanceiro"),
+				pl.col("Essencialidade"),
 				pl.col("ArquivoOrigem"),
 				pl.col("Fonte"),
 				pl.col("processed_at"),
@@ -116,6 +133,10 @@ class DataTransformer:
 			"Valor": pl.Decimal(18, 2),
 			"Tipo": pl.Utf8,
 			"Categoria": pl.Utf8,
+			"MacroCategoria": pl.Utf8,
+			"Subcategoria": pl.Utf8,
+			"TipoFinanceiro": pl.Utf8,
+			"Essencialidade": pl.Utf8,
 			"ArquivoOrigem": pl.Utf8,
 			"Fonte": pl.Utf8,
 			"processed_at": pl.Datetime("us", time_zone="UTC"),
@@ -201,14 +222,20 @@ class DataTransformer:
 		)
 		return normalized_amount.cast(pl.Float64, strict=False)
 
-	def _category_mapping(self, df: pl.DataFrame) -> dict[str, str]:
-		"""Build a mapping from normalized descriptions to final categories."""
+	def _category_mapping(self, df: pl.DataFrame) -> dict[str, dict[str, str]]:
+		"""Build category and taxonomy mappings for normalized descriptions."""
 
 		unique_descriptions = df.get_column("descricao_normalizada").unique().to_list()
-		mapping: dict[str, str] = {}
+		mapping: dict[str, dict[str, str]] = {}
 		for description in unique_descriptions:
-			categoria, _ = self._categorizer.categorize(str(description))
-			mapping[str(description)] = self._enum_value(categoria)
+			category = self._smart_categorizer.categorize_transaction(str(description))
+			mapping[str(description)] = {
+				"Categoria": self._enum_value(category.subcategoria),
+				"MacroCategoria": self._enum_value(category.macro_categoria),
+				"Subcategoria": self._enum_value(category.subcategoria),
+				"TipoFinanceiro": self._enum_value(category.tipo_financeiro),
+				"Essencialidade": self._enum_value(category.essencialidade),
+			}
 
 		return mapping
 
@@ -222,6 +249,12 @@ class DataTransformer:
 			mapping[str(description)] = self._enum_value(tipo)
 
 		return mapping
+
+	@staticmethod
+	def _mapping_values(mapping: dict[str, dict[str, str]], key: str) -> dict[str, str]:
+		"""Extract a single field mapping from the taxonomy lookup structure."""
+
+		return {description: values[key] for description, values in mapping.items()}
 
 	@staticmethod
 	def _enum_value(value: object) -> str:

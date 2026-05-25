@@ -6,6 +6,7 @@ ETL, domain rules, and tests without introducing extra dependencies.
 
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
 import re
 import unicodedata
 
@@ -39,3 +40,57 @@ def normalize_text(value: str) -> str:
 	uppercased = without_accents.upper()
 	replaced = _NON_ALNUM_PATTERN.sub(" ", uppercased)
 	return _WHITESPACE_PATTERN.sub(" ", replaced).strip()
+
+
+def parse_brazilian_currency(val: str | None) -> Decimal | None:
+	"""Parse a Brazilian currency string into ``Decimal``.
+
+	Empty values return ``None``. Malformed non-empty values raise ``ValueError``.
+	"""
+
+	if val is None:
+		return None
+
+	text = str(val).strip()
+	if not text:
+		return None
+
+	text = text.replace("R$", "").replace("\xa0", " ").replace(" ", "")
+	if "," in text:
+		text = text.replace(".", "").replace(",", ".")
+
+	text = re.sub(r"[^0-9.\-]", "", text)
+	if text in {"", "-", ".", "-."}:
+		return None
+
+	try:
+		return Decimal(text)
+	except InvalidOperation as exc:
+		raise ValueError(f"Unable to parse Brazilian currency value: {val!r}") from exc
+
+
+def parse_brazilian_percentage(val: str | None) -> Decimal | None:
+	"""Parse a Brazilian percentage string into ``Decimal``.
+
+	Empty values return ``None``. Malformed non-empty values raise ``ValueError``.
+	"""
+
+	if val is None:
+		return None
+
+	text = str(val).strip()
+	if not text:
+		return None
+
+	text = text.replace("%", "").replace("\xa0", " ").replace(" ", "")
+	if "," in text:
+		text = text.replace(".", "").replace(",", ".")
+
+	text = re.sub(r"[^0-9.\-]", "", text)
+	if text in {"", "-", ".", "-."}:
+		return None
+
+	try:
+		return Decimal(text)
+	except InvalidOperation as exc:
+		raise ValueError(f"Unable to parse Brazilian percentage value: {val!r}") from exc

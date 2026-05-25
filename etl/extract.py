@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import csv
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Final
 
@@ -11,7 +11,7 @@ import pandas as pd
 import polars as pl
 
 from config.constants import FonteDados
-from utils.normalization import normalize_text
+from utils.normalization import normalize_text, parse_brazilian_currency
 
 ESSENTIAL_COLUMNS: Final[set[str]] = {"data", "descricao", "valor"}
 
@@ -50,11 +50,11 @@ class DataExtractor:
 	delimiter, and falls back from UTF-8 to latin1 when necessary.
 	"""
 
-	def read_bank_csv(self, file_path: Path, fonte: FonteDados) -> pl.DataFrame:
+	def read_bank_csv(self, file_obj: Path | BytesIO, fonte: FonteDados) -> pl.DataFrame:
 		"""Read a bank file and return a standardized Polars DataFrame.
 
 		Args:
-			file_path: Path to the source CSV file.
+			file_obj: Path or in-memory CSV buffer.
 			fonte: Source system used for lineage and downstream routing.
 
 		Returns:
@@ -65,10 +65,11 @@ class DataExtractor:
 			ValueError: If the file is empty or misses essential columns.
 		"""
 
-		if not file_path.exists():
+		file_path = file_obj if isinstance(file_obj, Path) else Path(getattr(file_obj, "name", "uploaded.csv"))
+		if isinstance(file_obj, Path) and not file_path.exists():
 			raise FileNotFoundError(file_path)
 
-		if file_path.suffix.lower() in {".xlsx", ".xls"}:
+		if isinstance(file_obj, Path) and file_path.suffix.lower() in {".xlsx", ".xls"}:
 			try:
 				dataframe = pl.from_pandas(pd.read_excel(file_path, engine="openpyxl"))
 			except ImportError as exc:
@@ -77,26 +78,31 @@ class DataExtractor:
 				) from exc
 			standardized = self._standardize_columns(dataframe)
 			standardized = self._normalize_myprofit_frame(standardized, fonte=fonte, file_path=file_path)
+			standardized = self._normalize_nubank_amounts(standardized, file_name=file_path.name, fonte=fonte)
 			self._validate_essential_columns(standardized, file_path=file_path, fonte=fonte)
 			return standardized
 
-		raw_text = self._read_text_with_fallback(file_path)
+		raw_text = self._read_text_input(file_obj)
 		cleaned_text = self._remove_blank_lines(raw_text)
 		if not cleaned_text.strip():
 			raise ValueError(f"CSV file is empty: {file_path}")
 
 		delimiter = self._detect_delimiter(cleaned_text)
-		dataframe = pl.read_csv(
-			StringIO(cleaned_text),
-			separator=delimiter,
-			infer_schema_length=0,
-			ignore_errors=False,
-			try_parse_dates=False,
-			truncate_ragged_lines=True,
-		)
+		try:
+			dataframe = pl.read_csv(
+				StringIO(cleaned_text),
+				separator=delimiter,
+				infer_schema_length=0,
+				ignore_errors=False,
+				try_parse_dates=False,
+				truncate_ragged_lines=True,
+			)
+		except Exception as exc:
+			raise ValueError(f"Failed to parse CSV file {file_path}: {exc}") from exc
 
 		standardized = self._standardize_columns(dataframe)
 		standardized = self._normalize_myprofit_frame(standardized, fonte=fonte, file_path=file_path)
+		standardized = self._normalize_nubank_amounts(standardized, file_name=file_path.name, fonte=fonte)
 		self._validate_essential_columns(standardized, file_path=file_path, fonte=fonte)
 		return standardized
 
@@ -111,6 +117,24 @@ class DataExtractor:
 				continue
 
 		raise UnicodeDecodeError("utf-8", b"", 0, 1, "Unable to decode CSV file")
+
+	@staticmethod
+	def _read_text_input(file_obj: Path | BytesIO) -> str:
+		"""Read text from either a filesystem path or an in-memory buffer."""
+
+		if isinstance(file_obj, Path):
+			return DataExtractor._read_text_with_fallback(file_obj)
+
+		if hasattr(file_obj, "seek"):
+			file_obj.seek(0)
+		payload = file_obj.getvalue() if hasattr(file_obj, "getvalue") else file_obj.read()
+		for encoding in ("utf-8-sig", "utf-8", "latin1"):
+			try:
+				return bytes(payload).decode(encoding)
+			except UnicodeDecodeError:
+				continue
+
+		raise UnicodeDecodeError("utf-8", b"", 0, 1, "Unable to decode CSV buffer")
 
 	@staticmethod
 	def _remove_blank_lines(raw_text: str) -> str:
@@ -174,6 +198,25 @@ class DataExtractor:
 			return pl.DataFrame(schema={"data": pl.Utf8, "descricao": pl.Utf8, "valor": pl.Utf8})
 
 		return dataframe
+
+	def _normalize_nubank_amounts(self, dataframe: pl.DataFrame, *, file_name: str, fonte: FonteDados) -> pl.DataFrame:
+		"""Normalize Nubank monetary strings into decimal-friendly text."""
+
+		if fonte != FonteDados.NUBANK or "valor" not in dataframe.columns:
+			return dataframe
+
+		try:
+			return dataframe.with_columns(
+				pl.col("valor")
+				.cast(pl.Utf8)
+				.map_elements(
+					lambda value: str(parse_brazilian_currency(value)) if parse_brazilian_currency(value) is not None else None,
+					return_dtype=pl.Utf8,
+				)
+				.alias("valor")
+			)
+		except Exception as exc:
+			raise ValueError(f"Falha ao processar a coluna Valor em {file_name}: {exc}") from exc
 
 	@staticmethod
 	def _warn_ignored_myprofit_snapshot(*, file_path: Path) -> None:
