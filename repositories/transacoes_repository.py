@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -182,8 +183,13 @@ class TransacoesRepository:
 		if incoming_ids.is_empty():
 			return df_polars.clone()
 
-		self._connection.register("incoming_ids_tmp", incoming_ids.to_pandas())
+		incoming_id_rows = [(str(value),) for value in incoming_ids.get_column("ID_Unico").to_list()]
+		self._connection.execute("CREATE TEMP TABLE incoming_ids_tmp (ID_Unico VARCHAR)")
 		try:
+			self._connection.executemany(
+				"INSERT INTO incoming_ids_tmp (ID_Unico) VALUES (?)",
+				incoming_id_rows,
+			)
 			rows = self._connection.execute(
 				"""
 				SELECT i.ID_Unico
@@ -197,7 +203,7 @@ class TransacoesRepository:
 				""",
 			).fetchall()
 		finally:
-			self._connection.unregister("incoming_ids_tmp")
+			self._connection.execute("DROP TABLE IF EXISTS incoming_ids_tmp")
 
 		if not rows:
 			return df_polars.head(0)
@@ -386,6 +392,41 @@ class TransacoesRepository:
 			ORDER BY 1, 3 DESC, 2
 		"""
 		return self._connection.sql(query)
+
+	def fetch_cash_balance(self) -> Decimal:
+		"""Return current cash balance from BASE_GERAL transactions."""
+
+		row = self._connection.execute(
+			"""
+			SELECT
+				COALESCE(SUM(CASE WHEN Tipo = 'RECEITA' THEN Valor ELSE 0 END), 0)
+				- COALESCE(SUM(CASE WHEN Tipo IN ('GASTO', 'INVESTIMENTO') THEN ABS(Valor) ELSE 0 END), 0)
+			FROM BASE_GERAL
+			""",
+		).fetchone()
+		return self._to_decimal(row[0] if row else 0)
+
+	def fetch_month_expenses_by_category(self, *, reference_date: date) -> dict[str, Decimal]:
+		"""Aggregate month expenses by category for budget intelligence."""
+
+		month_start = reference_date.replace(day=1)
+		if reference_date.month == 12:
+			next_month_start = reference_date.replace(year=reference_date.year + 1, month=1, day=1)
+		else:
+			next_month_start = reference_date.replace(month=reference_date.month + 1, day=1)
+
+		rows = self._connection.execute(
+			"""
+			SELECT UPPER(Categoria) AS categoria, COALESCE(SUM(ABS(Valor)), 0) AS valor_utilizado
+			FROM BASE_GERAL
+			WHERE Tipo = 'GASTO'
+			  AND Data >= ?
+			  AND Data < ?
+			GROUP BY 1
+			""",
+			[month_start, next_month_start],
+		).fetchall()
+		return {str(row[0]).upper(): self._to_decimal(row[1]) for row in rows}
 
 	def count_etl_executions(self) -> int:
 		"""Return the total number of ETL executions persisted."""
@@ -687,6 +728,20 @@ class TransacoesRepository:
 			return value.replace(tzinfo=UTC)
 
 		return value.astimezone(UTC)
+
+	@staticmethod
+	def _to_decimal(value: object) -> Decimal:
+		"""Convert mixed numeric values to ``Decimal`` consistently."""
+
+		if isinstance(value, Decimal):
+			return value
+		if isinstance(value, int):
+			return Decimal(value)
+		if isinstance(value, str):
+			return Decimal(value)
+		if isinstance(value, float):
+			return Decimal(str(value))
+		return Decimal("0")
 
 	def _insert_rows(self, *, table_name: str, columns: tuple[str, ...], df: pl.DataFrame) -> None:
 		"""Insert a normalized frame using DuckDB executemany inside a transaction."""

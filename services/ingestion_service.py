@@ -210,7 +210,6 @@ class IngestionService:
 		rows = self._read_dividend_rows(payload)
 		rows_read = len(rows)
 		inserted_rows = 0
-		self._ensure_dividend_table()
 
 		for index, row in enumerate(rows, start=1):
 			ticker = self._clean_ticker(row.get("ativo"))
@@ -226,7 +225,12 @@ class IngestionService:
 					setor="NAO_INFORMADO",
 				),
 			)
-			self._insert_dividend(dividend_id, ticker, data_pagamento, valor_recebido)
+			self._wealth_repository.upsert_dividend(
+				dividend_id=dividend_id,
+				ticker=ticker,
+				data_pagamento=data_pagamento,
+				valor_recebido=valor_recebido,
+			)
 			inserted_rows += 1
 
 		return UploadedFileProcessingResult(
@@ -426,52 +430,6 @@ class IngestionService:
 
 		payload = f"file={file_name}|ticker={ticker}|data={data_pagamento}|valor={valor_recebido}|row={row_number}"
 		return sha256(payload.encode("utf-8")).hexdigest()
-
-	def _ensure_dividend_table(self) -> None:
-		"""Create the dividend fact table when it is missing."""
-
-		self._wealth_repository._connection.execute(  # noqa: SLF001
-			"""
-			CREATE TABLE IF NOT EXISTS FACT_DIVIDENDS (
-				id_dividendo VARCHAR PRIMARY KEY,
-				ticker VARCHAR NOT NULL,
-				data_pagamento DATE NOT NULL,
-				valor_recebido DECIMAL(18, 2) NOT NULL,
-				updated_at TIMESTAMP WITH TIME ZONE NOT NULL
-			)
-			""",
-		)
-
-	def _insert_dividend(self, dividend_id: str, ticker: str, data_pagamento: date, valor_recebido: Decimal) -> None:
-		"""Persist a dividend row with idempotent replacement semantics."""
-
-		now = datetime.now(UTC)
-		try:
-			self._wealth_repository._connection.execute("BEGIN TRANSACTION")  # noqa: SLF001
-			self._wealth_repository._connection.execute(  # noqa: SLF001
-				"DELETE FROM FACT_DIVIDENDS WHERE id_dividendo = ?",
-				[dividend_id],
-			)
-			self._wealth_repository._connection.execute(  # noqa: SLF001
-				"""
-				INSERT INTO FACT_DIVIDENDS (
-					id_dividendo,
-					ticker,
-					data_pagamento,
-					valor_recebido,
-					updated_at
-				)
-				VALUES (?, ?, ?, ?, ?)
-				""",
-				[dividend_id, ticker, data_pagamento, valor_recebido, now],
-			)
-			self._wealth_repository._connection.execute("COMMIT")  # noqa: SLF001
-		except Exception as exc:
-			try:
-				self._wealth_repository._connection.execute("ROLLBACK")  # noqa: SLF001
-			except Exception:
-				pass
-			raise RuntimeError(f"Failed to persist dividend for {ticker} on {data_pagamento}: {exc}") from exc
 
 	@staticmethod
 	def _clean_ticker(value: Any) -> str:

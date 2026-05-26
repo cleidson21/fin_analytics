@@ -10,7 +10,7 @@ import polars as pl
 from config.constants import CategoriaFallback, FonteDados, TipoTransacao
 from domain.categorization import Categorizer
 from services.smart_categorizer import SmartCategorizer
-from utils.hashing import generate_deterministic_hash
+from utils.hashing import generate_canonical_transaction_hash
 from utils.normalization import normalize_text
 
 OUTPUT_COLUMNS: Final[tuple[str, ...]] = (
@@ -86,6 +86,11 @@ class DataTransformer:
 			pl.lit(datetime.now(UTC)).cast(pl.Datetime("us", time_zone="UTC")).alias("processed_at"),
 		)
 
+		if "conta" not in enriched.columns:
+			enriched = enriched.with_columns(pl.lit("").alias("conta"))
+		if "referencia_externa" not in enriched.columns:
+			enriched = enriched.with_columns(pl.lit("").alias("referencia_externa"))
+
 		enriched = enriched.with_columns(
 			self._parse_date_expression().alias("Data"),
 		)
@@ -97,9 +102,16 @@ class DataTransformer:
 					pl.col("Data").dt.strftime("%Y-%m-%d").alias("data_iso"),
 					pl.col("valor_abs").round(2).cast(pl.Decimal(18, 2)).cast(pl.Utf8).alias("valor_abs_text"),
 					pl.col("descricao_normalizada"),
-					pl.col("Fonte"),
-					pl.lit(file_name).alias("nome_arquivo"),
-					pl.col("row_number").cast(pl.Utf8),
+					pl.col("conta").cast(pl.Utf8).fill_null("").alias("account_id"),
+					pl.col("referencia_externa").cast(pl.Utf8).fill_null("").alias("external_reference"),
+					pl.concat_str(
+						[
+							pl.col("Fonte").cast(pl.Utf8),
+							pl.lit(file_name),
+							pl.col("row_number").cast(pl.Utf8),
+						],
+						separator="|",
+					).alias("fallback_seed"),
 				]
 			).map_elements(self._generate_hash_from_row, return_dtype=pl.Utf8).alias("ID_Unico")
 		)
@@ -146,13 +158,13 @@ class DataTransformer:
 	def _generate_hash_from_row(row: dict[str, object]) -> str:
 		"""Generate the final deterministic hash from a prepared struct row."""
 
-		return generate_deterministic_hash(
+		return generate_canonical_transaction_hash(
 			data_iso=str(row["data_iso"]),
 			valor_abs=str(row["valor_abs_text"]),
 			descricao_normalizada=str(row["descricao_normalizada"]),
-			fonte=str(row["Fonte"]),
-			nome_arquivo=str(row["nome_arquivo"]),
-			row_number=str(row["row_number"]),
+			account_id=str(row["account_id"]),
+			external_reference=str(row["external_reference"]),
+			fallback_seed=str(row["fallback_seed"]),
 		)
 
 	def _standardize_input_columns(self, df: pl.DataFrame) -> pl.DataFrame:
@@ -188,6 +200,14 @@ class DataTransformer:
 			"type": "tipo",
 			"categoria": "categoria",
 			"category": "categoria",
+			"conta": "conta",
+			"account": "conta",
+			"account_id": "conta",
+			"id_conta": "conta",
+			"referencia_externa": "referencia_externa",
+			"external_reference": "referencia_externa",
+			"id_externo": "referencia_externa",
+			"txid": "referencia_externa",
 		}
 		return aliases.get(normalized, normalized)
 

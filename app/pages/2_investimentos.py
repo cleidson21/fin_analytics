@@ -17,7 +17,7 @@ try:
 		set_active_tab,
 		set_flash_message,
 	)
-	from app.dependencies import get_wealth_repository
+	from app.dependencies import get_analytics_repository
 except ModuleNotFoundError:
 	from core.shell import configure_page, render_sidebar
 	from core.state import (
@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 		set_active_tab,
 		set_flash_message,
 	)
-	from dependencies import get_wealth_repository
+	from dependencies import get_analytics_repository
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -43,21 +43,7 @@ def _to_decimal(value: object) -> Decimal:
 
 
 def _build_positions_df() -> pd.DataFrame:
-	wealth_repo = get_wealth_repository()
-	rows = wealth_repo._connection.execute(  # noqa: SLF001
-		"""
-		SELECT
-			p.ticker,
-			p.quantidade,
-			p.preco_medio,
-			p.cotacao_atual,
-			p.pnl_absoluto,
-			p.pnl_percentual,
-			p.dividend_yield
-		FROM FACT_POSITIONS p
-		ORDER BY p.ticker
-		"""
-	).fetchall()
+	rows = get_analytics_repository().get_positions_grid_rows()
 
 	if not rows:
 		return pd.DataFrame(columns=["Ticker", "Qtde", "Preco Medio", "Cotacao", "PnL", "PnL %", "Yield %"])
@@ -66,13 +52,13 @@ def _build_positions_df() -> pd.DataFrame:
 	for row in rows:
 		data.append(
 			{
-				"Ticker": row[0],
-				"Qtde": float(_to_decimal(row[1])),
-				"Preco Medio": float(_to_decimal(row[2])),
-				"Cotacao": float(_to_decimal(row[3])),
-				"PnL": float(_to_decimal(row[4])),
-				"PnL %": float(_to_decimal(row[5])),
-				"Yield %": float(_to_decimal(row[6])),
+				"Ticker": row.get("ticker"),
+				"Qtde": float(_to_decimal(row.get("quantidade"))),
+				"Preco Medio": float(_to_decimal(row.get("preco_medio"))),
+				"Cotacao": float(_to_decimal(row.get("cotacao_atual"))),
+				"PnL": float(_to_decimal(row.get("pnl_absoluto"))),
+				"PnL %": float(_to_decimal(row.get("pnl_percentual"))),
+				"Yield %": float(_to_decimal(row.get("dividend_yield"))),
 			}
 		)
 	return pd.DataFrame(data)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -12,13 +11,12 @@ import streamlit as st
 try:
 	from app.core.shell import configure_page, render_sidebar
 	from app.core.state import initialize_session_state, pop_flash_message, set_active_tab, set_flash_message
-	from app.dependencies import get_transacoes_repository, get_wealth_repository
+	from app.dependencies import get_analytics_repository, get_wealth_repository
 except ModuleNotFoundError:
 	from core.shell import configure_page, render_sidebar
 	from core.state import initialize_session_state, pop_flash_message, set_active_tab, set_flash_message
-	from dependencies import get_transacoes_repository, get_wealth_repository
+	from dependencies import get_analytics_repository, get_wealth_repository
 
-from config.constants import TipoTransacao
 from models.wealth_schemas import CategoriaDimDTO, FinancialGoalDTO
 
 
@@ -175,26 +173,7 @@ def _save_goals(edited_df: pd.DataFrame) -> int:
 
 
 def _load_quarantine_df(limit: int = 200) -> pd.DataFrame:
-	repository = get_transacoes_repository()
-	rows = repository._connection.execute(  # noqa: SLF001
-		"""
-		SELECT
-			ID_Unico,
-			Data,
-			Descricao,
-			Valor,
-			Tipo,
-			Categoria,
-			ArquivoOrigem,
-			Fonte,
-			processed_at,
-			motivo_rejeicao
-		FROM QUARANTINE_TRANSACTIONS
-		ORDER BY processed_at DESC, Data DESC, ID_Unico DESC
-		LIMIT ?
-		""",
-		[limit],
-	).fetchall()
+	rows = get_analytics_repository().get_quarantine_rows(limit=limit)
 
 	if not rows:
 		return pd.DataFrame(
@@ -216,66 +195,21 @@ def _load_quarantine_df(limit: int = 200) -> pd.DataFrame:
 	return pd.DataFrame(
 		[
 			{
-				"ID_Unico": row[0],
-				"Data": row[1],
-				"Descricao": row[2],
-				"Valor": float(_to_decimal(row[3])),
-				"Tipo": row[4],
-				"Categoria": row[5],
-				"ArquivoOrigem": row[6],
-				"Fonte": row[7],
-				"processed_at": row[8],
-				"motivo_rejeicao": row[9],
+				"ID_Unico": row.get("ID_Unico"),
+				"Data": row.get("Data"),
+				"Descricao": row.get("Descricao"),
+				"Valor": float(_to_decimal(row.get("Valor"))),
+				"Tipo": row.get("Tipo"),
+				"Categoria": row.get("Categoria"),
+				"ArquivoOrigem": row.get("ArquivoOrigem"),
+				"Fonte": row.get("Fonte"),
+				"processed_at": row.get("processed_at"),
+				"motivo_rejeicao": row.get("motivo_rejeicao"),
 				"Subcategoria Corrigida": "",
 			}
 			for row in rows
 		]
 	)
-
-
-def _promote_quarantine_record(record: dict[str, Any], category: CategoriaDimDTO) -> None:
-	repository = get_transacoes_repository()
-	base_tipo = TipoTransacao.INVESTIMENTO.value if category.macro_categoria == "INVESTIMENTOS" else TipoTransacao.GASTO.value
-	try:
-		repository._connection.execute("BEGIN TRANSACTION")  # noqa: SLF001
-		repository._connection.execute(
-			"""
-			INSERT INTO BASE_GERAL (
-				ID_Unico,
-				Data,
-				Descricao,
-				Valor,
-				Tipo,
-				Categoria,
-				ArquivoOrigem,
-				Fonte,
-				processed_at
-			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			""",
-			[
-				record["ID_Unico"],
-				record["Data"],
-				record["Descricao"],
-				_to_decimal(record["Valor"]),
-				base_tipo,
-				category.subcategoria,
-				record["ArquivoOrigem"],
-				record["Fonte"],
-				record["processed_at"],
-			],
-		)
-		repository._connection.execute(  # noqa: SLF001
-			"DELETE FROM QUARANTINE_TRANSACTIONS WHERE ID_Unico = ?",
-			[record["ID_Unico"]],
-		)
-		repository._connection.execute("COMMIT")
-	except Exception as exc:
-		try:
-			repository._connection.execute("ROLLBACK")
-		except Exception:
-			pass
-		raise RuntimeError(f"Falha ao promover transacao {record['ID_Unico']}") from exc
 
 
 def _render_categories_tab() -> None:
@@ -391,7 +325,10 @@ def _render_quarantine_tab() -> None:
 				match = next((category for category in categories if category.subcategoria == subcategoria), None)
 				if match is None:
 					continue
-				_promote_quarantine_record(row, match)
+				get_analytics_repository().promote_quarantine_record(
+					transaction_id=str(row["ID_Unico"]),
+					categoria=match.subcategoria,
+				)
 				promoted += 1
 		except Exception as exc:
 			set_flash_message(f"Falha ao corrigir quarentena: {exc}")

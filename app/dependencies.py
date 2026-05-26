@@ -24,6 +24,7 @@ from domain.categorization import Categorizer
 from etl.extract import DataExtractor
 from etl.load import DataLoader
 from etl.transform import DataTransformer
+from repositories.analytics_repository import AnalyticsRepository
 from repositories.transacoes_repository import TransacoesRepository
 from repositories.wealth_repository import WealthRepository
 from services.ingestion_service import IngestionService
@@ -120,3 +121,15 @@ def _build_wealth_repository() -> WealthRepository:
 	repository = WealthRepository(database_path=settings.DATABASE_PATH)
 	repository.init_wealth_tables()
 	return repository
+
+
+def get_analytics_repository() -> AnalyticsRepository:
+	"""Return a cached analytics read repository."""
+
+	return _get_session_resource(
+		"fin_analytics_analytics_repository",
+		lambda: AnalyticsRepository(
+			transacoes_repository=get_transacoes_repository(),
+			wealth_repository=get_wealth_repository(),
+		),
+	)
