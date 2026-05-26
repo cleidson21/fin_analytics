@@ -126,6 +126,62 @@ class WealthRepository:
 				updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 			)
 			""",
+			"""
+			CREATE TABLE IF NOT EXISTS DIM_ACCOUNTS (
+				account_id VARCHAR PRIMARY KEY,
+				account_name VARCHAR NOT NULL,
+				institution VARCHAR NOT NULL,
+				account_type VARCHAR NOT NULL,
+				created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+				updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+			)
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS FACT_TRANSACTIONS (
+				transaction_id VARCHAR PRIMARY KEY,
+				account_id VARCHAR,
+				asset_ticker VARCHAR,
+				transaction_date DATE NOT NULL,
+				description VARCHAR NOT NULL,
+				amount DECIMAL(18, 2) NOT NULL,
+				transaction_type VARCHAR NOT NULL,
+				category VARCHAR NOT NULL,
+				source_file VARCHAR NOT NULL,
+				external_reference VARCHAR,
+				processed_at TIMESTAMP WITH TIME ZONE NOT NULL
+			)
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS FACT_CASHFLOW (
+				cashflow_id VARCHAR PRIMARY KEY,
+				account_id VARCHAR,
+				period_start DATE NOT NULL,
+				inflow DECIMAL(18, 2) NOT NULL,
+				outflow DECIMAL(18, 2) NOT NULL,
+				net_flow DECIMAL(18, 2) NOT NULL,
+				updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+			)
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS FACT_DIVIDENDS (
+				id_dividendo VARCHAR PRIMARY KEY,
+				ticker VARCHAR NOT NULL,
+				data_pagamento DATE NOT NULL,
+				valor_recebido DECIMAL(18, 2) NOT NULL,
+				updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+			)
+			""",
+			"""
+			CREATE TABLE IF NOT EXISTS FACT_TRANSFERS (
+				transfer_id VARCHAR PRIMARY KEY,
+				from_account_id VARCHAR,
+				to_account_id VARCHAR,
+				transfer_date DATE NOT NULL,
+				amount DECIMAL(18, 2) NOT NULL,
+				description VARCHAR NOT NULL,
+				updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+			)
+			""",
 		)
 
 		for statement in ddl_statements:
@@ -629,6 +685,114 @@ class WealthRepository:
 			)
 			for row in rows
 		]
+
+	def upsert_budget_limit(self, *, categoria: str, teto_mensal: Decimal) -> None:
+		"""Insert or replace one budget limit row."""
+
+		normalized_categoria = categoria.strip().upper()
+		if not normalized_categoria:
+			raise ValueError("categoria must not be empty")
+		now = datetime.now(UTC)
+		self._atomic_replace(
+			"BUDGETS",
+			"categoria",
+			normalized_categoria,
+			"""
+			INSERT INTO BUDGETS (
+				categoria,
+				teto_mensal,
+				valor_utilizado,
+				percentual_uso,
+				status_alerta,
+				updated_at
+			)
+			VALUES (?, ?, ?, ?, ?, ?)
+			""",
+			[
+				normalized_categoria,
+				self._to_decimal(teto_mensal),
+				Decimal("0"),
+				Decimal("0"),
+				"OK",
+				now,
+			],
+		)
+
+	def count_active_goals(self) -> int:
+		"""Return count of goals that are still in progress."""
+
+		try:
+			row = self._connection.execute(
+				"""
+				SELECT COUNT(*)
+				FROM FINANCIAL_GOALS
+				WHERE COALESCE(percentual_conclusao, 0) < 100
+				""",
+			).fetchone()
+		except Exception:
+			row = self._connection.execute(
+				"""
+				SELECT COUNT(*)
+				FROM FINANCIAL_GOALS
+				WHERE COALESCE(status, 'ATIVA') <> 'CONCLUIDA'
+				""",
+			).fetchone()
+		return int(row[0] if row else 0)
+
+	def count_positions(self) -> int:
+		"""Return count of tracked portfolio positions."""
+
+		row = self._connection.execute("SELECT COUNT(*) FROM FACT_POSITIONS").fetchone()
+		return int(row[0] if row else 0)
+
+	def fetch_monthly_dividends(self) -> list[dict[str, Decimal | str]]:
+		"""Return monthly dividend totals."""
+
+		rows = self._connection.execute(
+			"""
+			SELECT
+				strftime(data_pagamento, '%Y-%m') AS mes,
+				SUM(valor_recebido) AS valor_recebido
+			FROM FACT_DIVIDENDS
+			GROUP BY 1
+			ORDER BY 1
+			""",
+		).fetchall()
+		return [
+			{
+				"mes": str(row[0]),
+				"valor_recebido": self._to_decimal(row[1]),
+			}
+			for row in rows
+		]
+
+	def upsert_dividend(self, *, dividend_id: str, ticker: str, data_pagamento: date, valor_recebido: Decimal) -> None:
+		"""Persist one dividend row with idempotent replacement semantics."""
+
+		now = datetime.now(UTC)
+		try:
+			self._connection.execute("BEGIN TRANSACTION")
+			self._connection.execute("DELETE FROM FACT_DIVIDENDS WHERE id_dividendo = ?", [dividend_id])
+			self._connection.execute(
+				"""
+				INSERT INTO FACT_DIVIDENDS (
+					id_dividendo,
+					ticker,
+					data_pagamento,
+					valor_recebido,
+					updated_at
+				)
+				VALUES (?, ?, ?, ?, ?)
+				""",
+				[dividend_id, ticker, data_pagamento, valor_recebido, now],
+			)
+			self._connection.execute("COMMIT")
+		except Exception as exc:
+			try:
+				self._connection.execute("ROLLBACK")
+			except Exception:
+				pass
+			raise RuntimeError(f"Failed to persist dividend for {ticker} on {data_pagamento}: {exc}") from exc
 
 	def fetch_portfolio(self) -> list[dict[str, Any]]:
 		"""Compatibility alias returning the legacy portfolio shape."""

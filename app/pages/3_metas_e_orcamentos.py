@@ -17,7 +17,6 @@ try:
 		set_active_tab,
 		set_flash_message,
 	)
-	from app.dependencies import get_wealth_repository
 except ModuleNotFoundError:
 	from core.shell import configure_page, render_sidebar
 	from core.state import (
@@ -27,7 +26,6 @@ except ModuleNotFoundError:
 		set_active_tab,
 		set_flash_message,
 	)
-	from dependencies import get_wealth_repository
 from models.wealth_dto import GoalDTO
 
 
@@ -72,27 +70,14 @@ def _save_budget_limits(edited_df: pd.DataFrame) -> int:
 	if edited_df.empty:
 		return 0
 
-	wealth_repo = get_wealth_repository()
+	service = get_wealth_intelligence_service()
 	updated_count = 0
 	for row in edited_df.to_dict("records"):
 		categoria = str(row.get("Categoria", "")).strip().upper()
 		if not categoria:
 			continue
 		teto = _to_decimal(row.get("Teto Mensal", 0))
-		wealth_repo._connection.execute(  # noqa: SLF001
-			"""
-			DELETE FROM BUDGETS
-			WHERE categoria = ?
-			""",
-			[categoria],
-		)
-		wealth_repo._connection.execute(  # noqa: SLF001
-			"""
-			INSERT INTO BUDGETS (categoria, teto_mensal, valor_utilizado, percentual_uso, status_alerta, updated_at)
-			VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-			""",
-			[categoria, teto, Decimal("0"), Decimal("0"), "OK"],
-		)
+		service.upsert_budget_limit(categoria=categoria, teto_mensal=teto)
 		updated_count += 1
 
 	return updated_count
@@ -127,7 +112,7 @@ def _render_new_goal_form() -> None:
 							"prioridade": int(prioridade),
 						}
 					)
-					service._wealth_repository.upsert_goal(goal)  # noqa: SLF001
+					service.upsert_goal(goal)
 				except Exception as exc:
 					set_flash_message(f"Falha ao salvar meta: {exc}")
 				else:

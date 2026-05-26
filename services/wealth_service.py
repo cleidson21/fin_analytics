@@ -149,42 +149,26 @@ class WealthIntelligenceService:
 
 		return results
 
+	def upsert_budget_limit(self, *, categoria: str, teto_mensal: Decimal) -> None:
+		"""Persist a budget limit through the wealth repository."""
+
+		self._wealth_repository.upsert_budget_limit(categoria=categoria, teto_mensal=teto_mensal)
+
+	def upsert_goal(self, goal: GoalDTO) -> None:
+		"""Persist a goal through the wealth repository."""
+
+		self._wealth_repository.upsert_goal(goal)
+
 	def _fetch_cash_balance(self) -> Decimal:
 		"""Return the current cash balance from BASE_GERAL transactions."""
 
 		self._transactions_repository.init_tables()
-		row = self._transactions_repository._connection.execute(  # noqa: SLF001
-			"""
-			SELECT
-				COALESCE(SUM(CASE WHEN Tipo = 'RECEITA' THEN Valor ELSE 0 END), 0)
-				- COALESCE(SUM(CASE WHEN Tipo IN ('GASTO', 'INVESTIMENTO') THEN ABS(Valor) ELSE 0 END), 0)
-			FROM BASE_GERAL
-			""",
-		).fetchone()
-		return self._to_decimal(row[0] if row else 0)
+		return self._transactions_repository.fetch_cash_balance()
 
 	def _fetch_month_expenses_by_category(self, reference_date: date) -> dict[str, Decimal]:
 		"""Aggregate current-month expenses per category from transactions."""
 
-		month_start = reference_date.replace(day=1)
-		if reference_date.month == 12:
-			next_month_start = reference_date.replace(year=reference_date.year + 1, month=1, day=1)
-		else:
-			next_month_start = reference_date.replace(month=reference_date.month + 1, day=1)
-
-		rows = self._transactions_repository._connection.execute(  # noqa: SLF001
-			"""
-			SELECT UPPER(Categoria) AS categoria, COALESCE(SUM(ABS(Valor)), 0) AS valor_utilizado
-			FROM BASE_GERAL
-			WHERE Tipo = 'GASTO'
-			  AND Data >= ?
-			  AND Data < ?
-			GROUP BY 1
-			""",
-			[month_start, next_month_start],
-		).fetchall()
-
-		return {str(row[0]).upper(): self._to_decimal(row[1]) for row in rows}
+		return self._transactions_repository.fetch_month_expenses_by_category(reference_date=reference_date)
 
 	@staticmethod
 	def _classify_budget_status(usage_percent: Decimal) -> str:

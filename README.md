@@ -18,7 +18,8 @@ FinAnalytics é uma plataforma local de inteligência financeira para consolidar
 - `data/processed/`: arquivos curados gerados pelo ETL.
 - `data/database/`: banco local DuckDB.
 - `logs/`: logs da execução.
-- `app/dashboard.py`: interface web do Streamlit.
+- `app/main.py`: entrada oficial da interface web Streamlit.
+- `app/pages/*`: páginas modulares do frontend.
 - `etl/pipeline.py`: execução completa do ETL.
 
 ## Passo a passo rápido
@@ -37,13 +38,15 @@ pip install streamlit plotly
 python etl/pipeline.py
 ```
 
-5. Inicie o dashboard:
+5. Inicie o frontend Streamlit:
 
 ```powershell
-streamlit run app/dashboard.py
+streamlit run app/main.py
 ```
 
 6. Abra `http://localhost:8501` no navegador.
+
+> `app/dashboard.py` foi mantido apenas por compatibilidade e redireciona para `app/main.py`.
 
 ## Como inserir dados
 
@@ -89,7 +92,7 @@ Esse modo limpa a base local e reaplica as regras atuais sobre tudo que estiver 
 
 O pipeline também aceita planilhas `.xlsx` de MyProfit, desde que elas estejam em `data/raw/` e tenham colunas equivalentes a `data`, `descricao` e `valor`.
 
-## Funcionalidades do dashboard
+## Funcionalidades do frontend
 
 ### Barra lateral
 
@@ -127,11 +130,11 @@ O pipeline também aceita planilhas `.xlsx` de MyProfit, desde que elas estejam 
 
 - Se o ETL informar que o banco está em uso, feche o Streamlit ou outro processo que esteja conectado ao DuckDB e tente novamente.
 - Se um CSV falhar na leitura, verifique se ele contém `data`, `descricao` e `valor`.
-- Se não aparecerem dados no dashboard, confirme se o ETL foi executado depois de inserir novos arquivos.
+- Se não aparecerem dados no frontend, confirme se o ETL foi executado depois de inserir novos arquivos.
 
 ## Execução direta
 
-Para validar rapidamente a camada analítica sem abrir o dashboard, use:
+Para validar rapidamente a camada analítica sem abrir o frontend, use:
 
 ```powershell
 python app/cli_test.py

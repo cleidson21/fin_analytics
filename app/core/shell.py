@@ -15,9 +15,9 @@ if str(_REPO_ROOT) not in sys.path:
 	sys.path.insert(0, str(_REPO_ROOT))
 
 try:
-	from app.dependencies import get_transacoes_repository, get_wealth_repository
+	from app.dependencies import get_analytics_repository, get_transacoes_repository, get_wealth_repository
 except ModuleNotFoundError:
-	from dependencies import get_transacoes_repository, get_wealth_repository
+	from dependencies import get_analytics_repository, get_transacoes_repository, get_wealth_repository
 
 from etl.pipeline import ETLPipeline
 
@@ -125,40 +125,8 @@ def _render_health_status(*, active_tab: str) -> None:
 	wealth_repo = get_wealth_repository()
 	transacoes_repo.init_tables()
 	wealth_repo.init_wealth_tables()
-
-	etl_row = transacoes_repo._connection.execute(  # noqa: SLF001
-		"""
-		SELECT status, source_file, finished_at
-		FROM ETL_EXECUTIONS
-		ORDER BY finished_at DESC
-		LIMIT 1
-		"""
-	).fetchone()
-
-	try:
-		goals_active = wealth_repo._connection.execute(  # noqa: SLF001
-			"""
-			SELECT COUNT(*)
-			FROM FINANCIAL_GOALS
-			WHERE COALESCE(percentual_conclusao, 0) < 100
-			"""
-		).fetchone()
-	except Exception:
-		goals_active = wealth_repo._connection.execute(  # noqa: SLF001
-			"""
-			SELECT COUNT(*)
-			FROM FINANCIAL_GOALS
-			WHERE COALESCE(status, 'ATIVA') <> 'CONCLUIDA'
-			"""
-		).fetchone()
-
-	positions_count = wealth_repo._connection.execute(  # noqa: SLF001
-		"""
-		SELECT COUNT(*)
-		FROM FACT_POSITIONS
-		"""
-	).fetchone()
-
+	health = get_analytics_repository().get_shell_health_snapshot()
+	etl_row = health.get("latest_execution")
 	status = str(etl_row[0]) if etl_row else "SEM_DADOS"
 	status_color = "#5AF2B5" if status == "SUCESSO" else "#FFB347" if status == "SEM_DADOS" else "#FF8D96"
 
@@ -176,5 +144,5 @@ def _render_health_status(*, active_tab: str) -> None:
 			unsafe_allow_html=True,
 		)
 		col_a, col_b = st.columns(2)
-		col_a.metric("Ativos", f"{int(positions_count[0] if positions_count else 0)}")
-		col_b.metric("Metas", f"{int(goals_active[0] if goals_active else 0)}")
+		col_a.metric("Ativos", f"{int(health.get('positions_count', 0) or 0)}")
+		col_b.metric("Metas", f"{int(health.get('active_goals', 0) or 0)}")
