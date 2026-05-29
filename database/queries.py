@@ -10,7 +10,9 @@ class FinancialQueries:
         self.db_path = db_path
 
     def _get_connection(self):
-        return sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
 
     def _read_dataframe(self, query: str, numeric_columns: list[str]) -> pd.DataFrame:
         with self._get_connection() as conn:
@@ -185,9 +187,61 @@ class FinancialQueries:
         return self._read_dataframe(query, ["valor"])
 
     def get_transactions(self, limit: int = 50, offset: int = 0) -> pd.DataFrame:
-        query = "SELECT data, descricao_original as description, macro_categoria as category, source as account, valor as amount FROM transactions ORDER BY data DESC LIMIT ? OFFSET ?"
+        query = """
+            SELECT
+                id_economico as id,
+                data,
+                descricao_original as description,
+                macro_categoria as category,
+                natureza,
+                subnatureza,
+                source as account,
+                valor as amount
+            FROM transactions
+            ORDER BY data DESC
+            LIMIT ? OFFSET ?
+        """
         with self._get_connection() as conn:
             return pd.read_sql(query, conn, params=[limit, offset])
+
+    def update_transaction_category(
+        self,
+        transaction_id: str,
+        macro_categoria: str,
+        natureza: str | None = None,
+        subnatureza: str | None = None,
+    ) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            current = cursor.execute(
+                """
+                SELECT macro_categoria, sub_categoria, subnatureza, natureza
+                FROM transactions
+                WHERE id_economico = ?
+                """,
+                (transaction_id,),
+            ).fetchone()
+
+            if current is None:
+                return False
+
+            natureza_final = natureza or current["natureza"]
+            subnatureza_final = subnatureza or current["subnatureza"] or current["sub_categoria"]
+
+            cursor.execute(
+                """
+                UPDATE transactions
+                SET macro_categoria = ?,
+                    sub_categoria = ?,
+                    subnatureza = ?,
+                    natureza = ?,
+                    atualizado_em = CURRENT_TIMESTAMP
+                WHERE id_economico = ?
+                """,
+                (macro_categoria, subnatureza_final, subnatureza_final, natureza_final, transaction_id),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
 
     def get_accounts_summary(self) -> pd.DataFrame:
         query = "SELECT source as institution, SUM(valor) as balance FROM transactions GROUP BY source ORDER BY balance DESC"

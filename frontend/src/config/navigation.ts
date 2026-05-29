@@ -37,13 +37,18 @@ export const SECTION_TABS = {
     { name: "Dividendos", href: "/wealth/dividends", icon: BarChart3 },
     { name: "Evolução", href: "/wealth/evolution", icon: LineChart },
   ],
-  transactions: [],
+  transactions: [{ name: "Extrato", href: "/transactions", icon: Receipt }],
+  governance: [
+    { name: "Revisão de Dados", href: "/governance", icon: Settings },
+    { name: "Importação CSV", href: "/governance/import", icon: Receipt },
+  ],
   goals: [],
 } as const;
 
 export function getTabsForPath(pathname: string) {
   if (pathname.startsWith("/wealth")) return SECTION_TABS.wealth;
   if (pathname.startsWith("/transactions")) return SECTION_TABS.transactions;
+  if (pathname.startsWith("/governance")) return SECTION_TABS.governance;
   if (pathname.startsWith("/goals")) return SECTION_TABS.goals;
 
   return SECTION_TABS.dashboard;

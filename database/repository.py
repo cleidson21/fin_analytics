@@ -72,11 +72,12 @@ class DatabaseManager:
                     """
                     INSERT INTO transactions (
                         id_economico, source, data, descricao_original, descricao_normalizada,
-                        valor, identificador_externo, macro_categoria, sub_categoria, natureza, perfil
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        valor, identificador_externo, macro_categoria, sub_categoria, subnatureza, natureza, perfil
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id_economico) DO UPDATE SET
                         macro_categoria = excluded.macro_categoria,
                         sub_categoria = excluded.sub_categoria,
+                        subnatureza = excluded.subnatureza,
                         natureza = excluded.natureza,
                         perfil = excluded.perfil,
                         descricao_normalizada = excluded.descricao_normalizada,
@@ -91,6 +92,7 @@ class DatabaseManager:
                         str(transaction["valor"]),
                         transaction["identificador_externo"],
                         cat["macro"],
+                        cat["sub"],
                         cat["sub"],
                         cat["natureza"].value,
                         cat["perfil"].value,

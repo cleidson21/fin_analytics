@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     identificador_externo TEXT,
     macro_categoria TEXT NOT NULL,
     sub_categoria TEXT NOT NULL,
+    subnatureza TEXT NOT NULL DEFAULT 'INDEFINIDO',
     natureza TEXT NOT NULL,
     perfil TEXT NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
