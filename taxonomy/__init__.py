@@ -1,0 +1,1 @@
+"""Taxonomia financeira configurável por dados."""

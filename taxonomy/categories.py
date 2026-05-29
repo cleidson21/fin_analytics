@@ -1,0 +1,16 @@
+from enum import Enum
+
+
+class Natureza(str, Enum):
+    INCOME = "INCOME"
+    EXPENSE = "EXPENSE"
+    TRANSFER = "TRANSFER"
+    INVESTMENT = "INVESTMENT"
+    DIVIDEND = "DIVIDEND"
+
+
+class Perfil(str, Enum):
+    ESSENCIAL = "ESSENCIAL"
+    DISCRICIONARIO = "DISCRICIONARIO"
+    IGNORADO = "IGNORADO"
+    PATRIMONIAL = "PATRIMONIAL"
