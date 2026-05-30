@@ -8,6 +8,14 @@ from utils.semantic import normalize_description
 
 
 OWNERS = ["CLEIDSON RAMOS", "C RAMOS", "CLEIDSON R", "CLEIDSON RAMOS DE CARVALHO"]
+SEMANTIC_MACRO_CATEGORIES = [
+    "TRANSFERENCIA_INTERNA",
+    "SALARIO",
+    "DIVIDENDOS",
+    "RECEBIMENTO_DIRETO",
+    "PAGAMENTO_DIRETO",
+    "OUTROS",
+]
 
 
 def _classification_payload(
@@ -77,6 +85,11 @@ def aplicar_regras_semanticas(descricao: str, valor: float) -> dict[str, object]
 class SmartCategorizer:
     def __init__(self, rules_path: Path):
         self.rules = self._load_rules(rules_path)
+
+    def available_categories(self) -> list[str]:
+        categories = {rule["macro"] for rule in self.rules if rule.get("macro")}
+        categories.update(SEMANTIC_MACRO_CATEGORIES)
+        return sorted(categories)
 
     def _load_rules(self, path: Path) -> list[dict[str, str]]:
         rules: list[dict[str, str]] = []

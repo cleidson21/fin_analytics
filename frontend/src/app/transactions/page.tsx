@@ -15,11 +15,14 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { fetchFromAPI } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { getCurrentMonth, isValidMonth } from "@/lib/period";
+import { useFinanceStore } from "@/store/finance-store";
 
 interface Transaction {
   id: string;
@@ -32,11 +35,38 @@ interface Transaction {
   amount: number | string;
 }
 
+interface TransactionListResponse {
+  items: Transaction[];
+  total: number;
+  limit: number;
+  offset: number;
+  totalPages: number;
+  summary: {
+    income: number;
+    expense: number;
+    balance: number;
+  };
+}
+
 interface ReclassificationPayload {
   macro_categoria: string;
   natureza: string;
   subnatureza: string;
 }
+
+interface CatalogResponse {
+  categories: string[];
+  natures: string[];
+  accounts: string[];
+}
+
+const NATURE_LABELS: Record<string, string> = {
+  INCOME: "Receita",
+  EXPENSE: "Despesa",
+  TRANSFER: "Transferência",
+  INVESTMENT: "Investimento",
+  DIVIDEND: "Dividendo",
+};
 
 const emptyPayload: ReclassificationPayload = {
   macro_categoria: "",
@@ -85,22 +115,110 @@ function getNaturezaLabel(kind: TransactionKind, fallback: string) {
   }
 }
 
+function getMonthBounds(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const startDate = `${month}-01`;
+  const endDate = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
+
+  return {
+    startDate,
+    endDate,
+  };
+}
+
 export default function TransactionsPage() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [referenceMonth] = useState(() => {
+    const storedMonth = useFinanceStore.getState().referenceMonth;
+    return isValidMonth(storedMonth) ? storedMonth : getCurrentMonth();
+  });
+
+  const monthBounds = getMonthBounds(referenceMonth);
+
+  const [startDate, setStartDate] = useState(() => searchParams.get("startDate") ?? monthBounds.startDate);
+  const [endDate, setEndDate] = useState(() => searchParams.get("endDate") ?? monthBounds.endDate);
+  const [account, setAccount] = useState(() => searchParams.get("account") ?? "all");
+  const [category, setCategory] = useState(() => searchParams.get("category") ?? "all");
+  const [natureza, setNatureza] = useState(() => searchParams.get("natureza") ?? "all");
+  const [limit] = useState(50);
+  const [offset, setOffset] = useState(0);
+
+  const [catalog, setCatalog] = useState<CatalogResponse>({
+    accounts: [],
+    categories: [],
+    natures: [],
+  });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [periodStart, setPeriodStart] = useState("");
-  const [periodEnd, setPeriodEnd] = useState("");
-  const [selectedAccount, setSelectedAccount] = useState("all");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedNatureza, setSelectedNatureza] = useState("all");
-  const [limit] = useState(50);
-  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [summary, setSummary] = useState({
+    income: 0,
+    expense: 0,
+    balance: 0,
+  });
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [form, setForm] = useState<ReclassificationPayload>(emptyPayload);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const currentPage = Math.floor(offset / limit) + 1;
+  const hasPreviousPage = offset > 0;
+  const hasNextPage = totalPages > 0 && currentPage < totalPages;
+  const rangeStart = total > 0 ? offset + 1 : 0;
+  const rangeEnd = total > 0 ? Math.min(offset + transactions.length, total) : 0;
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+
+    nextParams.set("startDate", startDate);
+    nextParams.set("endDate", endDate);
+
+    if (account !== "all") {
+      nextParams.set("account", account);
+    }
+
+    if (category !== "all") {
+      nextParams.set("category", category);
+    }
+
+    if (natureza !== "all") {
+      nextParams.set("natureza", natureza);
+    }
+
+    const nextQuery = nextParams.toString();
+
+    if (nextQuery !== searchParams.toString()) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [account, category, endDate, natureza, pathname, router, searchParams, startDate]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCatalog() {
+      const data = await fetchFromAPI<CatalogResponse>("/catalog");
+
+      if (!active) {
+        return;
+      }
+
+      if (data) {
+        setCatalog(data);
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -109,49 +227,87 @@ export default function TransactionsPage() {
       setLoading(true);
       setError(null);
 
-      const query = new URLSearchParams({
-        limit: String(limit),
-        offset: String(offset),
-      });
+      try {
+        if (startDate > endDate) {
+          setTransactions([]);
+          setTotal(0);
+          setTotalPages(0);
+          setSummary({ income: 0, expense: 0, balance: 0 });
+          return;
+        }
 
-      const data = await fetchFromAPI<Transaction[]>(`/transactions?${query.toString()}`);
+        const query = new URLSearchParams({
+          startDate,
+          endDate,
+          limit: String(limit),
+          offset: String(offset),
+        });
 
-      if (!active) {
-        return;
-      }
+        if (account !== "all") {
+          query.set("account", account);
+        }
 
-      setTransactions(data || []);
+        if (category !== "all") {
+          query.set("category", category);
+        }
 
-      if (!data) {
+        if (natureza !== "all") {
+          query.set("natureza", natureza);
+        }
+
+        const data = await fetchFromAPI<TransactionListResponse>(`/transactions?${query.toString()}`);
+
+        if (!active) {
+          return;
+        }
+
+        setTransactions(data?.items || []);
+        setTotal(data?.total ?? 0);
+        setTotalPages(data?.totalPages ?? 0);
+        setSummary({
+          income: data?.summary?.income ?? 0,
+          expense: data?.summary?.expense ?? 0,
+          balance: data?.summary?.balance ?? 0,
+        });
+
+        if (!data) {
+          setError("Não foi possível carregar o extrato.");
+        }
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setTransactions([]);
+        setTotal(0);
+        setTotalPages(0);
+        setSummary({ income: 0, expense: 0, balance: 0 });
         setError("Não foi possível carregar o extrato.");
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-
-      setLoading(false);
     }
 
     loadData();
+
     return () => {
       active = false;
     };
-  }, [limit, offset]);
+  }, [account, category, endDate, limit, natureza, offset, startDate]);
 
-  const accountOptions = useMemo(() => {
-    return Array.from(new Set(transactions.map((tx) => tx.account).filter(Boolean))).sort((left, right) =>
-      left.localeCompare(right, "pt-BR")
-    );
-  }, [transactions]);
-
-  const categoryOptions = useMemo(() => {
-    return Array.from(new Set(transactions.map((tx) => tx.category).filter(Boolean))).sort((left, right) =>
-      left.localeCompare(right, "pt-BR")
-    );
-  }, [transactions]);
+  const accountOptions = catalog.accounts;
+  const categoryOptions = catalog.categories;
+  const natureOptions = catalog.natures.map((nature) => ({
+    value: nature,
+    label: NATURE_LABELS[nature] ?? nature,
+  }));
 
   const filteredTransactions = useMemo(() => {
     const term = normalizeText(searchTerm);
 
     return transactions.filter((tx) => {
-      const kind = classifyTransaction(tx.natureza);
       const matchesSearch =
         !term ||
         [tx.description, tx.category, tx.natureza, tx.subnatureza, tx.account, tx.date]
@@ -160,55 +316,10 @@ export default function TransactionsPage() {
           .replace(/[\u0300-\u036f]/g, "")
           .toUpperCase()
           .includes(term);
-      const matchesDateRange = (!periodStart || tx.date >= periodStart) && (!periodEnd || tx.date <= periodEnd);
-      const matchesAccount = selectedAccount === "all" || tx.account === selectedAccount;
-      const matchesCategory = selectedCategory === "all" || tx.category === selectedCategory;
-      const matchesNatureza = selectedNatureza === "all" || kind === selectedNatureza;
 
-      return matchesSearch && matchesDateRange && matchesAccount && matchesCategory && matchesNatureza;
+      return matchesSearch;
     });
-  }, [periodEnd, periodStart, searchTerm, selectedAccount, selectedCategory, selectedNatureza, transactions]);
-
-  const summary = useMemo(() => {
-    return filteredTransactions.reduce(
-      (accumulator, tx) => {
-        const amount = Math.abs(Number(tx.amount) || 0);
-        const kind = classifyTransaction(tx.natureza);
-
-        if (kind === "income") {
-          accumulator.income += amount;
-          accumulator.net += amount;
-        } else if (kind === "expense") {
-          accumulator.expenses += amount;
-          accumulator.net -= amount;
-        } else if (kind === "other") {
-          const signedAmount = Number(tx.amount) || 0;
-
-          if (signedAmount >= 0) {
-            accumulator.income += amount;
-            accumulator.net += amount;
-          } else {
-            accumulator.expenses += amount;
-            accumulator.net -= amount;
-          }
-        }
-
-        return accumulator;
-      },
-      {
-        income: 0,
-        expenses: 0,
-        net: 0,
-      }
-    );
-  }, [filteredTransactions]);
-
-  const pageLabel = useMemo(() => {
-    return offset / limit + 1;
-  }, [limit, offset]);
-
-  const hasNextPage = transactions.length === limit;
-  const hasPreviousPage = offset > 0;
+  }, [searchTerm, transactions]);
 
   const goToPreviousPage = () => {
     if (!hasPreviousPage) {
@@ -226,6 +337,31 @@ export default function TransactionsPage() {
     setOffset((current) => current + limit);
   };
 
+  const handleStartDateChange = (value: string) => {
+    setStartDate(value);
+    setOffset(0);
+  };
+
+  const handleEndDateChange = (value: string) => {
+    setEndDate(value);
+    setOffset(0);
+  };
+
+  const handleAccountChange = (value: string) => {
+    setAccount(value);
+    setOffset(0);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
+    setOffset(0);
+  };
+
+  const handleNaturezaChange = (value: string) => {
+    setNatureza(value);
+    setOffset(0);
+  };
+
   const openReclassification = (tx: Transaction) => {
     setSelectedTransaction(tx);
     setForm({
@@ -235,6 +371,8 @@ export default function TransactionsPage() {
     });
     setMessage(null);
   };
+
+  void openReclassification;
 
   const cancelReclassification = () => {
     setSelectedTransaction(null);
@@ -283,14 +421,13 @@ export default function TransactionsPage() {
   };
 
   return (
-    <PageLayout title="Transações" subtitle="Entrada e saída de capital com hierarquia fiscal e auditoria.">
+    <PageLayout title="Transações" subtitle="Entrada e saída de capital com paginação real e filtros do backend.">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-zinc-500">Sprint 2</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50">Base de dados e auditoria</h2>
             <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-              Revise a taxonomia, filtre o extrato e reclassifique transações diretamente no backend.
+              Revise e filtre o extrato com paginação real no servidor.
             </p>
           </div>
 
@@ -312,7 +449,7 @@ export default function TransactionsPage() {
           <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total de Despesas</p>
             <div className="mt-3 flex items-end justify-between gap-3">
-              <p className="text-2xl font-semibold tracking-tight text-rose-300">{formatCurrency(summary.expenses)}</p>
+              <p className="text-2xl font-semibold tracking-tight text-rose-300">{formatCurrency(summary.expense)}</p>
               <ArrowDownRight className="size-5 text-rose-300" />
             </div>
           </article>
@@ -320,8 +457,8 @@ export default function TransactionsPage() {
           <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Saldo Líquido</p>
             <div className="mt-3 flex items-end justify-between gap-3">
-              <p className={`text-2xl font-semibold tracking-tight ${summary.net >= 0 ? "text-cyan-300" : "text-rose-300"}`}>
-                {formatCurrency(summary.net)}
+              <p className={`text-2xl font-semibold tracking-tight ${summary.balance >= 0 ? "text-cyan-300" : "text-rose-300"}`}>
+                {formatCurrency(summary.balance)}
               </p>
               <SlidersHorizontal className="size-5 text-cyan-300" />
             </div>
@@ -349,7 +486,7 @@ export default function TransactionsPage() {
 
           <div className="flex items-center gap-3 rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-3 text-sm text-zinc-400">
             <Filter className="size-4" />
-            Filtros funcionais com paginação real por limit e offset
+            Filtros sincronizados com o backend
           </div>
         </div>
 
@@ -361,8 +498,8 @@ export default function TransactionsPage() {
             </span>
             <input
               type="date"
-              value={periodStart}
-              onChange={(event) => setPeriodStart(event.target.value)}
+              value={startDate}
+              onChange={(event) => handleStartDateChange(event.target.value)}
               className="w-full bg-transparent text-zinc-100 outline-none"
             />
           </label>
@@ -374,8 +511,8 @@ export default function TransactionsPage() {
             </span>
             <input
               type="date"
-              value={periodEnd}
-              onChange={(event) => setPeriodEnd(event.target.value)}
+              value={endDate}
+              onChange={(event) => handleEndDateChange(event.target.value)}
               className="w-full bg-transparent text-zinc-100 outline-none"
             />
           </label>
@@ -383,14 +520,14 @@ export default function TransactionsPage() {
           <label className="space-y-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
             <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Conta</span>
             <select
-              value={selectedAccount}
-              onChange={(event) => setSelectedAccount(event.target.value)}
-              className="w-full bg-transparent text-zinc-100 outline-none"
+              value={account}
+              onChange={(event) => handleAccountChange(event.target.value)}
+              className="w-full bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
             >
               <option value="all">Todas as contas</option>
-              {accountOptions.map((account) => (
-                <option key={account} value={account}>
-                  {account}
+              {accountOptions.map((accountOption) => (
+                <option key={accountOption} value={accountOption}>
+                  {accountOption}
                 </option>
               ))}
             </select>
@@ -399,14 +536,14 @@ export default function TransactionsPage() {
           <label className="space-y-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
             <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Categoria</span>
             <select
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-              className="w-full bg-transparent text-zinc-100 outline-none"
+              value={category}
+              onChange={(event) => handleCategoryChange(event.target.value)}
+              className="w-full bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
             >
               <option value="all">Todas as categorias</option>
-              {categoryOptions.map((category) => (
-                <option key={category} value={category}>
-                  {category}
+              {categoryOptions.map((categoryOption) => (
+                <option key={categoryOption} value={categoryOption}>
+                  {categoryOption}
                 </option>
               ))}
             </select>
@@ -417,15 +554,16 @@ export default function TransactionsPage() {
           <label className="flex flex-1 min-w-[220px] items-center gap-3 text-zinc-400">
             <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Tipo</span>
             <select
-              value={selectedNatureza}
-              onChange={(event) => setSelectedNatureza(event.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-zinc-100 outline-none"
+              value={natureza}
+              onChange={(event) => handleNaturezaChange(event.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
             >
               <option value="all">Todos os tipos</option>
-              <option value="income">Receita</option>
-              <option value="expense">Despesa</option>
-              <option value="transfer">Transferência</option>
-              <option value="other">Não classificada</option>
+              {natureOptions.map((nature) => (
+                <option key={nature.value} value={nature.value}>
+                  {nature.label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -511,19 +649,19 @@ export default function TransactionsPage() {
                   <th className="px-4 py-3">Classificação</th>
                   <th className="px-4 py-3">Conta</th>
                   <th className="px-4 py-3 text-right">Valor</th>
-                  <th className="px-4 py-3 text-right">Ação</th>
+                  {/* <th className="px-4 py-3 text-right">Ação</th> */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10 bg-white/5">
                 {loading ? (
                   <tr>
-                    <td className="px-4 py-6 text-zinc-400" colSpan={6}>
+                    <td className="px-4 py-6 text-zinc-400" colSpan={5}>
                       A carregar extrato...
                     </td>
                   </tr>
                 ) : filteredTransactions.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-6 text-zinc-400" colSpan={6}>
+                    <td className="px-4 py-6 text-zinc-400" colSpan={5}>
                       Nenhuma transação encontrada.
                     </td>
                   </tr>
@@ -566,14 +704,12 @@ export default function TransactionsPage() {
                         </td>
                         <td className="px-4 py-4 text-zinc-300">{tx.account}</td>
                         <td className="px-4 py-4 text-right">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium ${toneClasses}`}
-                          >
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium ${toneClasses}`}>
                             {badgeIcon}
                             {formatCurrency(amountAbs)}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-right">
+                        {/* <td className="px-4 py-4 text-right">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -582,7 +718,7 @@ export default function TransactionsPage() {
                           >
                             Reclassificar
                           </Button>
-                        </td>
+                        </td> */}
                       </tr>
                     );
                   })
@@ -596,9 +732,13 @@ export default function TransactionsPage() {
           <div className="flex flex-wrap items-center gap-3">
             <span>{filteredTransactions.length} transações nesta página</span>
             <span className="text-zinc-600">|</span>
-            <span>Página {pageLabel}</span>
+            <span>Página {currentPage}</span>
             <span className="text-zinc-600">|</span>
-            <span>{offset + 1} a {offset + transactions.length}</span>
+            <span>
+              {rangeStart} a {rangeEnd}
+            </span>
+            <span className="text-zinc-600">|</span>
+            <span>{total} no total</span>
           </div>
 
           <div className="flex items-center gap-2">

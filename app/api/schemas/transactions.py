@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TransactionItem(BaseModel):
@@ -24,3 +24,20 @@ class ReclassificationRequest(BaseModel):
 class AccountSummary(BaseModel):
     institution: str
     balance: Decimal
+
+
+class TransactionSummary(BaseModel):
+    income: float
+    expense: float
+    balance: float
+
+
+class TransactionListResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    items: list[TransactionItem]
+    total: int
+    limit: int
+    offset: int
+    total_pages: int = Field(alias="totalPages")
+    summary: TransactionSummary

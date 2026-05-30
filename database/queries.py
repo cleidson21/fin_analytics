@@ -1,4 +1,6 @@
 from decimal import Decimal
+from datetime import date, datetime
+from math import ceil
 from pathlib import Path
 import sqlite3
 
@@ -23,6 +25,49 @@ class FinancialQueries:
                 df[column] = pd.to_numeric(df[column])
 
         return df
+
+    def _month_bounds(self, month: str) -> tuple[str, str]:
+        month_start = datetime.strptime(month, "%Y-%m").date().replace(day=1)
+        if month_start.month == 12:
+            next_month = date(month_start.year + 1, 1, 1)
+        else:
+            next_month = date(month_start.year, month_start.month + 1, 1)
+
+        return month_start.isoformat(), next_month.isoformat()
+
+    def _build_transaction_filters(
+        self,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        account: str | None = None,
+        category: str | None = None,
+        natureza: str | None = None,
+    ) -> tuple[str, list[object]]:
+        where_clauses: list[str] = []
+        params: list[object] = []
+
+        if start_date:
+            where_clauses.append("data >= ?")
+            params.append(start_date)
+
+        if end_date:
+            where_clauses.append("data <= ?")
+            params.append(end_date)
+
+        if account:
+            where_clauses.append("source = ?")
+            params.append(account)
+
+        if category:
+            where_clauses.append("macro_categoria = ?")
+            params.append(category)
+
+        if natureza:
+            where_clauses.append("natureza = ?")
+            params.append(natureza)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        return where_sql, params
 
     def get_cashflow_summary(self, month: str | None = None) -> pd.DataFrame:
         """Retorna Receitas e Gastos. Se 'month' for passado (ex: '2026-04'), filtra por esse mês."""
@@ -186,8 +231,26 @@ class FinancialQueries:
         """
         return self._read_dataframe(query, ["valor"])
 
-    def get_transactions(self, limit: int = 50, offset: int = 0) -> pd.DataFrame:
-        query = """
+    def get_transactions(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        account: str | None = None,
+        category: str | None = None,
+        natureza: str | None = None,
+    ) -> tuple[pd.DataFrame, int]:
+        where_sql, params = self._build_transaction_filters(
+            start_date=start_date,
+            end_date=end_date,
+            account=account,
+            category=category,
+            natureza=natureza,
+        )
+
+        count_query = f"SELECT COUNT(*) as total FROM transactions {where_sql}"
+        items_query = f"""
             SELECT
                 id_economico as id,
                 data,
@@ -198,11 +261,61 @@ class FinancialQueries:
                 source as account,
                 valor as amount
             FROM transactions
-            ORDER BY data DESC
+            {where_sql}
+            ORDER BY data DESC, id_economico DESC
             LIMIT ? OFFSET ?
         """
+
         with self._get_connection() as conn:
-            return pd.read_sql(query, conn, params=[limit, offset])
+            total_df = pd.read_sql(count_query, conn, params=params)
+
+            items_params = [*params, limit, offset]
+            items_df = pd.read_sql(items_query, conn, params=items_params)
+
+        total = int(total_df.iloc[0]["total"]) if not total_df.empty else 0
+        return items_df, total
+
+    def get_transactions_summary(
+        self,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        account: str | None = None,
+        category: str | None = None,
+        natureza: str | None = None,
+    ) -> dict[str, float]:
+        where_sql, params = self._build_transaction_filters(
+            start_date=start_date,
+            end_date=end_date,
+            account=account,
+            category=category,
+            natureza=natureza,
+        )
+
+        query = f"""
+            SELECT
+                COALESCE(SUM(CASE WHEN natureza = 'INCOME' THEN ABS(valor) ELSE 0 END), 0) as income,
+                COALESCE(SUM(CASE WHEN natureza = 'EXPENSE' THEN ABS(valor) ELSE 0 END), 0) as expense,
+                COALESCE(SUM(CASE WHEN natureza = 'INCOME' THEN ABS(valor) ELSE 0 END), 0)
+                - COALESCE(SUM(CASE WHEN natureza = 'EXPENSE' THEN ABS(valor) ELSE 0 END), 0) as balance
+            FROM transactions
+            {where_sql}
+        """
+
+        with self._get_connection() as conn:
+            df = pd.read_sql(query, conn, params=params)
+
+        if df.empty:
+            return {"income": 0.0, "expense": 0.0, "balance": 0.0}
+
+        row = df.iloc[0]
+        return {
+            "income": float(row["income"] or 0),
+            "expense": float(row["expense"] or 0),
+            "balance": float(row["balance"] or 0),
+        }
+
+    def get_transactions_total_pages(self, total: int, limit: int) -> int:
+        return ceil(total / limit) if total else 0
 
     def update_transaction_category(
         self,
@@ -245,6 +358,11 @@ class FinancialQueries:
 
     def get_accounts_summary(self) -> pd.DataFrame:
         query = "SELECT source as institution, SUM(valor) as balance FROM transactions GROUP BY source ORDER BY balance DESC"
+        with self._get_connection() as conn:
+            return pd.read_sql(query, conn)
+
+    def get_account_catalog(self) -> pd.DataFrame:
+        query = "SELECT DISTINCT source as account FROM transactions ORDER BY account ASC"
         with self._get_connection() as conn:
             return pd.read_sql(query, conn)
 

@@ -9,6 +9,12 @@ import { SECONDARY_NAV, SIDEBAR_NAV } from "@/config/navigation";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const isFinancialDomain =
+    pathname === "/" ||
+    pathname.startsWith("/transactions") ||
+    pathname.startsWith("/categories") ||
+    pathname.startsWith("/subscriptions") ||
+    pathname.startsWith("/heatmap");
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -27,7 +33,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="space-y-1">
                 {SIDEBAR_NAV.map((item) => {
                   const isActive =
-                    pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                    item.href === "/"
+                      ? isFinancialDomain
+                      : pathname === item.href || pathname.startsWith(item.href);
 
                   return (
                     <Link

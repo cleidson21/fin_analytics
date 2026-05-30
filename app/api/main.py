@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import accounts, dashboard, governance, investments, transactions
+from app.api.routes import accounts, catalog, dashboard, governance, investments, transactions
 
 
 app = FastAPI(
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+app.include_router(catalog.router, prefix="/api/v1/catalog", tags=["Catálogo"])
 app.include_router(governance.router, prefix="/api/v1/governance", tags=["Governança"])
 app.include_router(investments.router, prefix="/api/v1/investments", tags=["Investimentos"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transações"])

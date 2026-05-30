@@ -11,6 +11,9 @@ import {
   TrendingUp,
   Tv,
 } from "lucide-react";
+type SearchParamsLike = {
+  toString(): string;
+};
 
 export const SIDEBAR_NAV = [
   { name: "Controle Financeiro", href: "/", icon: LayoutDashboard },
@@ -37,7 +40,6 @@ export const SECTION_TABS = {
     { name: "Dividendos", href: "/wealth/dividends", icon: BarChart3 },
     { name: "Evolução", href: "/wealth/evolution", icon: LineChart },
   ],
-  transactions: [{ name: "Extrato", href: "/transactions", icon: Receipt }],
   governance: [
     { name: "Revisão de Dados", href: "/governance", icon: Settings },
     { name: "Importação CSV", href: "/governance/import", icon: Receipt },
@@ -47,9 +49,14 @@ export const SECTION_TABS = {
 
 export function getTabsForPath(pathname: string) {
   if (pathname.startsWith("/wealth")) return SECTION_TABS.wealth;
-  if (pathname.startsWith("/transactions")) return SECTION_TABS.transactions;
   if (pathname.startsWith("/governance")) return SECTION_TABS.governance;
   if (pathname.startsWith("/goals")) return SECTION_TABS.goals;
 
   return SECTION_TABS.dashboard;
+}
+
+export function buildHrefWithSearchParams(pathname: string, searchParams: SearchParamsLike) {
+  const queryString = searchParams.toString();
+
+  return queryString ? `${pathname}?${queryString}` : pathname;
 }
