@@ -10,6 +10,7 @@ __pycache__/
 .env
 .streamlit/
 .pytest_cache/
-data/raw/
+./data/raw/
+./backups
 logs/
 fin_analytics.db
