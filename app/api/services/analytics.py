@@ -1,13 +1,95 @@
+import calendar
+import re
+import sqlite3
+from datetime import date
 from decimal import Decimal
 
-from app.api.schemas.dashboard import CategoryComparison, DailyHeatmap, PacingComparison
+from app.api.schemas.dashboard import (
+    CategoryComparison,
+    DailyDataPoint,
+    DailyHeatmap,
+    DashboardSummaryV2,
+    InstallmentItem,
+    InstallmentsSummary,
+    KpiItem,
+    PacingComparison,
+    PacingV2,
+    SubscriptionItem,
+    SubscriptionsSummary,
+)
 from app.core.formatters import format_money
 from database.queries import FinancialQueries
 
 
 class AnalyticsService:
+    INSTALLMENT_PATTERN = re.compile(r"(.+?)\s+(\d{1,2})\s*/\s*(\d{1,2})\s*x?\b", re.IGNORECASE)
+
     def __init__(self):
         self.queries = FinancialQueries()
+
+    def _month_filter_sql(self, month: str | None) -> tuple[str, list[object]]:
+        if not month:
+            return "", []
+        return " AND strftime('%Y-%m', data) = ?", [month]
+
+    def _fetch_expense_rows(
+        self,
+        month: str | None = None,
+        macro_categoria: str | None = None,
+    ) -> list[dict[str, object]]:
+        query = """
+            SELECT
+                source_line_no,
+                id_economico,
+                data,
+                descricao_original,
+                valor_cents,
+                macro_categoria,
+                natureza,
+                source
+            FROM transactions
+            WHERE natureza = 'EXPENSE'
+        """
+        params: list[object] = []
+
+        if macro_categoria:
+            query += " AND UPPER(macro_categoria) = UPPER(?)"
+            params.append(macro_categoria)
+
+        month_sql, month_params = self._month_filter_sql(month)
+        query += month_sql
+        params.extend(month_params)
+        query += " ORDER BY data ASC, source_line_no ASC, id_economico ASC"
+
+        with sqlite3.connect(self.queries.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(query, params).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def _cents_to_float(self, value: object) -> float:
+        return float(Decimal(str(value or 0)) / Decimal("100"))
+
+    def _installment_bucket(self, amount: float) -> int:
+        return int(round(amount / 10))
+
+    def _parse_money(self, value: str) -> float:
+        normalized = value.replace("R$", "").replace(".", "").replace(" ", "").replace(",", ".").strip()
+        return float(Decimal(normalized or "0"))
+
+    def _add_months(self, source_date: date, months: int) -> date:
+        total_months = (source_date.year * 12 + (source_date.month - 1)) + months
+        year = total_months // 12
+        month = (total_months % 12) + 1
+        last_day = calendar.monthrange(year, month)[1]
+        return date(year, month, min(source_date.day, last_day))
+
+    def _format_month_year_pt(self, source_date: date) -> str:
+        months = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+        ]
+        return f"{months[source_date.month - 1]} {source_date.year}"
 
     def get_expense_pacing(self, current_month: str) -> PacingComparison:
         """Calcula o ritmo de gastos mês a mês e devolve dados prontos para a UI."""
@@ -135,3 +217,239 @@ class AnalyticsService:
             )
 
         return sorted(comparisons, key=lambda item: item.current_amount, reverse=True)
+
+    def _to_kpi_item(self, current: Decimal, previous: Decimal) -> KpiItem:
+        current_float = float(current)
+        previous_float = float(previous)
+
+        if previous == 0:
+            delta_pct = 0.0
+        else:
+            delta_pct = float(((current - previous) / abs(previous)) * Decimal("100"))
+
+        return KpiItem(
+            current=current_float,
+            previous=previous_float,
+            delta_pct=delta_pct,
+        )
+
+    def _month_minus_one(self, month: str) -> str:
+        year, month_number = map(int, month.split("-"))
+        if month_number == 1:
+            return f"{year - 1}-12"
+        return f"{year}-{month_number - 1:02d}"
+
+    def get_summary_v2(self, month: str) -> DashboardSummaryV2:
+        previous_month = self._month_minus_one(month)
+
+        df_curr = self.queries.get_cashflow_summary(month=month)
+        df_prev = self.queries.get_cashflow_summary(month=previous_month)
+
+        receitas_curr = Decimal(str(df_curr.loc[df_curr["natureza"] == "INCOME", "total"].sum())) if not df_curr.empty else Decimal("0")
+        despesas_curr = abs(Decimal(str(df_curr.loc[df_curr["natureza"] == "EXPENSE", "total"].sum()))) if not df_curr.empty else Decimal("0")
+
+        receitas_prev = Decimal(str(df_prev.loc[df_prev["natureza"] == "INCOME", "total"].sum())) if not df_prev.empty else Decimal("0")
+        despesas_prev = abs(Decimal(str(df_prev.loc[df_prev["natureza"] == "EXPENSE", "total"].sum()))) if not df_prev.empty else Decimal("0")
+
+        saldo_curr = receitas_curr - despesas_curr
+        saldo_prev = receitas_prev - despesas_prev
+
+        patrimonio_curr = Decimal(str(self.queries.get_current_net_worth()))
+        patrimonio_prev = Decimal("0")
+
+        df_evolution = self.queries.get_net_worth_history()
+        if not df_evolution.empty:
+            previous_rows = df_evolution[df_evolution["month"] == previous_month]
+            if not previous_rows.empty:
+                patrimonio_prev = Decimal(str(previous_rows.iloc[0]["net_worth"]))
+
+        return DashboardSummaryV2(
+            month=month,
+            receitas=self._to_kpi_item(receitas_curr, receitas_prev),
+            despesas=self._to_kpi_item(despesas_curr, despesas_prev),
+            saldo_liquido=self._to_kpi_item(saldo_curr, saldo_prev),
+            patrimonio=self._to_kpi_item(patrimonio_curr, patrimonio_prev),
+        )
+
+    def get_subscriptions_summary(self, month: str) -> SubscriptionsSummary:
+        rows = self._fetch_expense_rows(month=month, macro_categoria="ASSINATURAS")
+
+        items = [
+            SubscriptionItem(
+                original_name=str(row["descricao_original"] or ""),
+                date=str(row["data"]),
+                amount=self._cents_to_float(row["valor_cents"]),
+            )
+            for row in rows
+        ]
+
+        monthly_total = sum(item.amount for item in items)
+        active_count = len(items)
+        average_per_service = monthly_total / active_count if active_count else 0.0
+
+        return SubscriptionsSummary(
+            month=month,
+            active_count=active_count,
+            monthly_total=monthly_total,
+            annual_projection=monthly_total * 12,
+            average_per_service=average_per_service,
+            items=items,
+        )
+
+    def get_installments_summary(self, month: str | None = None) -> InstallmentsSummary:
+        rows = self._fetch_expense_rows(month=None)
+        grouped: dict[tuple[str, int, int], list[dict[str, object]]] = {}
+
+        for row in rows:
+            description = str(row["descricao_original"] or "").strip()
+            match = self.INSTALLMENT_PATTERN.search(description)
+            if not match:
+                continue
+
+            base_name = match.group(1).strip()
+            current_installment = int(match.group(2))
+            total_installments = int(match.group(3))
+
+            if total_installments <= 1 or current_installment < 0 or current_installment > total_installments:
+                continue
+
+            row_date = date.fromisoformat(str(row["data"]))
+            installment_amount = self._cents_to_float(row["valor_cents"])
+            bucket = self._installment_bucket(installment_amount)
+            key = (base_name.lower(), total_installments, bucket)
+            sequences = grouped.setdefault(key, [])
+
+            matched_sequence: dict[str, object] | None = None
+            for sequence in sequences:
+                last_x = int(sequence["current_installment"])
+                last_date = sequence["date_obj"]
+                if last_x + 1 == current_installment and row_date >= last_date:
+                    matched_sequence = sequence
+                    break
+
+            if matched_sequence is None:
+                matched_sequence = {
+                    "base_name": base_name,
+                    "original_name": description,
+                    "date": str(row["data"]),
+                    "date_obj": row_date,
+                    "installment_amount": installment_amount,
+                    "current_installment": current_installment,
+                    "total_installments": total_installments,
+                    "total_estimated": installment_amount * total_installments,
+                    "already_paid": installment_amount * current_installment,
+                    "remaining": installment_amount * (total_installments - current_installment),
+                    "bucket": bucket,
+                }
+                sequences.append(matched_sequence)
+            else:
+                matched_sequence.update(
+                    {
+                        "original_name": description,
+                        "date": str(row["data"]),
+                        "date_obj": row_date,
+                        "installment_amount": installment_amount,
+                        "current_installment": current_installment,
+                        "total_installments": total_installments,
+                        "total_estimated": installment_amount * total_installments,
+                        "already_paid": installment_amount * current_installment,
+                        "remaining": installment_amount * (total_installments - current_installment),
+                    }
+                )
+
+        normalized_items: list[dict[str, object]] = []
+        for sequences in grouped.values():
+            normalized_items.extend(sequences)
+
+        items = [InstallmentItem(**{k: v for k, v in item.items() if k not in {"date_obj", "bucket"}}) for item in normalized_items]
+        items.sort(key=lambda item: (item.remaining, item.total_installments, item.current_installment), reverse=True)
+
+        active_items = [item for item in items if item.current_installment < item.total_installments]
+        finished_items = [item for item in items if item.current_installment >= item.total_installments]
+
+        global_estimated = sum(item.total_estimated for item in active_items)
+        global_paid = sum(item.already_paid for item in active_items)
+        global_remaining = sum(item.remaining for item in active_items)
+
+        last_installment_dates: list[date] = []
+        for item in normalized_items:
+            current_installment = int(item["current_installment"])
+            total_installments = int(item["total_installments"])
+            if current_installment >= total_installments:
+                continue
+
+            remaining_count = total_installments - current_installment
+            final_date = self._add_months(item["date_obj"], remaining_count)
+            last_installment_dates.append(final_date)
+
+        last_installment_date = None
+        if last_installment_dates:
+            last_installment_date = self._format_month_year_pt(max(last_installment_dates))
+
+        return InstallmentsSummary(
+            month=month or "",
+            active_installments=len(active_items),
+            finished_installments=len(finished_items),
+            global_estimated=global_estimated,
+            global_paid=global_paid,
+            global_remaining=global_remaining,
+            last_installment_date=last_installment_date,
+            items=items,
+        )
+
+    def get_pacing_v2(self, month: str) -> PacingV2:
+        base = self.get_expense_pacing(month)
+        previous_month = self._month_minus_one(month)
+
+        current_daily_df = self.queries.get_daily_expenses(month)
+        previous_daily_df = self.queries.get_daily_expenses(previous_month)
+
+        current_daily_map: dict[str, Decimal] = {}
+        previous_daily_map: dict[str, Decimal] = {}
+
+        if not current_daily_df.empty:
+            for _, row in current_daily_df.iterrows():
+                current_daily_map[row["data"]] = abs(Decimal(str(row["total"])))
+
+        if not previous_daily_df.empty:
+            for _, row in previous_daily_df.iterrows():
+                previous_daily_map[row["data"]] = abs(Decimal(str(row["total"])))
+
+        year, month_number = map(int, month.split("-"))
+        prev_year, prev_month_number = map(int, previous_month.split("-"))
+
+        _, current_last_day = calendar.monthrange(year, month_number)
+        _, previous_last_day = calendar.monthrange(prev_year, prev_month_number)
+
+        daily_data: list[DailyDataPoint] = []
+        for day in range(1, current_last_day + 1):
+            current_date = f"{year}-{month_number:02d}-{day:02d}"
+
+            prev_amount = Decimal("0")
+            if day <= previous_last_day:
+                previous_date = f"{prev_year}-{prev_month_number:02d}-{day:02d}"
+                prev_amount = previous_daily_map.get(previous_date, Decimal("0"))
+
+            daily_data.append(
+                DailyDataPoint(
+                    date=date.fromisoformat(current_date).isoformat(),
+                    current_amount=float(current_daily_map.get(current_date, Decimal("0"))),
+                    previous_amount=float(prev_amount),
+                )
+            )
+
+        current_expenses = float(Decimal(str(base.current_expenses)))
+        previous_expenses = float(Decimal(str(base.previous_expenses)))
+        delta_percentage = float(Decimal(str(base.delta_percentage)))
+
+        return PacingV2(
+            current_month=base.current_month,
+            previous_month=base.previous_month,
+            current_expenses=current_expenses,
+            previous_expenses=previous_expenses,
+            delta_percentage=delta_percentage,
+            trend=base.trend,
+            severity=base.severity,
+            message=base.message,
+            daily_data=daily_data,
+        )

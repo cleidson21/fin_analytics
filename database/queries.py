@@ -7,6 +7,12 @@ import sqlite3
 import pandas as pd
 
 
+def _cents_to_decimal(value) -> Decimal:
+    if value is None:
+        return Decimal("0.00")
+    return (Decimal(int(value)) / Decimal("100")).quantize(Decimal("0.01"))
+
+
 class FinancialQueries:
     def __init__(self, db_path: Path = Path("fin_analytics.db")):
         self.db_path = db_path
@@ -72,7 +78,7 @@ class FinancialQueries:
     def get_cashflow_summary(self, month: str | None = None) -> pd.DataFrame:
         """Retorna Receitas e Gastos. Se 'month' for passado (ex: '2026-04'), filtra por esse mês."""
         query = """
-            SELECT natureza, SUM(valor) as total
+            SELECT natureza, SUM(valor_cents) as total_cents
             FROM transactions
             WHERE natureza IN ('INCOME', 'EXPENSE')
         """
@@ -86,15 +92,16 @@ class FinancialQueries:
         with self._get_connection() as conn:
             df = pd.read_sql(query, conn, params=params)
 
-        if "total" in df.columns:
-            df["total"] = pd.to_numeric(df["total"])
+        if "total_cents" in df.columns:
+            df["total"] = df["total_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["total_cents"], inplace=True)
 
         return df
 
     def get_expenses_by_category(self, month: str | None = None) -> pd.DataFrame:
         """Agrupa os gastos por Macro Categoria para o gráfico de barras/pizza."""
         query = """
-            SELECT macro_categoria, ABS(SUM(valor)) as total
+            SELECT macro_categoria, ABS(SUM(valor_cents)) as total_cents
             FROM transactions
             WHERE natureza = 'EXPENSE' AND perfil != 'IGNORADO'
         """
@@ -103,19 +110,20 @@ class FinancialQueries:
             query += " AND strftime('%Y-%m', data) = ?"
             params.append(month)
 
-        query += " GROUP BY macro_categoria ORDER BY total DESC"
+        query += " GROUP BY macro_categoria ORDER BY total_cents DESC"
         with self._get_connection() as conn:
             df = pd.read_sql(query, conn, params=params)
 
-        if "total" in df.columns:
-            df["total"] = pd.to_numeric(df["total"])
+        if "total_cents" in df.columns:
+            df["total"] = df["total_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["total_cents"], inplace=True)
 
         return df
 
     def get_daily_expenses(self, month: str | None = None) -> pd.DataFrame:
         """Retorna o total de gastos por dia para montar o heatmap mensal."""
         query = """
-            SELECT data, ABS(SUM(valor)) as total
+            SELECT data, ABS(SUM(valor_cents)) as total_cents
             FROM transactions
             WHERE natureza = 'EXPENSE' AND perfil != 'IGNORADO'
         """
@@ -129,8 +137,9 @@ class FinancialQueries:
         with self._get_connection() as conn:
             df = pd.read_sql(query, conn, params=params)
 
-        if "total" in df.columns:
-            df["total"] = pd.to_numeric(df["total"])
+        if "total_cents" in df.columns:
+            df["total"] = df["total_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["total_cents"], inplace=True)
 
         return df
 
@@ -150,13 +159,19 @@ class FinancialQueries:
     def get_dividend_history(self) -> pd.DataFrame:
         """Agrupa os dividendos recebidos por Mês/Ano com arredondamento direto no banco."""
         query = """
-            SELECT strftime('%Y-%m', data_pagamento) as month, ROUND(SUM(valor_liquido), 2) as amount_received
+            SELECT strftime('%Y-%m', data_pagamento) as month, SUM(valor_liquido_cents) as amount_received_cents
             FROM dividends
             GROUP BY month
             ORDER BY month ASC
         """
         with self._get_connection() as conn:
-            return pd.read_sql(query, conn)
+            df = pd.read_sql(query, conn)
+
+        if "amount_received_cents" in df.columns:
+            df["amount_received"] = df["amount_received_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["amount_received_cents"], inplace=True)
+
+        return df
 
     def get_portfolio_allocation(self) -> pd.DataFrame:
         """Agrupa o património atual por Asset Class com dicionário de exceções para ETFs/Units."""
@@ -213,23 +228,63 @@ class FinancialQueries:
             SELECT
                 strftime('%Y-%m', data) as mes,
                 natureza,
-                SUM(valor) as total
+                SUM(valor_cents) as total_cents
             FROM transactions
             WHERE natureza IN ('INCOME', 'EXPENSE')
             GROUP BY mes, natureza
             ORDER BY mes, natureza
         """
-        return self._read_dataframe(query, ["total"])
+        df = self._read_dataframe(query, ["total_cents"])
+        if "total_cents" in df.columns:
+            df["total"] = df["total_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["total_cents"], inplace=True)
+        return df
 
     def get_quarantine_transactions(self) -> pd.DataFrame:
         """Puxa o lixo/ruído que precisa de novas regras no rules.csv."""
         query = """
-            SELECT data, descricao_original, valor, identificador_externo
+            SELECT data, descricao_original, valor_cents as valor_cents, identificador_externo
             FROM transactions
-            WHERE sub_categoria = 'INDEFINIDO'
+            WHERE macro_categoria = 'OUTROS'
+               OR sub_categoria = 'INDEFINIDO'
             ORDER BY data DESC
         """
-        return self._read_dataframe(query, ["valor"])
+        df = self._read_dataframe(query, ["valor_cents"])
+        if "valor_cents" in df.columns:
+            df["valor"] = df["valor_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["valor_cents"], inplace=True)
+        return df
+
+    def get_import_status(self) -> dict[str, object]:
+        query_last = """
+            SELECT source_line_no, descricao_original
+            FROM transactions
+            WHERE origin = 'PIERRE'
+              AND source_line_no IS NOT NULL
+            ORDER BY source_line_no DESC
+            LIMIT 3
+        """
+        query_next = """
+            SELECT COALESCE(MAX(source_line_no), 0) + 1 AS next_line
+            FROM transactions
+            WHERE origin = 'PIERRE'
+              AND source_line_no IS NOT NULL
+        """
+
+        with self._get_connection() as conn:
+            last_df = pd.read_sql(query_last, conn)
+            next_df = pd.read_sql(query_next, conn)
+
+        last_items = [
+            {
+                "source_line_no": int(row["source_line_no"]),
+                "description": row["descricao_original"],
+            }
+            for _, row in last_df.iterrows()
+        ]
+
+        next_line = int(next_df.iloc[0]["next_line"]) if not next_df.empty else 1
+        return {"last_items": last_items, "next_line": next_line}
 
     def get_transactions(
         self,
@@ -259,7 +314,7 @@ class FinancialQueries:
                 natureza,
                 subnatureza,
                 source as account,
-                valor as amount
+                valor_cents as amount_cents
             FROM transactions
             {where_sql}
             ORDER BY data DESC, id_economico DESC
@@ -271,6 +326,10 @@ class FinancialQueries:
 
             items_params = [*params, limit, offset]
             items_df = pd.read_sql(items_query, conn, params=items_params)
+
+        if "amount_cents" in items_df.columns:
+            items_df["amount"] = items_df["amount_cents"].apply(_cents_to_decimal)
+            items_df.drop(columns=["amount_cents"], inplace=True)
 
         total = int(total_df.iloc[0]["total"]) if not total_df.empty else 0
         return items_df, total
@@ -293,10 +352,10 @@ class FinancialQueries:
 
         query = f"""
             SELECT
-                COALESCE(SUM(CASE WHEN natureza = 'INCOME' THEN ABS(valor) ELSE 0 END), 0) as income,
-                COALESCE(SUM(CASE WHEN natureza = 'EXPENSE' THEN ABS(valor) ELSE 0 END), 0) as expense,
-                COALESCE(SUM(CASE WHEN natureza = 'INCOME' THEN ABS(valor) ELSE 0 END), 0)
-                - COALESCE(SUM(CASE WHEN natureza = 'EXPENSE' THEN ABS(valor) ELSE 0 END), 0) as balance
+                COALESCE(SUM(CASE WHEN natureza = 'INCOME' THEN ABS(valor_cents) ELSE 0 END), 0) as income_cents,
+                COALESCE(SUM(CASE WHEN natureza = 'EXPENSE' THEN ABS(valor_cents) ELSE 0 END), 0) as expense_cents,
+                COALESCE(SUM(CASE WHEN natureza = 'INCOME' THEN ABS(valor_cents) ELSE 0 END), 0)
+                - COALESCE(SUM(CASE WHEN natureza = 'EXPENSE' THEN ABS(valor_cents) ELSE 0 END), 0) as balance_cents
             FROM transactions
             {where_sql}
         """
@@ -305,13 +364,13 @@ class FinancialQueries:
             df = pd.read_sql(query, conn, params=params)
 
         if df.empty:
-            return {"income": 0.0, "expense": 0.0, "balance": 0.0}
+            return {"income": Decimal("0.00"), "expense": Decimal("0.00"), "balance": Decimal("0.00")}
 
         row = df.iloc[0]
         return {
-            "income": float(row["income"] or 0),
-            "expense": float(row["expense"] or 0),
-            "balance": float(row["balance"] or 0),
+            "income": _cents_to_decimal(row["income_cents"] or 0),
+            "expense": _cents_to_decimal(row["expense_cents"] or 0),
+            "balance": _cents_to_decimal(row["balance_cents"] or 0),
         }
 
     def get_transactions_total_pages(self, total: int, limit: int) -> int:
@@ -328,7 +387,8 @@ class FinancialQueries:
             cursor = conn.cursor()
             current = cursor.execute(
                 """
-                SELECT macro_categoria, sub_categoria, subnatureza, natureza
+                SELECT macro_categoria, sub_categoria, subnatureza, natureza, perfil,
+                       source_line_no, origin
                 FROM transactions
                 WHERE id_economico = ?
                 """,
@@ -340,6 +400,7 @@ class FinancialQueries:
 
             natureza_final = natureza or current["natureza"]
             subnatureza_final = subnatureza or current["subnatureza"] or current["sub_categoria"]
+            perfil_final = current["perfil"]
 
             cursor.execute(
                 """
@@ -348,18 +409,28 @@ class FinancialQueries:
                     sub_categoria = ?,
                     subnatureza = ?,
                     natureza = ?,
+                    classificacao_fonte = 'MANUAL',
                     atualizado_em = CURRENT_TIMESTAMP
                 WHERE id_economico = ?
                 """,
                 (macro_categoria, subnatureza_final, subnatureza_final, natureza_final, transaction_id),
             )
+
+
             conn.commit()
             return cursor.rowcount > 0
 
+
     def get_accounts_summary(self) -> pd.DataFrame:
-        query = "SELECT source as institution, SUM(valor) as balance FROM transactions GROUP BY source ORDER BY balance DESC"
+        query = "SELECT source as institution, SUM(valor_cents) as balance_cents FROM transactions GROUP BY source ORDER BY balance_cents DESC"
         with self._get_connection() as conn:
-            return pd.read_sql(query, conn)
+            df = pd.read_sql(query, conn)
+
+        if "balance_cents" in df.columns:
+            df["balance"] = df["balance_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["balance_cents"], inplace=True)
+
+        return df
 
     def get_account_catalog(self) -> pd.DataFrame:
         query = "SELECT DISTINCT source as account FROM transactions ORDER BY account ASC"

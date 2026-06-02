@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname.startsWith("/transactions") ||
     pathname.startsWith("/categories") ||
     pathname.startsWith("/subscriptions") ||
-    pathname.startsWith("/heatmap");
+    pathname.startsWith("/installments");
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -35,6 +35,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   const isActive =
                     item.href === "/"
                       ? isFinancialDomain
+                      : item.href.startsWith("/governance")
+                        ? pathname.startsWith("/governance")
                       : pathname === item.href || pathname.startsWith(item.href);
 
                   return (

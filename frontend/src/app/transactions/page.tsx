@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowRightLeft,
@@ -21,8 +21,7 @@ import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { fetchFromAPI } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-import { getCurrentMonth, isValidMonth } from "@/lib/period";
-import { useFinanceStore } from "@/store/finance-store";
+import { getCurrentMonth, getMonthBounds } from "@/lib/period";
 
 interface Transaction {
   id: string;
@@ -115,31 +114,16 @@ function getNaturezaLabel(kind: TransactionKind, fallback: string) {
   }
 }
 
-function getMonthBounds(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const startDate = `${month}-01`;
-  const endDate = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
-
-  return {
-    startDate,
-    endDate,
-  };
-}
-
-export default function TransactionsPage() {
+function TransactionsPageBody() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [referenceMonth] = useState(() => {
-    const storedMonth = useFinanceStore.getState().referenceMonth;
-    return isValidMonth(storedMonth) ? storedMonth : getCurrentMonth();
-  });
+  const fallbackMonth = getCurrentMonth();
+  const fallbackMonthBounds = getMonthBounds(fallbackMonth);
 
-  const monthBounds = getMonthBounds(referenceMonth);
-
-  const [startDate, setStartDate] = useState(() => searchParams.get("startDate") ?? monthBounds.startDate);
-  const [endDate, setEndDate] = useState(() => searchParams.get("endDate") ?? monthBounds.endDate);
+  const [startDate, setStartDate] = useState(() => searchParams.get("startDate") ?? fallbackMonthBounds.startDate);
+  const [endDate, setEndDate] = useState(() => searchParams.get("endDate") ?? fallbackMonthBounds.endDate);
   const [account, setAccount] = useState(() => searchParams.get("account") ?? "all");
   const [category, setCategory] = useState(() => searchParams.get("category") ?? "all");
   const [natureza, setNatureza] = useState(() => searchParams.get("natureza") ?? "all");
@@ -421,7 +405,7 @@ export default function TransactionsPage() {
   };
 
   return (
-    <PageLayout title="Transações" subtitle="Entrada e saída de capital com paginação real e filtros do backend.">
+    <PageLayout title="Transações" subtitle="Entrada e saída de capital com paginação real e filtros do backend." hideTitle={true}>
       <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -644,12 +628,11 @@ export default function TransactionsPage() {
             <table className="min-w-full divide-y divide-white/10 text-sm">
               <thead className="bg-black/25 text-left text-xs uppercase tracking-[0.18em] text-zinc-500">
                 <tr>
-                  <th className="px-4 py-3">Data</th>
-                  <th className="px-4 py-3">Descrição</th>
-                  <th className="px-4 py-3">Classificação</th>
-                  <th className="px-4 py-3">Conta</th>
-                  <th className="px-4 py-3 text-right">Valor</th>
-                  {/* <th className="px-4 py-3 text-right">Ação</th> */}
+                  <th className="px-4 py-3 w-[30%]">Descrição</th>
+                  <th className="px-4 py-3 w-[30%]">Classificação</th>
+                  <th className="px-4 py-3 w-[15%]">Conta</th>
+                  <th className="px-4 py-3 w-[15%]">Data</th>
+                  <th className="px-4 py-3 w-[10%] text-right">Valor</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10 bg-white/5">
@@ -670,55 +653,66 @@ export default function TransactionsPage() {
                     const amountValue = Number(tx.amount) || 0;
                     const amountAbs = Math.abs(amountValue);
                     const kind = classifyTransaction(tx.natureza);
-                    const badgeLabel = getNaturezaLabel(kind, tx.natureza);
-                    const toneClasses =
-                      kind === "income"
-                        ? "bg-emerald-500/15 text-emerald-200"
-                        : kind === "expense"
-                          ? "bg-rose-500/15 text-rose-200"
-                          : kind === "transfer"
-                            ? "bg-cyan-500/15 text-cyan-200"
-                            : "bg-zinc-500/15 text-zinc-200";
-                    const badgeIcon =
-                      kind === "income" ? (
-                        <ArrowUpRight className="size-3.5" />
-                      ) : kind === "expense" ? (
-                        <ArrowDownRight className="size-3.5" />
-                      ) : (
-                        <ArrowRightLeft className="size-3.5" />
-                      );
+
+                    // Badge de tipo (linha superior)
+                    let typeBadgeClasses: string;
+                    let typeBadgeLabel: string;
+                    if (kind === "income") {
+                      typeBadgeClasses = "bg-green-500/10 text-green-400";
+                      typeBadgeLabel = "↑ Receita";
+                    } else if (kind === "expense") {
+                      typeBadgeClasses = "bg-red-500/10 text-red-400";
+                      typeBadgeLabel = "↓ Despesa";
+                    } else if (kind === "transfer") {
+                      typeBadgeClasses = "bg-blue-500/10 text-blue-400";
+                      typeBadgeLabel = "→ Transferência";
+                    } else {
+                      typeBadgeClasses = "bg-green-500/10 text-green-400";
+                      typeBadgeLabel = "⇄ Neutro·Aporte";
+                    }
+
+                    // Badge de categoria (linha inferior)
+                    const categoryLabel = (tx.category ?? "")
+                      .replace(/_/g, " ")
+                      .toLowerCase()
+                      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+                    // Formata data DD/MM/YY
+                    const dateParts = tx.date.split("-");
+                    const formattedDate =
+                      dateParts.length === 3
+                        ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0].slice(2)}`
+                        : tx.date;
+
+                    // Cor do valor
+                    const isIncome = kind === "income";
+                    const valueColorClass = isIncome ? "text-[#4ecf98]" : "text-[#e97070]";
+                    const valuePrefix = isIncome ? "+" : "";
 
                     return (
                       <tr key={tx.id} className="group transition-colors hover:bg-white/5">
-                        <td className="px-4 py-4 text-zinc-300">{tx.date}</td>
-                        <td className="px-4 py-4 text-zinc-100">{tx.description}</td>
+                        <td className="px-4 py-4">
+                          <p className="truncate max-w-xs text-sm text-white">{tx.description}</p>
+                        </td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col gap-1">
-                            <span className={`inline-flex w-fit items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium ${toneClasses}`}>
-                              {badgeIcon}
-                              {badgeLabel}
-                              {tx.subnatureza ? ` • ${tx.subnatureza}` : ""}
+                            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md w-fit ${typeBadgeClasses}`}>
+                              {typeBadgeLabel}
                             </span>
-                            <span className="text-xs text-zinc-500">{tx.category}</span>
+                            {categoryLabel ? (
+                              <span className="bg-white/[0.05] text-neutral-500 text-[10px] px-1.5 py-0.5 rounded w-fit mt-1">
+                                {categoryLabel}
+                              </span>
+                            ) : null}
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-zinc-300">{tx.account}</td>
+                        <td className="px-4 py-4 text-sm text-neutral-500">{tx.account}</td>
+                        <td className="px-4 py-4 text-sm text-neutral-500">{formattedDate}</td>
                         <td className="px-4 py-4 text-right">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium ${toneClasses}`}>
-                            {badgeIcon}
-                            {formatCurrency(amountAbs)}
+                          <span className={`text-sm font-medium ${valueColorClass}`}>
+                            {valuePrefix}{formatCurrency(amountAbs)}
                           </span>
                         </td>
-                        {/* <td className="px-4 py-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openReclassification(tx)}
-                            className="text-zinc-400 opacity-100 transition-colors hover:text-emerald-300 group-hover:text-emerald-300"
-                          >
-                            Reclassificar
-                          </Button>
-                        </td> */}
                       </tr>
                     );
                   })
@@ -754,5 +748,13 @@ export default function TransactionsPage() {
         </div>
       </section>
     </PageLayout>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-zinc-400">A carregar extrato...</div>}>
+      <TransactionsPageBody />
+    </Suspense>
   );
 }

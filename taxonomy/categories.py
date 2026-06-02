@@ -4,6 +4,7 @@ from enum import Enum
 class Natureza(str, Enum):
     INCOME = "INCOME"
     EXPENSE = "EXPENSE"
+    NEUTRAL = "NEUTRAL"
     TRANSFER = "TRANSFER"
     INVESTMENT = "INVESTMENT"
     DIVIDEND = "DIVIDEND"

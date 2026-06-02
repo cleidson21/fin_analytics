@@ -1,6 +1,6 @@
 import {
   BarChart3,
-  Flame,
+  CreditCard,
   LayoutDashboard,
   LineChart,
   PieChart,
@@ -19,7 +19,7 @@ export const SIDEBAR_NAV = [
   { name: "Controle Financeiro", href: "/", icon: LayoutDashboard },
   { name: "Investimentos", href: "/wealth", icon: LineChart },
   { name: "Metas", href: "/goals", icon: Target },
-  { name: "Importações", href: "/imports", icon: Receipt },
+  { name: "Importações", href: "/governance/import", icon: Receipt },
   { name: "Perfil", href: "/profile", icon: Settings },
 ] as const;
 
@@ -31,8 +31,7 @@ export const SECTION_TABS = {
     { name: "Transações", href: "/transactions", icon: Receipt },
     { name: "Categorias", href: "/categories", icon: Tag },
     { name: "Assinaturas", href: "/subscriptions", icon: Tv },
-    { name: "Parcelamentos", href: "/installments", icon: BarChart3 },
-    { name: "Heatmap", href: "/heatmap", icon: Flame },
+    { name: "Parcelamentos", href: "/installments", icon: CreditCard },
   ],
   wealth: [
     { name: "Patrimônio", href: "/wealth", icon: PieChart },

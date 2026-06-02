@@ -1,42 +1,190 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Line, LineChart } from "recharts";
 
-import { fetchFromAPI } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
-import { CategoriesCard, type CategoryComparison } from "@/components/dashboard/CategoriesCard";
-import { PacingCard, type PacingComparison } from "@/components/dashboard/PacingCard";
-import { SummaryCards, type DashboardSummary } from "@/components/dashboard/SummaryCards";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { usePeriod } from "@/hooks/use-period";
-import { isValidMonth } from "@/lib/period";
+import { fetchFromAPI } from "@/lib/api";
+import { getCategoryColor } from "@/lib/colors";
+import { addMonths, getCurrentMonth, getMonthBounds } from "@/lib/period";
+import { formatCurrency } from "@/lib/utils";
+
+interface KpiItem {
+  current: number;
+  previous: number;
+  delta_pct: number;
+}
+
+interface DashboardSummaryV2 {
+  month: string;
+  receitas: KpiItem;
+  despesas: KpiItem;
+  saldo_liquido: KpiItem;
+  patrimonio: KpiItem;
+}
+
+interface DailyDataPoint {
+  date: string;
+  current_amount: number;
+  previous_amount: number;
+}
+
+interface PacingV2 {
+  current_month: string;
+  previous_month: string;
+  current_expenses: number;
+  previous_expenses: number;
+  delta_percentage: number;
+  trend: string;
+  severity: string;
+  message: string;
+  daily_data: DailyDataPoint[];
+}
+
+interface HeatmapDay {
+  date: string;
+  amount: string;
+  intensity: number;
+}
+
+interface CategoryBreakdown {
+  category: string;
+  total: number;
+}
+
+interface TransactionItem {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  natureza: string;
+  subnatureza: string;
+  account: string;
+  amount: number | string;
+}
+
+interface TransactionListResponse {
+  items: TransactionItem[];
+}
+
+type LoadState = {
+  summary: boolean;
+  pacing: boolean;
+  heatmap: boolean;
+  categories: boolean;
+  transactions: boolean;
+};
+
+function toNumber(value: number | string | null | undefined): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function formatDelta(delta: number) {
+  const prefix = delta > 0 ? "+" : "";
+  return `${prefix}${delta.toFixed(1)}%`;
+}
+
+function getBadgeClasses(delta: number, isExpense = false) {
+  if (delta === 0) {
+    return "bg-white/[0.06] text-neutral-500";
+  }
+
+  const isPositive = delta > 0;
+  const positiveIsGood = !isExpense;
+  const isGood = positiveIsGood ? isPositive : !isPositive;
+
+  return isGood ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400";
+}
+
+function categoryLabel(category: string) {
+  return category.toLowerCase().replace(/_/g, " ");
+}
+
+function formatTxDate(value: string) {
+  const dt = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(dt.getTime())) {
+    return value;
+  }
+
+  return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
+function getTxVisual(tx: TransactionItem) {
+  const natureza = tx.natureza?.toUpperCase();
+  if (natureza === "INCOME") {
+    return { icon: "↗", box: "bg-green-500/15 text-green-300", value: "text-green-400" };
+  }
+
+  if (natureza === "EXPENSE") {
+    return { icon: "↘", box: "bg-red-500/15 text-red-300", value: "text-red-400" };
+  }
+
+  return { icon: "↔", box: "bg-white/[0.08] text-neutral-300", value: "text-neutral-300" };
+}
+
+function LoadingBar({ width = "w-32" }: { width?: string }) {
+  return <div className={`h-6 ${width} animate-pulse rounded bg-white/[0.04]`} />;
+}
 
 export function DashboardPage() {
-  const { month } = usePeriod();
-  const searchParams = useSearchParams();
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [pacing, setPacing] = useState<PacingComparison | null>(null);
-  const [categories, setCategories] = useState<CategoryComparison[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const chartWrapRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState<number>(0);
 
-  const urlMonth = searchParams.get("month");
-  const referenceMonth = urlMonth && isValidMonth(urlMonth) ? urlMonth : month;
+  const currentMonth = useMemo(() => getCurrentMonth(), []);
+  const prevMonth = useMemo(() => addMonths(currentMonth, -1), [currentMonth]);
+  const monthBounds = useMemo(() => getMonthBounds(currentMonth), [currentMonth]);
+
+  const [summary, setSummary] = useState<DashboardSummaryV2 | null>(null);
+  const [pacing, setPacing] = useState<PacingV2 | null>(null);
+  const [heatmap, setHeatmap] = useState<HeatmapDay[] | null>(null);
+  const [catsCurrent, setCatsCurrent] = useState<CategoryBreakdown[] | null>(null);
+  const [catsPrev, setCatsPrev] = useState<CategoryBreakdown[] | null>(null);
+  const [recentTxs, setRecentTxs] = useState<TransactionItem[] | null>(null);
+
+  const [loading, setLoading] = useState<LoadState>({
+    summary: true,
+    pacing: true,
+    heatmap: true,
+    categories: true,
+    transactions: true,
+  });
+
+  useEffect(() => {
+    const resize = () => {
+      if (!chartWrapRef.current) {
+        return;
+      }
+      setChartWidth(Math.max(0, Math.floor(chartWrapRef.current.clientWidth)));
+    };
+
+    resize();
+
+    const observer = new ResizeObserver(() => resize());
+    if (chartWrapRef.current) {
+      observer.observe(chartWrapRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let active = true;
 
-    async function loadDashboard() {
-      setLoading(true);
-      setError(null);
-
-      const [summaryData, pacingData, categoriesData] = await Promise.all([
-        fetchFromAPI<DashboardSummary>(`/dashboard/summary?month=${referenceMonth}`),
-        fetchFromAPI<PacingComparison>(`/dashboard/pacing?month=${referenceMonth}`),
-        fetchFromAPI<CategoryComparison[]>(`/dashboard/categories/comparison?month=${referenceMonth}`),
+    async function loadDashboardData() {
+      const [summaryData, pacingData, heatmapData, categoriesCurrent, categoriesPrev, recentTransactions] = await Promise.all([
+        fetchFromAPI<DashboardSummaryV2>(`/dashboard/summary-v2?month=${currentMonth}`),
+        fetchFromAPI<PacingV2>(`/dashboard/pacing-v2?month=${currentMonth}`),
+        fetchFromAPI<HeatmapDay[]>(`/dashboard/heatmap?month=${currentMonth}`),
+        fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${currentMonth}`),
+        fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${prevMonth}`),
+        fetchFromAPI<TransactionListResponse>("/transactions?limit=5&sortBy=date&sortOrder=desc"),
       ]);
 
       if (!active) {
@@ -45,53 +193,427 @@ export function DashboardPage() {
 
       setSummary(summaryData);
       setPacing(pacingData);
-      setCategories(categoriesData);
+      setHeatmap(heatmapData ?? []);
+      setCatsCurrent(categoriesCurrent ?? []);
+      setCatsPrev(categoriesPrev ?? []);
+      setRecentTxs(recentTransactions?.items ?? []);
 
-      if (!summaryData || !pacingData || !categoriesData) {
-        setError("Não foi possível carregar o dashboard.");
-      }
-
-      setLoading(false);
+      setLoading({
+        summary: false,
+        pacing: false,
+        heatmap: false,
+        categories: false,
+        transactions: false,
+      });
     }
 
-    loadDashboard();
+    void loadDashboardData();
 
     return () => {
       active = false;
     };
-  }, [referenceMonth]);
+  }, [currentMonth, prevMonth]);
+
+  const pushTransactionsRange = (startDate: string, endDate: string, category?: string) => {
+    const base = `/transactions?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+    const withCategory = category ? `${base}&category=${encodeURIComponent(category)}` : base;
+    router.push(withCategory);
+  };
+
+  const categoryStats = useMemo(() => {
+    const current = (catsCurrent ?? []).slice().sort((a, b) => b.total - a.total);
+    const prevMap = new Map((catsPrev ?? []).map((item) => [item.category, item.total]));
+
+    const ranked = current.map((item) => {
+      const previous = prevMap.get(item.category);
+      const hasPrevious = typeof previous === "number";
+      const delta = hasPrevious && previous !== 0 ? ((item.total - previous) / Math.abs(previous)) * 100 : null;
+
+      return {
+        category: item.category,
+        current: item.total,
+        previous: previous ?? 0,
+        delta,
+        isNew: !hasPrevious,
+      };
+    });
+
+    const top5 = ranked.slice(0, 5);
+    const highestPositive = ranked
+      .filter((item) => item.delta !== null && item.delta > 0)
+      .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0))[0];
+
+    return { top5, highestPositive };
+  }, [catsCurrent, catsPrev]);
+
+  const insightsTitle = useMemo(() => {
+    if (categoryStats.highestPositive?.delta !== null && categoryStats.highestPositive?.delta !== undefined) {
+      return `${categoryLabel(categoryStats.highestPositive.category)} subiu ${categoryStats.highestPositive.delta.toFixed(0)}%. Bora revisar?`;
+    }
+
+    const receitaDelta = summary?.receitas?.delta_pct ?? 0;
+    if (receitaDelta !== 0) {
+      return receitaDelta > 0
+        ? `Receitas subiram ${receitaDelta.toFixed(1)}% neste mês.`
+        : `Receitas recuaram ${Math.abs(receitaDelta).toFixed(1)}% neste mês.`;
+    }
+
+    return "Mês estável. Vamos manter o ritmo financeiro.";
+  }, [categoryStats.highestPositive, summary?.receitas?.delta_pct]);
+
+  const heatmapGrid = useMemo(() => {
+    const days = heatmap ?? [];
+    if (days.length === 0) {
+      return [] as Array<HeatmapDay | null>;
+    }
+
+    const firstWeekday = new Date(`${days[0].date}T00:00:00`).getDay();
+    return [...Array(firstWeekday).fill(null), ...days];
+  }, [heatmap]);
+
+  const heatmapTotals = useMemo(() => {
+    const days = heatmap ?? [];
+    const total = days.reduce((acc, day) => acc + toNumber(day.amount), 0);
+    const average = days.length > 0 ? total / days.length : 0;
+    return { total, average };
+  }, [heatmap]);
+
+  const resolvedChartWidth = chartWidth > 0 ? chartWidth : 320;
 
   return (
-    <PageLayout title="O seu motor financeiro está online." subtitle={`Dados de referência: ${referenceMonth}`}>
-      {loading ? <p className="text-sm text-zinc-400">A carregar dashboard...</p> : null}
-      {error ? <p className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{error}</p> : null}
+    <PageLayout title="Visão Geral" subtitle={`Dados do mês: ${currentMonth}`} hideTitle={true}>
+      <div className="space-y-6 text-white">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {loading.summary || !summary ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <article key={`kpi-loading-${index}`} className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+                <LoadingBar width="w-24" />
+                <div className="mt-3">
+                  <LoadingBar width="w-36" />
+                </div>
+              </article>
+            ))
+          ) : (
+            [
+              { label: "Patrimônio Total", value: summary.patrimonio, color: "text-white", isExpense: false },
+              { label: "Receitas", value: summary.receitas, color: "text-[#4ecf98]", isExpense: false },
+              { label: "Despesas", value: summary.despesas, color: "text-[#e97070]", isExpense: true },
+              { label: "Saldo Líquido", value: summary.saldo_liquido, color: "text-[#7EB8F7]", isExpense: false },
+            ].map((item) => (
+              <article key={item.label} className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+                <p className="text-xs uppercase tracking-widest text-neutral-500">{item.label}</p>
+                <p className={`mt-3 text-xl font-medium ${item.color}`}>{formatCurrency(item.value.current)}</p>
+                <span className={`mt-3 inline-flex rounded-full px-2 py-1 text-xs ${getBadgeClasses(item.value.delta_pct, item.isExpense)}`}>
+                  {formatDelta(item.value.delta_pct)}
+                </span>
+              </article>
+            ))
+          )}
+        </section>
 
-      <SummaryCards summary={summary} />
+        <section className="grid gap-6 xl:grid-cols-2">
+          <article
+            className="cursor-pointer rounded-xl border border-white/[0.07] border-l-2 border-l-[#4ecf98] bg-gradient-to-br from-[#1a2620] to-[#1a1a1a] p-4"
+            onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+          >
+            {loading.summary || !summary ? (
+              <div className="space-y-3">
+                <LoadingBar width="w-60" />
+                <LoadingBar width="w-44" />
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <LoadingBar width="w-full" />
+                  <LoadingBar width="w-full" />
+                  <LoadingBar width="w-full" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-3xl font-semibold leading-tight text-[#4ecf98]">{insightsTitle}</h3>
+                <p className="mt-2 text-sm text-neutral-400">Gerado para o mês atual.</p>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <PacingCard pacing={pacing} />
-      </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-lg border border-white/[0.05] bg-white/[0.03] p-3">
+                    <p className="text-xs text-neutral-500">Gasto Mai.</p>
+                    <p className="mt-1 text-lg font-medium text-white">{formatCurrency(summary.despesas.current)}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/[0.05] bg-white/[0.03] p-3">
+                    <p className="text-xs text-neutral-500">Variação %</p>
+                    <p className="mt-1 text-lg font-medium text-white">{formatDelta(summary.despesas.delta_pct)}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/[0.05] bg-white/[0.03] p-3">
+                    <p className="text-xs text-neutral-500">Maior categoria</p>
+                    <p className="mt-1 text-lg font-medium capitalize text-white">
+                      {categoryStats.top5[0] ? categoryLabel(categoryStats.top5[0].category) : "-"}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </article>
 
-      <CategoriesCard categories={categories ?? []} />
-
-      {summary ? (
-        <section className="rounded-3xl border border-white/10 bg-gradient-to-r from-white/8 to-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-zinc-400">Patrimônio Consolidado</p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight">{formatCurrency(summary.net_worth)}</p>
+          <article className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs uppercase tracking-widest text-neutral-500">Ritmo de Gastos</p>
+              <button
+                type="button"
+                onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+                className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+              >
+                ver todas ↗
+              </button>
             </div>
 
-            <Link
-              href="/wealth"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-zinc-50 transition hover:bg-white/15"
-            >
-              Acessar Investimentos
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+            {loading.pacing || !pacing ? (
+              <div className="mt-4 space-y-3">
+                <LoadingBar width="w-36" />
+                <LoadingBar width="w-24" />
+                <LoadingBar width="w-full" />
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex items-end justify-between gap-4">
+                  <p className="text-3xl font-semibold text-white">{formatCurrency(pacing.current_expenses)}</p>
+                  <span className={`inline-flex rounded-full px-2 py-1 text-xs ${getBadgeClasses(pacing.delta_percentage, true)}`}>
+                    {formatDelta(pacing.delta_percentage)}
+                  </span>
+                </div>
+
+                <div ref={chartWrapRef} className="mt-4" style={{ width: "100%" }}>
+                  <LineChart width={resolvedChartWidth} height={70} data={pacing.daily_data}>
+                    <Line dataKey="current_amount" stroke="#4ecf98" dot={false} strokeWidth={2} />
+                    <Line
+                      dataKey="previous_amount"
+                      stroke="#444"
+                      dot={false}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                    />
+                  </LineChart>
+                </div>
+
+                <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-[2px] w-4 bg-[#4ecf98]" />
+                    Este mês
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-[2px] w-4 bg-[#444]" />
+                    Mês passado
+                  </span>
+                </div>
+              </>
+            )}
+          </article>
         </section>
-      ) : null}
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <article className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-neutral-500">Mapa de Calor</p>
+                {loading.heatmap || !heatmap ? (
+                  <div className="mt-2 space-y-2">
+                    <LoadingBar width="w-32" />
+                    <LoadingBar width="w-28" />
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-2 text-3xl font-semibold text-white">{formatCurrency(heatmapTotals.total)}</p>
+                    <p className="text-sm text-neutral-500">Média diária: {formatCurrency(heatmapTotals.average)}</p>
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+                className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+              >
+                ver mais ↗
+              </button>
+            </div>
+
+            {loading.heatmap || !heatmap ? (
+              <div className="mt-4 grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, index) => (
+                  <div key={`heat-loading-${index}`} className="h-[22px] animate-pulse rounded-[3px] bg-white/[0.04]" />
+                ))}
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs text-neutral-600">
+                  {"DSTQQSS".split("").map((day, index) => (
+                    <span key={`${day}-${index}`}>{day}</span>
+                  ))}
+                </div>
+
+                <div className="mt-2 grid grid-cols-7 gap-1">
+                  {heatmapGrid.map((day, index) => {
+                    if (!day) {
+                      return <div key={`empty-${index}`} className="h-[22px] rounded-[3px] bg-transparent" />;
+                    }
+
+                    const dayNumber = new Date(`${day.date}T00:00:00`).getDate();
+
+                    if (day.intensity <= 0) {
+                      return (
+                        <div
+                          key={day.date}
+                          className="flex h-[22px] cursor-default items-center justify-center rounded-[3px] bg-[#1e1e1e] text-[10px] font-medium text-white"
+                        >
+                          {dayNumber}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        key={day.date}
+                        className="flex h-[22px] cursor-pointer items-center justify-center rounded-[3px] text-[10px] font-medium text-white transition-all hover:brightness-125"
+                        style={{ background: `rgba(216,90,48,${Math.max(0.08, day.intensity)})` }}
+                        onClick={() => pushTransactionsRange(day.date, day.date)}
+                        aria-label={`Abrir transações do dia ${day.date}`}
+                      >
+                        {dayNumber}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 flex items-center justify-end gap-2 text-xs text-neutral-600">
+                  <span>Menos</span>
+                  {[0.12, 0.3, 0.5, 0.7, 0.95].map((alpha, index) => (
+                    <span
+                      key={`legend-${index}`}
+                      className="h-3 w-3 rounded-[2px]"
+                      style={{ background: `rgba(216,90,48,${alpha})` }}
+                    />
+                  ))}
+                  <span>Mais</span>
+                </div>
+              </>
+            )}
+          </article>
+
+          <article className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs uppercase tracking-widest text-neutral-500">Principais Categorias</p>
+              <button
+                type="button"
+                onClick={() => router.push("/categories")}
+                className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+              >
+                ver mais ↗
+              </button>
+            </div>
+
+            <div className="mt-3 grid grid-cols-[1.6fr_1fr_1fr_1fr] gap-2 text-xs text-neutral-600">
+              <span>Categoria</span>
+              <span className="text-right">Atual</span>
+              <span className="text-right">Variação</span>
+              <span className="text-right">Anterior</span>
+            </div>
+
+            {loading.categories || !catsCurrent || !catsPrev ? (
+              <div className="mt-3 space-y-2">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <LoadingBar key={`cat-loading-${index}`} width="w-full" />
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2">
+                {categoryStats.top5.map((item, index) => {
+                  const badgeClass = item.delta === null
+                    ? "bg-white/[0.06] text-neutral-500"
+                    : item.delta < 0
+                      ? "bg-green-500/10 text-green-400"
+                      : item.delta > 0
+                        ? "bg-red-500/10 text-red-400"
+                        : "bg-white/[0.06] text-neutral-500";
+
+                  return (
+                    <button
+                      type="button"
+                      key={item.category}
+                      onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate, item.category)}
+                      className="grid w-full grid-cols-[1.6fr_1fr_1fr_1fr] items-center gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-white/[0.03]"
+                    >
+                      <span className="inline-flex items-center gap-2 text-sm text-white">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: getCategoryColor(item.category, index) }}
+                        />
+                        <span className="capitalize">{categoryLabel(item.category)}</span>
+                      </span>
+                      <span className="text-right text-sm text-white">{formatCurrency(item.current)}</span>
+                      <span className="text-right">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-[11px] ${badgeClass}`}>
+                          {item.isNew || item.delta === null ? "novo" : formatDelta(item.delta)}
+                        </span>
+                      </span>
+                      <span className="text-right text-sm text-neutral-400">{formatCurrency(item.previous)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </article>
+        </section>
+
+        <section className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs uppercase tracking-widest text-neutral-500">Transações Recentes</p>
+            <button
+              type="button"
+              onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+              className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+            >
+              ver todas ↗
+            </button>
+          </div>
+
+          {loading.transactions || !recentTxs ? (
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <LoadingBar key={`tx-loading-${index}`} width="w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4">
+              {recentTxs.slice(0, 5).map((tx, index, list) => {
+                const visual = getTxVisual(tx);
+                const amount = toNumber(tx.amount);
+
+                return (
+                  <article
+                    key={tx.id}
+                    className={`flex items-center justify-between gap-3 py-3 ${index < list.length - 1 ? "border-b border-white/[0.05]" : ""}`}
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className={`flex h-5 w-5 items-center justify-center rounded ${visual.box}`}>
+                        <span className="text-[10px] leading-none">{visual.icon}</span>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-white">{tx.description}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                          <span className="rounded bg-white/[0.06] px-1.5 py-0.5">{categoryLabel(tx.category)}</span>
+                          <span>{tx.account}</span>
+                          <span>{formatTxDate(tx.date)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className={`whitespace-nowrap text-base font-medium ${visual.value}`}>
+                      {formatCurrency(amount)}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
     </PageLayout>
   );
 }
