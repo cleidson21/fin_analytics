@@ -2,7 +2,7 @@ from datetime import date
 from pathlib import Path
 
 from database.repository import DatabaseManager
-from parsers.myprofit import parse_dividends, parse_positions
+from parsers.myprofit import parse_dividends, parse_positions, parse_evolution
 from parsers.nubank import parse_nubank_file
 from services.categorizer import SmartCategorizer
 
@@ -63,6 +63,24 @@ def etl_dividends(db: DatabaseManager, data_dir: Path) -> tuple[int, int]:
     return inserted, updated
 
 
+def etl_evolution(db: DatabaseManager, data_dir: Path) -> tuple[int, int]:
+    myprofit_dir = data_dir / "raw" / "myprofit"
+    path_evo = myprofit_dir / "Evolucao_carteira.csv"
+
+    if not path_evo.exists():
+        return 0, 0
+
+    evos = parse_evolution(path_evo)
+    if not evos:
+        return 0, 0
+
+    run_id = db.register_etl_run("MYPROFIT", path_evo.name, len(evos))
+    inserted, updated = db.upsert_portfolio_evolution(evos)
+    db.update_etl_run_metrics(run_id, inserted, updated)
+    print(f"[EVOLUCAO] {path_evo.name}: {inserted} novas | {updated} atualizadas")
+    return inserted, updated
+
+
 def executar_etl_completo():
     data_dir = Path("data")
     db = DatabaseManager()
@@ -75,9 +93,10 @@ def executar_etl_completo():
     caixa_inserted, caixa_updated = etl_cashflow(db, categorizer, data_dir)
     patrimonio_inserted, patrimonio_updated = etl_positions(db, data_dir)
     dividendos_inserted, dividendos_updated = etl_dividends(db, data_dir)
+    evolucao_inserted, evolucao_updated = etl_evolution(db, data_dir)
 
-    total_inserted = caixa_inserted + patrimonio_inserted + dividendos_inserted
-    total_updated = caixa_updated + patrimonio_updated + dividendos_updated
+    total_inserted = caixa_inserted + patrimonio_inserted + dividendos_inserted + evolucao_inserted
+    total_updated = caixa_updated + patrimonio_updated + dividendos_updated + evolucao_updated
 
     print(f"\nETL Concluido. Insercoes totais: {total_inserted} | Atualizacoes totais: {total_updated}")
 

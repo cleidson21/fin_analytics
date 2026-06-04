@@ -99,7 +99,9 @@ export default function InstallmentsPage() {
   // Auto-abre o primeiro card ao trocar de aba
   useEffect(() => {
     if (displayedItems.length > 0) {
-      setExpandedId(displayedItems[0].base_name);
+      const first = displayedItems[0];
+      const rowId = `${first.base_name}-${first.date}-${first.total_installments}-0`;
+      setExpandedId(rowId);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -229,15 +231,18 @@ export default function InstallmentsPage() {
           <p className="py-8 text-sm text-neutral-500">Nenhum parcelamento para esta aba.</p>
         ) : (
           <div className="mt-3 space-y-2">
-            {displayedItems.map((item, i) => (
-              <InstallmentCard
-                key={`${item.base_name}-${item.original_name}-${item.date}`}
-                item={item}
-                index={i}
-                isExpanded={expandedId === item.base_name}
-                onToggle={() => handleToggle(item.base_name)}
-              />
-            ))}
+            {displayedItems.map((item, i) => {
+              const rowId = `${item.base_name}-${item.date}-${item.total_installments}-${i}`;
+              return (
+                <InstallmentCard
+                  key={rowId}
+                  item={item}
+                  index={i}
+                  isExpanded={expandedId === rowId}
+                  onToggle={() => handleToggle(rowId)}
+                />
+              );
+            })}
           </div>
         )}
       </section>

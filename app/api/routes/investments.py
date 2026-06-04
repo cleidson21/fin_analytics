@@ -2,64 +2,59 @@ from typing import List
 
 from fastapi import APIRouter
 
-from app.api.schemas.investments import AssetAllocation, DividendHistory, NetWorthEvolution
-from app.core.formatters import format_money
-from database.queries import FinancialQueries
+from app.api.schemas.investments import (
+    AssetAllocation,
+    DividendBreakdown,
+    DividendHistory,
+    NetWorthEvolution,
+    PositionDetail,
+    PortfolioEvolutionPoint,
+    PortfolioEvolutionSummary,
+)
+from app.api.services.wealth import WealthAnalyticsService
 
 
 router = APIRouter()
-queries = FinancialQueries()
+wealth_service = WealthAnalyticsService()
 
 
 @router.get("/dividends/history", response_model=List[DividendHistory])
 def get_dividend_history():
     """Retorna o histórico mensal de dividendos recebidos."""
-    df = queries.get_dividend_history()
-    if df.empty:
-        return []
-
-    records = df.to_dict(orient="records")
-
-    return [
-        DividendHistory(
-            month=r["month"],
-            amount_received=format_money(r["amount_received"]),
-        )
-        for r in records
-    ]
+    return wealth_service.get_dividend_history()
 
 
 @router.get("/allocation", response_model=List[AssetAllocation])
 def get_portfolio_allocation():
     """Retorna a alocação atual do portfólio por classe de ativo."""
-    df = queries.get_portfolio_allocation()
-    if df.empty:
-        return []
-
-    records = df.to_dict(orient="records")
-
-    return [
-        AssetAllocation(
-            asset_class=r["asset_class"],
-            current_total=format_money(r["current_total"]),
-        )
-        for r in records
-    ]
+    return wealth_service.get_portfolio_allocation()
 
 
 @router.get("/evolution", response_model=List[NetWorthEvolution])
 def get_net_worth_evolution():
     """Retorna a evolução histórica do património (fecho de cada mês)."""
-    df = queries.get_net_worth_history()
-    if df.empty:
-        return []
+    return wealth_service.get_net_worth_evolution()
 
-    records = df.to_dict(orient="records")
 
-    return [
-        NetWorthEvolution(
-            month=r["month"],
-            net_worth=format_money(r["net_worth"]),
-        )
-        for r in records
-    ]
+@router.get("/positions", response_model=List[PositionDetail])
+def get_detailed_positions():
+    """Retorna posições detalhadas do último snapshot disponível."""
+    return wealth_service.get_detailed_positions()
+
+
+@router.get("/dividends/breakdown", response_model=List[DividendBreakdown])
+def get_dividends_breakdown():
+    """Retorna o detalhamento histórico de dividendos agrupado por ativo."""
+    return wealth_service.get_dividends_by_asset()
+
+
+@router.get("/evolution/history", response_model=List[PortfolioEvolutionPoint])
+def get_portfolio_evolution_history():
+    """Retorna o histórico detalhado de evolução da carteira (compras, vendas, rentabilidade)."""
+    return wealth_service.get_portfolio_evolution_history()
+
+
+@router.get("/evolution/summary", response_model=PortfolioEvolutionSummary)
+def get_portfolio_evolution_summary():
+    """Retorna os KPIs consolidados da evolução da carteira."""
+    return wealth_service.get_portfolio_evolution_summary()

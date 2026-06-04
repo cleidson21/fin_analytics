@@ -459,3 +459,158 @@ class FinancialQueries:
             df["net_worth"] = pd.to_numeric(df["net_worth"])
 
         return df
+
+    def get_detailed_positions(self) -> pd.DataFrame:
+        """Busca posições detalhadas do último snapshot disponível com cálculo de peso."""
+        query = """
+            SELECT
+                ticker,
+                quantidade,
+                preco_medio,
+                total_investido as valor_investido,
+                preco_atual,
+                total_atual as valor_atual,
+                ganho
+            FROM positions
+            WHERE data_snapshot = (SELECT MAX(data_snapshot) FROM positions)
+            ORDER BY total_atual DESC
+        """
+        with self._get_connection() as conn:
+            df = pd.read_sql(query, conn)
+            
+        if not df.empty and "valor_atual" in df.columns:
+            # Convert numeric columns explicitly
+            df["valor_atual"] = pd.to_numeric(df["valor_atual"], errors='coerce').fillna(0)
+            df["valor_investido"] = pd.to_numeric(df["valor_investido"], errors='coerce').fillna(0)
+            df["ganho"] = pd.to_numeric(df["ganho"], errors='coerce').fillna(0)
+            df["preco_medio"] = pd.to_numeric(df["preco_medio"], errors='coerce').fillna(0)
+            df["preco_atual"] = pd.to_numeric(df["preco_atual"], errors='coerce').fillna(0)
+            
+            total_patrimonio = df["valor_atual"].sum()
+            if total_patrimonio > 0:
+                df["peso_percentual"] = (df["valor_atual"] / total_patrimonio) * 100
+            else:
+                df["peso_percentual"] = 0.0
+        else:
+            # Return empty DataFrame with expected columns if no data
+            return pd.DataFrame(columns=[
+                "ticker", "quantidade", "preco_medio", "valor_investido",
+                "preco_atual", "valor_atual", "ganho", "peso_percentual"
+            ])
+            
+        return df
+
+    def get_dividends_by_asset(self) -> pd.DataFrame:
+        """Busca o histórico completo de dividendos agrupado por ativo."""
+        query = """
+            SELECT 
+                ticker,
+                SUM(COALESCE(valor_liquido_cents, 0)) as total_recebido_cents,
+                COUNT(*) as quantidade_eventos,
+                MIN(data_pagamento) as primeiro_recebimento,
+                MAX(data_pagamento) as ultimo_recebimento
+            FROM dividends
+            GROUP BY ticker
+            ORDER BY total_recebido_cents DESC
+        """
+        with self._get_connection() as conn:
+            df = pd.read_sql(query, conn)
+            
+        if "total_recebido_cents" in df.columns:
+            df["total_recebido"] = df["total_recebido_cents"].apply(_cents_to_decimal)
+            df.drop(columns=["total_recebido_cents"], inplace=True)
+            
+        return df
+
+
+    def get_portfolio_evolution_history(self) -> pd.DataFrame:
+        """Busca o histórico de evolução da carteira da nova tabela."""
+        query = """
+            SELECT
+                strftime('%Y-%m', reference_month) as month,
+                rentabilidade_mensal_pct,
+                rentabilidade_acumulada_pct,
+                patrimonio_cents,
+                compras_cents,
+                vendas_cents,
+                op_finalizadas_cents,
+                proventos_cents,
+                ibov_mensal_pct,
+                ibov_acumulado_pct,
+                cdi_mensal_pct,
+                cdi_acumulado_pct,
+                ipca_mensal_pct,
+                ipca_acumulado_pct,
+                ifix_mensal_pct,
+                ifix_acumulado_pct,
+                sp500_mensal_pct,
+                sp500_acumulado_pct,
+                idiv_mensal_pct,
+                idiv_acumulado_pct
+            FROM portfolio_evolution
+            ORDER BY reference_month ASC
+        """
+        with self._get_connection() as conn:
+            df = pd.read_sql(query, conn)
+            
+        cents_cols = [
+            "patrimonio_cents", "compras_cents", "vendas_cents", 
+            "op_finalizadas_cents", "proventos_cents"
+        ]
+        
+        for col in cents_cols:
+            if col in df.columns:
+                new_col = col.replace("_cents", "")
+                df[new_col] = df[col].apply(_cents_to_decimal)
+                df.drop(columns=[col], inplace=True)
+                
+        pct_cols = [
+            "rentabilidade_mensal_pct", "rentabilidade_acumulada_pct",
+            "ibov_mensal_pct", "ibov_acumulado_pct", "cdi_mensal_pct", 
+            "cdi_acumulado_pct", "ipca_mensal_pct", "ipca_acumulado_pct", 
+            "ifix_mensal_pct", "ifix_acumulado_pct", "sp500_mensal_pct", 
+            "sp500_acumulado_pct", "idiv_mensal_pct", "idiv_acumulado_pct"
+        ]
+        for col in pct_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+        return df
+
+    def get_portfolio_evolution_summary(self) -> dict:
+        """Busca o resumo da evolução para KPIs."""
+        query = """
+            SELECT 
+                (SELECT patrimonio_cents FROM portfolio_evolution ORDER BY reference_month DESC LIMIT 1) as patrimonio_atual_cents,
+                (SELECT rentabilidade_acumulada_pct FROM portfolio_evolution ORDER BY reference_month DESC LIMIT 1) as rentabilidade_acumulada_pct,
+                (SELECT ibov_acumulado_pct FROM portfolio_evolution ORDER BY reference_month DESC LIMIT 1) as ibov_acumulado_pct,
+                (SELECT cdi_acumulado_pct FROM portfolio_evolution ORDER BY reference_month DESC LIMIT 1) as cdi_acumulado_pct,
+                SUM(compras_cents) as compras_totais_cents,
+                SUM(vendas_cents) as vendas_totais_cents,
+                SUM(proventos_cents) as proventos_totais_cents
+            FROM portfolio_evolution;
+        """
+        with self._get_connection() as conn:
+            df = pd.read_sql(query, conn)
+            
+        if df.empty or df.iloc[0]["patrimonio_atual_cents"] is None:
+            return {
+                "patrimonio_atual": Decimal("0.00"),
+                "rentabilidade_acumulada": 0.0,
+                "ibov_acumulado_pct": 0.0,
+                "cdi_acumulado_pct": 0.0,
+                "compras_totais": Decimal("0.00"),
+                "vendas_totais": Decimal("0.00"),
+                "proventos_totais": Decimal("0.00")
+            }
+
+        row = df.iloc[0]
+        return {
+            "patrimonio_atual": _cents_to_decimal(row["patrimonio_atual_cents"]),
+            "rentabilidade_acumulada": float(row["rentabilidade_acumulada_pct"] or 0),
+            "ibov_acumulado_pct": float(row["ibov_acumulado_pct"] or 0),
+            "cdi_acumulado_pct": float(row["cdi_acumulado_pct"] or 0),
+            "compras_totais": _cents_to_decimal(row["compras_totais_cents"]),
+            "vendas_totais": _cents_to_decimal(row["vendas_totais_cents"]),
+            "proventos_totais": _cents_to_decimal(row["proventos_totais_cents"])
+        }

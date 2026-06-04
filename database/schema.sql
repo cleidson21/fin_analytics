@@ -105,4 +105,31 @@ ON positions(data_snapshot);
 
 CREATE INDEX IF NOT EXISTS idx_dividends_date
 ON dividends(data_pagamento);
-
+
+CREATE TABLE IF NOT EXISTS portfolio_evolution (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reference_month DATE NOT NULL UNIQUE,
+    rentabilidade_mensal_pct DECIMAL(7, 4) DEFAULT 0,
+    rentabilidade_acumulada_pct DECIMAL(7, 4) DEFAULT 0,
+    patrimonio_cents BIGINT NOT NULL DEFAULT 0,
+    compras_cents BIGINT NOT NULL DEFAULT 0,
+    vendas_cents BIGINT NOT NULL DEFAULT 0,
+    op_finalizadas_cents BIGINT NOT NULL DEFAULT 0,
+    proventos_cents BIGINT NOT NULL DEFAULT 0,
+    ibov_mensal_pct DECIMAL(7, 4) DEFAULT 0,
+    ibov_acumulado_pct DECIMAL(7, 4) DEFAULT 0,
+    cdi_mensal_pct DECIMAL(7, 4) DEFAULT 0,
+    cdi_acumulado_pct DECIMAL(7, 4) DEFAULT 0,
+    ipca_mensal_pct DECIMAL(7, 4) DEFAULT 0,
+    ipca_acumulado_pct DECIMAL(7, 4) DEFAULT 0,
+    ifix_mensal_pct DECIMAL(7, 4) DEFAULT 0,
+    ifix_acumulado_pct DECIMAL(7, 4) DEFAULT 0,
+    sp500_mensal_pct DECIMAL(7, 4) DEFAULT 0,
+    sp500_acumulado_pct DECIMAL(7, 4) DEFAULT 0,
+    idiv_mensal_pct DECIMAL(7, 4) DEFAULT 0,
+    idiv_acumulado_pct DECIMAL(7, 4) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_evolution_date
+ON portfolio_evolution(reference_month);

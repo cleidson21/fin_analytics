@@ -559,3 +559,83 @@ class DatabaseManager:
             conn.commit()
 
         return inserted, updated
+
+
+    def upsert_portfolio_evolution(self, evos: list) -> tuple[int, int]:
+        if not evos:
+            return 0, 0
+
+        inserted = 0
+        updated = 0
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            for evo in evos:
+                existing = cursor.execute(
+                    "SELECT 1 FROM portfolio_evolution WHERE reference_month = ?",
+                    (evo["reference_month"].isoformat(),),
+                ).fetchone()
+
+                cursor.execute(
+                    """
+                    INSERT INTO portfolio_evolution (
+                        reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                        patrimonio_cents, compras_cents, vendas_cents, op_finalizadas_cents, proventos_cents,
+                        ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                        ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                        sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(reference_month) DO UPDATE SET
+                        rentabilidade_mensal_pct = excluded.rentabilidade_mensal_pct,
+                        rentabilidade_acumulada_pct = excluded.rentabilidade_acumulada_pct,
+                        patrimonio_cents = excluded.patrimonio_cents,
+                        compras_cents = excluded.compras_cents,
+                        vendas_cents = excluded.vendas_cents,
+                        op_finalizadas_cents = excluded.op_finalizadas_cents,
+                        proventos_cents = excluded.proventos_cents,
+                        ibov_mensal_pct = excluded.ibov_mensal_pct,
+                        ibov_acumulado_pct = excluded.ibov_acumulado_pct,
+                        cdi_mensal_pct = excluded.cdi_mensal_pct,
+                        cdi_acumulado_pct = excluded.cdi_acumulado_pct,
+                        ipca_mensal_pct = excluded.ipca_mensal_pct,
+                        ipca_acumulado_pct = excluded.ipca_acumulado_pct,
+                        ifix_mensal_pct = excluded.ifix_mensal_pct,
+                        ifix_acumulado_pct = excluded.ifix_acumulado_pct,
+                        sp500_mensal_pct = excluded.sp500_mensal_pct,
+                        sp500_acumulado_pct = excluded.sp500_acumulado_pct,
+                        idiv_mensal_pct = excluded.idiv_mensal_pct,
+                        idiv_acumulado_pct = excluded.idiv_acumulado_pct
+                    """,
+                    (
+                        evo["reference_month"].isoformat(),
+                        str(evo["rentabilidade_mensal_pct"]),
+                        str(evo["rentabilidade_acumulada_pct"]),
+                        evo["patrimonio_cents"],
+                        evo["compras_cents"],
+                        evo["vendas_cents"],
+                        evo["op_finalizadas_cents"],
+                        evo["proventos_cents"],
+                        str(evo["ibov_mensal_pct"]),
+                        str(evo["ibov_acumulado_pct"]),
+                        str(evo["cdi_mensal_pct"]),
+                        str(evo["cdi_acumulado_pct"]),
+                        str(evo["ipca_mensal_pct"]),
+                        str(evo["ipca_acumulado_pct"]),
+                        str(evo["ifix_mensal_pct"]),
+                        str(evo["ifix_acumulado_pct"]),
+                        str(evo["sp500_mensal_pct"]),
+                        str(evo["sp500_acumulado_pct"]),
+                        str(evo["idiv_mensal_pct"]),
+                        str(evo["idiv_acumulado_pct"]),
+                    ),
+                )
+
+                if existing is None:
+                    inserted += 1
+                else:
+                    updated += 1
+
+            conn.commit()
+
+        return inserted, updated

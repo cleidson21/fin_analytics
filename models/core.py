@@ -39,3 +39,27 @@ class CanonicalEvent(TypedDict):
     ticker: str
     data_pagamento: date
     valor_liquido: Decimal
+
+
+class CanonicalPortfolioEvolution(TypedDict):
+    source: Source
+    reference_month: date
+    rentabilidade_mensal_pct: Decimal
+    rentabilidade_acumulada_pct: Decimal
+    patrimonio_cents: int
+    compras_cents: int
+    vendas_cents: int
+    op_finalizadas_cents: int
+    proventos_cents: int
+    ibov_mensal_pct: Decimal
+    ibov_acumulado_pct: Decimal
+    cdi_mensal_pct: Decimal
+    cdi_acumulado_pct: Decimal
+    ipca_mensal_pct: Decimal
+    ipca_acumulado_pct: Decimal
+    ifix_mensal_pct: Decimal
+    ifix_acumulado_pct: Decimal
+    sp500_mensal_pct: Decimal
+    sp500_acumulado_pct: Decimal
+    idiv_mensal_pct: Decimal
+    idiv_acumulado_pct: Decimal
