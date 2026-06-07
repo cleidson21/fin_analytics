@@ -21,6 +21,9 @@ export default function EvolutionPage() {
   const [showIbov, setShowIbov] = useState(true);
   const [showCdi, setShowCdi] = useState(false);
   const [showIpca, setShowIpca] = useState(false);
+  const [showIfix, setShowIfix] = useState(false);
+  const [showSp500, setShowSp500] = useState(false);
+  const [showIdiv, setShowIdiv] = useState(false);
 
   const alphaIbov = summary?.alpha_vs_ibov || 0;
   const alphaCdi = summary?.alpha_vs_cdi || 0;
@@ -35,12 +38,7 @@ export default function EvolutionPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <WealthSectionTitle 
-          title="Evolução & Performance" 
-          subtitle="Análise comparativa de performance e geração de alpha vs benchmarks." 
-          className="mb-0"
-        />
+      <div className="flex justify-end mb-4">
         <WealthPeriodToggle active={period} onChange={setPeriod} />
       </div>
 
@@ -96,6 +94,9 @@ export default function EvolutionPage() {
               <button onClick={() => setShowIbov(!showIbov)} className={cn("px-2 py-1 rounded transition-colors border", showIbov ? "bg-[#7EB8F7]/10 text-[#7EB8F7] border-[#7EB8F7]/25" : "bg-transparent text-neutral-600 border-transparent")}>IBOV</button>
               <button onClick={() => setShowCdi(!showCdi)} className={cn("px-2 py-1 rounded transition-colors border", showCdi ? "bg-[#f5a623]/10 text-[#f5a623] border-[#f5a623]/25" : "bg-transparent text-neutral-600 border-transparent")}>CDI</button>
               <button onClick={() => setShowIpca(!showIpca)} className={cn("px-2 py-1 rounded transition-colors border", showIpca ? "bg-[#e97070]/10 text-[#e97070] border-[#e97070]/25" : "bg-transparent text-neutral-600 border-transparent")}>IPCA</button>
+              <button onClick={() => setShowIfix(!showIfix)} className={cn("px-2 py-1 rounded transition-colors border", showIfix ? "bg-[#7F77DD]/10 text-[#7F77DD] border-[#7F77DD]/25" : "bg-transparent text-neutral-600 border-transparent")}>IFIX</button>
+              <button onClick={() => setShowSp500(!showSp500)} className={cn("px-2 py-1 rounded transition-colors border", showSp500 ? "bg-[#f08a5d]/10 text-[#f08a5d] border-[#f08a5d]/25" : "bg-transparent text-neutral-600 border-transparent")}>S&P 500</button>
+              <button onClick={() => setShowIdiv(!showIdiv)} className={cn("px-2 py-1 rounded transition-colors border", showIdiv ? "bg-[#86e3ce]/10 text-[#86e3ce] border-[#86e3ce]/25" : "bg-transparent text-neutral-600 border-transparent")}>IDIV</button>
             </div>
           }
         >
@@ -105,6 +106,9 @@ export default function EvolutionPage() {
             showIbov={showIbov} 
             showCdi={showCdi} 
             showIpca={showIpca} 
+            showIfix={showIfix}
+            showSp500={showSp500}
+            showIdiv={showIdiv}
           />
         </WealthChartCard>
       </div>
@@ -114,14 +118,18 @@ export default function EvolutionPage() {
           <CashflowBarChart data={rawHistory} />
         </WealthChartCard>
         
-        <WealthChartCard title="Matriz Analítica Completa" isLoading={isLoading} isError={isError} className="h-[350px]">
+        <WealthChartCard title="Matriz Analítica Completa" isLoading={isLoading} isError={isError} tableMode>
           <WealthTable
             data={tableData}
+            pageSize={12}
             columns={[
               { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
-              { header: "Cart %", cell: (item) => `${item.rentabilidade_mensal_pct.toFixed(2)}%`, align: "right", className: (item) => item.rentabilidade_mensal_pct >= 0 ? "text-[#4ecf98] font-medium" : "text-[#e97070] font-medium" },
-              { header: "IBOV %", cell: (item) => `${item.ibov_mensal_pct.toFixed(2)}%`, align: "right" },
-              { header: "CDI %", cell: (item) => `${item.cdi_mensal_pct.toFixed(2)}%`, align: "right" },
+              { header: "Cart % (Mês)", cell: (item) => `${item.rentabilidade_mensal_pct.toFixed(2)}%`, align: "right", className: (item) => item.rentabilidade_mensal_pct >= 0 ? "text-[#4ecf98] font-medium" : "text-[#e97070] font-medium" },
+              { header: "Cart % (Acum)", cell: (item) => `${item.rentabilidade_acumulada_pct.toFixed(2)}%`, align: "right", className: "text-[#4ecf98]" },
+              { header: "IBOV (Mês)", cell: (item) => `${item.ibov_mensal_pct.toFixed(2)}%`, align: "right" },
+              { header: "IBOV (Acum)", cell: (item) => `${item.ibov_acumulado_pct.toFixed(2)}%`, align: "right", className: "text-[#7EB8F7]" },
+              { header: "CDI (Mês)", cell: (item) => `${item.cdi_mensal_pct.toFixed(2)}%`, align: "right" },
+              { header: "CDI (Acum)", cell: (item) => `${item.cdi_acumulado_pct.toFixed(2)}%`, align: "right", className: "text-[#f5a623]" },
               { header: "Aportes", cell: (item) => formatCurrency(item.compras_value), align: "right" },
               { header: "Vendas", cell: (item) => formatCurrency(item.vendas_value), align: "right" },
             ]}

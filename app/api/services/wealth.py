@@ -31,7 +31,13 @@ class WealthAnalyticsService:
             DividendHistory(
                 month=r["month"],
                 amount_received=format_money(r["amount_received"]),
-                amount_received_value=float(r["amount_received"])
+                amount_received_value=float(r["amount_received"]),
+                amount_dividend=format_money(r["amount_dividend"]) if "amount_dividend" in r else None,
+                amount_dividend_value=float(r["amount_dividend"]) if "amount_dividend" in r else 0.0,
+                amount_jcp=format_money(r["amount_jcp"]) if "amount_jcp" in r else None,
+                amount_jcp_value=float(r["amount_jcp"]) if "amount_jcp" in r else 0.0,
+                amount_rendimento=format_money(r["amount_rendimento"]) if "amount_rendimento" in r else None,
+                amount_rendimento_value=float(r["amount_rendimento"]) if "amount_rendimento" in r else 0.0,
             )
             for r in records
         ]
@@ -75,6 +81,8 @@ class WealthAnalyticsService:
         return [
             PositionDetail(
                 ticker=r["ticker"],
+                asset_class=r.get("asset_class", "Outros"),
+                asset_subclass=r.get("asset_subclass", ""),
                 quantidade=str(r["quantidade"]),
                 preco_medio=format_money(r["preco_medio"]),
                 valor_investido=format_money(r["valor_investido"]),
@@ -166,3 +174,52 @@ class WealthAnalyticsService:
             alpha_vs_ibov=alpha_vs_ibov,
             alpha_vs_cdi=alpha_vs_cdi
         )
+
+    def get_asset_details(self, ticker: str) -> dict:
+        """Consolida as informações do ativo (posições, histórico de preços, indicadores, proventos, timeline)."""
+        from app.api.services.market_data import get_asset_history, get_asset_indicators
+        from fastapi import HTTPException
+        
+        # 1. Posição
+        position = self.queries.get_asset_position(ticker)
+        if not position:
+            raise HTTPException(status_code=404, detail="Ativo não encontrado na carteira.")
+            
+        # Para saber o peso, precisamos do valor_atual de todas as posições
+        all_positions = self.queries.get_detailed_positions()
+        total_wallet = float(all_positions["valor_atual"].sum()) if not all_positions.empty and "valor_atual" in all_positions else 0.0
+        peso = (position["valor_atual"] / total_wallet * 100) if total_wallet > 0 else 0
+        position["peso"] = peso
+        
+        # 2. Market Data e Indicadores
+        market_history = get_asset_history(ticker)
+        indicators = get_asset_indicators(ticker)
+        
+        # 3. Proventos
+        dividends = self.queries.get_asset_dividends(ticker)
+        
+        # KPI Proventos: Total e 12 Meses
+        total_dividends = sum(d["valor"] for d in dividends)
+        
+        # Soma os últimos 12 proventos recebidos
+        dividends_12m = sum(d["valor"] for d in dividends[:12])
+        
+        yoc = (total_dividends / position["valor_investido"] * 100) if position["valor_investido"] > 0 else 0
+        
+        # 4. Timeline
+        timeline = self.queries.get_asset_timeline(ticker)
+        
+        return {
+            "position": position,
+            "market_data": market_history,
+            "indicators": indicators,
+            "dividends": {
+                "items": dividends,
+                "kpis": {
+                    "total": total_dividends,
+                    "last_12m": dividends_12m,
+                    "yoc": yoc
+                }
+            },
+            "timeline": timeline
+        }

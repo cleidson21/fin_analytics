@@ -38,6 +38,14 @@ export function DividendFlowChart({ data }: DividendFlowChartProps) {
             <stop offset="0%" stopColor="#f5a623" stopOpacity={0.85} />
             <stop offset="100%" stopColor="#f5a623" stopOpacity={0.35} />
           </linearGradient>
+          <linearGradient id="gradJcp" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#e97070" stopOpacity={0.85} />
+            <stop offset="100%" stopColor="#e97070" stopOpacity={0.35} />
+          </linearGradient>
+          <linearGradient id="gradRendimento" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4ecf98" stopOpacity={0.85} />
+            <stop offset="100%" stopColor="#4ecf98" stopOpacity={0.35} />
+          </linearGradient>
         </defs>
 
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
@@ -65,16 +73,29 @@ export function DividendFlowChart({ data }: DividendFlowChartProps) {
           content={(props) => (
             <WealthTooltip
               {...props}
-              nameMap={{ amount_received_value: "Dividendos", movingAvg: "Média 3M" }}
-              colorMap={{ amount_received_value: "#f5a623", movingAvg: "#7EB8F7" }}
+              nameMap={{ amount_dividend_value: "Dividendos", amount_jcp_value: "JCP", amount_rendimento_value: "Rendimentos", movingAvg: "Média 3M" }}
+              colorMap={{ amount_dividend_value: "#f5a623", amount_jcp_value: "#e97070", amount_rendimento_value: "#4ecf98", movingAvg: "#7EB8F7" }}
               valueFormatter={(v) => formatCurrency(v)}
             />
           )}
         />
 
         <Bar
-          dataKey="amount_received_value"
+          dataKey="amount_rendimento_value"
+          stackId="a"
+          fill="url(#gradRendimento)"
+          maxBarSize={40}
+        />
+        <Bar
+          dataKey="amount_dividend_value"
+          stackId="a"
           fill="url(#gradDividendos)"
+          maxBarSize={40}
+        />
+        <Bar
+          dataKey="amount_jcp_value"
+          stackId="a"
+          fill="url(#gradJcp)"
           radius={[4, 4, 0, 0]}
           maxBarSize={40}
         />

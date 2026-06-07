@@ -14,3 +14,4 @@ __pycache__/
 ./backups
 logs/
 fin_analytics.db
+_temp/

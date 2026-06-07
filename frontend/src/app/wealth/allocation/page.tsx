@@ -1,59 +1,51 @@
 "use client";
 
 import { useState } from "react";
-import { useAllocationData, PositionDetail } from "@/hooks/useAllocationData";
+import Link from "next/link";
+import { useAllocationData } from "@/hooks/useAllocationData";
 import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
 import { WealthSectionTitle } from "@/components/wealth/ui/WealthSectionTitle";
 import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
 import { WealthTable } from "@/components/wealth/ui/WealthTable";
 import { PieChart, ShieldAlert, LayoutGrid, Target } from "lucide-react";
-import { formatCurrency, cn } from "@/lib/utils";
-import { getCategoryColor, getSemanticColor } from "@/lib/colors";
+import { formatCurrency } from "@/lib/utils";
 import { AllocationTreemap } from "@/components/wealth/charts/AllocationTreemap";
 import { AllocationDonut } from "@/components/wealth/charts/AllocationDonut";
 import { DiversificationGauge } from "@/components/wealth/charts/DiversificationGauge";
 
 // ── Classify ticker into asset class ──────────────────────────────────────────
-type AssetClass = "Todos" | "Renda Fixa" | "FIIs" | "Ações BR" | "Exterior";
+type AssetClass = "Todos" | "Renda Fixa" | "Fundos Imobiliários (FIIs)" | "Ações Brasil" | "ETFs Globais" | "Criptomoedas" | "Outros";
 
-function classifyTicker(ticker: string): AssetClass {
-  if (ticker.includes("11")) return "FIIs";
-  if (["BTC", "ETH"].some((c) => ticker.includes(c))) return "Exterior"; // crypto → exterior
-  if (ticker.match(/^[A-Z]{4}[34]$/)) return "Ações BR";
-  if (ticker.startsWith("LFT") || ticker.startsWith("LTN") || ticker.startsWith("NTN") || ticker.includes("CDB") || ticker.includes("CDI") || ticker.includes("IPCA") || ticker.includes("Selic") || ticker.includes("Tesouro") || ticker.includes("RDB") || ticker.includes("LCI") || ticker.includes("LCA")) return "Renda Fixa";
-  return "Exterior";
-}
-
-function getTickerColor(ticker: string): string {
-  const cls = classifyTicker(ticker);
-  if (cls === "Renda Fixa") return "#4ecf98";
-  if (cls === "FIIs") return "#7F77DD";
-  if (cls === "Ações BR") return "#7EB8F7";
-  return "#f5a623";
+function getTickerColor(assetClass: string): string {
+  if (assetClass === "Renda Fixa") return "#4ecf98";
+  if (assetClass === "Fundos Imobiliários (FIIs)") return "#7F77DD";
+  if (assetClass === "Ações Brasil") return "#7EB8F7";
+  if (assetClass === "Criptomoedas") return "#e97070";
+  return "#f5a623"; // ETFs Globais / Outros
 }
 
 const FILTER_PILLS: { label: string; value: AssetClass }[] = [
   { label: "Todos", value: "Todos" },
   { label: "Renda Fixa", value: "Renda Fixa" },
-  { label: "FIIs", value: "FIIs" },
-  { label: "Ações BR", value: "Ações BR" },
-  { label: "Exterior", value: "Exterior" },
+  { label: "FIIs", value: "Fundos Imobiliários (FIIs)" },
+  { label: "Ações BR", value: "Ações Brasil" },
+  { label: "ETFs Globais", value: "ETFs Globais" },
+  { label: "Criptomoedas", value: "Criptomoedas" },
 ];
 
 export default function AllocationPage() {
   const [activeFilter, setActiveFilter] = useState<AssetClass>("Todos");
 
   const {
-    allocation, positions, top5, top5Concentration,
+    allocation, positions, top5Concentration,
     totalAssets, dominantClass, diversificationScore,
     isLoading, isError
   } = useAllocationData();
 
-  // ── Treemap Data ─────────────────────────────────────────────────────────────
   const treemapData = positions.map((p) => ({
     name: p.ticker,
     size: p.valor_atual_value,
-    fill: getTickerColor(p.ticker),
+    fill: getTickerColor(p.asset_class),
     peso: p.peso_percentual_value
   }));
 
@@ -61,7 +53,7 @@ export default function AllocationPage() {
   const donutData = allocation.map((a) => ({
     name: a.asset_class,
     value: a.current_total_value,
-    color: getSemanticColor(a.asset_class)
+    color: getTickerColor(a.asset_class)
   }));
 
   const totalValue = positions.reduce((acc, p) => acc + p.valor_atual_value, 0);
@@ -69,7 +61,7 @@ export default function AllocationPage() {
   // ── Filtered positions for table ─────────────────────────────────────────────
   const filteredPositions = activeFilter === "Todos"
     ? positions
-    : positions.filter((p) => classifyTicker(p.ticker) === activeFilter);
+    : positions.filter((p) => p.asset_class === activeFilter);
 
   // ── Top 5 of filtered ────────────────────────────────────────────────────────
   const filteredTop5 = [...filteredPositions]
@@ -78,15 +70,11 @@ export default function AllocationPage() {
 
   const filterLabel = activeFilter === "Todos" ? "Top 5 Posições (Risco)" : `Top 5 — ${activeFilter}`;
 
-  // ── Score color for gauge ─────────────────────────────────────────────────────
-  const scoreColor = diversificationScore >= 66 ? "positive" as const : diversificationScore >= 41 ? "neutral" as const : "negative" as const;
+
 
   return (
     <div className="space-y-6">
-      <WealthSectionTitle
-        title="Alocação & Risco"
-        subtitle="Análise de concentração de risco e exposição por classe."
-      />
+
 
       {/* KPI Cards — Score com Gauge embutido */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -194,7 +182,7 @@ export default function AllocationPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <WealthChartCard title="Alocação Macro (Donut)" isLoading={isLoading} isError={isError} className="lg:col-span-1 h-[350px]">
+        <WealthChartCard title="Alocação Macro" isLoading={isLoading} isError={isError} className="lg:col-span-1 h-[350px]">
           <div className="flex flex-col h-full">
             <div className="flex-1 min-h-0">
               <AllocationDonut data={donutData} />
@@ -213,22 +201,22 @@ export default function AllocationPage() {
           </div>
         </WealthChartCard>
 
-        <WealthChartCard title="Posições (Treemap)" isLoading={isLoading} isError={isError} className="lg:col-span-2 h-[350px]">
+        <WealthChartCard title="Posições por Ativo" isLoading={isLoading} isError={isError} className="lg:col-span-2 h-[350px]">
           <AllocationTreemap data={treemapData} />
         </WealthChartCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WealthChartCard title={filterLabel} isLoading={isLoading} isError={isError}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <WealthChartCard title={filterLabel} isLoading={isLoading} isError={isError} className="lg:col-span-1" tableMode>
           <div className="space-y-4 mt-2">
             {filteredTop5.map((p, i) => (
               <div key={i} className="flex flex-col gap-1">
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getTickerColor(p.ticker) }} />
-                    <span className="font-medium text-white">{p.ticker}</span>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getTickerColor(p.asset_class) }} />
+                    <Link href={`/wealth/asset/${p.ticker}`} className="font-medium text-[#4ecf98] hover:underline cursor-pointer">{p.ticker}</Link>
                     <span className="text-[10px] px-1.5 py-0.5 rounded text-neutral-500" style={{ background: "rgba(255,255,255,0.05)" }}>
-                      {classifyTicker(p.ticker)}
+                      {p.asset_class}
                     </span>
                   </div>
                   <span className="text-neutral-400">{formatCurrency(p.valor_atual_value)} ({p.peso_percentual})</span>
@@ -238,7 +226,7 @@ export default function AllocationPage() {
                     className="h-full rounded-full"
                     style={{
                       width: p.peso_percentual,
-                      backgroundColor: getTickerColor(p.ticker),
+                      backgroundColor: getTickerColor(p.asset_class),
                     }}
                   />
                 </div>
@@ -247,14 +235,37 @@ export default function AllocationPage() {
           </div>
         </WealthChartCard>
 
-        <WealthChartCard title="Lista Completa de Posições" isLoading={isLoading} isError={isError}>
+        <WealthChartCard title="Lista Completa de Posições" isLoading={isLoading} isError={isError} className="lg:col-span-2" tableMode>
           <WealthTable
             data={filteredPositions}
+            pageSize={10}
             columns={[
-              { header: "Ticker", accessorKey: "ticker", className: "text-white font-medium" },
+              { 
+                header: "Ticker", 
+                cell: (item: unknown) => {
+                  const typedItem = item as { ticker: string };
+                  return (
+                    <Link href={`/wealth/asset/${typedItem.ticker}`} className="text-[#4ecf98] hover:underline font-medium">
+                      {typedItem.ticker}
+                    </Link>
+                  );
+                }
+              },
               { header: "Qtd", accessorKey: "quantidade", align: "right" },
-              { header: "Valor Atual", cell: (item) => formatCurrency(item.valor_atual_value), align: "right" },
-              { header: "Resultado", cell: (item) => item.ganho, align: "right", className: (item: any) => item.ganho_value >= 0 ? "text-[#4ecf98]" : "text-[#e97070]" },
+              { header: "Preço Médio", cell: (item: unknown) => formatCurrency((item as any).preco_medio_value || 0), align: "right" },
+              { header: "Valor Investido", cell: (item: unknown) => formatCurrency((item as any).valor_investido_value || 0), align: "right" },
+              { header: "Valor Atual", cell: (item: unknown) => formatCurrency((item as any).valor_atual_value || 0), align: "right" },
+              { header: "Diferença (R$)", cell: (item: unknown) => (item as any).ganho, align: "right", className: (item: unknown) => ((item as any).ganho_value || 0) >= 0 ? "text-[#4ecf98]" : "text-[#e97070]" },
+              { header: "Diferença (%)", cell: (item: unknown) => {
+                 const typedItem = item as any;
+                 if (!typedItem.valor_investido_value || typedItem.valor_investido_value === 0) return "-";
+                 const diff = ((typedItem.ganho_value || 0) / typedItem.valor_investido_value) * 100;
+                 return (
+                   <span className={diff >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
+                     {diff >= 0 ? "+" : ""}{diff.toFixed(2)}%
+                   </span>
+                 );
+              }, align: "right" },
               { header: "Peso", accessorKey: "peso_percentual", align: "right" },
             ]}
           />

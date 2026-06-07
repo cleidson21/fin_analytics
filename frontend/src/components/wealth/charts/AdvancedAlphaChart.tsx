@@ -17,6 +17,9 @@ interface AdvancedAlphaChartProps {
   showIbov: boolean;
   showCdi: boolean;
   showIpca: boolean;
+  showIfix: boolean;
+  showSp500: boolean;
+  showIdiv: boolean;
 }
 
 const NAME_MAP: Record<string, string> = {
@@ -24,6 +27,9 @@ const NAME_MAP: Record<string, string> = {
   rebased_ibov: "IBOV",
   rebased_cdi: "CDI",
   rebased_ipca: "IPCA",
+  rebased_ifix: "IFIX",
+  rebased_sp500: "S&P 500",
+  rebased_idiv: "IDIV",
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -31,9 +37,12 @@ const COLOR_MAP: Record<string, string> = {
   rebased_ibov: "#7EB8F7",
   rebased_cdi: "#f5a623",
   rebased_ipca: "#e97070",
+  rebased_ifix: "#7F77DD",
+  rebased_sp500: "#f08a5d",
+  rebased_idiv: "#86e3ce",
 };
 
-export function AdvancedAlphaChart({ data, showCarteira, showIbov, showCdi, showIpca }: AdvancedAlphaChartProps) {
+export function AdvancedAlphaChart({ data, showCarteira, showIbov, showCdi, showIpca, showIfix, showSp500, showIdiv }: AdvancedAlphaChartProps) {
   if (!data || data.length === 0) return null;
 
   return (
@@ -133,6 +142,36 @@ export function AdvancedAlphaChart({ data, showCarteira, showIbov, showCdi, show
             strokeDasharray="2 4"
             dot={false}
             activeDot={{ r: 4, fill: "#e97070" }}
+          />
+        )}
+        {showIfix && (
+          <Line
+            type="monotone"
+            dataKey="rebased_ifix"
+            stroke="#7F77DD"
+            strokeWidth={1.5}
+            dot={false}
+            activeDot={{ r: 4, fill: "#7F77DD" }}
+          />
+        )}
+        {showSp500 && (
+          <Line
+            type="monotone"
+            dataKey="rebased_sp500"
+            stroke="#f08a5d"
+            strokeWidth={1.5}
+            dot={false}
+            activeDot={{ r: 4, fill: "#f08a5d" }}
+          />
+        )}
+        {showIdiv && (
+          <Line
+            type="monotone"
+            dataKey="rebased_idiv"
+            stroke="#86e3ce"
+            strokeWidth={1.5}
+            dot={false}
+            activeDot={{ r: 4, fill: "#86e3ce" }}
           />
         )}
       </ComposedChart>

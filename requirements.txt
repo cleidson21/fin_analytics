@@ -2,3 +2,6 @@ pandas
 streamlit
 fastapi
 uvicorn
+passlib[bcrypt]
+PyJWT
+python-multipart

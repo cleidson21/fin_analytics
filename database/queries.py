@@ -7,14 +7,61 @@ import sqlite3
 import pandas as pd
 
 
+import math
 def _cents_to_decimal(value) -> Decimal:
-    if value is None:
+    if value is None or (isinstance(value, float) and math.isnan(value)):
         return Decimal("0.00")
     return (Decimal(int(value)) / Decimal("100")).quantize(Decimal("0.01"))
 
 
+def classify_asset(ticker: str) -> str:
+    t = ticker.upper()
+
+    KNOWN_EXCEPTIONS = {
+        "BOVA11": "ETFs (Brasil)",
+        "SMAL11": "ETFs (Brasil)",
+        "HASH11": "Criptomoedas",
+        "IVVB11": "ETFs Globais",
+        "KLBN11": "Ações Brasil",
+        "TAEE11": "Ações Brasil",
+        "TIET11": "Ações Brasil",
+        "SANB11": "Ações Brasil",
+    }
+
+    if t in KNOWN_EXCEPTIONS:
+        return KNOWN_EXCEPTIONS[t]
+
+    if "RDB" in t or "TESOURO" in t or "CDB" in t:
+        return "Renda Fixa"
+    if t.endswith("11"):
+        return "Fundos Imobiliários (FIIs)"
+    if t.endswith("3") or t.endswith("4") or t.endswith("6"):
+        return "Ações Brasil"
+    if "BTC" in t or "ETH" in t:
+        return "Criptomoedas"
+    if t in ["IVV", "VXUS", "AGG"]:
+        return "ETFs Globais"
+    return "Outros"
+
+def normalize_tipo_evento(tipo: str) -> str:
+    if not tipo:
+        return "OUTROS"
+    
+    t = tipo.upper().strip()
+    if t in ["DIVIDENDO", "DIV", "DIVIDENDOS"]:
+        return "DIVIDENDO"
+    if t in ["JCP", "JUROS SOBRE CAPITAL PRÓPRIO", "JUROS SOBRE CAPITAL PROPRIO"]:
+        return "JCP"
+    if "RENDIMENTO" in t:
+        return "RENDIMENTO"
+    
+    return "OUTROS"
+
+
+from database.config import DATABASE_PATH
+
 class FinancialQueries:
-    def __init__(self, db_path: Path = Path("fin_analytics.db")):
+    def __init__(self, db_path: Path = DATABASE_PATH):
         self.db_path = db_path
 
     def _get_connection(self):
@@ -157,21 +204,71 @@ class FinancialQueries:
             return Decimal(str(result)) if result is not None else Decimal("0")
 
     def get_dividend_history(self) -> pd.DataFrame:
-        """Agrupa os dividendos recebidos por Mês/Ano com arredondamento direto no banco."""
-        query = """
-            SELECT strftime('%Y-%m', data_pagamento) as month, SUM(valor_liquido_cents) as amount_received_cents
+        """Agrupa os dividendos recebidos por Mês/Ano e os segrega por tipo de evento normalizado.
+        Enriquece os dados com o histórico consolidado (proventos_cents) da tabela portfolio_evolution 
+        caso os registros detalhados de dividendos estejam ausentes ou incompletos."""
+        query_div = """
+            SELECT strftime('%Y-%m', data_pagamento) as month, tipo_evento, valor_liquido_cents
             FROM dividends
-            GROUP BY month
-            ORDER BY month ASC
+        """
+        query_evo = """
+            SELECT strftime('%Y-%m', reference_month) as month, proventos_cents
+            FROM portfolio_evolution
+            WHERE proventos_cents > 0
         """
         with self._get_connection() as conn:
-            df = pd.read_sql(query, conn)
+            df_div = pd.read_sql(query_div, conn)
+            df_evo = pd.read_sql(query_evo, conn)
 
-        if "amount_received_cents" in df.columns:
-            df["amount_received"] = df["amount_received_cents"].apply(_cents_to_decimal)
-            df.drop(columns=["amount_received_cents"], inplace=True)
+        pivot = pd.DataFrame(columns=["month", "DIVIDENDO", "JCP", "RENDIMENTO"])
+        
+        if not df_div.empty:
+            df_div["tipo_norm"] = df_div["tipo_evento"].apply(normalize_tipo_evento)
+            grouped = df_div.groupby(["month", "tipo_norm"])["valor_liquido_cents"].sum().reset_index()
+            pivot = grouped.pivot(index="month", columns="tipo_norm", values="valor_liquido_cents").fillna(0).reset_index()
+            
+        for col in ["DIVIDENDO", "JCP", "RENDIMENTO"]:
+            if col not in pivot.columns:
+                pivot[col] = 0
 
-        return df
+        if not df_evo.empty:
+            df_evo = df_evo.groupby("month")["proventos_cents"].sum().reset_index()
+            if pivot.empty:
+                pivot = df_evo.copy()
+                pivot["DIVIDENDO"] = 0
+                pivot["JCP"] = 0
+                pivot["RENDIMENTO"] = 0
+                pivot["OUTROS"] = 0
+                pivot["proventos_cents_evo"] = pivot["proventos_cents"]
+            else:
+                pivot = pd.merge(pivot, df_evo, on="month", how="outer").fillna(0)
+                pivot.rename(columns={"proventos_cents": "proventos_cents_evo"}, inplace=True)
+        else:
+            pivot["proventos_cents_evo"] = 0
+
+        # Create final dataframe
+        result = pd.DataFrame()
+        result["month"] = pivot["month"]
+        
+        total_cents_div = pivot["DIVIDENDO"] + pivot["JCP"] + pivot["RENDIMENTO"]
+        if "OUTROS" in pivot.columns:
+            total_cents_div += pivot["OUTROS"]
+            
+        # Consider the max between detailed dividends and portfolio_evolution
+        total_cents = pivot[["proventos_cents_evo"]].assign(div=total_cents_div).max(axis=1)
+        diff = total_cents - total_cents_div
+        
+        # Add any difference (missing detail) to the generic 'DIVIDENDO' category so it shows in charts
+        result["amount_dividend"] = (pivot["DIVIDENDO"] + diff).apply(_cents_to_decimal)
+        result["amount_jcp"] = pivot["JCP"].apply(_cents_to_decimal)
+        result["amount_rendimento"] = pivot["RENDIMENTO"].apply(_cents_to_decimal)
+        
+        if "OUTROS" in pivot.columns:
+            result["amount_outros"] = pivot["OUTROS"].apply(_cents_to_decimal)
+            
+        result["amount_received"] = total_cents.apply(_cents_to_decimal)
+        
+        return result.sort_values(by="month").reset_index(drop=True)
 
     def get_portfolio_allocation(self) -> pd.DataFrame:
         """Agrupa o património atual por Asset Class com dicionário de exceções para ETFs/Units."""
@@ -185,35 +282,6 @@ class FinancialQueries:
 
         if df.empty:
             return df
-
-        def classify_asset(ticker: str) -> str:
-            t = ticker.upper()
-
-            KNOWN_EXCEPTIONS = {
-                "BOVA11": "ETFs (Brazil)",
-                "SMAL11": "ETFs (Brazil)",
-                "HASH11": "Cryptocurrency",
-                "IVVB11": "Global ETFs",
-                "KLBN11": "Brazilian Stocks",
-                "TAEE11": "Brazilian Stocks",
-                "TIET11": "Brazilian Stocks",
-                "SANB11": "Brazilian Stocks",
-            }
-
-            if t in KNOWN_EXCEPTIONS:
-                return KNOWN_EXCEPTIONS[t]
-
-            if "RDB" in t or "TESOURO" in t or "CDB" in t:
-                return "Fixed Income"
-            if t.endswith("11"):
-                return "Real Estate (FIIs)"
-            if t.endswith("3") or t.endswith("4") or t.endswith("6"):
-                return "Brazilian Stocks"
-            if "BTC" in t or "ETH" in t:
-                return "Cryptocurrency"
-            if t in ["IVV", "VXUS", "AGG"]:
-                return "Global ETFs"
-            return "Others"
 
         df["asset_class"] = df["ticker"].apply(classify_asset)
 
@@ -478,7 +546,13 @@ class FinancialQueries:
         with self._get_connection() as conn:
             df = pd.read_sql(query, conn)
             
-        if not df.empty and "valor_atual" in df.columns:
+        if df.empty:
+            return df
+            
+        df["asset_class"] = df["ticker"].apply(classify_asset)
+        df["asset_subclass"] = ""
+            
+        if "valor_atual" in df.columns:
             # Convert numeric columns explicitly
             df["valor_atual"] = pd.to_numeric(df["valor_atual"], errors='coerce').fillna(0)
             df["valor_investido"] = pd.to_numeric(df["valor_investido"], errors='coerce').fillna(0)
@@ -614,3 +688,378 @@ class FinancialQueries:
             "vendas_totais": _cents_to_decimal(row["vendas_totais_cents"]),
             "proventos_totais": _cents_to_decimal(row["proventos_totais_cents"])
         }
+
+    def get_import_runs(self, limit: int = 50, offset: int = 0) -> pd.DataFrame:
+        """Busca o histórico de importações recentes."""
+        query = """
+            SELECT 
+                id, source_type, file_name, checksum, started_at, finished_at, 
+                status, rows_read, rows_inserted, rows_updated, rows_failed, created_by
+            FROM import_runs
+            ORDER BY started_at DESC
+            LIMIT ? OFFSET ?
+        """
+        with self._get_connection() as conn:
+            return pd.read_sql(query, conn, params=[limit, offset])
+
+    def get_dashboard_metrics(self) -> dict:
+        """Busca KPIs globais para o Dashboard de Governança."""
+        query = """
+            SELECT
+                COUNT(id) as total_runs,
+                SUM(CASE WHEN status = 'CONFIRMED' THEN 1 ELSE 0 END) as confirmed_runs,
+                SUM(CASE WHEN status IN ('PENDING', 'AWAITING_CONFIRMATION', 'PROCESSING', 'PROCESSING_CONFIRMATION') THEN 1 ELSE 0 END) as pending_runs,
+                COALESCE(SUM(rows_inserted), 0) as lines_inserted,
+                COALESCE(SUM(rows_updated), 0) as lines_updated,
+                COALESCE(SUM(rows_failed), 0) as lines_failed,
+                MAX(started_at) as last_import
+            FROM import_runs
+            WHERE source_type != 'LEGACY'
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute(query).fetchone()
+            
+            if not row:
+                return {
+                    "total_runs": 0, "confirmed_runs": 0, "pending_runs": 0,
+                    "lines_inserted": 0, "lines_updated": 0, "lines_failed": 0,
+                    "last_import": None
+                }
+                
+            return {
+                "total_runs": row["total_runs"] or 0,
+                "confirmed_runs": row["confirmed_runs"] or 0,
+                "pending_runs": row["pending_runs"] or 0,
+                "lines_inserted": row["lines_inserted"] or 0,
+                "lines_updated": row["lines_updated"] or 0,
+                "lines_failed": row["lines_failed"] or 0,
+                "last_import": row["last_import"]
+            }
+
+    def get_import_run_by_id(self, run_id: str) -> dict | None:
+        """Busca os detalhes de uma importação específica, incluindo error_log e preview_summary."""
+        query = """
+            SELECT 
+                id, source_type, file_name, checksum, started_at, finished_at, 
+                status, rows_read, rows_inserted, rows_updated, rows_failed, created_by, error_log, preview_summary
+            FROM import_runs
+            WHERE id = ?
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute(query, (run_id,)).fetchone()
+            return dict(row)
+
+    def get_wealth_staging_items(self, run_id: str) -> dict:
+        import json
+        run = self.get_import_run_by_id(run_id)
+        if not run:
+            return {"file_type": "UNKNOWN", "items": []}
+            
+        file_type = "UNKNOWN"
+        if run.get("preview_summary"):
+            try:
+                summary = json.loads(run["preview_summary"])
+                file_type = summary.get("file_type", "UNKNOWN")
+            except:
+                pass
+                
+        items = []
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            if file_type == "POSICOES":
+                cursor.execute(
+                    "SELECT source_line_no, ticker, validation_status, validation_message FROM staging_positions WHERE import_run_id = ? ORDER BY source_line_no ASC",
+                    (run_id,)
+                )
+                items = [dict(r) for r in cursor.fetchall()]
+            elif file_type == "PROVENTOS":
+                cursor.execute(
+                    "SELECT source_line_no, ticker, validation_status, validation_message FROM staging_dividends WHERE import_run_id = ? ORDER BY source_line_no ASC",
+                    (run_id,)
+                )
+                items = [dict(r) for r in cursor.fetchall()]
+            elif file_type == "EVOLUCAO":
+                cursor.execute(
+                    "SELECT source_line_no, reference_month as ticker, validation_status, validation_message FROM staging_portfolio_evolution WHERE import_run_id = ? ORDER BY source_line_no ASC",
+                    (run_id,)
+                )
+                items = [dict(r) for r in cursor.fetchall()]
+                
+        return {"run_id": run_id, "file_type": file_type, "items": items}
+
+    def get_asset_position(self, ticker: str) -> dict | None:
+        """Busca o snapshot mais recente de um ativo específico."""
+        query = """
+            SELECT
+                ticker,
+                quantidade,
+                preco_medio,
+                total_investido as valor_investido,
+                preco_atual,
+                total_atual as valor_atual,
+                ganho
+            FROM positions
+            WHERE ticker = ? AND data_snapshot = (SELECT MAX(data_snapshot) FROM positions WHERE ticker = ?)
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute(query, (ticker, ticker)).fetchone()
+            
+            if not row:
+                return None
+                
+            pos = {
+                "ticker": row[0],
+                "quantidade": row[1],
+                "preco_medio": row[2],
+                "valor_investido": row[3],
+                "preco_atual": row[4],
+                "valor_atual": row[5],
+                "ganho": row[6] if row[6] != 0 else (row[5] - row[3])
+            }
+            pos["asset_class"] = classify_asset(pos["ticker"])
+            pos["asset_subclass"] = ""
+            return pos
+
+    def get_asset_dividends(self, ticker: str) -> list:
+        """Busca histórico completo de proventos de um ativo."""
+        query = """
+            SELECT data_pagamento, tipo_evento, valor_liquido
+            FROM dividends
+            WHERE ticker = ?
+            ORDER BY data_pagamento DESC
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute(query, (ticker,)).fetchall()
+            
+            return [
+                {
+                    "data": r[0],
+                    "tipo": r[1],
+                    "valor": r[2]
+                }
+                for r in rows
+            ]
+
+    def get_asset_timeline(self, ticker: str) -> list:
+        """
+        Gera uma timeline de eventos historicamente comprováveis.
+        Eventos:
+        - Primeiro registro na base (primeiro provento)
+        - Primeiro dividendo recebido
+        - Maior dividendo recebido
+        """
+        events = []
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Proventos
+            divs = cursor.execute("SELECT data_pagamento, valor_liquido FROM dividends WHERE ticker = ? ORDER BY data_pagamento ASC", (ticker,)).fetchall()
+            
+            if divs:
+                first_div = divs[0]
+                events.append({
+                    "date": first_div[0],
+                    "title": "Primeiro Provento Recebido",
+                    "description": f"Recebimento inaugural de R$ {first_div[1]:.2f}",
+                    "type": "MILESTONE"
+                })
+                
+                max_div = max(divs, key=lambda x: x[1])
+                # Evita duplicar se o maior também for o primeiro
+                if max_div[0] != first_div[0] or len(divs) > 1:
+                    events.append({
+                        "date": max_div[0],
+                        "title": "Maior Recebimento Histórico",
+                        "description": f"Provento recorde de R$ {max_div[1]:.2f}",
+                        "type": "RECORD"
+                    })
+                    
+            # Outros marcos poderiam vir de import_runs ou snapshots antigos se tivéssemos.
+            # Por hora limitamos ao comprovável em dividends, respeitando a regra estrita do usuário.
+
+        events.sort(key=lambda x: x["date"], reverse=True)
+        return events
+    def get_database_summary(self) -> dict:
+        summary = {}
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            summary['total_transactions'] = cursor.execute("SELECT COUNT(*) FROM transactions").fetchone()[0]
+            summary['total_positions'] = cursor.execute("SELECT COUNT(*) FROM positions").fetchone()[0]
+            summary['total_dividends'] = cursor.execute("SELECT COUNT(*) FROM dividends").fetchone()[0]
+            summary['total_evolutions'] = cursor.execute("SELECT COUNT(*) FROM portfolio_evolution").fetchone()[0]
+            summary['total_import_runs'] = cursor.execute("SELECT COUNT(*) FROM import_runs").fetchone()[0]
+            summary['runs_confirmed'] = cursor.execute("SELECT COUNT(*) FROM import_runs WHERE status = 'CONFIRMED'").fetchone()[0]
+            summary['runs_pending'] = cursor.execute("SELECT COUNT(*) FROM import_runs WHERE status IN ('PENDING', 'AWAITING_CONFIRMATION')").fetchone()[0]
+        return summary
+
+    def get_database_tables(self) -> list:
+        tables = ['transactions', 'positions', 'dividends', 'portfolio_evolution', 'import_runs', 'staging_imports', 'staging_positions', 'staging_dividends', 'staging_portfolio_evolution']
+        results = []
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            for t in tables:
+                try:
+                    count = cursor.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+                    results.append({'table_name': t, 'row_count': count, 'status': 'OK' if count < 1000000 else 'WARNING'})
+                except:
+                    results.append({'table_name': t, 'row_count': 0, 'status': 'ERROR'})
+        return results
+
+    def get_database_integrity(self) -> dict:
+        integrity = {'orphan_runs': 0, 'pending_staging': 0, 'duplicate_transactions_suspects': 0}
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            # Orphan runs (runs in transactions that don't exist in import_runs)
+            integrity['orphan_runs'] = cursor.execute("SELECT COUNT(DISTINCT import_run_id) FROM transactions WHERE import_run_id IS NOT NULL AND import_run_id NOT IN (SELECT id FROM import_runs)").fetchone()[0]
+            # Pending staging
+            integrity['pending_staging'] = cursor.execute("SELECT COUNT(*) FROM staging_imports WHERE status = 'PENDING'").fetchone()[0]
+            # Duplicate suspects (same value, date, description, macro)
+            integrity['duplicate_transactions_suspects'] = cursor.execute("SELECT COUNT(*) FROM (SELECT data, descricao_original, valor_cents, COUNT(*) as c FROM transactions GROUP BY data, descricao_original, valor_cents HAVING c > 1)").fetchone()[0]
+        return integrity
+
+    def get_audit_runs(self, status_filter: str = 'ALL') -> list:
+        query = "SELECT id, file_name, source_type, started_at, status, created_by, rows_read, rows_inserted, rows_updated, rows_failed FROM import_runs"
+        params = []
+        if status_filter != 'ALL':
+            if status_filter == 'CONFIRMED': query += " WHERE status = 'CONFIRMED'"
+            elif status_filter == 'PENDING': query += " WHERE status IN ('PENDING', 'AWAITING_CONFIRMATION', 'PROCESSING_CONFIRMATION')"
+            elif status_filter == 'ROLLBACK': query += " WHERE status = 'CANCELLED'"
+            elif status_filter == 'ERROR': query += " WHERE status = 'FAILED'"
+        query += " ORDER BY started_at DESC"
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            return [dict(row) for row in cursor.execute(query, params).fetchall()]
+
+    def get_audit_rollbacks(self) -> list:
+        query = "SELECT id, file_name, rollback_timestamp, rollback_user, rollback_reason, started_at FROM import_runs WHERE status = 'CANCELLED' ORDER BY rollback_timestamp DESC"
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            return [dict(row) for row in cursor.execute(query).fetchall()]
+
+    def get_audit_logs(self, entity_type: str = None, action: str = None, changed_by: str = None, start_date: str = None, end_date: str = None, limit: int = 100, offset: int = 0) -> list:
+        query = "SELECT id, entity_type, entity_id, action, field_changes, changed_by, created_at FROM audit_log WHERE 1=1"
+        params = []
+        if entity_type:
+            query += " AND entity_type = ?"
+            params.append(entity_type)
+        if action:
+            query += " AND action = ?"
+            params.append(action)
+        if changed_by:
+            query += " AND changed_by = ?"
+            params.append(changed_by)
+        if start_date:
+            query += " AND created_at >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND created_at <= ?"
+            params.append(end_date)
+        
+        query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            return [dict(row) for row in cursor.execute(query, params).fetchall()]
+
+    def get_audit_log_by_id(self, log_id: str) -> dict:
+        query = "SELECT id, entity_type, entity_id, action, field_changes, changed_by, created_at FROM audit_log WHERE id = ?"
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            row = cursor.execute(query, (log_id,)).fetchone()
+            if row:
+                return dict(row)
+            return None
+
+    def get_admin_positions(self, limit: int = 50, offset: int = 0, ticker: str = None, snapshot_date: str = None, classe_ativo: str = None) -> tuple[list, int]:
+        where_clauses = ["1=1"]
+        params = []
+        if ticker:
+            where_clauses.append("ticker LIKE ?")
+            params.append(f"%{ticker}%")
+        if snapshot_date:
+            where_clauses.append("data_snapshot = ?")
+            params.append(snapshot_date)
+        if classe_ativo:
+            where_clauses.append("classe_ativo = ?")
+            params.append(classe_ativo)
+            
+        where_str = " AND ".join(where_clauses)
+        
+        count_query = f"SELECT COUNT(*) FROM positions WHERE {where_str}"
+        query = f"SELECT ticker, data_snapshot, quantidade, preco_medio, total_atual as valor_total, classe_ativo, observacao FROM positions WHERE {where_str} ORDER BY data_snapshot DESC, ticker ASC LIMIT ? OFFSET ?"
+        
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            total = cursor.execute(count_query, params).fetchone()[0]
+            
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            items = []
+            for row in cursor.execute(query, params + [limit, offset]).fetchall():
+                d = dict(row)
+                d["snapshot_date"] = d.pop("data_snapshot")
+                d["preco_medio"] = _cents_to_decimal(d.get("preco_medio"))
+                d["valor_total"] = _cents_to_decimal(d.get("valor_total"))
+                items.append(d)
+                
+            return items, total
+
+    def get_admin_dividends(self, limit: int = 50, offset: int = 0, ticker: str = None, start_date: str = None, end_date: str = None, tipo_evento: str = None) -> tuple[list, int]:
+        where_clauses = ["1=1"]
+        params = []
+        if ticker:
+            where_clauses.append("ticker LIKE ?")
+            params.append(f"%{ticker}%")
+        if start_date:
+            where_clauses.append("data_pagamento >= ?")
+            params.append(start_date)
+        if end_date:
+            where_clauses.append("data_pagamento <= ?")
+            params.append(end_date)
+        if tipo_evento:
+            where_clauses.append("tipo_evento = ?")
+            params.append(tipo_evento)
+            
+        where_str = " AND ".join(where_clauses)
+        
+        count_query = f"SELECT COUNT(*) FROM dividends WHERE {where_str}"
+        query = f"SELECT id_economico, ticker, tipo_evento, valor_liquido_cents as valor, data_pagamento, observacao FROM dividends WHERE {where_str} ORDER BY data_pagamento DESC LIMIT ? OFFSET ?"
+        
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            total = cursor.execute(count_query, params).fetchone()[0]
+            
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            items = []
+            for row in cursor.execute(query, params + [limit, offset]).fetchall():
+                d = dict(row)
+                d["valor"] = _cents_to_decimal(d.get("valor"))
+                items.append(d)
+                
+            return items, total
+
+    def get_admin_categories(self, limit: int = 50, offset: int = 0) -> tuple[list, int]:
+        count_query = "SELECT COUNT(DISTINCT macro_categoria) FROM transactions WHERE macro_categoria IS NOT NULL AND macro_categoria != ''"
+        query = "SELECT macro_categoria as categoria, COUNT(*) as quantidade_transacoes FROM transactions WHERE macro_categoria IS NOT NULL AND macro_categoria != '' GROUP BY macro_categoria ORDER BY quantidade_transacoes DESC LIMIT ? OFFSET ?"
+        
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            total = cursor.execute(count_query).fetchone()[0]
+            
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            items = [dict(row) for row in cursor.execute(query, [limit, offset]).fetchall()]
+                
+            return items, total

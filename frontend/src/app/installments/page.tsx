@@ -74,12 +74,12 @@ export default function InstallmentsPage() {
   const allItems = useMemo(() => summary?.items ?? [], [summary]);
 
   const activeItems = useMemo(
-    () => allItems.filter((item) => item.current_installment < item.total_installments),
+    () => allItems.filter((item) => item.is_active),
     [allItems]
   );
 
   const finishedItems = useMemo(
-    () => allItems.filter((item) => item.current_installment >= item.total_installments),
+    () => allItems.filter((item) => !item.is_active),
     [allItems]
   );
 

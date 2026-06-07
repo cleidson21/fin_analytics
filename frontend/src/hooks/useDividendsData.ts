@@ -6,10 +6,23 @@ export interface DividendHistory {
   month: string; // e.g. "2023-01"
   amount_received: string;
   amount_received_value: number;
+  amount_dividend_value?: number;
+  amount_jcp_value?: number;
+  amount_rendimento_value?: number;
+}
+
+export interface DividendBreakdown {
+  ticker: string;
+  total_recebido: string;
+  total_recebido_value: number;
+  quantidade_eventos: number;
+  primeiro_recebimento: string;
+  ultimo_recebimento: string;
 }
 
 export function useDividendsData() {
   const [history, setHistory] = useState<DividendHistory[]>([]);
+  const [breakdown, setBreakdown] = useState<DividendBreakdown[]>([]);
   const [summary, setSummary] = useState<PortfolioEvolutionSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -20,15 +33,17 @@ export function useDividendsData() {
       setIsLoading(true);
       setIsError(false);
       try {
-        const [histRes, sumRes] = await Promise.all([
+        const [histRes, sumRes, breakRes] = await Promise.all([
           fetchFromAPI<DividendHistory[]>("/investments/dividends/history"),
-          fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary")
+          fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary"),
+          fetchFromAPI<DividendBreakdown[]>("/investments/dividends/breakdown")
         ]);
 
         if (!mounted) return;
         if (histRes) {
           setHistory(histRes);
           setSummary(sumRes || null);
+          setBreakdown(breakRes || []);
         } else {
           setIsError(true);
         }
@@ -89,6 +104,7 @@ export function useDividendsData() {
 
   return {
     history,
+    breakdown,
     yoyArray,
     availableYears: Array.from(availableYears).sort(),
     totalDividends,

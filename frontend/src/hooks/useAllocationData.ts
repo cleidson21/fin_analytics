@@ -9,6 +9,8 @@ export interface AssetAllocation {
 
 export interface PositionDetail {
   ticker: string;
+  asset_class: string;
+  asset_subclass: string;
   quantidade: string;
   preco_medio: string;
   valor_investido: string;

@@ -361,30 +361,80 @@ class AnalyticsService:
         for sequences in grouped.values():
             normalized_items.extend(sequences)
 
-        items = [InstallmentItem(**{k: v for k, v in item.items() if k not in {"date_obj", "bucket"}}) for item in normalized_items]
-        items.sort(key=lambda item: (item.remaining, item.total_installments, item.current_installment), reverse=True)
-
-        active_items = [item for item in items if item.current_installment < item.total_installments]
-        finished_items = [item for item in items if item.current_installment >= item.total_installments]
-
-        global_estimated = sum(item.total_estimated for item in active_items)
-        global_paid = sum(item.already_paid for item in active_items)
-        global_remaining = sum(item.remaining for item in active_items)
-
-        last_installment_dates: list[date] = []
+        # ── Mês de contexto ────────────────────────────────────────────
+        # Usamos a maior data de transação importada no banco como referência
+        # de "mês corrente". Isso evita dependência do relógio do servidor e
+        # garante consistência com os dados reais.
+        context_date: date | None = None
         for item in normalized_items:
-            current_installment = int(item["current_installment"])
-            total_installments = int(item["total_installments"])
-            if current_installment >= total_installments:
-                continue
+            d = item["date_obj"]
+            if context_date is None or d > context_date:
+                context_date = d
 
-            remaining_count = total_installments - current_installment
-            final_date = self._add_months(item["date_obj"], remaining_count)
-            last_installment_dates.append(final_date)
+        # Fallback para a data real do sistema se não houver transações
+        if context_date is None:
+            context_date = date.today()
 
-        last_installment_date = None
-        if last_installment_dates:
-            last_installment_date = self._format_month_year_pt(max(last_installment_dates))
+        # Tupla (ano, mês) do mês de contexto para comparação
+        context_ym = (context_date.year, context_date.month)
+
+        # ── Calcular projected_end_date por item ────────────────────────
+        # Para cada grupo, projetamos a data final: last_date + meses_restantes.
+        # Se current == total, meses_restantes == 0, data projetada == last_date.
+        for item in normalized_items:
+            last_x: int = int(item["current_installment"])
+            total_y: int = int(item["total_installments"])
+            last_date_val: date = item["date_obj"]
+            meses_restantes = total_y - last_x
+            if meses_restantes > 0:
+                projected = self._add_months(last_date_val, meses_restantes)
+            else:
+                projected = last_date_val  # última parcela — mês de referência é o próprio
+            item["projected_end_date"] = self._format_month_year_pt(projected)
+            item["projected_end_date_obj"] = projected
+
+        # ── Lógica de status com "sobrevivência no mês" ─────────────────
+        # Uma parcela X/X paga NESTE mês permanece ATIVA até o fim do mês.
+        # Só migra para 'finalizadas' quando o mês de contexto for estritamente
+        # posterior ao mês da última transação registada.
+        def _is_active(norm: dict[str, object]) -> bool:
+            last_x = int(norm["current_installment"])
+            total_y = int(norm["total_installments"])
+            if last_x < total_y:
+                return True  # ainda tem parcelas futuras → definitivamente ativo
+            # last_x == total_y: verifica se ainda estamos no mesmo mês
+            last_date_obj: date = norm["date_obj"]
+            item_ym = (last_date_obj.year, last_date_obj.month)
+            return item_ym >= context_ym  # mesmo mês ou posterior → ativo
+
+        # Construir InstallmentItems com o novo campo projected_end_date
+        exclude_keys = {"date_obj", "bucket", "projected_end_date_obj"}
+
+        def _to_item(norm: dict[str, object]) -> InstallmentItem:
+            fields = {k: v for k, v in norm.items() if k not in exclude_keys}
+            fields["is_active"] = _is_active(norm)
+            return InstallmentItem(**fields)
+
+        all_items = [_to_item(n) for n in normalized_items]
+        all_items.sort(key=lambda i: (i.remaining, i.total_installments, i.current_installment), reverse=True)
+
+        active_items = [i for i in all_items if i.is_active]
+        finished_items = [i for i in all_items if not i.is_active]
+
+        global_estimated = sum(i.total_estimated for i in active_items)
+        global_paid = sum(i.already_paid for i in active_items)
+        global_remaining = sum(i.remaining for i in active_items)
+
+        # ── last_installment_date global = máximo das projected_end_date dos ativos ──
+        active_projections: list[date] = [
+            norm["projected_end_date_obj"]
+            for norm in normalized_items
+            if _is_active(norm)
+        ]
+
+        last_installment_date: str | None = None
+        if active_projections:
+            last_installment_date = self._format_month_year_pt(max(active_projections))
 
         return InstallmentsSummary(
             month=month or "",
@@ -394,7 +444,7 @@ class AnalyticsService:
             global_paid=global_paid,
             global_remaining=global_remaining,
             last_installment_date=last_installment_date,
-            items=items,
+            items=all_items,
         )
 
     def get_pacing_v2(self, month: str) -> PacingV2:

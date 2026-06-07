@@ -41,7 +41,7 @@ const CustomizedContent = (props: any) => {
             x={x + width / 2}
             y={y + height / 2 - (peso && height > 45 ? 6 : 0)}
             textAnchor="middle"
-            fill="#ffffff"
+            fill="#000000"
             fontSize={Math.min(13, height / 3)} 
             fontWeight={600}
             className="pointer-events-none select-none"
@@ -53,8 +53,8 @@ const CustomizedContent = (props: any) => {
               x={x + width / 2}
               y={y + height / 2 + 10}
               textAnchor="middle"
-              fill="rgba(255,255,255,0.85)"
-              fontSize={10} // Fixo e pequeno
+              fill="rgba(0,0,0,0.65)"
+              fontSize={10}
               className="pointer-events-none select-none"
             >
               {peso.toFixed(1)}%

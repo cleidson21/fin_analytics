@@ -10,6 +10,9 @@ interface WealthChartCardProps {
   onRetry?: () => void;
   className?: string;
   action?: ReactNode;
+  /** Modo tabela: desativa altura mínima e posicionamento absoluto do conteúdo,
+   *  permitindo que o card cresça com o conteúdo em vez de ter altura fixa. */
+  tableMode?: boolean;
 }
 
 export function WealthChartCard({
@@ -20,6 +23,7 @@ export function WealthChartCard({
   onRetry,
   className,
   action,
+  tableMode = false,
 }: WealthChartCardProps) {
   return (
     <div
@@ -41,34 +45,61 @@ export function WealthChartCard({
       </div>
 
       {/* Content */}
-      <div className="flex-1 relative min-h-[200px]">
-        {isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-full h-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
-          </div>
-        ) : isError ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ color: "#6b7280" }}>
-            <AlertCircle size={28} style={{ opacity: 0.5 }} />
-            <p className="text-sm">Dados indisponíveis no momento.</p>
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                style={{ background: "rgba(255,255,255,0.05)", color: "#9ca3af" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-              >
-                <RefreshCw size={12} />
-                Tentar novamente
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="absolute inset-0 animate-in fade-in duration-300">
-            {children}
-          </div>
-        )}
-      </div>
+      {tableMode ? (
+        // Modo tabela: sem altura mínima fixa, o card cresce com o conteúdo
+        <div className="w-full">
+          {isLoading ? (
+            <div className="h-32 w-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-10" style={{ color: "#6b7280" }}>
+              <AlertCircle size={28} style={{ opacity: 0.5 }} />
+              <p className="text-sm">Dados indisponíveis no momento.</p>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ background: "rgba(255,255,255,0.05)", color: "#9ca3af" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+                >
+                  <RefreshCw size={12} />
+                  Tentar novamente
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-300">{children}</div>
+          )}
+        </div>
+      ) : (
+        // Modo gráfico: conteúdo posicionado de forma absoluta para Recharts funcionar
+        <div className="flex-1 relative min-h-[200px]">
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-full h-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+            </div>
+          ) : isError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ color: "#6b7280" }}>
+              <AlertCircle size={28} style={{ opacity: 0.5 }} />
+              <p className="text-sm">Dados indisponíveis no momento.</p>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ background: "rgba(255,255,255,0.05)", color: "#9ca3af" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+                >
+                  <RefreshCw size={12} />
+                  Tentar novamente
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="absolute inset-0 animate-in fade-in duration-300">{children}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

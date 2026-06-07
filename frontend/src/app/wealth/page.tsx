@@ -33,12 +33,7 @@ export default function WealthHome() {
   
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <WealthSectionTitle 
-          title="Executive Overview" 
-          subtitle="Visão consolidada de patrimônio, renda e performance." 
-          className="mb-0"
-        />
+      <div className="flex justify-end mb-4">
         <WealthPeriodToggle active={period} onChange={setPeriod} />
       </div>
 
@@ -97,23 +92,23 @@ export default function WealthHome() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <WealthChartCard title="Acesso Rápido" className="min-h-[200px]">
+        <WealthChartCard title="Acesso Rápido" tableMode>
            <div className="flex flex-col gap-2">
              {[
-               { href: "/wealth/patrimonio", icon: Wallet, label: "Patrimônio: Detalhes & Marcos", badge: "GROWTH", iconBg: "rgba(78,207,152,0.12)", iconColor: "#4ecf98", badgeColor: "#4ecf98", badgeBg: "rgba(78,207,152,0.1)" },
-               { href: "/wealth/allocation", icon: PieChart, label: "Alocação: Concentração de Risco", badge: "RISK", iconBg: "rgba(233,112,112,0.12)", iconColor: "#e97070", badgeColor: "#e97070", badgeBg: "rgba(233,112,112,0.1)" },
-               { href: "/wealth/dividends", icon: Coins, label: "Dividendos: Fluxo Anual", badge: "INCOME", iconBg: "rgba(245,166,35,0.12)", iconColor: "#f5a623", badgeColor: "#f5a623", badgeBg: "rgba(245,166,35,0.1)" },
-               { href: "/wealth/evolution", icon: TrendingUp, label: "Evolução: Benchmarks & Alpha", badge: "RESEARCH", iconBg: "rgba(127,119,221,0.12)", iconColor: "#7F77DD", badgeColor: "#7F77DD", badgeBg: "rgba(127,119,221,0.1)" },
+               { href: "/wealth/patrimonio", icon: Wallet, label: "Patrimônio: Detalhes & Marcos", badge: "CRESCIMENTO", iconBg: "rgba(78,207,152,0.12)", iconColor: "#4ecf98", badgeColor: "#4ecf98", badgeBg: "rgba(78,207,152,0.1)" },
+               { href: "/wealth/allocation", icon: PieChart, label: "Alocação: Concentração de Risco", badge: "RISCO", iconBg: "rgba(233,112,112,0.12)", iconColor: "#e97070", badgeColor: "#e97070", badgeBg: "rgba(233,112,112,0.1)" },
+               { href: "/wealth/dividends", icon: Coins, label: "Dividendos: Fluxo Anual", badge: "PROVENTOS", iconBg: "rgba(245,166,35,0.12)", iconColor: "#f5a623", badgeColor: "#f5a623", badgeBg: "rgba(245,166,35,0.1)" },
+               { href: "/wealth/evolution", icon: TrendingUp, label: "Evolução: Benchmarks & Alpha", badge: "ANÁLISE", iconBg: "rgba(127,119,221,0.12)", iconColor: "#7F77DD", badgeColor: "#7F77DD", badgeBg: "rgba(127,119,221,0.1)" },
              ].map((item) => (
                <Link
                  key={item.href}
                  href={item.href}
-                 className="flex items-center justify-between p-3 rounded-xl transition-colors"
+                 className="flex items-center justify-between gap-3 p-3 rounded-xl transition-colors"
                  style={{ background: "rgba(255,255,255,0.02)" }}
                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
                >
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-3 min-w-0">
                    {/* Icon-box colorido */}
                    <div
                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -121,11 +116,11 @@ export default function WealthHome() {
                    >
                      <item.icon size={15} style={{ color: item.iconColor }} />
                    </div>
-                   <span className="text-sm font-medium text-neutral-300">{item.label}</span>
+                   <span className="text-sm font-medium text-neutral-300 break-words">{item.label}</span>
                  </div>
                  {/* Badge colorido por categoria */}
                  <span
-                   className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0"
+                   className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0 ml-2"
                    style={{ color: item.badgeColor, background: item.badgeBg }}
                  >
                    {item.badge}
@@ -151,7 +146,7 @@ export default function WealthHome() {
                 </p>
               </div>
               <div className="w-12 h-12 flex-shrink-0 relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   <RechartsPie>
                     <Pie
                       data={[

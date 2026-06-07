@@ -49,6 +49,8 @@ class InstallmentItem(BaseModel):
     total_estimated: float
     already_paid: float
     remaining: float
+    projected_end_date: str | None = None  # data projetada de término (ex: 'Novembro 2026')
+    is_active: bool = True  # False quando current==total E mês de contexto já passou
 
 
 class InstallmentsSummary(BaseModel):

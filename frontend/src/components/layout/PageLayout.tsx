@@ -6,11 +6,13 @@ export function PageLayout({
   title,
   subtitle,
   hideTitle,
+  breadcrumb,
   children,
 }: {
   title: string;
   subtitle?: string;
   hideTitle?: boolean;
+  breadcrumb?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -20,6 +22,7 @@ export function PageLayout({
       <section className={`mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-6 sm:px-10 lg:px-12 ${hideTitle ? "pt-6 pb-10" : "py-10"}`}>
         {!hideTitle && (
           <header className="space-y-2">
+            {breadcrumb && <div className="mb-4">{breadcrumb}</div>}
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
             {subtitle ? <p className="text-sm text-zinc-400">{subtitle}</p> : null}
           </header>

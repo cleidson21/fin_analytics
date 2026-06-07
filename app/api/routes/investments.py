@@ -58,3 +58,8 @@ def get_portfolio_evolution_history():
 def get_portfolio_evolution_summary():
     """Retorna os KPIs consolidados da evolução da carteira."""
     return wealth_service.get_portfolio_evolution_summary()
+
+@router.get("/asset/{ticker}")
+def get_asset_details(ticker: str):
+    """Retorna todas as informações consolidadas de um ativo (Asset Detail)."""
+    return wealth_service.get_asset_details(ticker)

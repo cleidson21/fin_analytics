@@ -182,9 +182,10 @@ export default function PatrimonioPage() {
       </div>
 
       {/* Tabela */}
-      <WealthChartCard title="Histórico de Crescimento Mensal" isLoading={isLoading} isError={isError}>
+      <WealthChartCard title="Histórico de Crescimento Mensal" isLoading={isLoading} isError={isError} tableMode>
         <WealthTable
           data={tableData}
+          pageSize={12}
           columns={[
             { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
             { header: "Patrimônio", cell: (item) => formatCurrency(item.patrimonio_value), align: "right" },

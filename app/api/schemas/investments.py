@@ -6,6 +6,12 @@ class DividendHistory(BaseModel):
     month: str
     amount_received: str
     amount_received_value: Optional[float] = None
+    amount_dividend: Optional[str] = None
+    amount_dividend_value: Optional[float] = None
+    amount_jcp: Optional[str] = None
+    amount_jcp_value: Optional[float] = None
+    amount_rendimento: Optional[str] = None
+    amount_rendimento_value: Optional[float] = None
 
 
 class AssetAllocation(BaseModel):
@@ -22,6 +28,8 @@ class NetWorthEvolution(BaseModel):
 
 class PositionDetail(BaseModel):
     ticker: str
+    asset_class: str
+    asset_subclass: str
     quantidade: str
     preco_medio: str
     valor_investido: str

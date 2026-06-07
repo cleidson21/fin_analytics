@@ -25,8 +25,9 @@ def _decimal_to_cents(value) -> int:
     return int(cents)
 
 
+import math
 def _cents_to_decimal(value) -> Decimal:
-    if value is None:
+    if value is None or (isinstance(value, float) and math.isnan(value)):
         return Decimal("0.00")
     return (Decimal(int(value)) / Decimal("100")).quantize(Decimal("0.01"))
 
@@ -35,8 +36,10 @@ def _source_value(source) -> str:
     return getattr(source, "value", source)
 
 
+from database.config import DATABASE_PATH
+
 class DatabaseManager:
-    def __init__(self, db_path: Path = Path("fin_analytics.db")):
+    def __init__(self, db_path: Path = DATABASE_PATH):
         self.db_path = db_path
         self._init_db()
 
@@ -89,6 +92,14 @@ class DatabaseManager:
             "dividends",
             (("valor_liquido_cents", "INTEGER"),),
         )
+        ensure_columns(
+            "import_runs",
+            (
+                ("rollback_timestamp", "TIMESTAMP"),
+                ("rollback_reason", "TEXT"),
+                ("rollback_user", "TEXT"),
+            ),
+        )
 
         conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_staging_imports_run_line ON staging_imports(import_run_id, source_line_no)"
@@ -120,27 +131,78 @@ class DatabaseManager:
             )
             conn.commit()
 
-    def create_import_run(self, raw_text: str, checksum: str) -> str:
+    def create_import_run(
+        self,
+        source_type: str,
+        file_name: str,
+        checksum: str,
+        status: str = "PENDING",
+        created_by: str | None = None
+    ) -> str:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            existing = cursor.execute(
-                "SELECT id FROM import_runs WHERE payload_checksum = ? ORDER BY created_at DESC LIMIT 1",
-                (checksum,),
-            ).fetchone()
-
-            if existing is not None:
-                return str(existing["id"])
 
             run_id = uuid.uuid4().hex
             cursor.execute(
                 """
-                INSERT INTO import_runs (id, raw_payload, payload_checksum)
-                VALUES (?, ?, ?)
+                INSERT INTO import_runs (id, source_type, file_name, checksum, status, created_by)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (run_id, raw_text, checksum),
+                (run_id, source_type, file_name, checksum, status, created_by),
             )
             conn.commit()
             return run_id
+
+    def create_import_artifact(
+        self,
+        import_run_id: str,
+        artifact_type: str,
+        storage_path: str,
+        sha256: str,
+        size_bytes: int,
+        mime_type: str | None = None
+    ) -> str:
+        artifact_id = uuid.uuid4().hex
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO import_artifacts (id, import_run_id, artifact_type, storage_path, sha256, size_bytes, mime_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (artifact_id, import_run_id, artifact_type, storage_path, sha256, size_bytes, mime_type),
+            )
+            conn.commit()
+        return artifact_id
+
+    def update_import_run_status(self, run_id: str, status: str):
+        with self._get_connection() as conn:
+            conn.execute(
+                "UPDATE import_runs SET status = ? WHERE id = ?",
+                (status, run_id),
+            )
+            conn.commit()
+
+    def update_import_run_metrics(
+        self,
+        run_id: str,
+        status: str,
+        rows_read: int,
+        rows_inserted: int,
+        rows_failed: int,
+        error_log: str | None = None,
+        preview_summary: str | None = None
+    ):
+        with self._get_connection() as conn:
+            conn.execute(
+                """
+                UPDATE import_runs 
+                SET status = ?, finished_at = CURRENT_TIMESTAMP, rows_read = ?, rows_inserted = ?, rows_failed = ?, error_log = ?, preview_summary = ?
+                WHERE id = ?
+                """,
+                (status, rows_read, rows_inserted, rows_failed, error_log, preview_summary, run_id),
+            )
+            conn.commit()
 
     def insert_staging_items(self, run_id: str, items: list) -> list[dict]:
         if not items:
@@ -383,6 +445,398 @@ class DatabaseManager:
 
         return processed_preview
 
+    def insert_wealth_staging_items(self, run_id: str, file_type: str, items: list[dict]):
+        if not items:
+            return
+            
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            if file_type == "POSICOES":
+                cursor.executemany(
+                    """
+                    INSERT INTO staging_positions (
+                        import_run_id, source_line_no, validation_status, validation_message,
+                        ticker, data_snapshot, source, quantidade, preco_medio, total_investido,
+                        preco_atual, total_atual, ganho
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            run_id, item.get("source_line_no"), item.get("validation_status", "PENDING"), item.get("validation_message"),
+                            item.get("ticker"), item.get("data_snapshot"), item.get("source", "MYPROFIT"),
+                            item.get("quantidade"), item.get("preco_medio"), item.get("total_investido"),
+                            item.get("preco_atual"), item.get("total_atual"), item.get("ganho")
+                        )
+                        for item in items
+                    ]
+                )
+            elif file_type == "PROVENTOS":
+                cursor.executemany(
+                    """
+                    INSERT INTO staging_dividends (
+                        import_run_id, source_line_no, validation_status, validation_message,
+                        id_economico, source, ticker, tipo_evento, data_pagamento, valor_liquido, valor_liquido_cents
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            run_id, item.get("source_line_no"), item.get("validation_status", "PENDING"), item.get("validation_message"),
+                            item.get("id_economico", f"MP-{item.get('ticker')}-{item.get('data_pagamento')}"), item.get("source", "MYPROFIT"), item.get("ticker"), item.get("tipo_evento"),
+                            item.get("data_pagamento"), item.get("valor_liquido"), item.get("valor_liquido_cents")
+                        )
+                        for item in items
+                    ]
+                )
+            elif file_type == "EVOLUCAO":
+                cursor.executemany(
+                    """
+                    INSERT INTO staging_portfolio_evolution (
+                        import_run_id, source_line_no, validation_status, validation_message,
+                        reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                        patrimonio_cents, compras_cents, vendas_cents, proventos_cents,
+                        ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                        ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                        sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            run_id, item.get("source_line_no"), item.get("validation_status", "PENDING"), item.get("validation_message"),
+                            item.get("reference_month"), item.get("rentabilidade_mensal_pct"), item.get("rentabilidade_acumulada_pct"),
+                            item.get("patrimonio_cents"), item.get("compras_cents"), item.get("vendas_cents"), item.get("proventos_cents"),
+                            item.get("ibov_mensal_pct"), item.get("ibov_acumulado_pct"), item.get("cdi_mensal_pct"), item.get("cdi_acumulado_pct"),
+                            item.get("ipca_mensal_pct"), item.get("ipca_acumulado_pct"), item.get("ifix_mensal_pct"), item.get("ifix_acumulado_pct"),
+                            item.get("sp500_mensal_pct"), item.get("sp500_acumulado_pct"), item.get("idiv_mensal_pct"), item.get("idiv_acumulado_pct")
+                        )
+                        for item in items
+                    ]
+                )
+            
+            conn.commit()
+
+    def mark_staging_conflicts(self, run_id: str, file_type: str) -> dict:
+        """Classifica os itens do staging com a política: UNCHANGED | UPDATE | VALID."""
+        counts = {"unchanged": 0, "update": 0, "conflicts": 0}
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            if file_type == "POSICOES":
+                # Chave econômica: (ticker, data_snapshot)
+                # UNCHANGED: chave + todos os campos de valor idênticos
+                cursor.execute(
+                    """
+                    UPDATE staging_positions
+                    SET validation_status = 'UNCHANGED', validation_message = 'Posição idêntica já existe (sem alteração)'
+                    WHERE import_run_id = ? AND validation_status NOT IN ('ERROR')
+                    AND EXISTS (
+                        SELECT 1 FROM positions p 
+                        WHERE p.ticker = staging_positions.ticker 
+                        AND p.data_snapshot = staging_positions.data_snapshot
+                        AND ROUND(CAST(p.quantidade AS REAL), 4) = ROUND(CAST(staging_positions.quantidade AS REAL), 4)
+                        AND ROUND(CAST(p.preco_medio AS REAL), 4) = ROUND(CAST(staging_positions.preco_medio AS REAL), 4)
+                        AND ROUND(CAST(p.total_atual AS REAL), 2) = ROUND(CAST(staging_positions.total_atual AS REAL), 2)
+                    )
+                    """,
+                    (run_id,)
+                )
+                counts["unchanged"] = cursor.rowcount
+                
+                # UPDATE: chave existe mas dados mudaram
+                cursor.execute(
+                    """
+                    UPDATE staging_positions
+                    SET validation_status = 'UPDATE', validation_message = 'Posição atualizada (dados alterados)'
+                    WHERE import_run_id = ? AND validation_status NOT IN ('ERROR', 'UNCHANGED')
+                    AND EXISTS (
+                        SELECT 1 FROM positions p 
+                        WHERE p.ticker = staging_positions.ticker 
+                        AND p.data_snapshot = staging_positions.data_snapshot
+                    )
+                    """,
+                    (run_id,)
+                )
+                counts["update"] = cursor.rowcount
+
+                # VALID: tudo que sobrou como PENDING
+                cursor.execute(
+                    """
+                    UPDATE staging_positions
+                    SET validation_status = 'VALID', validation_message = 'Novo registro a ser importado'
+                    WHERE import_run_id = ? AND validation_status = 'PENDING'
+                    """,
+                    (run_id,)
+                )
+
+            elif file_type == "PROVENTOS":
+                # Chave econômica: (ticker, data_pagamento)
+                # UNCHANGED: chave + valor idêntico
+                cursor.execute(
+                    """
+                    UPDATE staging_dividends
+                    SET validation_status = 'UNCHANGED', validation_message = 'Dividendo idêntico já existe (sem alteração)'
+                    WHERE import_run_id = ? AND validation_status NOT IN ('ERROR')
+                    AND EXISTS (
+                        SELECT 1 FROM dividends d 
+                        WHERE d.ticker = staging_dividends.ticker 
+                        AND d.data_pagamento = staging_dividends.data_pagamento
+                        AND d.valor_liquido_cents = staging_dividends.valor_liquido_cents
+                    )
+                    """,
+                    (run_id,)
+                )
+                counts["unchanged"] = cursor.rowcount
+
+                # UPDATE: mesmo ticker+data mas valor diferente (correção de provento)
+                cursor.execute(
+                    """
+                    UPDATE staging_dividends
+                    SET validation_status = 'UPDATE', validation_message = 'Provento corrigido (valor alterado)'
+                    WHERE import_run_id = ? AND validation_status NOT IN ('ERROR', 'UNCHANGED')
+                    AND EXISTS (
+                        SELECT 1 FROM dividends d 
+                        WHERE d.ticker = staging_dividends.ticker 
+                        AND d.data_pagamento = staging_dividends.data_pagamento
+                    )
+                    """,
+                    (run_id,)
+                )
+                counts["update"] = cursor.rowcount
+
+                # VALID: tudo que sobrou como PENDING
+                cursor.execute(
+                    """
+                    UPDATE staging_dividends
+                    SET validation_status = 'VALID', validation_message = 'Novo provento a ser importado'
+                    WHERE import_run_id = ? AND validation_status = 'PENDING'
+                    """,
+                    (run_id,)
+                )
+
+            elif file_type == "EVOLUCAO":
+                # Chave econômica: (reference_month)
+                # UNCHANGED: mês + todos os campos financeiros e de benchmark idênticos
+                cursor.execute(
+                    """
+                    UPDATE staging_portfolio_evolution
+                    SET validation_status = 'UNCHANGED', validation_message = 'Mês idêntico já registrado (sem alteração)'
+                    WHERE import_run_id = ? AND validation_status NOT IN ('ERROR')
+                    AND EXISTS (
+                        SELECT 1 FROM portfolio_evolution pe
+                        WHERE pe.reference_month = staging_portfolio_evolution.reference_month
+                        AND pe.patrimonio_cents = staging_portfolio_evolution.patrimonio_cents
+                        AND pe.rentabilidade_mensal_pct = staging_portfolio_evolution.rentabilidade_mensal_pct
+                        AND pe.cdi_mensal_pct = staging_portfolio_evolution.cdi_mensal_pct
+                        AND pe.ibov_mensal_pct = staging_portfolio_evolution.ibov_mensal_pct
+                        AND pe.ifix_mensal_pct = staging_portfolio_evolution.ifix_mensal_pct
+                        AND pe.sp500_mensal_pct = staging_portfolio_evolution.sp500_mensal_pct
+                        AND pe.idiv_mensal_pct = staging_portfolio_evolution.idiv_mensal_pct
+                    )
+                    """,
+                    (run_id,)
+                )
+                counts["unchanged"] = cursor.rowcount
+
+                # UPDATE: mês existe mas dados mudaram (rebalanceamento retroativo)
+                cursor.execute(
+                    """
+                    UPDATE staging_portfolio_evolution
+                    SET validation_status = 'UPDATE', validation_message = 'Evolução atualizada (dados alterados)'
+                    WHERE import_run_id = ? AND validation_status NOT IN ('ERROR', 'UNCHANGED')
+                    AND EXISTS (
+                        SELECT 1 FROM portfolio_evolution pe
+                        WHERE pe.reference_month = staging_portfolio_evolution.reference_month
+                    )
+                    """,
+                    (run_id,)
+                )
+                counts["update"] = cursor.rowcount
+                
+                # VALID: tudo que sobrou como PENDING
+                cursor.execute(
+                    """
+                    UPDATE staging_portfolio_evolution
+                    SET validation_status = 'VALID', validation_message = 'Novo mês a ser importado'
+                    WHERE import_run_id = ? AND validation_status = 'PENDING'
+                    """,
+                    (run_id,)
+                )
+                
+            conn.commit()
+        return counts
+
+    def rollback_import_run(self, run_id: str, user: str = "api_user", reason: str = "Revertido pelo usuário") -> bool:
+        """Deleta os itens do staging e marca a run como CANCELLED, registrando log do rollback."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT status FROM import_runs WHERE id = ?", (run_id,))
+            row = cursor.fetchone()
+            if not row or row["status"] in ("SUCCESS", "CONFIRMED", "CANCELLED", "FAILED"):
+                return False
+                
+            # Staging items are deleted via ON DELETE CASCADE if we deleted the run,
+            # but we want to keep the run for audit purposes.
+            # So we manually delete staging rows.
+            cursor.execute("DELETE FROM staging_imports WHERE import_run_id = ?", (run_id,))
+            cursor.execute("DELETE FROM staging_positions WHERE import_run_id = ?", (run_id,))
+            cursor.execute("DELETE FROM staging_dividends WHERE import_run_id = ?", (run_id,))
+            cursor.execute("DELETE FROM staging_portfolio_evolution WHERE import_run_id = ?", (run_id,))
+            cursor.execute(
+                """
+                UPDATE import_runs 
+                SET status = 'CANCELLED',
+                    rollback_timestamp = CURRENT_TIMESTAMP,
+                    rollback_user = ?,
+                    rollback_reason = ?
+                WHERE id = ?
+                """, 
+                (user, reason, run_id)
+            )
+            conn.commit()
+            return True
+
+    def lock_import_run_for_confirmation(self, run_id: str) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE import_runs SET status = 'PROCESSING_CONFIRMATION' WHERE id = ? AND status = 'AWAITING_CONFIRMATION'",
+                (run_id,)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def promote_all_wealth_staging(self, run_id: str) -> dict:
+        imported = 0
+        updated = 0
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # ─── POSICOES ───
+            # INSERT novos (VALID/WARNING)
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO positions (
+                    ticker, data_snapshot, source, quantidade, preco_medio, total_investido,
+                    preco_atual, total_atual, ganho, import_run_id, source_line_no
+                )
+                SELECT ticker, data_snapshot, source, quantidade, preco_medio, total_investido,
+                       preco_atual, total_atual, ganho, import_run_id, source_line_no
+                FROM staging_positions
+                WHERE import_run_id = ? AND validation_status IN ('VALID', 'WARNING')
+                """,
+                (run_id,)
+            )
+            cursor.execute("UPDATE staging_positions SET validation_status = 'IMPORTED' WHERE import_run_id = ? AND validation_status IN ('VALID', 'WARNING')", (run_id,))
+
+            # UPSERT atualizações (UPDATE)
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO positions (
+                    ticker, data_snapshot, source, quantidade, preco_medio, total_investido,
+                    preco_atual, total_atual, ganho, import_run_id, source_line_no
+                )
+                SELECT ticker, data_snapshot, source, quantidade, preco_medio, total_investido,
+                       preco_atual, total_atual, ganho, import_run_id, source_line_no
+                FROM staging_positions
+                WHERE import_run_id = ? AND validation_status = 'UPDATE'
+                """,
+                (run_id,)
+            )
+            cursor.execute("UPDATE staging_positions SET validation_status = 'IMPORTED' WHERE import_run_id = ? AND validation_status = 'UPDATE'", (run_id,))
+
+            # ─── PROVENTOS ───
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO dividends (
+                    id_economico, source, ticker, tipo_evento, data_pagamento, valor_liquido, valor_liquido_cents, import_run_id, source_line_no
+                )
+                SELECT id_economico, source, ticker, tipo_evento, data_pagamento, valor_liquido, valor_liquido_cents, import_run_id, source_line_no
+                FROM staging_dividends
+                WHERE import_run_id = ? AND validation_status IN ('VALID', 'WARNING')
+                """,
+                (run_id,)
+            )
+            cursor.execute("UPDATE staging_dividends SET validation_status = 'IMPORTED' WHERE import_run_id = ? AND validation_status IN ('VALID', 'WARNING')", (run_id,))
+
+            # UPSERT proventos corrigidos
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO dividends (
+                    id_economico, source, ticker, tipo_evento, data_pagamento, valor_liquido, valor_liquido_cents, import_run_id, source_line_no
+                )
+                SELECT id_economico, source, ticker, tipo_evento, data_pagamento, valor_liquido, valor_liquido_cents, import_run_id, source_line_no
+                FROM staging_dividends
+                WHERE import_run_id = ? AND validation_status = 'UPDATE'
+                """,
+                (run_id,)
+            )
+            cursor.execute("UPDATE staging_dividends SET validation_status = 'IMPORTED' WHERE import_run_id = ? AND validation_status = 'UPDATE'", (run_id,))
+
+            # ─── EVOLUCAO ───
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO portfolio_evolution (
+                    reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                    patrimonio_cents, compras_cents, vendas_cents, proventos_cents,
+                    ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                    ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                    sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
+                    import_run_id, source_line_no
+                )
+                SELECT reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                       patrimonio_cents, compras_cents, vendas_cents, proventos_cents,
+                       ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                       ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                       sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
+                       import_run_id, source_line_no
+                FROM staging_portfolio_evolution
+                WHERE import_run_id = ? AND validation_status IN ('VALID', 'WARNING')
+                """,
+                (run_id,)
+            )
+            cursor.execute("UPDATE staging_portfolio_evolution SET validation_status = 'IMPORTED' WHERE import_run_id = ? AND validation_status IN ('VALID', 'WARNING')", (run_id,))
+
+            # UPSERT evolução atualizada
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO portfolio_evolution (
+                    reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                    patrimonio_cents, compras_cents, vendas_cents, proventos_cents,
+                    ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                    ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                    sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
+                    import_run_id, source_line_no
+                )
+                SELECT reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                       patrimonio_cents, compras_cents, vendas_cents, proventos_cents,
+                       ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                       ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                       sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
+                       import_run_id, source_line_no
+                FROM staging_portfolio_evolution
+                WHERE import_run_id = ? AND validation_status = 'UPDATE'
+                """,
+                (run_id,)
+            )
+            cursor.execute("UPDATE staging_portfolio_evolution SET validation_status = 'IMPORTED' WHERE import_run_id = ? AND validation_status = 'UPDATE'", (run_id,))
+
+            # ─── Contagens finais ───
+            cursor.execute("SELECT COUNT(*) FROM staging_positions WHERE import_run_id = ? AND validation_status = 'IMPORTED'", (run_id,))
+            imported += cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM staging_dividends WHERE import_run_id = ? AND validation_status = 'IMPORTED'", (run_id,))
+            imported += cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM staging_portfolio_evolution WHERE import_run_id = ? AND validation_status = 'IMPORTED'", (run_id,))
+            imported += cursor.fetchone()[0]
+
+            cursor.execute(
+                "UPDATE import_runs SET status = 'CONFIRMED', finished_at = CURRENT_TIMESTAMP, rows_inserted = ? WHERE id = ?",
+                (imported, run_id)
+            )
+            conn.commit()
+            
+        return {"inserted": imported}
+
     def upsert_transactions(self, transactions: list, categorizer) -> tuple[int, int]:
         if not transactions:
             return 0, 0
@@ -475,8 +929,9 @@ class DatabaseManager:
                     """
                     INSERT INTO positions (
                         ticker, data_snapshot, source, quantidade, preco_medio,
-                        total_investido, preco_atual, total_atual, ganho
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        total_investido, preco_atual, total_atual, ganho,
+                        import_run_id, source_line_no
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(ticker, data_snapshot) DO UPDATE SET
                         source = excluded.source,
                         quantidade = excluded.quantidade,
@@ -485,6 +940,8 @@ class DatabaseManager:
                         preco_atual = excluded.preco_atual,
                         total_atual = excluded.total_atual,
                         ganho = excluded.ganho,
+                        import_run_id = excluded.import_run_id,
+                        source_line_no = excluded.source_line_no,
                         atualizado_em = CURRENT_TIMESTAMP
                     """,
                     (
@@ -497,6 +954,8 @@ class DatabaseManager:
                         str(position["preco_atual"]),
                         str(position["total_atual"]),
                         str(position["ganho"]),
+                        position.get("import_run_id"),
+                        position.get("source_line_no"),
                     ),
                 )
 
@@ -529,8 +988,9 @@ class DatabaseManager:
                     """
                     INSERT INTO dividends (
                         id_economico, source, ticker, tipo_evento,
-                        data_pagamento, valor_liquido, valor_liquido_cents
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        data_pagamento, valor_liquido, valor_liquido_cents,
+                        import_run_id, source_line_no
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id_economico) DO UPDATE SET
                         source = excluded.source,
                         ticker = excluded.ticker,
@@ -538,6 +998,8 @@ class DatabaseManager:
                         data_pagamento = excluded.data_pagamento,
                         valor_liquido = excluded.valor_liquido,
                         valor_liquido_cents = excluded.valor_liquido_cents,
+                        import_run_id = excluded.import_run_id,
+                        source_line_no = excluded.source_line_no,
                         atualizado_em = CURRENT_TIMESTAMP
                     """,
                     (
@@ -548,6 +1010,8 @@ class DatabaseManager:
                         dividend["data_pagamento"].isoformat(),
                         _decimal_to_cents(dividend["valor_liquido"]),
                         _decimal_to_cents(dividend["valor_liquido"]),
+                        dividend.get("import_run_id"),
+                        dividend.get("source_line_no"),
                     ),
                 )
 
@@ -584,8 +1048,9 @@ class DatabaseManager:
                         patrimonio_cents, compras_cents, vendas_cents, op_finalizadas_cents, proventos_cents,
                         ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
                         ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
-                        sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
+                        import_run_id, source_line_no
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(reference_month) DO UPDATE SET
                         rentabilidade_mensal_pct = excluded.rentabilidade_mensal_pct,
                         rentabilidade_acumulada_pct = excluded.rentabilidade_acumulada_pct,
@@ -605,7 +1070,9 @@ class DatabaseManager:
                         sp500_mensal_pct = excluded.sp500_mensal_pct,
                         sp500_acumulado_pct = excluded.sp500_acumulado_pct,
                         idiv_mensal_pct = excluded.idiv_mensal_pct,
-                        idiv_acumulado_pct = excluded.idiv_acumulado_pct
+                        idiv_acumulado_pct = excluded.idiv_acumulado_pct,
+                        import_run_id = excluded.import_run_id,
+                        source_line_no = excluded.source_line_no
                     """,
                     (
                         evo["reference_month"].isoformat(),
@@ -628,6 +1095,8 @@ class DatabaseManager:
                         str(evo["sp500_acumulado_pct"]),
                         str(evo["idiv_mensal_pct"]),
                         str(evo["idiv_acumulado_pct"]),
+                        evo.get("import_run_id"),
+                        evo.get("source_line_no"),
                     ),
                 )
 
@@ -639,3 +1108,210 @@ class DatabaseManager:
             conn.commit()
 
         return inserted, updated
+
+    def get_user_by_username(self, username: str) -> dict:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            user = cursor.execute(
+                "SELECT id, username, email, password_hash, role, active FROM users WHERE username = ?",
+                (username,)
+            ).fetchone()
+            if user:
+                return dict(user)
+            return None
+
+    def create_user(self, username: str, email: str, password_hash: str, role: str = 'VIEWER') -> str:
+        import uuid
+        user_id = uuid.uuid4().hex
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO users (id, username, email, password_hash, role, active)
+                VALUES (?, ?, ?, ?, ?, 1)
+                """,
+                (user_id, username, email, password_hash, role)
+            )
+            conn.commit()
+            return user_id
+
+    def create_audit_log(
+        self,
+        entity_type: str,
+        entity_id: str,
+        action: str,
+        field_changes: str = None,
+        changed_by: str = None,
+        cursor = None
+    ) -> str:
+        import uuid
+        log_id = uuid.uuid4().hex
+        
+        def _execute(cur):
+            cur.execute(
+                """
+                INSERT INTO audit_log (id, entity_type, entity_id, action, field_changes, changed_by)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (log_id, entity_type, entity_id, action, field_changes, changed_by)
+            )
+            
+        if cursor:
+            _execute(cursor)
+            return log_id
+            
+        with self._get_connection() as conn:
+            cur = conn.cursor()
+            _execute(cur)
+            conn.commit()
+            return log_id
+
+    def vacuum_database(self) -> dict:
+        import os
+        size_before = os.path.getsize(self.db_path)
+        with self._get_connection() as conn:
+            conn.isolation_level = None
+            conn.execute("VACUUM")
+            conn.isolation_level = ""
+        size_after = os.path.getsize(self.db_path)
+        return {"size_before_bytes": size_before, "size_after_bytes": size_after}
+
+    def analyze_database(self) -> bool:
+        with self._get_connection() as conn:
+            conn.isolation_level = None
+            conn.execute("ANALYZE")
+            conn.isolation_level = ""
+            return True
+
+    def _dict_factory(self, cursor, row):
+        return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+
+    def update_transaction(self, id_economico: str, updates: dict, changed_by: str = None) -> bool:
+        import json
+        with self._get_connection() as conn:
+            conn.row_factory = self._dict_factory
+            cursor = conn.cursor()
+            
+            # 1. Fetch current
+            cursor.execute("SELECT * FROM transactions WHERE id_economico = ?", (id_economico,))
+            old_record = cursor.fetchone()
+            if not old_record:
+                return False
+                
+            # 2. Prepare changes
+            field_changes = {}
+            set_clauses = []
+            params = []
+            for k, v in updates.items():
+                if v is not None and k in old_record and old_record[k] != v:
+                    field_changes[k] = {"old": old_record[k], "new": v}
+                    set_clauses.append(f"{k} = ?")
+                    params.append(v)
+                    
+            if not field_changes:
+                return True # Nothing to update
+                
+            # 3. Apply changes
+            params.append(id_economico)
+            cursor.execute(f"UPDATE transactions SET {', '.join(set_clauses)} WHERE id_economico = ?", params)
+            
+            # 4. Audit
+            self.create_audit_log("TRANSACTION", id_economico, "UPDATE", json.dumps(field_changes), changed_by, cursor=cursor)
+            conn.commit()
+            return True
+
+    def update_position(self, ticker: str, data_snapshot: str, updates: dict, changed_by: str = None) -> bool:
+        import json
+        with self._get_connection() as conn:
+            conn.row_factory = self._dict_factory
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT * FROM positions WHERE ticker = ? AND data_snapshot = ?", (ticker, data_snapshot))
+            old_record = cursor.fetchone()
+            if not old_record:
+                return False
+                
+            field_changes = {}
+            set_clauses = []
+            params = []
+            for k, v in updates.items():
+                if v is not None and k in old_record and old_record[k] != v:
+                    field_changes[k] = {"old": old_record[k], "new": v}
+                    set_clauses.append(f"{k} = ?")
+                    params.append(v)
+                    
+            if not field_changes:
+                return True
+                
+            params.extend([ticker, data_snapshot])
+            cursor.execute(f"UPDATE positions SET {', '.join(set_clauses)} WHERE ticker = ? AND data_snapshot = ?", params)
+            
+            entity_id = f"{ticker}|{data_snapshot}"
+            self.create_audit_log("POSITION", entity_id, "UPDATE", json.dumps(field_changes), changed_by, cursor=cursor)
+            conn.commit()
+            return True
+
+    def update_dividend(self, id_economico: str, updates: dict, changed_by: str = None) -> bool:
+        import json
+        with self._get_connection() as conn:
+            conn.row_factory = self._dict_factory
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT * FROM dividends WHERE id_economico = ?", (id_economico,))
+            old_record = cursor.fetchone()
+            if not old_record:
+                return False
+                
+            field_changes = {}
+            set_clauses = []
+            params = []
+            for k, v in updates.items():
+                if v is not None and k in old_record and old_record[k] != v:
+                    field_changes[k] = {"old": old_record[k], "new": v}
+                    set_clauses.append(f"{k} = ?")
+                    params.append(v)
+                    
+            if not field_changes:
+                return True
+                
+            params.append(id_economico)
+            cursor.execute(f"UPDATE dividends SET {', '.join(set_clauses)} WHERE id_economico = ?", params)
+            
+            self.create_audit_log("DIVIDEND", id_economico, "UPDATE", json.dumps(field_changes), changed_by, cursor=cursor)
+            conn.commit()
+            return True
+
+    def merge_categories(self, source_category: str, target_category: str, changed_by: str = None) -> int:
+        import json
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT COUNT(*) FROM transactions WHERE macro_categoria = ? OR sub_categoria = ?", (source_category, source_category))
+            count = cursor.fetchone()[0]
+            
+            if count == 0:
+                return 0
+                
+            # Update macro
+            cursor.execute("UPDATE transactions SET macro_categoria = ? WHERE macro_categoria = ?", (target_category, source_category))
+            # Update sub
+            cursor.execute("UPDATE transactions SET sub_categoria = ? WHERE sub_categoria = ?", (target_category, source_category))
+            
+            field_changes = {"categoria": {"old": source_category, "new": target_category}, "affected_rows": count}
+            self.create_audit_log("CATEGORY", source_category, "MERGE", json.dumps(field_changes), changed_by, cursor=cursor)
+            
+            conn.commit()
+            return count
+
+    def get_orphans_count(self) -> dict:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            # Transactions that do not match import_runs (orphan)
+            cursor.execute("SELECT COUNT(*) FROM transactions WHERE import_run_id IS NOT NULL AND import_run_id NOT IN (SELECT id FROM import_runs)")
+            count = cursor.fetchone()[0]
+            
+            return {
+                "orphan_count": count,
+                "type": "transaction",
+                "table": "transactions"
+            }

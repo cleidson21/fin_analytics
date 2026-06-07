@@ -10,6 +10,9 @@ import {
   Target,
   TrendingUp,
   Tv,
+  Database,
+  FileSearch,
+  Upload,
 } from "lucide-react";
 type SearchParamsLike = {
   toString(): string;
@@ -19,7 +22,7 @@ export const SIDEBAR_NAV = [
   { name: "Controle Financeiro", href: "/", icon: LayoutDashboard },
   { name: "Investimentos", href: "/wealth", icon: LineChart },
   { name: "Metas", href: "/goals", icon: Target },
-  { name: "Importações", href: "/governance/import", icon: Receipt },
+  { name: "Governança", href: "/governance", icon: Receipt },
   { name: "Perfil", href: "/profile", icon: Settings },
 ] as const;
 
@@ -34,14 +37,34 @@ export const SECTION_TABS = {
     { name: "Parcelamentos", href: "/installments", icon: CreditCard },
   ],
   wealth: [
-    { name: "Patrimônio", href: "/wealth", icon: PieChart },
+    { name: "Resumo", href: "/wealth", icon: LayoutDashboard },
+    { name: "Patrimônio", href: "/wealth/patrimonio", icon: PieChart },
     { name: "Alocação", href: "/wealth/allocation", icon: TrendingUp },
     { name: "Dividendos", href: "/wealth/dividends", icon: BarChart3 },
     { name: "Evolução", href: "/wealth/evolution", icon: LineChart },
   ],
   governance: [
-    { name: "Revisão de Dados", href: "/governance", icon: Settings },
-    { name: "Importação CSV", href: "/governance/import", icon: Receipt },
+    { name: "Dashboard", href: "/governance", icon: LayoutDashboard },
+    {
+      name: "Nova Importação",
+      href: "/governance/imports",
+      icon: Upload,
+    },
+    {
+      name: "Administração do Banco",
+      href: "/governance/database",
+      icon: Database,
+    },
+    {
+      name: "Auditoria",
+      href: "/governance/audit",
+      icon: FileSearch,
+    },
+    {
+      name: "Transações",
+      href: "/governance/transactions",
+      icon: Receipt,
+    },
   ],
   goals: [],
 } as const;

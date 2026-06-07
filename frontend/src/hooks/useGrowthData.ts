@@ -33,6 +33,12 @@ export interface PortfolioEvolutionPoint {
   cdi_acumulado_pct: number;
   ipca_mensal_pct: number;
   ipca_acumulado_pct: number;
+  ifix_mensal_pct: number;
+  ifix_acumulado_pct: number;
+  sp500_mensal_pct: number;
+  sp500_acumulado_pct: number;
+  idiv_mensal_pct: number;
+  idiv_acumulado_pct: number;
 }
 
 export function useGrowthData(period: string) {

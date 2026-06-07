@@ -1,6 +1,7 @@
 "use client";
 
 import { useDividendsData } from "@/hooks/useDividendsData";
+import Link from 'next/link';
 import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
 import { WealthSectionTitle } from "@/components/wealth/ui/WealthSectionTitle";
 import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
@@ -12,7 +13,7 @@ import { DividendYoYChart } from "@/components/wealth/charts/DividendYoYChart";
 
 export default function DividendsPage() {
   const { 
-    history, yoyArray, availableYears, 
+    history, breakdown, yoyArray, availableYears, 
     totalDividends, average12m, yieldOnCost, ytdReceived,
     isLoading, isError 
   } = useDividendsData();
@@ -22,10 +23,6 @@ export default function DividendsPage() {
 
   return (
     <div className="space-y-6">
-      <WealthSectionTitle 
-        title="Dividendos" 
-        subtitle="Acompanhamento de renda passiva e reinvestimento acumulado." 
-      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <WealthKpiCard
@@ -88,28 +85,49 @@ export default function DividendsPage() {
         </WealthChartCard>
       </div>
 
-      <WealthChartCard title="Histórico de Recebimentos" isLoading={isLoading} isError={isError}>
-         <WealthTable
-            data={tableData}
-            columns={[
-              { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
-              { header: "Total Recebido", cell: (item) => formatCurrency(item.amount_received_value), align: "right", className: "text-[#f5a623] font-medium" },
-              { header: "Variação M/M", cell: (item) => {
-                 // To find index we could do tableData.indexOf(item), but that's O(n).
-                 // For now, let's just use it safely.
-                 const index = tableData.indexOf(item);
-                 const prev = tableData[index + 1];
-                 if (!prev || prev.amount_received_value === 0) return "-";
-                 const variation = ((item.amount_received_value - prev.amount_received_value) / prev.amount_received_value) * 100;
-                 return (
-                   <span className={variation >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
-                     {variation >= 0 ? "+" : ""}{variation.toFixed(1)}%
-                   </span>
-                 );
-              }, align: "right" }
-            ]}
-         />
-      </WealthChartCard>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <WealthChartCard title="Histórico de Recebimentos" isLoading={isLoading} isError={isError} tableMode>
+           <WealthTable
+              data={tableData}
+              pageSize={12}
+              columns={[
+                { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
+                { header: "Total Recebido", cell: (item) => formatCurrency(item.amount_received_value), align: "right", className: "text-[#f5a623] font-medium" },
+                { header: "Variação M/M", cell: (item) => {
+                   const index = tableData.indexOf(item);
+                   const prev = tableData[index + 1];
+                   if (!prev || prev.amount_received_value === 0) return "-";
+                   const variation = ((item.amount_received_value - prev.amount_received_value) / prev.amount_received_value) * 100;
+                   return (
+                     <span className={variation >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
+                       {variation >= 0 ? "+" : ""}{variation.toFixed(1)}%
+                     </span>
+                   );
+                }, align: "right" }
+              ]}
+           />
+        </WealthChartCard>
+
+        <WealthChartCard title="Maiores Pagadores Históricos" isLoading={isLoading} isError={isError} tableMode>
+           <WealthTable
+              data={breakdown}
+              pageSize={10}
+              columns={[
+                { 
+                  header: "Ativo", 
+                  cell: (item: any) => (
+                    <Link href={`/wealth/asset/${item.ticker}`} className="text-[#4ecf98] hover:underline font-medium">
+                      {item.ticker}
+                    </Link>
+                  )
+                },
+                { header: "Pagamentos", accessorKey: "quantidade_eventos", align: "right" },
+                { header: "Total Recebido", cell: (item) => formatCurrency(item.total_recebido_value), align: "right", className: "text-[#4ecf98] font-medium" },
+                { header: "Participação", cell: (item) => totalDividends > 0 ? `${((item.total_recebido_value / totalDividends) * 100).toFixed(1)}%` : "0%", align: "right" },
+              ]}
+           />
+        </WealthChartCard>
+      </div>
 
     </div>
   );

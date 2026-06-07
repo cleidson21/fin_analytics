@@ -45,21 +45,21 @@ export function useAlphaData(period: string) {
     filteredHistory = history.slice(Math.max(history.length - monthsToKeep, 0));
   }
 
-  // To draw a proper alpha chart, we might need to rebase the accumulated percentages 
-  // so they start from 0 at the beginning of the filtered period.
-  // But for now we just pass the raw data and let the chart handle it or display it.
+  // Lógica de Rebase: Subtrair o acumulado do primeiro mês do período
+  // para que todas as linhas comecem do zero relativo ao período filtrado.
   const rebasedHistory = filteredHistory.map((point, index) => {
-    if (index === 0 || !filteredHistory[0]) return { ...point, rebased_cart: 0, rebased_ibov: 0, rebased_cdi: 0 };
+    if (index === 0 || !filteredHistory[0]) return { ...point, rebased_cart: 0, rebased_ibov: 0, rebased_cdi: 0, rebased_ipca: 0, rebased_ifix: 0, rebased_sp500: 0, rebased_idiv: 0 };
     
-    // Rebase approach: Current accumulated - Initial accumulated of the period
-    // This is an approximation, mathematically exact would require division, but subtraction is enough for visual trends of "alpha".
     const base = filteredHistory[0];
     return {
       ...point,
       rebased_cart: point.rentabilidade_acumulada_pct - base.rentabilidade_acumulada_pct,
       rebased_ibov: point.ibov_acumulado_pct - base.ibov_acumulado_pct,
       rebased_cdi: point.cdi_acumulado_pct - base.cdi_acumulado_pct,
-      rebased_ipca: point.ipca_acumulado_pct - base.ipca_acumulado_pct
+      rebased_ipca: point.ipca_acumulado_pct - base.ipca_acumulado_pct,
+      rebased_ifix: point.ifix_acumulado_pct - base.ifix_acumulado_pct,
+      rebased_sp500: point.sp500_acumulado_pct - base.sp500_acumulado_pct,
+      rebased_idiv: point.idiv_acumulado_pct - base.idiv_acumulado_pct
     };
   });
 

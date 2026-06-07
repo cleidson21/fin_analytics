@@ -14,6 +14,8 @@ export interface InstallmentItem {
   total_estimated: number;
   already_paid: number;
   remaining: number;
+  projected_end_date: string | null; // data projetada de término (ex: 'Novembro 2026')
+  is_active: boolean; // calculado no backend com regra de "sobrevivência no mês"
 }
 
 interface InstallmentCardProps {
@@ -35,10 +37,8 @@ export function InstallmentCard({ item, index, isExpanded, onToggle }: Installme
   const iconBg = hexColor + "26"; // 15% opacity
   const initial = item.base_name.charAt(0).toUpperCase();
 
-  // Last installment date from item.date (latest recorded)
-  const lastDate = item.date
-    ? new Date(`${item.date}T00:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })
-    : "-";
+  // Projected end date from backend
+  const projectedEnd = item.projected_end_date ?? "-";
 
   return (
     <article className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#131313]">
@@ -124,8 +124,8 @@ export function InstallmentCard({ item, index, isExpanded, onToggle }: Installme
               <p className="mt-1 text-sm font-medium text-[#f5a623]">{formatCurrency(item.remaining)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-widest text-neutral-600">Última</p>
-              <p className="mt-1 text-sm font-medium text-white">{lastDate}</p>
+              <p className="text-xs uppercase tracking-widest text-neutral-600">Término</p>
+              <p className="mt-1 text-sm font-medium text-white">{projectedEnd}</p>
             </div>
           </div>
 

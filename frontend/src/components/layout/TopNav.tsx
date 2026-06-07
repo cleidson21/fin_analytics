@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { getTabsForPath } from "@/config/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TAB_COLORS: Record<string, string> = {
   "/":              "#4ecf98",  // Visão geral — verde
@@ -12,12 +13,21 @@ const TAB_COLORS: Record<string, string> = {
   "/installments":  "#f5a623",  // Parcelamentos — âmbar
   "/subscriptions": "#b794f4",  // Assinaturas — violeta
   "/categories":    "#f687b3",  // Categorias — rosa
-  "/governance":         "#94a3b8",  // Revisão de Dados — cinza-azulado
-  "/governance/import":  "#94a3b8",  // Importação CSV — mesma cor da secção
+  "/governance":               "#94a3b8",  // Dashboard de Governança
+  "/governance/transactions":  "#7EB8F7",  // Transações — azul
+  "/governance/imports":       "#4ecf98",  // Nova Importação — verde
+  "/governance/database":      "#f5a623",  // DB — âmbar
+  "/governance/audit":         "#f687b3",  // Auditoria — rosa
+  "/wealth":                   "#94a3b8",  // Resumo — neutro
+  "/wealth/patrimonio":        "#4ecf98",  // Patrimônio — verde
+  "/wealth/allocation":        "#f5a623",  // Alocação — âmbar
+  "/wealth/dividends":         "#f687b3",  // Dividendos — rosa
+  "/wealth/evolution":         "#7EB8F7",  // Evolução — azul
 };
 
 export function TopNav() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   const tabs = getTabsForPath(pathname);
   if (!tabs || tabs.length === 0) {
@@ -26,9 +36,23 @@ export function TopNav() {
 
   return (
     <div className="flex justify-center pt-8 pb-0">
-      <nav className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-white/[0.03] p-1">
+      <nav className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-white/[0.03] p-1 relative z-10">
         {tabs.map((tab) => {
-          const isActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href + "/"));
+          let isActive = pathname === tab.href;
+
+          if (!tabs.some(t => t.href === pathname)) {
+             if (tab.href !== "/" && tab.href !== "/wealth" && tab.href !== "/governance" && pathname.startsWith(tab.href + "/")) {
+                isActive = true;
+             } else {
+                 const isBaseTab = tab.href === "/" || tab.href === "/wealth" || tab.href === "/governance";
+                 // Only highlight base tab if NO other tab is a prefix match
+                 const hasOtherPrefixMatch = tabs.some(t => t.href !== tab.href && t.href !== "/" && pathname.startsWith(t.href + "/"));
+                 if (isBaseTab && pathname.startsWith(tab.href === "/" ? "/" : tab.href + "/") && !hasOtherPrefixMatch) {
+                    isActive = true;
+                 }
+             }
+          }
+
           const dotColor = TAB_COLORS[tab.href];
 
           return (
@@ -52,6 +76,20 @@ export function TopNav() {
           );
         })}
       </nav>
+
+      {user && (
+        <div className="absolute right-8 top-8 flex items-center gap-4 text-sm z-20">
+          <div className="text-zinc-400">
+            <span className="font-medium text-zinc-300">{user.role}</span> {user.username}
+          </div>
+          <button
+            onClick={() => logout()}
+            className="text-red-400 hover:text-red-300 font-medium transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+      )}
     </div>
   );
 }

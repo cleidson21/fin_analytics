@@ -70,10 +70,7 @@ export default function CategoriesPage() {
       hideTitle={true}
     >
       {/* ── Seletor de mês ───────────────────────────────────────── */}
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-lg font-medium text-white">
-          Gastos por categoria
-        </h2>
+      <div className="mb-6 flex items-center justify-end">
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrev}

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 interface Column<T> {
   header: string;
@@ -14,9 +14,14 @@ interface WealthTableProps<T> {
   columns: Column<T>[];
   className?: string;
   emptyMessage?: string;
+  pageSize?: number;
 }
 
-export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhum dado encontrado." }: WealthTableProps<T>) {
+export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhum dado encontrado.", pageSize }: WealthTableProps<T>) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = pageSize ? Math.ceil(data.length / pageSize) : 1;
+  const displayData = pageSize ? data.slice((currentPage - 1) * pageSize, currentPage * pageSize) : data;
   return (
     <div className={cn("w-full overflow-x-auto rounded-xl border border-white/[0.05]", className)}>
       <table className="w-full text-left">
@@ -38,14 +43,14 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
           </tr>
         </thead>
         <tbody>
-          {data.length === 0 ? (
+          {displayData.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-8 text-center text-[13px] text-neutral-500">
                 {emptyMessage}
               </td>
             </tr>
           ) : (
-            data.map((row, rowIndex) => (
+            displayData.map((row, rowIndex) => (
               <tr 
                 key={rowIndex} 
                 className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.015] transition-colors cursor-default"
@@ -72,6 +77,29 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
           )}
         </tbody>
       </table>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.05]">
+          <span className="text-xs text-neutral-500">
+            Página {currentPage} de {totalPages}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-xs font-medium text-white bg-white/[0.03] border border-white/[0.05] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/[0.06] transition-colors"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-xs font-medium text-white bg-white/[0.03] border border-white/[0.05] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/[0.06] transition-colors"
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
