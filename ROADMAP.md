@@ -276,35 +276,38 @@ Colunas obrigatórias a selecionar no MyProfit (20 colunas):
 
 ---
 
-## 🔄 Fase 3 — Governança dos dados 🆕
+## ✅ Fase 3 — Governança dos dados
 
 **Objetivo:** criar a camada de confiança (curadoria visual). Dados confiáveis são pré-requisito para Metas e IA.
 
 Transformar as APIs administrativas já existentes em ferramentas visuais de curadoria de dados:
 
-- ⬜ CRUD visual de Posições
-- ⬜ CRUD visual de Dividendos
-- ⬜ Merge de Categorias
-- ⬜ Reclassificação de Ativos
-- ⬜ Correção de Tickers
-- ⬜ Ferramentas de Saneamento
-- ⬜ Consistência e Qualidade dos Dados
-- ⬜ Painéis avançados de Governança
+- ✅ CRUD visual de Posições
+- ✅ CRUD visual de Dividendos
+- ✅ Merge de Categorias
+- ✅ Reclassificação de Ativos
+- ✅ Correção de Tickers
+- ✅ Ferramentas de Saneamento
+- ✅ Consistência e Qualidade dos Dados
+- ✅ Painéis avançados de Governança
+- ✅ Detecção de duplicatas na importação (mesmo valor + data + descrição)
+- ✅ Painel de saúde dos dados — alertas visuais para inconsistências detectadas
+
+---
+
+## ⬜ Fase 4 — Governança Inteligente (Preparação para IA) e Estabilização 🆕
+
+**Objetivo:** Iniciar fundação de aprendizado contínuo para IA e estabilizar a base antes do módulo Metas.
+
+### Governança Inteligente
 - ⬜ Regras de validação de entrada por tipo de lançamento (PIX, cartão, TED, boleto)
-- ⬜ Detecção de duplicatas na importação (mesmo valor + data + descrição)
 - ⬜ Score de qualidade dos dados por mês (% de transações sem categoria, sem valor, etc.)
-- ⬜ Painel de saúde dos dados — alertas visuais para inconsistências detectadas
 - ⬜ Dataset de correções do usuário para few-shots na IA:
   - Cada correção manual salva um par (entrada original → categoria correta)
   - Após N correções, gerar arquivo de few-shots automaticamente
   - Alimentar chamadas futuras ao Gemini (ver Fase 8)
 
----
-
-## ⬜ Fase 4 — MVP Stabilization 🆕
-
-**Objetivo:** estabilizar a base antes de espalhar dependências com o módulo Metas.
-
+### MVP Stabilization
 - ⬜ Resolver todos os warnings do React (chaves únicas, deps de useEffect, etc.)
 - ⬜ Revisar e eliminar hooks duplicados entre módulos
 - ⬜ Revisar componentes duplicados (Wealth vs Dashboard)
