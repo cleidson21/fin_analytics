@@ -18,6 +18,12 @@ type SearchParamsLike = {
   toString(): string;
 };
 
+export const GOVERNANCE_TABS = [
+  { name: "Auditoria", href: "/governance/audit", dotColor: "bg-rose-500" },
+  { name: "Saneamento", href: "/governance/database", dotColor: "bg-zinc-500" },
+  { name: "Dados", href: "/governance/data", dotColor: "bg-blue-500" },
+] as const;
+
 export const SIDEBAR_NAV = [
   { name: "Controle Financeiro", href: "/", icon: LayoutDashboard },
   { name: "Investimentos", href: "/wealth", icon: LineChart },
@@ -61,8 +67,8 @@ export const SECTION_TABS = {
       icon: FileSearch,
     },
     {
-      name: "Transações",
-      href: "/governance/transactions",
+      name: "Dados",
+      href: "/governance/data",
       icon: Receipt,
     },
   ],

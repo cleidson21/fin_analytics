@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { PageLayout } from "@/components/layout/PageLayout";
 import { AdminTable, ColumnDef } from "@/components/admin/AdminTable";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminFilters } from "@/components/admin/AdminFilters";
@@ -10,9 +9,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 
-import Link from "next/link";
-
-export default function TransactionsAdminPage() {
+export function TransactionsTab() {
   const { isAdmin } = useCurrentUser();
   
   const [limit] = useState(50);
@@ -76,18 +73,7 @@ export default function TransactionsAdminPage() {
   }
 
   return (
-    <PageLayout
-      title="Administração de Transações"
-      subtitle="Gerencie e reclassifique transações no banco oficial"
-      hideTitle={true}
-      breadcrumb={
-        <div className="text-sm font-medium text-zinc-500 flex items-center gap-2">
-          <Link href="/governance" className="hover:text-white transition-colors">Governança</Link>
-          <span>/</span>
-          <span className="text-zinc-300">Transações</span>
-        </div>
-      }
-    >
+    <div className="space-y-6 mt-4">
       <AdminFilters>
         <form onSubmit={handleSearch} className="flex w-full items-center space-x-2">
           <input
@@ -123,6 +109,6 @@ export default function TransactionsAdminPage() {
         transaction={editingTx}
         onSuccess={() => refetch()}
       />
-    </PageLayout>
+    </div>
   );
 }

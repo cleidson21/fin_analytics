@@ -14,9 +14,9 @@ const TAB_COLORS: Record<string, string> = {
   "/subscriptions": "#b794f4",  // Assinaturas — violeta
   "/categories":    "#f687b3",  // Categorias — rosa
   "/governance":               "#94a3b8",  // Dashboard de Governança
-  "/governance/transactions":  "#7EB8F7",  // Transações — azul
+  "/governance/data":          "#7EB8F7",  // Dados Consolidados
   "/governance/imports":       "#4ecf98",  // Nova Importação — verde
-  "/governance/database":      "#f5a623",  // DB — âmbar
+  "/governance/database":      "#94a3b8",  // Saneamento — slate
   "/governance/audit":         "#f687b3",  // Auditoria — rosa
   "/wealth":                   "#94a3b8",  // Resumo — neutro
   "/wealth/patrimonio":        "#4ecf98",  // Patrimônio — verde
