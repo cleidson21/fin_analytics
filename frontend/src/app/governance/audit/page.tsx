@@ -2,7 +2,7 @@
 
 import { useAuditRuns, useAuditRollbacks } from "@/hooks/useAudit";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { FileSearch, Clock, History, AlertCircle, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { Clock, History, AlertCircle, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

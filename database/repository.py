@@ -11,6 +11,13 @@ from utils.transformers import generate_economic_id
 logger = logging.getLogger(__name__)
 
 
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+
 def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
@@ -104,7 +111,99 @@ class DatabaseManager:
         conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_staging_imports_run_line ON staging_imports(import_run_id, source_line_no)"
         )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_transactions_import_run ON transactions(import_run_id)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_transactions_source ON transactions(source)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_transactions_classificacao ON transactions(classificacao_fonte)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_staging_imports_run_status ON staging_imports(import_run_id, status)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_dividends_ticker ON dividends(ticker)"
+        )
+
+        # ── Sprint 4.4: colunas de rastreabilidade raw_event ──
+        ensure_columns("transactions", (("raw_event_id", "TEXT"),))
+        ensure_columns("positions",    (("raw_event_id", "TEXT"),))
+        ensure_columns("dividends",    (("raw_event_id", "TEXT"),))
+        ensure_columns("import_runs",  (("pipeline_version", "TEXT DEFAULT 'legacy'"),))
+
+        # ── Sprint 4.5: coluna status em event_links ──
+        ensure_columns("event_links",  (("status", "TEXT NOT NULL DEFAULT 'AUTO_CONFIRMED'"),))
+
+        # ── Sprint 4.4: tabelas do pipeline ETL unificado ──
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS raw_events (
+                id                TEXT PRIMARY KEY,
+                import_run_id     TEXT NOT NULL,
+                source            TEXT NOT NULL,
+                event_type        TEXT NOT NULL,
+                source_line_no    INTEGER,
+                raw_content       TEXT,
+                event_date        DATE,
+                reference_month   DATE,
+                amount_cents      INTEGER,
+                currency          TEXT NOT NULL DEFAULT 'BRL',
+                semantic_id       TEXT NOT NULL,
+                cross_fingerprint TEXT,
+                external_id       TEXT,
+                metadata          TEXT,
+                pipeline_status   TEXT NOT NULL DEFAULT 'RAW',
+                match_status      TEXT NOT NULL DEFAULT 'NEW',
+                promoted_entity_id TEXT,
+                promoted_table    TEXT,
+                created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS event_links (
+                id              TEXT PRIMARY KEY,
+                event_id_a      TEXT NOT NULL,
+                event_id_b      TEXT NOT NULL,
+                link_type       TEXT NOT NULL,
+                confidence      REAL NOT NULL DEFAULT 1.0,
+                match_method    TEXT NOT NULL DEFAULT 'EXACT',
+                status          TEXT NOT NULL DEFAULT 'AUTO_CONFIRMED',
+                confirmed_by    TEXT,
+                confirmed_at    TIMESTAMP,
+                notes           TEXT,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(event_id_a) REFERENCES raw_events(id) ON DELETE CASCADE,
+                FOREIGN KEY(event_id_b) REFERENCES raw_events(id) ON DELETE CASCADE
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS reconciliation_hints (
+                id          TEXT PRIMARY KEY,
+                pattern_a   TEXT NOT NULL,
+                source_a    TEXT NOT NULL,
+                pattern_b   TEXT NOT NULL,
+                source_b    TEXT NOT NULL,
+                link_type   TEXT NOT NULL,
+                confidence  REAL NOT NULL DEFAULT 0.8,
+                active      INTEGER NOT NULL DEFAULT 1,
+                confirmed_by TEXT,
+                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_raw_events_run ON raw_events(import_run_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_raw_events_semantic ON raw_events(semantic_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_raw_events_cross_fp ON raw_events(cross_fingerprint)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_raw_events_type_status ON raw_events(event_type, pipeline_status)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_raw_events_source ON raw_events(source)")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_raw_events_semantic_source ON raw_events(semantic_id, source)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_a ON event_links(event_id_a)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_b ON event_links(event_id_b)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_reconciliation_hints_active ON reconciliation_hints(active, source_a, source_b)")
+
         conn.commit()
+
 
     def register_etl_run(self, source: str, file_name: str, rows_read: int, checksum: str = "") -> int:
         with self._get_connection() as conn:
@@ -213,6 +312,16 @@ class DatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # ── 1. Bulk-check duplicatas: 1 query para todos os source_line_no já presentes ──
+            existing_rows = cursor.execute(
+                "SELECT source_line_no FROM staging_imports WHERE import_run_id = ?",
+                (run_id,),
+            ).fetchall()
+            existing_line_nos: set[int] = {row["source_line_no"] for row in existing_rows}
+
+            # ── 2. Separar duplicatas de novos registros ──
+            rows_to_insert: list[tuple] = []
+
             for item in items:
                 source_line_no = item.get("source_line_no")
                 date_value = str(item.get("date", "")).strip()
@@ -223,23 +332,11 @@ class DatabaseManager:
 
                 amount_decimal = _to_decimal(item.get("amount", 0))
                 amount_cents = _decimal_to_cents(amount_decimal)
-                staging_amount = None
 
                 if source_line_no is None or not date_value or not description:
                     status = "ERROR"
 
-                duplicate = cursor.execute(
-                    """
-                    SELECT 1
-                    FROM staging_imports
-                    WHERE import_run_id = ?
-                      AND source_line_no = ?
-                    LIMIT 1
-                    """,
-                    (run_id, source_line_no),
-                ).fetchone()
-
-                if duplicate is not None:
+                if source_line_no in existing_line_nos:
                     inserted_items.append(
                         {
                             "source_line_no": source_line_no,
@@ -253,29 +350,22 @@ class DatabaseManager:
                     )
                     continue
 
-                cursor.execute(
-                    """
-                    INSERT INTO staging_imports (
-                        import_run_id, source_line_no, date, description, amount, amount_cents, account, category_inferred, status
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        run_id,
-                        source_line_no,
-                        date_value,
-                        description,
-                        staging_amount,
-                        amount_cents,
-                        account,
-                        category_inferred,
-                        status,
-                    ),
-                )
+                # Marca como visto para evitar duplicatas dentro do próprio batch
+                existing_line_nos.add(source_line_no)
 
-                staging_id = cursor.lastrowid
+                rows_to_insert.append((
+                    run_id,
+                    source_line_no,
+                    date_value,
+                    description,
+                    None,         # amount (legacy REAL — não usado, cents é o canônico)
+                    amount_cents,
+                    account,
+                    category_inferred,
+                    status,
+                ))
                 inserted_items.append(
                     {
-                        "id": staging_id,
                         "source_line_no": source_line_no,
                         "import_run_id": run_id,
                         "date": date_value,
@@ -285,6 +375,17 @@ class DatabaseManager:
                         "category_inferred": category_inferred,
                         "status": status,
                     }
+                )
+
+            # ── 3. Bulk insert com executemany ──
+            if rows_to_insert:
+                cursor.executemany(
+                    """
+                    INSERT INTO staging_imports (
+                        import_run_id, source_line_no, date, description, amount, amount_cents, account, category_inferred, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    rows_to_insert,
                 )
 
             conn.commit()
@@ -417,7 +518,7 @@ class DatabaseManager:
                         transaction_payload["data"],
                         transaction_payload["descricao_original"],
                         transaction_payload["descricao_normalizada"],
-                        amount_cents,
+                        str(amount_decimal),
                         amount_cents,
                         transaction_payload["identificador_externo"],
                         cat["macro"],
@@ -666,29 +767,36 @@ class DatabaseManager:
         return counts
 
     def rollback_import_run(self, run_id: str, user: str = "api_user", reason: str = "Revertido pelo usuário") -> bool:
-        """Deleta os itens do staging e marca a run como CANCELLED, registrando log do rollback."""
+        """Deleta os itens e marca a run como ROLLED_BACK, registrando log."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             
             cursor.execute("SELECT status FROM import_runs WHERE id = ?", (run_id,))
             row = cursor.fetchone()
-            if not row or row["status"] in ("SUCCESS", "CONFIRMED", "CANCELLED", "FAILED"):
+            if not row or row["status"] in ("CANCELLED", "FAILED", "ROLLED_BACK"):
                 return False
                 
-            # Staging items are deleted via ON DELETE CASCADE if we deleted the run,
-            # but we want to keep the run for audit purposes.
-            # So we manually delete staging rows.
+            # Remover das tabelas oficiais (caso a importação já tenha sido efetivada)
+            cursor.execute("DELETE FROM transactions WHERE import_run_id = ?", (run_id,))
+            cursor.execute("DELETE FROM positions WHERE import_run_id = ?", (run_id,))
+            cursor.execute("DELETE FROM dividends WHERE import_run_id = ?", (run_id,))
+            cursor.execute("DELETE FROM portfolio_evolution WHERE import_run_id = ?", (run_id,))
+
+            # Remover do staging
             cursor.execute("DELETE FROM staging_imports WHERE import_run_id = ?", (run_id,))
             cursor.execute("DELETE FROM staging_positions WHERE import_run_id = ?", (run_id,))
             cursor.execute("DELETE FROM staging_dividends WHERE import_run_id = ?", (run_id,))
             cursor.execute("DELETE FROM staging_portfolio_evolution WHERE import_run_id = ?", (run_id,))
+            
             cursor.execute(
                 """
                 UPDATE import_runs 
-                SET status = 'CANCELLED',
+                SET status = 'ROLLED_BACK',
                     rollback_timestamp = CURRENT_TIMESTAMP,
                     rollback_user = ?,
-                    rollback_reason = ?
+                    rollback_reason = ?,
+                    rows_inserted = 0,
+                    rows_updated = 0
                 WHERE id = ?
                 """, 
                 (user, reason, run_id)
@@ -841,70 +949,73 @@ class DatabaseManager:
         if not transactions:
             return 0, 0
 
-        inserted = 0
-        updated = 0
-
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # ── 1. Pré-computa todas as linhas (categorização é CPU-bound, não I/O) ──
+            rows: list[tuple] = []
+            ids: list[str] = []
             for transaction in transactions:
-                existing = cursor.execute(
-                    "SELECT 1 FROM transactions WHERE id_economico = ?",
-                    (transaction["id_economico"],),
-                ).fetchone()
-
                 cat = categorizer.classify(transaction)
                 source_value = _source_value(transaction.get("source"))
                 origin_value = transaction.get("origin") or source_value
                 domain_value = transaction.get("domain") or "FINANCE"
-                source_line_no = transaction.get("source_line_no")
+                valor_cents = _decimal_to_cents(transaction["valor"])
+                ids.append(transaction["id_economico"])
+                rows.append((
+                    transaction["id_economico"],
+                    source_value,
+                    origin_value,
+                    domain_value,
+                    transaction.get("source_line_no"),
+                    transaction["data"].isoformat(),
+                    transaction["descricao_original"],
+                    transaction["descricao_normalizada"],
+                    valor_cents,
+                    valor_cents,
+                    transaction["identificador_externo"],
+                    cat["macro"],
+                    cat["sub"],
+                    cat["sub"],
+                    cat["natureza"].value,
+                    cat["perfil"].value,
+                ))
 
-                cursor.execute(
-                    """
-                    INSERT INTO transactions (
-                        id_economico, source, origin, domain, source_line_no, data, descricao_original, descricao_normalizada,
-                        valor, valor_cents, identificador_externo, macro_categoria, sub_categoria, subnatureza, natureza, perfil,
-                        classificacao_fonte
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ETL')
-                    ON CONFLICT(id_economico) DO UPDATE SET
-                        source = excluded.source,
-                        origin = excluded.origin,
-                        domain = excluded.domain,
-                        source_line_no = excluded.source_line_no,
-                        descricao_normalizada = excluded.descricao_normalizada,
-                        -- Só atualiza classificação se a transação ainda não foi marcada como MANUAL
-                        macro_categoria = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.macro_categoria ELSE excluded.macro_categoria END,
-                        sub_categoria   = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.sub_categoria   ELSE excluded.sub_categoria   END,
-                        subnatureza     = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.subnatureza     ELSE excluded.subnatureza     END,
-                        natureza        = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.natureza        ELSE excluded.natureza        END,
-                        perfil          = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.perfil          ELSE excluded.perfil          END,
-                        atualizado_em = CURRENT_TIMESTAMP
-                    """,
-                    (
-                        transaction["id_economico"],
-                        source_value,
-                        origin_value,
-                        domain_value,
-                        source_line_no,
-                        transaction["data"].isoformat(),
-                        transaction["descricao_original"],
-                        transaction["descricao_normalizada"],
-                        _decimal_to_cents(transaction["valor"]),
-                        _decimal_to_cents(transaction["valor"]),
-                        transaction["identificador_externo"],
-                        cat["macro"],
-                        cat["sub"],
-                        cat["sub"],
-                        cat["natureza"].value,
-                        cat["perfil"].value,
-                    ),
-                )
+            # ── 2. 1 query para saber quantos já existem (insert vs update count) ──
+            placeholders = ",".join("?" * len(ids))
+            existing_ids: set[str] = {
+                row[0]
+                for row in cursor.execute(
+                    f"SELECT id_economico FROM transactions WHERE id_economico IN ({placeholders})",
+                    ids,
+                ).fetchall()
+            }
+            inserted = len(ids) - len(existing_ids)
+            updated = len(existing_ids)
 
-                if existing is None:
-                    inserted += 1
-                else:
-                    updated += 1
-
+            # ── 3. Bulk upsert ──
+            cursor.executemany(
+                """
+                INSERT INTO transactions (
+                    id_economico, source, origin, domain, source_line_no, data, descricao_original, descricao_normalizada,
+                    valor, valor_cents, identificador_externo, macro_categoria, sub_categoria, subnatureza, natureza, perfil,
+                    classificacao_fonte
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ETL')
+                ON CONFLICT(id_economico) DO UPDATE SET
+                    source = excluded.source,
+                    origin = excluded.origin,
+                    domain = excluded.domain,
+                    source_line_no = excluded.source_line_no,
+                    descricao_normalizada = excluded.descricao_normalizada,
+                    macro_categoria = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.macro_categoria ELSE excluded.macro_categoria END,
+                    sub_categoria   = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.sub_categoria   ELSE excluded.sub_categoria   END,
+                    subnatureza     = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.subnatureza     ELSE excluded.subnatureza     END,
+                    natureza        = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.natureza        ELSE excluded.natureza        END,
+                    perfil          = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.perfil          ELSE excluded.perfil          END,
+                    atualizado_em = CURRENT_TIMESTAMP
+                """,
+                rows,
+            )
             conn.commit()
 
         return inserted, updated
@@ -913,57 +1024,62 @@ class DatabaseManager:
         if not positions:
             return 0, 0
 
-        inserted = 0
-        updated = 0
-
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # ── 1. Pré-computa todas as linhas ──
+            rows: list[tuple] = []
+            keys: list[tuple] = []
             for position in positions:
-                existing = cursor.execute(
-                    "SELECT 1 FROM positions WHERE ticker = ? AND data_snapshot = ?",
-                    (position["ticker"], position["data_snapshot"].isoformat()),
-                ).fetchone()
+                snapshot_iso = position["data_snapshot"].isoformat()
+                keys.append((position["ticker"], snapshot_iso))
+                rows.append((
+                    position["ticker"],
+                    snapshot_iso,
+                    _source_value(position["source"]),
+                    str(position["quantidade"]),
+                    str(position["preco_medio"]),
+                    str(position["total_investido"]),
+                    str(position["preco_atual"]),
+                    str(position["total_atual"]),
+                    str(position["ganho"]),
+                    position.get("import_run_id"),
+                    position.get("source_line_no"),
+                ))
 
-                cursor.execute(
-                    """
-                    INSERT INTO positions (
-                        ticker, data_snapshot, source, quantidade, preco_medio,
-                        total_investido, preco_atual, total_atual, ganho,
-                        import_run_id, source_line_no
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(ticker, data_snapshot) DO UPDATE SET
-                        source = excluded.source,
-                        quantidade = excluded.quantidade,
-                        preco_medio = excluded.preco_medio,
-                        total_investido = excluded.total_investido,
-                        preco_atual = excluded.preco_atual,
-                        total_atual = excluded.total_atual,
-                        ganho = excluded.ganho,
-                        import_run_id = excluded.import_run_id,
-                        source_line_no = excluded.source_line_no,
-                        atualizado_em = CURRENT_TIMESTAMP
-                    """,
-                    (
-                        position["ticker"],
-                        position["data_snapshot"].isoformat(),
-                        _source_value(position["source"]),
-                        str(position["quantidade"]),
-                        str(position["preco_medio"]),
-                        str(position["total_investido"]),
-                        str(position["preco_atual"]),
-                        str(position["total_atual"]),
-                        str(position["ganho"]),
-                        position.get("import_run_id"),
-                        position.get("source_line_no"),
-                    ),
-                )
+            # ── 2. 1 query para contar existentes ──
+            if keys:
+                existing_count = cursor.execute(
+                    f"SELECT COUNT(*) FROM positions WHERE (ticker, data_snapshot) IN ({','.join('(?,?)' for _ in keys)})",
+                    [val for k in keys for val in k],
+                ).fetchone()[0]
+            else:
+                existing_count = 0
+            inserted = len(rows) - existing_count
+            updated = existing_count
 
-                if existing is None:
-                    inserted += 1
-                else:
-                    updated += 1
-
+            # ── 3. Bulk upsert ──
+            cursor.executemany(
+                """
+                INSERT INTO positions (
+                    ticker, data_snapshot, source, quantidade, preco_medio,
+                    total_investido, preco_atual, total_atual, ganho,
+                    import_run_id, source_line_no
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(ticker, data_snapshot) DO UPDATE SET
+                    source = excluded.source,
+                    quantidade = excluded.quantidade,
+                    preco_medio = excluded.preco_medio,
+                    total_investido = excluded.total_investido,
+                    preco_atual = excluded.preco_atual,
+                    total_atual = excluded.total_atual,
+                    ganho = excluded.ganho,
+                    import_run_id = excluded.import_run_id,
+                    source_line_no = excluded.source_line_no,
+                    atualizado_em = CURRENT_TIMESTAMP
+                """,
+                rows,
+            )
             conn.commit()
 
         return inserted, updated
@@ -972,54 +1088,60 @@ class DatabaseManager:
         if not dividends:
             return 0, 0
 
-        inserted = 0
-        updated = 0
-
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # ── 1. Pré-computa todas as linhas ──
+            rows: list[tuple] = []
+            ids: list[str] = []
             for dividend in dividends:
-                existing = cursor.execute(
-                    "SELECT 1 FROM dividends WHERE id_economico = ?",
-                    (dividend["id_economico"],),
-                ).fetchone()
+                ids.append(dividend["id_economico"])
+                vliq_cents = _decimal_to_cents(dividend["valor_liquido"])
+                rows.append((
+                    dividend["id_economico"],
+                    _source_value(dividend["source"]),
+                    dividend["ticker"],
+                    dividend["tipo_evento"],
+                    dividend["data_pagamento"].isoformat(),
+                    vliq_cents,
+                    vliq_cents,
+                    dividend.get("import_run_id"),
+                    dividend.get("source_line_no"),
+                ))
 
-                cursor.execute(
-                    """
-                    INSERT INTO dividends (
-                        id_economico, source, ticker, tipo_evento,
-                        data_pagamento, valor_liquido, valor_liquido_cents,
-                        import_run_id, source_line_no
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(id_economico) DO UPDATE SET
-                        source = excluded.source,
-                        ticker = excluded.ticker,
-                        tipo_evento = excluded.tipo_evento,
-                        data_pagamento = excluded.data_pagamento,
-                        valor_liquido = excluded.valor_liquido,
-                        valor_liquido_cents = excluded.valor_liquido_cents,
-                        import_run_id = excluded.import_run_id,
-                        source_line_no = excluded.source_line_no,
-                        atualizado_em = CURRENT_TIMESTAMP
-                    """,
-                    (
-                        dividend["id_economico"],
-                        _source_value(dividend["source"]),
-                        dividend["ticker"],
-                        dividend["tipo_evento"],
-                        dividend["data_pagamento"].isoformat(),
-                        _decimal_to_cents(dividend["valor_liquido"]),
-                        _decimal_to_cents(dividend["valor_liquido"]),
-                        dividend.get("import_run_id"),
-                        dividend.get("source_line_no"),
-                    ),
-                )
+            # ── 2. 1 query para contar existentes ──
+            placeholders = ",".join("?" * len(ids))
+            existing_ids: set[str] = {
+                row[0]
+                for row in cursor.execute(
+                    f"SELECT id_economico FROM dividends WHERE id_economico IN ({placeholders})",
+                    ids,
+                ).fetchall()
+            }
+            inserted = len(ids) - len(existing_ids)
+            updated = len(existing_ids)
 
-                if existing is None:
-                    inserted += 1
-                else:
-                    updated += 1
-
+            # ── 3. Bulk upsert ──
+            cursor.executemany(
+                """
+                INSERT INTO dividends (
+                    id_economico, source, ticker, tipo_evento,
+                    data_pagamento, valor_liquido, valor_liquido_cents,
+                    import_run_id, source_line_no
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id_economico) DO UPDATE SET
+                    source = excluded.source,
+                    ticker = excluded.ticker,
+                    tipo_evento = excluded.tipo_evento,
+                    data_pagamento = excluded.data_pagamento,
+                    valor_liquido = excluded.valor_liquido,
+                    valor_liquido_cents = excluded.valor_liquido_cents,
+                    import_run_id = excluded.import_run_id,
+                    source_line_no = excluded.source_line_no,
+                    atualizado_em = CURRENT_TIMESTAMP
+                """,
+                rows,
+            )
             conn.commit()
 
         return inserted, updated
@@ -1029,85 +1151,315 @@ class DatabaseManager:
         if not evos:
             return 0, 0
 
-        inserted = 0
-        updated = 0
-
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
+            # ── 1. Pré-computa todas as linhas ──
+            rows: list[tuple] = []
+            months: list[str] = []
             for evo in evos:
-                existing = cursor.execute(
-                    "SELECT 1 FROM portfolio_evolution WHERE reference_month = ?",
-                    (evo["reference_month"].isoformat(),),
-                ).fetchone()
+                month_iso = evo["reference_month"].isoformat()
+                months.append(month_iso)
+                rows.append((
+                    month_iso,
+                    str(evo["rentabilidade_mensal_pct"]),
+                    str(evo["rentabilidade_acumulada_pct"]),
+                    evo["patrimonio_cents"],
+                    evo["compras_cents"],
+                    evo["vendas_cents"],
+                    evo["op_finalizadas_cents"],
+                    evo["proventos_cents"],
+                    str(evo["ibov_mensal_pct"]),
+                    str(evo["ibov_acumulado_pct"]),
+                    str(evo["cdi_mensal_pct"]),
+                    str(evo["cdi_acumulado_pct"]),
+                    str(evo["ipca_mensal_pct"]),
+                    str(evo["ipca_acumulado_pct"]),
+                    str(evo["ifix_mensal_pct"]),
+                    str(evo["ifix_acumulado_pct"]),
+                    str(evo["sp500_mensal_pct"]),
+                    str(evo["sp500_acumulado_pct"]),
+                    str(evo["idiv_mensal_pct"]),
+                    str(evo["idiv_acumulado_pct"]),
+                    evo.get("import_run_id"),
+                    evo.get("source_line_no"),
+                ))
 
-                cursor.execute(
-                    """
-                    INSERT INTO portfolio_evolution (
-                        reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
-                        patrimonio_cents, compras_cents, vendas_cents, op_finalizadas_cents, proventos_cents,
-                        ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
-                        ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
-                        sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
-                        import_run_id, source_line_no
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(reference_month) DO UPDATE SET
-                        rentabilidade_mensal_pct = excluded.rentabilidade_mensal_pct,
-                        rentabilidade_acumulada_pct = excluded.rentabilidade_acumulada_pct,
-                        patrimonio_cents = excluded.patrimonio_cents,
-                        compras_cents = excluded.compras_cents,
-                        vendas_cents = excluded.vendas_cents,
-                        op_finalizadas_cents = excluded.op_finalizadas_cents,
-                        proventos_cents = excluded.proventos_cents,
-                        ibov_mensal_pct = excluded.ibov_mensal_pct,
-                        ibov_acumulado_pct = excluded.ibov_acumulado_pct,
-                        cdi_mensal_pct = excluded.cdi_mensal_pct,
-                        cdi_acumulado_pct = excluded.cdi_acumulado_pct,
-                        ipca_mensal_pct = excluded.ipca_mensal_pct,
-                        ipca_acumulado_pct = excluded.ipca_acumulado_pct,
-                        ifix_mensal_pct = excluded.ifix_mensal_pct,
-                        ifix_acumulado_pct = excluded.ifix_acumulado_pct,
-                        sp500_mensal_pct = excluded.sp500_mensal_pct,
-                        sp500_acumulado_pct = excluded.sp500_acumulado_pct,
-                        idiv_mensal_pct = excluded.idiv_mensal_pct,
-                        idiv_acumulado_pct = excluded.idiv_acumulado_pct,
-                        import_run_id = excluded.import_run_id,
-                        source_line_no = excluded.source_line_no
-                    """,
-                    (
-                        evo["reference_month"].isoformat(),
-                        str(evo["rentabilidade_mensal_pct"]),
-                        str(evo["rentabilidade_acumulada_pct"]),
-                        evo["patrimonio_cents"],
-                        evo["compras_cents"],
-                        evo["vendas_cents"],
-                        evo["op_finalizadas_cents"],
-                        evo["proventos_cents"],
-                        str(evo["ibov_mensal_pct"]),
-                        str(evo["ibov_acumulado_pct"]),
-                        str(evo["cdi_mensal_pct"]),
-                        str(evo["cdi_acumulado_pct"]),
-                        str(evo["ipca_mensal_pct"]),
-                        str(evo["ipca_acumulado_pct"]),
-                        str(evo["ifix_mensal_pct"]),
-                        str(evo["ifix_acumulado_pct"]),
-                        str(evo["sp500_mensal_pct"]),
-                        str(evo["sp500_acumulado_pct"]),
-                        str(evo["idiv_mensal_pct"]),
-                        str(evo["idiv_acumulado_pct"]),
-                        evo.get("import_run_id"),
-                        evo.get("source_line_no"),
-                    ),
-                )
+            # ── 2. 1 query para contar existentes ──
+            placeholders = ",".join("?" * len(months))
+            existing_count = cursor.execute(
+                f"SELECT COUNT(*) FROM portfolio_evolution WHERE reference_month IN ({placeholders})",
+                months,
+            ).fetchone()[0]
+            inserted = len(rows) - existing_count
+            updated = existing_count
 
-                if existing is None:
-                    inserted += 1
-                else:
-                    updated += 1
-
+            # ── 3. Bulk upsert ──
+            cursor.executemany(
+                """
+                INSERT INTO portfolio_evolution (
+                    reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                    patrimonio_cents, compras_cents, vendas_cents, op_finalizadas_cents, proventos_cents,
+                    ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                    ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                    sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
+                    import_run_id, source_line_no
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(reference_month) DO UPDATE SET
+                    rentabilidade_mensal_pct = excluded.rentabilidade_mensal_pct,
+                    rentabilidade_acumulada_pct = excluded.rentabilidade_acumulada_pct,
+                    patrimonio_cents = excluded.patrimonio_cents,
+                    compras_cents = excluded.compras_cents,
+                    vendas_cents = excluded.vendas_cents,
+                    op_finalizadas_cents = excluded.op_finalizadas_cents,
+                    proventos_cents = excluded.proventos_cents,
+                    ibov_mensal_pct = excluded.ibov_mensal_pct,
+                    ibov_acumulado_pct = excluded.ibov_acumulado_pct,
+                    cdi_mensal_pct = excluded.cdi_mensal_pct,
+                    cdi_acumulado_pct = excluded.cdi_acumulado_pct,
+                    ipca_mensal_pct = excluded.ipca_mensal_pct,
+                    ipca_acumulado_pct = excluded.ipca_acumulado_pct,
+                    ifix_mensal_pct = excluded.ifix_mensal_pct,
+                    ifix_acumulado_pct = excluded.ifix_acumulado_pct,
+                    sp500_mensal_pct = excluded.sp500_mensal_pct,
+                    sp500_acumulado_pct = excluded.sp500_acumulado_pct,
+                    idiv_mensal_pct = excluded.idiv_mensal_pct,
+                    idiv_acumulado_pct = excluded.idiv_acumulado_pct,
+                    import_run_id = excluded.import_run_id,
+                    source_line_no = excluded.source_line_no
+                """,
+                rows,
+            )
             conn.commit()
 
         return inserted, updated
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Sprint 4.4 — ETL Inteligente
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    def insert_raw_events(self, events: list[dict]):
+        """Insere ou atualiza RawFinancialEvents em batch."""
+        if not events:
+            return
+        
+        with self._get_connection() as conn:
+            import json
+            cursor = conn.cursor()
+            cursor.executemany(
+                """
+                INSERT INTO raw_events (
+                    id, import_run_id, source, event_type, source_line_no, raw_content,
+                    event_date, reference_month, amount_cents, currency,
+                    semantic_id, cross_fingerprint, external_id, metadata,
+                    pipeline_status, match_status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(semantic_id, source) DO UPDATE SET
+                    pipeline_status = excluded.pipeline_status,
+                    match_status = excluded.match_status,
+                    cross_fingerprint = excluded.cross_fingerprint,
+                    metadata = excluded.metadata
+                """,
+                [
+                    (
+                        e["id"], e["import_run_id"], e["source"], e["event_type"],
+                        e.get("source_line_no"), e.get("raw_content"),
+                        e.get("event_date"), e.get("reference_month"),
+                        e.get("amount_cents"), e.get("currency", "BRL"),
+                        e["semantic_id"], e.get("cross_fingerprint"),
+                        e.get("external_id"), json.dumps(e.get("metadata", {})),
+                        e["pipeline_status"], e["match_status"],
+                    )
+                    for e in events
+                ]
+            )
+            conn.commit()
+
+    def create_event_links(self, links: list[tuple]):
+        """
+        Insere event links.
+        links = [(id, event_id_a, event_id_b, link_type, confidence, match_method, status, notes), ...]
+        """
+        if not links:
+            return
+            
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                """
+                INSERT INTO event_links (
+                    id, event_id_a, event_id_b, link_type, confidence, match_method, status, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO NOTHING
+                """,
+                links
+            )
+            conn.commit()
+
+    def get_active_hints(self) -> list[dict]:
+        """Retorna todas as dicas de reconciliação ativas."""
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            return cursor.execute("SELECT * FROM reconciliation_hints WHERE active = 1").fetchall()
+
+    def promote_raw_events(self, run_id: str) -> dict:
+        """
+        Promove eventos do import_run_id de CLASSIFIED para as tabelas finais.
+        Retorna dicionário com contagens.
+        """
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            
+            # Busca eventos classificados do run
+            raw_events = cursor.execute(
+                """
+                SELECT * FROM raw_events 
+                WHERE import_run_id = ? 
+                  AND pipeline_status = 'CLASSIFIED' 
+                  AND match_status != 'DUPLICATE'
+                  AND id NOT IN (SELECT event_id_a FROM event_links WHERE status = 'SUGGESTED')
+                  AND id NOT IN (SELECT event_id_b FROM event_links WHERE status = 'SUGGESTED')
+                """,
+                (run_id,)
+            ).fetchall()
+            
+            if not raw_events:
+                return {"inserted": 0, "errors": 0}
+                
+            inserted_tx = 0
+            inserted_pos = 0
+            inserted_div = 0
+            inserted_evo = 0
+            
+            import json
+            for event in raw_events:
+                meta = json.loads(event.get("metadata") or "{}")
+                
+                try:
+                    if event["event_type"] in ("TRANSACTION", "INVOICE"):
+                        amount_dec = _cents_to_decimal(event["amount_cents"]) if event["amount_cents"] is not None else 0
+                        
+                        id_economico = meta.get("id_economico")
+                        if not id_economico:
+                            id_economico = generate_economic_id(
+                                "MANUAL", event["source"], event["source_line_no"],
+                                event["event_date"], meta.get("descricao_normalizada", ""),
+                                str(amount_dec), event["source"]
+                            )
+                            
+                        cursor.execute(
+                            """
+                            INSERT INTO transactions (
+                                id_economico, source, origin, import_run_id, source_line_no, data,
+                                descricao_original, descricao_normalizada, valor, valor_cents, identificador_externo,
+                                macro_categoria, sub_categoria, subnatureza, natureza, perfil, classificacao_fonte, raw_event_id
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT(id_economico) DO UPDATE SET
+                                raw_event_id = excluded.raw_event_id,
+                                import_run_id = excluded.import_run_id,
+                                macro_categoria = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.macro_categoria ELSE excluded.macro_categoria END,
+                                sub_categoria   = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.sub_categoria   ELSE excluded.sub_categoria   END,
+                                subnatureza     = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.subnatureza     ELSE excluded.subnatureza     END,
+                                natureza        = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.natureza        ELSE excluded.natureza        END,
+                                perfil          = CASE WHEN transactions.classificacao_fonte = 'MANUAL' THEN transactions.perfil          ELSE excluded.perfil          END,
+                                atualizado_em = CURRENT_TIMESTAMP
+                            """,
+                            (
+                                id_economico, event["source"], meta.get("origin", "ETL"), run_id, event["source_line_no"], event["event_date"],
+                                meta.get("descricao_original", ""), meta.get("descricao_normalizada", ""),
+                                str(amount_dec), event["amount_cents"], event["external_id"],
+                                meta.get("macro_categoria", "OUTROS"), meta.get("sub_categoria", "INDEFINIDO"),
+                                meta.get("sub_categoria", "INDEFINIDO"), meta.get("natureza", "INDEFINIDO"),
+                                "INDEFINIDO", meta.get("classificacao_fonte", "ETL"), event["id"]
+                            )
+                        )
+                        inserted_tx += 1
+                        
+                    elif event["event_type"] == "DIVIDEND":
+                        amount_dec = _cents_to_decimal(event["amount_cents"]) if event["amount_cents"] is not None else 0
+                        cursor.execute(
+                            """
+                            INSERT INTO dividends (
+                                id_economico, source, ticker, tipo_evento, data_pagamento, 
+                                valor_liquido, valor_liquido_cents, import_run_id, source_line_no, raw_event_id
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT(ticker, data_pagamento, valor_liquido_cents) DO UPDATE SET
+                                raw_event_id = excluded.raw_event_id,
+                                import_run_id = excluded.import_run_id,
+                                atualizado_em = CURRENT_TIMESTAMP
+                            """,
+                            (
+                                event["external_id"], event["source"], meta.get("ticker"), meta.get("tipo_evento"), event["event_date"],
+                                str(amount_dec), event["amount_cents"], run_id, event["source_line_no"], event["id"]
+                            )
+                        )
+                        inserted_div += 1
+                        
+                    elif event["event_type"] == "POSITION":
+                        cursor.execute(
+                            """
+                            INSERT INTO positions (
+                                ticker, data_snapshot, source, quantidade, preco_medio, total_investido,
+                                preco_atual, total_atual, ganho, import_run_id, source_line_no, raw_event_id
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT(ticker, data_snapshot) DO UPDATE SET
+                                raw_event_id = excluded.raw_event_id,
+                                import_run_id = excluded.import_run_id,
+                                atualizado_em = CURRENT_TIMESTAMP
+                            """,
+                            (
+                                meta.get("ticker"), meta.get("data_snapshot"), event["source"], meta.get("quantidade"), meta.get("preco_medio"), meta.get("total_investido"),
+                                meta.get("preco_atual"), meta.get("total_atual"), meta.get("ganho"), run_id, event["source_line_no"], event["id"]
+                            )
+                        )
+                        inserted_pos += 1
+                        
+                    elif event["event_type"] == "PORTFOLIO_EVO":
+                        cursor.execute(
+                            """
+                            INSERT INTO portfolio_evolution (
+                                reference_month, rentabilidade_mensal_pct, rentabilidade_acumulada_pct,
+                                patrimonio_cents, compras_cents, vendas_cents, op_finalizadas_cents, proventos_cents,
+                                ibov_mensal_pct, ibov_acumulado_pct, cdi_mensal_pct, cdi_acumulado_pct,
+                                ipca_mensal_pct, ipca_acumulado_pct, ifix_mensal_pct, ifix_acumulado_pct,
+                                sp500_mensal_pct, sp500_acumulado_pct, idiv_mensal_pct, idiv_acumulado_pct,
+                                import_run_id, source_line_no
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT(reference_month) DO UPDATE SET
+                                import_run_id = excluded.import_run_id,
+                                patrimonio_cents = excluded.patrimonio_cents,
+                                compras_cents = excluded.compras_cents,
+                                vendas_cents = excluded.vendas_cents,
+                                op_finalizadas_cents = excluded.op_finalizadas_cents,
+                                proventos_cents = excluded.proventos_cents
+                            """,
+                            (
+                                meta.get("reference_month"), meta.get("rentabilidade_mensal_pct"), meta.get("rentabilidade_acumulada_pct"),
+                                meta.get("patrimonio_cents"), meta.get("compras_cents"), meta.get("vendas_cents"), meta.get("op_finalizadas_cents"), meta.get("proventos_cents"),
+                                meta.get("ibov_mensal_pct"), meta.get("ibov_acumulado_pct"), meta.get("cdi_mensal_pct"), meta.get("cdi_acumulado_pct"),
+                                meta.get("ipca_mensal_pct"), meta.get("ipca_acumulado_pct"), meta.get("ifix_mensal_pct"), meta.get("ifix_acumulado_pct"),
+                                meta.get("sp500_mensal_pct"), meta.get("sp500_acumulado_pct"), meta.get("idiv_mensal_pct"), meta.get("idiv_acumulado_pct"),
+                                run_id, event["source_line_no"]
+                            )
+                        )
+                        inserted_evo += 1
+                        
+                    cursor.execute("UPDATE raw_events SET pipeline_status = 'PROMOTED' WHERE id = ?", (event["id"],))
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Erro ao promover evento {event['id']}: {e}")
+            
+            conn.commit()
+            return {
+                "inserted": inserted_tx + inserted_pos + inserted_div + inserted_evo,
+                "tx": inserted_tx,
+                "pos": inserted_pos,
+                "div": inserted_div,
+                "evo": inserted_evo,
+                "errors": 0
+            }
 
     def get_user_by_username(self, username: str) -> dict:
         with self._get_connection() as conn:
@@ -1315,3 +1667,195 @@ class DatabaseManager:
                 "type": "transaction",
                 "table": "transactions"
             }
+
+    def update_event_link_status(self, link_id: str, status: str) -> None:
+        with self._get_connection() as conn:
+            conn.execute("UPDATE event_links SET status = ? WHERE id = ?", (status, link_id))
+            conn.commit()
+            
+    def get_run_ids_for_link(self, link_id: str) -> list[str]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            query = """
+                SELECT a.import_run_id as a_run, b.import_run_id as b_run 
+                FROM event_links el
+                JOIN raw_events a ON el.event_id_a = a.id
+                JOIN raw_events b ON el.event_id_b = b.id
+                WHERE el.id = ?
+            """
+            row = cursor.execute(query, (link_id,)).fetchone()
+            if row:
+                runs = {row[0], row[1]}
+                return [r for r in runs if r]
+            return []
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Sprint 4.7 — Memória Financeira (Rules & Learning)
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    def get_active_rules(self) -> list[dict]:
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            return cursor.execute("SELECT * FROM rules WHERE status = 'ACTIVE'").fetchall()
+
+    def upsert_rule(self, rule_type: str, pattern: str, action: str, reason: str = None) -> str:
+        """
+        Creates a new rule or supersedes an existing identical one.
+        Returns the ID of the active rule.
+        """
+        import uuid
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            
+            # Check if an active rule with same pattern exists
+            existing = cursor.execute(
+                "SELECT id, version, hit_count, miss_count, action FROM rules WHERE rule_type = ? AND pattern = ? AND active = 1",
+                (rule_type, pattern)
+            ).fetchone()
+            
+            new_id = str(uuid.uuid4())
+            version = 1
+            
+            if existing:
+                if existing['action'] == action:
+                    return existing['id']  # Nothing changed
+                
+                cursor.execute("UPDATE rules SET active = 0, superseded_by = ? WHERE id = ?", (new_id, existing['id']))
+                version = existing['version'] + 1
+                
+            cursor.execute(
+                """
+                INSERT INTO rules (id, rule_type, pattern, action, reason, version)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (new_id, rule_type, pattern, action, reason, version)
+            )
+            conn.commit()
+            return new_id
+
+    def record_rule_feedback(self, rule_id: str, is_hit: bool) -> None:
+        """Updates evidence_count, hit_count, miss_count, confidence_score and status."""
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            
+            # Buscamos o estado atual
+            current = cursor.execute("SELECT hit_count, miss_count, evidence_count, status FROM rules WHERE id = ?", (rule_id,)).fetchone()
+            if not current:
+                return
+                
+            hit_count = current['hit_count'] + (1 if is_hit else 0)
+            miss_count = current['miss_count'] + (0 if is_hit else 1)
+            evidence_count = current['evidence_count'] + 1
+            confidence_score = float(hit_count) / float(evidence_count)
+            
+            current_status = current['status']
+            new_status = current_status
+            
+            # State Machine:
+            if current_status == 'OBSERVING':
+                if evidence_count >= 3 and confidence_score >= 0.8:
+                    new_status = 'ACTIVE'
+            elif current_status == 'ACTIVE':
+                if confidence_score < 0.3:
+                    new_status = 'QUARANTINED'
+            elif current_status == 'QUARANTINED':
+                # Recuperação
+                if confidence_score >= 0.4:  # Margem para voltar ao ACTIVE
+                    new_status = 'ACTIVE'
+            
+            if new_status != current_status:
+                cursor.execute(
+                    """
+                    UPDATE rules 
+                    SET hit_count = ?, miss_count = ?, evidence_count = ?, confidence_score = ?, 
+                        last_used = CURRENT_TIMESTAMP, status = ?, status_changed_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """, (hit_count, miss_count, evidence_count, confidence_score, new_status, rule_id)
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE rules 
+                    SET hit_count = ?, miss_count = ?, evidence_count = ?, confidence_score = ?, 
+                        last_used = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """, (hit_count, miss_count, evidence_count, confidence_score, rule_id)
+                )
+            conn.commit()
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Sprint 4.8 — Governança da Memória Financeira
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    def get_learning_metrics(self) -> dict:
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            
+            stats = cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_rules,
+                    SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_rules,
+                    SUM(CASE WHEN status = 'OBSERVING' THEN 1 ELSE 0 END) as observing_rules,
+                    SUM(CASE WHEN status = 'QUARANTINED' THEN 1 ELSE 0 END) as quarantined_rules,
+                    SUM(CASE WHEN status = 'RETIRED' THEN 1 ELSE 0 END) as retired_rules,
+                    SUM(hit_count) as total_hits,
+                    SUM(miss_count) as total_misses
+                FROM rules
+            """).fetchone()
+            
+            if not stats:
+                return {}
+                
+            total_hits = stats['total_hits'] or 0
+            total_misses = stats['total_misses'] or 0
+            
+            health_score = 0
+            if total_hits + total_misses > 0:
+                health_score = (total_hits / (total_hits + total_misses)) * 100
+                
+            stats['memory_health_score'] = round(health_score, 2)
+            
+            return stats
+
+    def get_rules_audit(self, limit: int = 100, offset: int = 0, status: str = None) -> list[dict]:
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            
+            query = "SELECT * FROM rules"
+            params = []
+            
+            if status:
+                query += " WHERE status = ?"
+                params.append(status)
+                
+            query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            
+            return cursor.execute(query, params).fetchall()
+
+    def get_top_rules(self, limit: int = 20) -> list[dict]:
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            return cursor.execute("""
+                SELECT * FROM rules 
+                WHERE status IN ('ACTIVE', 'OBSERVING')
+                ORDER BY hit_count DESC, confidence_score DESC 
+                LIMIT ?
+            """, (limit,)).fetchall()
+
+    def get_problematic_rules(self, limit: int = 20) -> list[dict]:
+        with self._get_connection() as conn:
+            conn.row_factory = dict_factory
+            cursor = conn.cursor()
+            return cursor.execute("""
+                SELECT * FROM rules 
+                WHERE miss_count > 0
+                ORDER BY miss_count DESC 
+                LIMIT ?
+            """, (limit,)).fetchall()

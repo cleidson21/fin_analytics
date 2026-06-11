@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Transaction } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
 import { fetchFromAPI } from "@/lib/api";
 
 export interface TransactionFilters {
@@ -13,7 +15,7 @@ export interface TransactionFilters {
 }
 
 export function useTransactions(filters: TransactionFilters) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -30,7 +32,7 @@ export function useTransactions(filters: TransactionFilters) {
       if (filters.endDate) queryParams.set("endDate", filters.endDate);
       if (filters.category) queryParams.set("category", filters.category);
 
-      const response = await fetchFromAPI<{ items: any[]; total: number }>(
+      const response = await fetchFromAPI<PaginatedResponse<Transaction>>(
         `/transactions?${queryParams.toString()}`
       );
 
@@ -38,8 +40,8 @@ export function useTransactions(filters: TransactionFilters) {
         setData(response.items || []);
         setTotal(response.total || 0);
       }
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
       setData([]);
       setTotal(0);
     } finally {

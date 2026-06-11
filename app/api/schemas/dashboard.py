@@ -40,11 +40,13 @@ class SubscriptionsSummary(BaseModel):
 
 
 class InstallmentItem(BaseModel):
+    purchase_id: str
     base_name: str
     original_name: str
     date: str
     installment_amount: float
     current_installment: int
+    first_installment_found: int
     total_installments: int
     total_estimated: float
     already_paid: float

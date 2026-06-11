@@ -12,11 +12,10 @@ queries = FinancialQueries()
 @router.get("/summary", response_model=list[AccountSummary])
 def get_accounts_summary():
     """Retorna o saldo agregado por instituição/conta."""
-    df = queries.get_accounts_summary()
-    if df.empty:
+    records = queries.get_accounts_summary()
+    if not records:
         return []
 
-    records = df.to_dict(orient="records")
     return [
         AccountSummary(
             institution=r["institution"],

@@ -11,7 +11,17 @@ import { fetchFromAPI } from "@/lib/api";
 
 interface ImportResponse {
   run_id: string;
-  preview: any;
+  preview: Record<string, unknown>;
+}
+
+interface MyProfitPreview {
+  detected_file_type?: string;
+  total_rows?: number;
+  period_start?: string;
+  period_end?: string;
+  tickers_found?: string[];
+  errors?: string[];
+  run_id?: string;
 }
 
 export default function GovernanceUploadPage() {
@@ -27,7 +37,7 @@ export default function GovernanceUploadPage() {
   // States para MyProfit
   const [myprofitFile, setMyprofitFile] = useState<File | null>(null);
   const [myprofitSubmitting, setMyprofitSubmitting] = useState(false);
-  const [myprofitPreview, setMyprofitPreview] = useState<any>(null);
+  const [myprofitPreview, setMyprofitPreview] = useState<MyProfitPreview | null>(null);
   const [myprofitError, setMyprofitError] = useState<string | null>(null);
   
   // Submit Pierre
@@ -53,8 +63,8 @@ export default function GovernanceUploadPage() {
       setPierreMessage(`Importacao concluida. Run ID: ${response.run_id}`);
       setPierreText("");
       router.push(`/governance/review?run=${response.run_id}`);
-    } catch (err: any) {
-      setPierreError(err.message || "Erro desconhecido");
+    } catch (err) {
+      setPierreError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setPierreSubmitting(false);
     }
@@ -106,9 +116,9 @@ export default function GovernanceUploadPage() {
         return;
       }
 
-      setMyprofitPreview({ ...response.preview, run_id: response.run_id });
-    } catch (err: any) {
-      setMyprofitError(err.message || "Erro ao processar MyProfit");
+      setMyprofitPreview({ ...(response.preview as MyProfitPreview), run_id: response.run_id });
+    } catch (err) {
+      setMyprofitError(err instanceof Error ? err.message : "Erro ao processar MyProfit");
     } finally {
       setMyprofitSubmitting(false);
     }
@@ -157,7 +167,7 @@ export default function GovernanceUploadPage() {
 
       <div className="max-w-4xl mx-auto w-full">
         {activeTab === "PIERRE" && (
-          <section className="rounded-md border border-zinc-800 bg-zinc-900/50 p-8 shadow-sm">
+          <section className="rounded-md border border-slate-800 bg-slate-900/50 p-8 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <ClipboardPaste className="h-5 w-5 text-emerald-300" />
               <h2 className="text-xl font-semibold text-zinc-100">Colar CSV do Pierre</h2>
@@ -168,7 +178,7 @@ export default function GovernanceUploadPage() {
                 onChange={(e) => setPierreText(e.target.value)}
                 rows={12}
                 placeholder="Cole aqui as novas linhas do Extrato Pierre Processado.csv"
-                className="w-full rounded-md border border-zinc-700 bg-zinc-900 p-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/50"
+                className="w-full rounded-md border border-slate-800 bg-slate-900 p-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/50"
               />
               <Button
                 variant="admin"
@@ -186,7 +196,7 @@ export default function GovernanceUploadPage() {
         )}
 
         {activeTab === "MYPROFIT" && (
-          <section className="rounded-md border border-zinc-800 bg-zinc-900/50 p-8 shadow-sm">
+          <section className="rounded-md border border-slate-800 bg-slate-900/50 p-8 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <FileUp className="h-5 w-5 text-emerald-300" />
               <h2 className="text-xl font-semibold text-zinc-100">Upload de Arquivo (MyProfit)</h2>
@@ -196,7 +206,7 @@ export default function GovernanceUploadPage() {
               <div
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-zinc-700 bg-zinc-900/50 p-16 text-center transition hover:border-emerald-500/50 cursor-pointer"
+                className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-800 bg-slate-900/50 p-16 text-center transition hover:border-emerald-500/50 cursor-pointer"
                 onClick={() => document.getElementById("fileInput")?.click()}
               >
                 <FileUp className="mb-4 h-10 w-10 text-emerald-500/50" />
@@ -225,22 +235,22 @@ export default function GovernanceUploadPage() {
             )}
 
             {myprofitPreview && (
-              <div className="mt-6 space-y-6 rounded-md border border-zinc-800 bg-zinc-900 p-6">
-                <div className="border-b border-zinc-800 pb-4">
+              <div className="mt-6 space-y-6 rounded-md border border-slate-800 bg-slate-900 p-6">
+                <div className="border-b border-slate-800 pb-4">
                   <h3 className="text-lg font-medium text-zinc-100">Resultado da Validação</h3>
                   <p className="text-sm text-zinc-400 mt-1">Nenhum dado foi gravado definitivamente ainda.</p>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                  <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-4">
+                  <div className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
                     <span className="block text-zinc-500 mb-1">Arquivo Detectado</span>
                     <span className="font-medium text-zinc-200">{myprofitPreview.detected_file_type}</span>
                   </div>
-                  <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-4">
+                  <div className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
                     <span className="block text-zinc-500 mb-1">Total de Linhas</span>
                     <span className="font-medium text-zinc-200">{myprofitPreview.total_rows}</span>
                   </div>
-                  <div className="rounded-md border border-zinc-800 bg-zinc-900/50 p-4">
+                  <div className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
                     <span className="block text-zinc-500 mb-1">Período</span>
                     <span className="font-medium text-zinc-200">{myprofitPreview.period_start || '-'} a {myprofitPreview.period_end || '-'}</span>
                   </div>

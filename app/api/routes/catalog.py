@@ -16,8 +16,7 @@ categorizer = SmartCategorizer(Path(__file__).resolve().parents[3] / "taxonomy" 
 @router.get("", response_model=CatalogResponse)
 def get_catalog():
     """Retorna listas canónicas de categorias, naturezas e contas."""
-    accounts_df = queries.get_account_catalog()
-    accounts = accounts_df["account"].dropna().tolist() if not accounts_df.empty else []
+    accounts = queries.get_account_catalog()
 
     return CatalogResponse(
         categories=categorizer.available_categories(),

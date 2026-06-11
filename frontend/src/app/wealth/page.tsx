@@ -6,10 +6,9 @@ import { useAllocationData } from "@/hooks/useAllocationData";
 import { useAlphaData } from "@/hooks/useAlphaData";
 import { useWealthStore } from "@/hooks/useWealthStore";
 import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
-import { WealthSectionTitle } from "@/components/wealth/ui/WealthSectionTitle";
 import { WealthPeriodToggle } from "@/components/wealth/ui/WealthPeriodToggle";
 import { Wallet, TrendingUp, PieChart, Coins, Activity, Target, ShieldAlert } from "lucide-react";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, colorForValue, getScoreColor } from "@/lib/utils";
 import Link from "next/link";
 import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -67,12 +66,12 @@ export default function WealthHome() {
         <Link href="/wealth/evolution" className="block group">
           <WealthKpiCard
             title="Alpha vs IBOV"
-            value={isLoading ? "..." : `${alphaVal >= 0 ? "+" : ""}${alphaVal.toFixed(2)}%`}
+            value={<span className={colorForValue(alphaVal)}>{isLoading ? "..." : `${alphaVal >= 0 ? "+" : ""}${alphaVal.toFixed(2)}%`}</span>}
             icon={Activity}
             iconBgColor={alphaVal >= 0 ? "bg-[#4ecf98]/10" : "bg-[#e97070]/10"}
             iconColor={alphaVal >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}
-            sub={isLoading ? "" : `IBOV: ${alpha.summary?.ibov_acumulado_pct.toFixed(2)}%`}
-            subColor="neutral"
+            sub={isLoading ? "" : <span className="text-[#7EB8F7]">IBOV: {alpha.summary?.ibov_acumulado_pct.toFixed(2)}%</span>}
+            subType="text"
             className="group-hover:border-white/20 transition-all"
           />
         </Link>
@@ -80,7 +79,7 @@ export default function WealthHome() {
         <Link href="/wealth/allocation" className="block group">
           <WealthKpiCard
             title="Score de Diversificação"
-            value={isLoading ? "..." : `${allocation.diversificationScore}/100`}
+            value={<span className={getScoreColor(allocation.diversificationScore)}>{isLoading ? "..." : `${allocation.diversificationScore}/100`}</span>}
             icon={PieChart}
             iconBgColor="bg-[#7F77DD]/10"
             iconColor="text-[#7F77DD]"
@@ -168,18 +167,18 @@ export default function WealthHome() {
             {/* Insight 2: Concentração Top 5 */}
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
-                <ShieldAlert className={cn("w-4 h-4", allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-neutral-500")} />
-                <span className="text-[10px] uppercase tracking-widest text-neutral-600 font-medium">Concentração Top 5</span>
+                <ShieldAlert className={cn("w-4 h-4", allocation.top5Concentration > 70 ? "text-[#e97070]" : allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-[#4ecf98]")} />
+                <span className={cn("text-[10px] uppercase tracking-widest font-medium", allocation.top5Concentration > 70 ? "text-[#e97070]" : allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-[#4ecf98]")}>Concentração Top 5</span>
               </div>
               <div className="flex items-end gap-2 mb-1">
-                <span className={cn("text-xl font-semibold", allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-neutral-300")}>
+                <span className={cn("text-xl font-semibold", allocation.top5Concentration > 70 ? "text-[#e97070]" : allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-[#4ecf98]")}>
                   {allocation.top5Concentration.toFixed(1)}%
                 </span>
                 <span className="text-xs text-neutral-500 mb-1">das 5 maiores posições no patrimônio</span>
               </div>
               <div className="w-full bg-white/[0.05] rounded-full h-1 overflow-hidden mt-1 mb-3">
                 <div 
-                  className={cn("h-full", allocation.top5Concentration > 50 ? "bg-[#f5a623]" : "bg-[#4ecf98]")} 
+                  className={cn("h-full", allocation.top5Concentration > 70 ? "bg-[#e97070]" : allocation.top5Concentration > 50 ? "bg-[#f5a623]" : "bg-[#4ecf98]")} 
                   style={{ width: `${allocation.top5Concentration}%` }} 
                 />
               </div>

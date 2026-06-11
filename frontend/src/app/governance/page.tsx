@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
-  ArrowRight, 
   Activity, 
   CheckCircle2, 
   Clock, 
@@ -64,10 +63,10 @@ export default function GovernanceDashboardPage() {
       
       if (metricsData) setMetrics(metricsData);
       if (runsData && runsData.items) {
-        setRecentRuns(runsData.items.filter((r) => r.source_type !== "LEGACY"));
+        setRecentRuns(runsData.items.filter((r: { source_type: string }) => r.source_type !== "LEGACY"));
       }
-    } catch (err: any) {
-      if (err.name === "AuthError") {
+    } catch (err) {
+      if (err instanceof Error && err.name === "AuthError") {
         setIsUnauthorized(true);
       } else {
         console.error("Failed to load dashboard data", err);
@@ -100,6 +99,12 @@ export default function GovernanceDashboardPage() {
       {/* Header Actions */}
       <div className="mb-4 flex items-center justify-end">
         <div className="flex gap-3">
+          <Link href="/governance/learning">
+            <Button variant="admin-outline" size="sm" className="text-zinc-300 border-emerald-500/30 hover:bg-emerald-500/10">
+              <Activity className="h-4 w-4 mr-2 text-emerald-400" />
+              Memória Financeira
+            </Button>
+          </Link>
           <Button variant="admin-outline" size="sm" onClick={loadDashboard} disabled={loading} className="text-zinc-300 border-white/10 hover:bg-white/5">
             <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Atualizar
@@ -117,10 +122,10 @@ export default function GovernanceDashboardPage() {
 
       {/* KPI Cards */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
           <div className="flex items-center gap-3 text-zinc-400">
             <Activity className="h-5 w-5 text-emerald-400" />
-            <span className="text-sm font-medium uppercase tracking-wider">Total Runs</span>
+            <span className="text-sm font-medium uppercase tracking-wider">Importações</span>
           </div>
           <p className="mt-4 text-3xl font-semibold text-white">{metrics?.total_runs ?? "-"}</p>
           <p className="mt-1 text-xs text-zinc-500">
@@ -128,7 +133,7 @@ export default function GovernanceDashboardPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
           <div className="flex items-center gap-3 text-zinc-400">
             <CheckCircle2 className="h-5 w-5 text-blue-400" />
             <span className="text-sm font-medium uppercase tracking-wider">Confirmados</span>
@@ -137,7 +142,7 @@ export default function GovernanceDashboardPage() {
           <p className="mt-1 text-xs text-zinc-500">Importações efetivadas</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
           <div className="flex items-center gap-3 text-zinc-400">
             <Clock className="h-5 w-5 text-yellow-400" />
             <span className="text-sm font-medium uppercase tracking-wider">Pendentes</span>
@@ -146,7 +151,7 @@ export default function GovernanceDashboardPage() {
           <p className="mt-1 text-xs text-zinc-500">Aguardando revisão</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
           <div className="flex items-center gap-3 text-zinc-400">
             <DatabaseBackup className="h-5 w-5 text-purple-400" />
             <span className="text-sm font-medium uppercase tracking-wider">Linhas Salvas</span>
@@ -160,7 +165,7 @@ export default function GovernanceDashboardPage() {
       </div>
 
       {/* Recent Runs Table */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 shadow-xl">
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 shadow-xl">
         <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <List className="h-5 w-5 text-zinc-300" />
@@ -170,7 +175,7 @@ export default function GovernanceDashboardPage() {
         
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-black/20 text-zinc-400">
+            <thead className="bg-slate-800/50 text-zinc-400">
               <tr>
                 <th className="px-6 py-3 font-medium">Data</th>
                 <th className="px-6 py-3 font-medium">Arquivo</th>

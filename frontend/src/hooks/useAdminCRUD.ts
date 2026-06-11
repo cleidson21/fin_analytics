@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { fetchFromAPI } from "@/lib/api";
+import { UpdateTransactionDTO, UpdatePositionDTO, UpdateDividendDTO } from "@/types/dto";
 
 export function useTransactionAdmin() {
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const updateTransaction = async (idEconomico: string, payload: any) => {
+  const updateTransaction = async (idEconomico: string, payload: UpdateTransactionDTO) => {
     setIsUpdating(true);
     try {
       await fetchFromAPI(`/governance/transactions/${idEconomico}`, {
@@ -22,7 +23,7 @@ export function useTransactionAdmin() {
 export function usePositionAdmin() {
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const updatePosition = async (ticker: string, dataSnapshot: string, payload: any) => {
+  const updatePosition = async (ticker: string, dataSnapshot: string, payload: UpdatePositionDTO) => {
     setIsUpdating(true);
     try {
       await fetchFromAPI(`/governance/positions/${ticker}/${dataSnapshot}`, {
@@ -40,7 +41,7 @@ export function usePositionAdmin() {
 export function useDividendAdmin() {
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const updateDividend = async (idEconomico: string, payload: any) => {
+  const updateDividend = async (idEconomico: string, payload: UpdateDividendDTO) => {
     setIsUpdating(true);
     try {
       await fetchFromAPI(`/governance/dividends/${idEconomico}`, {

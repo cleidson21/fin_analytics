@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Dividend } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
 import { fetchFromAPI } from "@/lib/api";
 
 export interface DividendFilters {
@@ -13,7 +15,7 @@ export interface DividendFilters {
 }
 
 export function useDividendsAdmin(filters: DividendFilters) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Dividend[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -30,7 +32,7 @@ export function useDividendsAdmin(filters: DividendFilters) {
       if (filters.start_date) queryParams.set("start_date", filters.start_date);
       if (filters.end_date) queryParams.set("end_date", filters.end_date);
 
-      const response = await fetchFromAPI<{ items: any[]; total: number }>(
+      const response = await fetchFromAPI<PaginatedResponse<Dividend>>(
         `/governance/dividends?${queryParams.toString()}`
       );
 
@@ -38,8 +40,8 @@ export function useDividendsAdmin(filters: DividendFilters) {
         setData(response.items || []);
         setTotal(response.total || 0);
       }
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
       setData([]);
       setTotal(0);
     } finally {

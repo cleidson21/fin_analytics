@@ -340,18 +340,19 @@ class FinancialQueries:
         """
 
         with self._get_connection() as conn:
-            last_df = pd.read_sql(query_last, conn)
-            next_df = pd.read_sql(query_next, conn)
+            cursor = conn.cursor()
+            last_rows = cursor.execute(query_last).fetchall()
+            next_row = cursor.execute(query_next).fetchone()
 
         last_items = [
             {
                 "source_line_no": int(row["source_line_no"]),
                 "description": row["descricao_original"],
             }
-            for _, row in last_df.iterrows()
+            for row in last_rows
         ]
 
-        next_line = int(next_df.iloc[0]["next_line"]) if not next_df.empty else 1
+        next_line = int(next_row["next_line"]) if next_row and next_row["next_line"] is not None else 1
         return {"last_items": last_items, "next_line": next_line}
 
     def get_transactions(
@@ -363,7 +364,7 @@ class FinancialQueries:
         account: str | None = None,
         category: str | None = None,
         natureza: str | None = None,
-    ) -> tuple[pd.DataFrame, int]:
+    ) -> tuple[list[dict], int]:
         where_sql, params = self._build_transaction_filters(
             start_date=start_date,
             end_date=end_date,
@@ -390,17 +391,26 @@ class FinancialQueries:
         """
 
         with self._get_connection() as conn:
-            total_df = pd.read_sql(count_query, conn, params=params)
+            cursor = conn.cursor()
+            total = cursor.execute(count_query, params).fetchone()[0]
 
             items_params = [*params, limit, offset]
-            items_df = pd.read_sql(items_query, conn, params=items_params)
+            rows = cursor.execute(items_query, items_params).fetchall()
 
-        if "amount_cents" in items_df.columns:
-            items_df["amount"] = items_df["amount_cents"].apply(_cents_to_decimal)
-            items_df.drop(columns=["amount_cents"], inplace=True)
-
-        total = int(total_df.iloc[0]["total"]) if not total_df.empty else 0
-        return items_df, total
+        items = [
+            {
+                "id": row["id"],
+                "data": row["data"],
+                "description": row["description"],
+                "category": row["category"],
+                "natureza": row["natureza"],
+                "subnatureza": row["subnatureza"],
+                "account": row["account"],
+                "amount": _cents_to_decimal(row["amount_cents"]),
+            }
+            for row in rows
+        ]
+        return items, total
 
     def get_transactions_summary(
         self,
@@ -429,12 +439,11 @@ class FinancialQueries:
         """
 
         with self._get_connection() as conn:
-            df = pd.read_sql(query, conn, params=params)
+            row = conn.cursor().execute(query, params).fetchone()
 
-        if df.empty:
+        if not row or row["income_cents"] is None:
             return {"income": Decimal("0.00"), "expense": Decimal("0.00"), "balance": Decimal("0.00")}
 
-        row = df.iloc[0]
         return {
             "income": _cents_to_decimal(row["income_cents"] or 0),
             "expense": _cents_to_decimal(row["expense_cents"] or 0),
@@ -489,21 +498,21 @@ class FinancialQueries:
             return cursor.rowcount > 0
 
 
-    def get_accounts_summary(self) -> pd.DataFrame:
+    def get_accounts_summary(self) -> list[dict]:
         query = "SELECT source as institution, SUM(valor_cents) as balance_cents FROM transactions GROUP BY source ORDER BY balance_cents DESC"
         with self._get_connection() as conn:
-            df = pd.read_sql(query, conn)
+            rows = conn.cursor().execute(query).fetchall()
 
-        if "balance_cents" in df.columns:
-            df["balance"] = df["balance_cents"].apply(_cents_to_decimal)
-            df.drop(columns=["balance_cents"], inplace=True)
+        return [
+            {"institution": row["institution"], "balance": _cents_to_decimal(row["balance_cents"])}
+            for row in rows
+        ]
 
-        return df
-
-    def get_account_catalog(self) -> pd.DataFrame:
+    def get_account_catalog(self) -> list[str]:
         query = "SELECT DISTINCT source as account FROM transactions ORDER BY account ASC"
         with self._get_connection() as conn:
-            return pd.read_sql(query, conn)
+            rows = conn.cursor().execute(query).fetchall()
+        return [row["account"] for row in rows]
 
     def get_net_worth_history(self) -> pd.DataFrame:
         """Busca o Património Total do ÚLTIMO dia registado de cada mês."""
@@ -689,7 +698,7 @@ class FinancialQueries:
             "proventos_totais": _cents_to_decimal(row["proventos_totais_cents"])
         }
 
-    def get_import_runs(self, limit: int = 50, offset: int = 0) -> pd.DataFrame:
+    def get_import_runs(self, limit: int = 50, offset: int = 0) -> list[dict]:
         """Busca o histórico de importações recentes."""
         query = """
             SELECT 
@@ -700,7 +709,8 @@ class FinancialQueries:
             LIMIT ? OFFSET ?
         """
         with self._get_connection() as conn:
-            return pd.read_sql(query, conn, params=[limit, offset])
+            rows = conn.cursor().execute(query, [limit, offset]).fetchall()
+        return [dict(row) for row in rows]
 
     def get_dashboard_metrics(self) -> dict:
         """Busca KPIs globais para o Dashboard de Governança."""
@@ -785,6 +795,12 @@ class FinancialQueries:
             elif file_type == "EVOLUCAO":
                 cursor.execute(
                     "SELECT source_line_no, reference_month as ticker, validation_status, validation_message FROM staging_portfolio_evolution WHERE import_run_id = ? ORDER BY source_line_no ASC",
+                    (run_id,)
+                )
+                items = [dict(r) for r in cursor.fetchall()]
+            elif run.get("source_type") == "PIERRE":
+                cursor.execute(
+                    "SELECT source_line_no, description as ticker, status as validation_status, NULL as validation_message FROM staging_imports WHERE import_run_id = ? ORDER BY source_line_no ASC",
                     (run_id,)
                 )
                 items = [dict(r) for r in cursor.fetchall()]
@@ -885,6 +901,40 @@ class FinancialQueries:
 
         events.sort(key=lambda x: x["date"], reverse=True)
         return events
+
+    def get_asset_cashflow(self, ticker: str) -> list[dict]:
+        """
+        Busca o histórico de eventos financeiros (cashflow) de um ativo.
+        Usa a tabela raw_events do ETL v2 para cruzar dividendos e compras/vendas.
+        """
+        query = """
+            SELECT 
+                event_date as date,
+                amount_cents,
+                event_type as type,
+                source,
+                metadata
+            FROM raw_events
+            WHERE json_extract(metadata, '$.ticker') = ?
+               OR json_extract(metadata, '$.descricao_original') LIKE ?
+            ORDER BY event_date DESC
+        """
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            rows = cursor.execute(query, (ticker, f"%{ticker}%")).fetchall()
+            
+            return [
+                {
+                    "date": r["date"],
+                    "amount": _cents_to_decimal(r["amount_cents"]) if r["amount_cents"] is not None else 0,
+                    "type": r["type"],
+                    "source": r["source"],
+                    "metadata": __import__("json").loads(r["metadata"] or "{}")
+                }
+                for r in rows
+            ]
+
     def get_database_summary(self) -> dict:
         summary = {}
         with self._get_connection() as conn:
@@ -1063,3 +1113,64 @@ class FinancialQueries:
             items = [dict(row) for row in cursor.execute(query, [limit, offset]).fetchall()]
                 
             return items, total
+
+    def get_reconciliation_inbox(self) -> dict:
+        import json
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            suggestions_query = """
+                SELECT el.*, 
+                       a.source as a_source, a.event_type as a_type, a.amount_cents as a_amount, a.event_date as a_date, a.metadata as a_meta,
+                       b.source as b_source, b.event_type as b_type, b.amount_cents as b_amount, b.event_date as b_date, b.metadata as b_meta
+                FROM event_links el
+                LEFT JOIN raw_events a ON el.event_id_a = a.id
+                LEFT JOIN raw_events b ON el.event_id_b = b.id
+                WHERE el.status = 'SUGGESTED'
+            """
+            suggestions_raw = cursor.execute(suggestions_query).fetchall()
+            
+            suggestions = []
+            for row in suggestions_raw:
+                d = dict(row)
+                d["event_a"] = {
+                    "id": d["event_id_a"],
+                    "source": d["a_source"],
+                    "event_type": d["a_type"],
+                    "event_date": d["a_date"],
+                    "amount_cents": d["a_amount"],
+                    "metadata": json.loads(d["a_meta"] or "{}") if d["a_meta"] else {}
+                }
+                d["event_b"] = {
+                    "id": d["event_id_b"],
+                    "source": d["b_source"],
+                    "event_type": d["b_type"],
+                    "event_date": d["b_date"],
+                    "amount_cents": d["b_amount"],
+                    "metadata": json.loads(d["b_meta"] or "{}") if d["b_meta"] else {}
+                }
+                for k in ["a_source", "a_type", "a_amount", "a_date", "a_meta", "b_source", "b_type", "b_amount", "b_date", "b_meta"]:
+                    d.pop(k, None)
+                suggestions.append(d)
+                
+            orphans_query = """
+                SELECT id, source, event_type, amount_cents, event_date, metadata
+                FROM raw_events
+                WHERE pipeline_status = 'PROMOTED'
+                  AND id NOT IN (SELECT event_id_a FROM event_links)
+                  AND id NOT IN (SELECT event_id_b FROM event_links)
+                ORDER BY event_date DESC
+                LIMIT 100
+            """
+            orphans_raw = cursor.execute(orphans_query).fetchall()
+            orphans = []
+            for r in orphans_raw:
+                od = dict(r)
+                od["metadata"] = json.loads(od["metadata"] or "{}") if od["metadata"] else {}
+                orphans.append(od)
+            
+            return {
+                "suggestions": suggestions,
+                "orphans": orphans
+            }

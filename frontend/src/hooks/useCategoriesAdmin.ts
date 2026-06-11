@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Category } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
 import { fetchFromAPI } from "@/lib/api";
 
 export interface CategoryFilters {
@@ -10,7 +12,7 @@ export interface CategoryFilters {
 }
 
 export function useCategoriesAdmin(filters: CategoryFilters) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Category[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -23,7 +25,7 @@ export function useCategoriesAdmin(filters: CategoryFilters) {
       queryParams.set("limit", filters.limit.toString());
       queryParams.set("offset", filters.offset.toString());
 
-      const response = await fetchFromAPI<{ items: any[]; total: number }>(
+      const response = await fetchFromAPI<PaginatedResponse<Category>>(
         `/governance/categories?${queryParams.toString()}`
       );
 
@@ -43,8 +45,8 @@ export function useCategoriesAdmin(filters: CategoryFilters) {
         // Quando não tem, usa o total do backend.
         setTotal(filters.search ? filteredItems.length : response.total || 0);
       }
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
       setData([]);
       setTotal(0);
     } finally {

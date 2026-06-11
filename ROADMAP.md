@@ -14,8 +14,9 @@
 | Governança de Importação | ✅ Concluído (Staging, Review, Rollback) |
 | Importação CSV | ✅ Concluído |
 | Administração do banco | ✅ Concluído |
-| Governança dos dados | 🔄 Próximo |
-| MVP Stabilization | ⬜ Próximo |
+| Governança dos dados | ✅ Concluído |
+| MVP Stabilization | ✅ Concluído |
+| Otimização Backend | ⬜ Próximo |
 | Backup e Restore | ⬜ Próximo |
 | Docker | ⬜ Próximo |
 | Metas financeiras | ⬜ Planejado |
@@ -34,21 +35,22 @@
 2.  Governança de Importação (Fase 0.5)        ✅ Concluído (Staging e Promoção Atômica)
 3.  Importação definitiva CSV MyProfit (Fase 1) ✅ Concluído
 4.  Administração do banco (Fase 2) ✅ Concluído
-5.  Governança dos dados (Fase 3) ← fazer AGORA
-6.  MVP Stabilization (Fase 4)
-7.  Backup e Restore (Fase 5)
-8.  Docker + Documentação básica (Fase 6)
-9.  Metas financeiras (Fase 7)
-10. Python-GenAI — automação Pierre (Fase 8)
-11. Market Data / YFinance (Fase 9)
-12. Central de Insights (Fase 10)
-13. Testes (unitários + integração + E2E) (Fase 11)
-14. Auditoria de segurança (Fase 11)
-15. CI/CD (Fase 6, complemento)
-16. Open Finance
-17. IA Conversacional
-18. Planejamento FIRE
-19. Relatório IRPF
+5.  Governança dos dados (Fase 3) ✅ Concluído
+6.  MVP Stabilization e Auditoria (Fase 4) ✅ Concluído
+7.  Tuning e Otimização do Backend (Fase 4.3) ← fazer AGORA
+8.  Backup e Restore (Fase 5)
+9.  Docker + Documentação básica (Fase 6)
+10. Metas financeiras (Fase 7)
+11. Python-GenAI — automação Pierre (Fase 8)
+12. Market Data / YFinance (Fase 9)
+13. Central de Insights (Fase 10)
+14. Testes (unitários + integração + E2E) (Fase 11)
+15. Auditoria de segurança (Fase 11)
+16. CI/CD (Fase 6, complemento)
+17. Open Finance
+18. IA Conversacional
+19. Planejamento FIRE
+20. Relatório IRPF
 ```
 
 **Por que Fase 0.5 antes de tudo?**
@@ -295,91 +297,167 @@ Transformar as APIs administrativas já existentes em ferramentas visuais de cur
 
 ---
 
-## ⬜ Fase 4 — Governança Inteligente (Preparação para IA) e Estabilização 🆕
+## ✅ Fase 4 — Estabilização (MVP) e Auditoria de Arquitetura 🆕
 
-**Objetivo:** Iniciar fundação de aprendizado contínuo para IA e estabilizar a base antes do módulo Metas.
+**Objetivo:** Estabilizar o frontend com tipagem estrita (Zero Any) e auditar o backend para identificar gargalos.
 
-### Governança Inteligente
-- ⬜ Regras de validação de entrada por tipo de lançamento (PIX, cartão, TED, boleto)
-- ⬜ Score de qualidade dos dados por mês (% de transações sem categoria, sem valor, etc.)
-- ⬜ Dataset de correções do usuário para few-shots na IA:
-  - Cada correção manual salva um par (entrada original → categoria correta)
-  - Após N correções, gerar arquivo de few-shots automaticamente
-  - Alimentar chamadas futuras ao Gemini (ver Fase 8)
+### Sprint 4.1 — Saúde do Frontend (Concluída)
+- ✅ Resolver todos os warnings do React (chaves únicas, deps de useEffect, etc.)
+- ✅ Revisar e eliminar hooks duplicados entre módulos
+- ✅ Revisar componentes duplicados (Wealth vs Dashboard)
+- ✅ Eliminar tipagens `any` remanescentes — substituir por tipos concretos e contratos de domínio
+- ✅ Remover `console.log` esquecidos
+- ✅ Resolver todos os `TODO` e `FIXME` no código
+- ✅ Remover imports mortos
+- ✅ Build verde no Next.js (0 erros de lint e tsc)
 
-### MVP Stabilization
-- ⬜ Resolver todos os warnings do React (chaves únicas, deps de useEffect, etc.)
-- ⬜ Revisar e eliminar hooks duplicados entre módulos
-- ⬜ Revisar componentes duplicados (Wealth vs Dashboard)
-- ⬜ Eliminar tipagens `any` remanescentes — substituir por tipos concretos
-- ⬜ Remover `console.log` esquecidos
-- ⬜ Resolver todos os `TODO` e `FIXME` no código
-- ⬜ Remover imports mortos
-- ⬜ Revisar queries lentas — adicionar índices onde necessário
-- ⬜ Revisar cache — evitar re-fetch desnecessário ao trocar de aba
-- ⬜ Revisar estados globais — garantir consistência entre módulos
-- ⬜ Review de performance dos gráficos — avaliar memoização e downsampling de séries longas
+### Sprint 4.2 — Auditoria do Backend (Concluída)
+- ✅ Mapear estrutura completa e endpoints
+- ✅ Auditar banco de dados (índices, FKs, colunas legadas)
+- ✅ Identificar gargalos de performance (N+1 queries e Pandas em rotas transacionais)
+- ✅ Avaliar consistência de modelagem e IA Readiness
+
+### Sprint 4.3 — Tuning e Otimização do Backend (Concluída)
+- ✅ Remover dependência do Pandas em consultas transacionais simples (`queries.py`)
+- ✅ Refatorar loop N+1 no upload de arquivos (`repository.py`) para `executemany`
+- ✅ Adicionar chaves estrangeiras (FKs) pendentes e unificar sistema de tipagem (`cents` apenas)
+
+### Sprint 4.4 — ETL Inteligente e Pipeline Unificado (Concluída)
+- ✅ Centralizar parsing (Nubank Conta, Nubank Fatura, MyProfit, Pierre Legado)
+- ✅ Criar pipeline Agnóstico de Eventos (`RawFinancialEvent`)
+- ✅ Criar Deduplicador e Fingerprint Semântico (SHA-256)
+- ✅ Persistir buffer temporal `raw_events`
+
+### Sprint 4.5 — Reconciliation Engine (Concluída)
+- ✅ Criar motor de matching entre eventos de múltiplas fontes
+- ✅ Definir heurísticas e Scoring (Data, Valor, Descrição Fuzzy, Natureza Financeira)
+- ✅ Suportar `DIVIDEND_CREDIT`, `INVOICE_PAYMENT`, `INVESTMENT_PURCHASE`
+- ✅ Salvar pares suspeitos ou garantidos na tabela `event_links`
+
+### Sprint 4.6 — Inbox de Reconciliação (Concluída)
+- ✅ Criar interface `/governance/reconciliations` (React)
+- ✅ Apresentar `Event_A` lado a lado com `Event_B` e botão de Aprovar/Rejeitar
+- ✅ Processar o ciclo de vida (Confirmar -> Promover os Eventos à Tabela Principal)
+- ✅ Auditoria End-to-End da Reconciliação (Sprint 4.6.1)
+
+### Sprint 4.7 — Memória Financeira Permanente (Concluída)
+- ✅ Criar schema universal `rules` (Confidence Engine)
+- ✅ Integrar ciclo de Hits, Misses, e Evidence Count
+- ✅ Executar Classifier respeitando a prioridade estrita de Regras vs Heurísticas
+- ✅ Limiar de Aprendizado: Exigir 3 correções idênticas antes da regra ficar ativa
+- ✅ Congelar Dataset (`vw_rules_training_dataset`) para uso de IA futura
+
+### Sprint 4.8 — Governança da Memória Financeira (Concluída)
+
+**Objetivo:** Transformar a Memória Financeira Permanente em um sistema auditável, observável e governável.
+
+- ✅ Criar Dashboard de Learning `/governance/learning`
+- ✅ Exibir KPIs globais da memória
+- ✅ Exibir evolução temporal de regras
+- ✅ Exibir crescimento da memória
+- ✅ Implantar ciclo de vida formal (`OBSERVING`, `ACTIVE`, `QUARANTINED`, `RETIRED`)
+- ✅ Exibir Top Regras
+- ✅ Exibir Regras Problemáticas
+- ✅ Exibir degradação de score
+- ✅ Auditoria completa de regras
+- ✅ Validar se ETL consome apenas regras ACTIVE
+- ✅ Executar auditoria E2E completa
 
 ---
 
 ## ⬜ Fase 5 — Backup e Restore
 
-**Objetivo:** garantir que nenhum dado seja perdido antes de qualquer deploy ou migração.
+**Objetivo:** Garantir proteção total do patrimônio e dos dados antes da conteinerização.
 
-> Fazer antes do Docker. Patrimônio, dividendos e histórico real não podem ser perdidos
-> em uma migração ou erro de ambiente.
+- ⬜ Exportação completa do banco em SQLite
+- ⬜ Exportação completa em JSON
+- ⬜ Restore completo SQLite
+- ⬜ Restore completo JSON
+- ⬜ Backup incremental
+- ⬜ Histórico de backups
+- ⬜ Validação de integridade pós-restore
+- ⬜ Simulação de desastre
+- ⬜ Simulação de recuperação
 
-- ⬜ Exportar banco completo em JSON
-- ⬜ Exportar banco em SQLite
-- ⬜ Importar backup de volta (restore completo)
-- ⬜ Backup incremental (só o que mudou desde o último backup)
-- ⬜ Verificação de integridade pós-restore
-
----
-
-## ⬜ Fase 6 — Docker e documentação
-
-- ⬜ Dockerfile frontend (Next.js, multi-stage build)
-- ⬜ Dockerfile backend
-- ⬜ `docker-compose.yml` completo (frontend + backend + banco + volumes persistentes)
-- ⬜ `.env.example` documentado com todas as variáveis necessárias
-- ⬜ README com setup em 3 passos: clone → `docker-compose up` → abrir localhost
-- ⬜ Documentação de arquitetura (fluxo de dados, estrutura de pastas, decisões técnicas)
-- ⬜ Documentação do módulo Wealth (endpoints, shapes de response, cálculo de alpha e DY)
-- ⬜ Documentação dos importadores (colunas por CSV, configuração do pipeline Gemini)
-- ⬜ CI/CD com GitHub Actions: lint → testes → build (bloquear merge se falhar)
+**Critério de aceite:**
+- Banco pode ser destruído e restaurado integralmente
+- Nenhuma perda de transações
+- Nenhuma perda de patrimônio
+- Nenhuma perda de dividendos
 
 ---
 
-## ⬜ Fase 7 — Metas financeiras
+## ⬜ Fase 6 — Docker e Documentação
 
-**Objetivo:** fechar o ciclo — transformar o sistema de painel de consulta em ferramenta de decisão.
+**Objetivo:** Transformar o sistema em uma aplicação reproduzível e implantável.
 
-> Depende de: Importação estável (Fase 1) + Governança dos dados (Fase 3) + MVP Stabilization (Fase 4).
+### Docker
+- ⬜ Dockerfile Frontend
+- ⬜ Dockerfile Backend
+- ⬜ `docker-compose.yml`
+- ⬜ Volumes persistentes
+- ⬜ Variáveis de ambiente
+- ⬜ Build automatizado
 
-- ⬜ Estrutura de dados: tabela `goals` (tipo, valor_alvo, prazo, status, progresso)
+### Documentação
+- ⬜ README completo
+- ⬜ Guia de instalação
+- ⬜ Guia de atualização
+- ⬜ Arquitetura do sistema
+- ⬜ Fluxo ETL
+- ⬜ Fluxo Wealth
+- ⬜ Fluxo de Governança
+- ⬜ Fluxo de Aprendizado
+- ⬜ Fluxo de Reconciliação
+- ⬜ Fluxo de Backup
+
+### CI/CD
+- ⬜ Lint
+- ⬜ Testes
+- ⬜ Build
+- ⬜ Bloqueio de merge em caso de erro
+
+---
+
+## ⬜ Fase 7 — Metas Financeiras
+
+**Objetivo:** Transformar o sistema em ferramenta de decisão financeira.
+
+- ⬜ Estrutura de dados: tabela `goals`
   - Tipos: `reserva_emergencia`, `viagem`, `imovel`, `independencia_financeira`, `livre`
-- ⬜ Integração com Controle Financeiro — saldo mensal médio e sobra média
-- ⬜ Integração com Wealth — patrimônio, rentabilidade e dividendos como contribuição às metas
-- ⬜ Simulador de cenários: conservador (saldo atual) vs otimista (aumento de aportes/rentabilidade)
-- 🆕 Simulador de aportes: "Se eu aportar R$X/mês, quando chego a R$Y?" — rentabilidade histórica real
-- 🆕 Recomendação de onde aportar: score de diversificação atual → sugerir classe (pré-YFinance: lógica local)
+- ⬜ Cálculo de progresso
+- ⬜ Cálculo de prazo
+- ⬜ Integração com Wealth
+- ⬜ Integração com Dashboard
+- ⬜ Simulador conservador
+- ⬜ Simulador otimista
+- ⬜ Simulador de aportes
+- ⬜ Projeções futuras
+- 🆕 Se eu aportar X por mês quando atinjo Y?
+- 🆕 Se minha rentabilidade permanecer igual quando atinjo Y?
+- 🆕 Sugestão de classe de ativos para diversificação
 
 ---
 
-## ⬜ Fase 8 — Automação com Gemini API
+## ⬜ Fase 8 — Automação Gemini + Governança Inteligente
 
-**Objetivo:** eliminar o processo manual de Pierre → cópia → Gemini → ajuste → importação.
+**Objetivo:** Eliminar processos manuais.
 
-> As tabelas `prompt_versions` e `ai_runs` criadas na Fase 0.5 são usadas aqui diretamente.
+### Governança Inteligente
+- ⬜ Validação por tipo de lançamento
+- ⬜ Score de qualidade dos dados
+- ⬜ Score por mês
+- ⬜ Score por origem
+- ⬜ Dataset de correções do usuário
+- ⬜ Geração automática de few-shots
 
-- ⬜ Integração `python-genai` (googleapis/python-genai)
-- ⬜ Pipeline: mensagem Pierre → Gemini → JSON estruturado → importação automática via `import_runs`
-- ⬜ Classificação automática: PIX, cartão, TED, boleto → categoria sugerida + grau de confiança
-- 🆕 Ativar prompts da biblioteca (seeds criados na Fase 0.5) como base inicial
-- 🆕 Aplicar técnicas de prompt engineering (few-shot, chain-of-thought, output JSON estruturado)
-  - Referência: https://www.promptingguide.ai/pt
-- 🆕 Alimentar few-shots automaticamente com o dataset de correções da Fase 3
+### Integração Gemini
+- ⬜ `python-genai`
+- ⬜ Prompts versionados
+- ⬜ `ai_runs`
+- ⬜ `prompt_versions`
+- ⬜ Pipeline: Pierre → Gemini → JSON Estruturado → ETL → Governança → Wealth
+- ⬜ Implementar: few-shot learning, chain of thought, output JSON estruturado, aprendizado contínuo
 
 ---
 

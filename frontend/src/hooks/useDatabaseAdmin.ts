@@ -71,11 +71,13 @@ export function useDatabaseAdmin() {
       setTables({ data: tabRes, isLoading: false });
       setHealth({ data: healRes, isLoading: false });
       setIntegrity({ data: intRes, isLoading: false });
-    } catch (err: any) {
-      if (err.name === "AuthError") {
-        setIsUnauthorized(true);
-      } else {
-        console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.name === "AuthError") {
+          setIsUnauthorized(true);
+        } else {
+          console.error(err);
+        }
       }
       setSummary(s => ({ ...s, isLoading: false }));
       setTables(s => ({ ...s, isLoading: false }));
@@ -94,8 +96,10 @@ export function useDatabaseAdmin() {
       const data = await fetchFromAPI<VacuumEstimate>("/governance/database/vacuum/estimate", { method: "POST" });
       setVacuumEstimateMutation({ data, isPending: false });
       return data;
-    } catch (err: any) {
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err);
+      }
       setVacuumEstimateMutation({ data: null, isPending: false });
     }
   };
@@ -107,8 +111,8 @@ export function useDatabaseAdmin() {
       setVacuumMutation({ data, isPending: false, isSuccess: true });
       loadData();
       return data;
-    } catch (err: any) {
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) console.error(err);
       setVacuumMutation({ data: null, isPending: false, isSuccess: false });
     }
   };
@@ -119,8 +123,8 @@ export function useDatabaseAdmin() {
       await fetchFromAPI("/governance/database/recount", { method: "POST" });
       setRecountMutation({ isPending: false });
       loadData();
-    } catch (err: any) {
-      console.error(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) console.error(err);
       setRecountMutation({ isPending: false });
     }
   };

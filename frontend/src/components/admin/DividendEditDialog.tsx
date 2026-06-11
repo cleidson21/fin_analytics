@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { AdminEditDialog } from "./AdminEditDialog";
 import { useDividendAdmin } from "@/hooks/useAdminCRUD";
 import { Button } from "@/components/ui/button";
+import { Dividend } from "@/types/entities";
 
 interface DividendEditDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  dividend: any;
+  dividend: Dividend;
   onSuccess: () => void;
 }
 
@@ -46,7 +47,7 @@ export function DividendEditDialog({
       alert("Dividendo atualizado com sucesso.\\nRegistro enviado para Audit Log.");
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       alert("Erro ao atualizar dividendo.");
     }
   };

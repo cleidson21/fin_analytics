@@ -2,7 +2,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { formatCurrency } from '@/lib/utils';
 
 interface AssetHistoryChartProps {
-  data: any[];
+  data: Record<string, unknown>[];
 }
 
 export function AssetHistoryChart({ data }: AssetHistoryChartProps) {
@@ -43,7 +43,7 @@ export function AssetHistoryChart({ data }: AssetHistoryChartProps) {
           <Tooltip 
             contentStyle={{ backgroundColor: '#1A1D24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
             itemStyle={{ color: '#4ecf98' }}
-            formatter={(value: any) => [formatCurrency(value as number), 'Cotação']}
+            formatter={(value: unknown) => [formatCurrency(Number(value)), 'Cotação']}
             labelStyle={{ color: '#8B92A5', marginBottom: '4px' }}
           />
           <Area 

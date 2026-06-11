@@ -3,8 +3,11 @@ import hashlib
 import os
 from datetime import datetime
 import uuid
+import logging
 
-from fastapi import APIRouter, HTTPException
+logger = logging.getLogger(__name__)
+
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 
 from app.api.schemas.governance import (
     ImportStatusResponse,
@@ -183,12 +186,10 @@ def import_pierre(payload: PierreImportRequest):
 @router.get("/imports", response_model=ImportRunListResponse)
 def get_imports(limit: int = 50, offset: int = 0):
     """Retorna o histórico de importações registradas em import_runs."""
-    df = queries.get_import_runs(limit=limit, offset=offset)
-    if df.empty:
+    records = queries.get_import_runs(limit=limit, offset=offset)
+    if not records:
         return ImportRunListResponse(items=[], total=0)
         
-    import pandas as pd
-    records = [{k: v if pd.notna(v) else None for k, v in row.items()} for row in df.to_dict(orient="records")]
     return ImportRunListResponse(
         items=records,
         total=len(records) # ideal seria um count real
@@ -471,3 +472,161 @@ def list_admin_categories(
 ):
     items, total = queries.get_admin_categories(limit, offset)
     return AdminCategoryListResponse(items=items, total=total, limit=limit, offset=offset)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sprint 4.4 & 4.5 — ETL Inteligente: Endpoint Unificado com Motor de Scoring
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/import-unified")
+async def import_unified(
+    file: UploadFile = File(...),
+    current_user = Depends(require_admin)
+):
+    """
+    Endpoint de importação usando o pipeline ETL v2 (Sprint 4.4 / 4.5).
+    Auto-detecta a fonte, normaliza, faz match e classificação, 
+    usa a engine de reconciliação com scoring e promove os registros.
+    """
+    import logging
+    from etl.normalizers import REGISTRY
+    from etl.matcher import EventMatcher
+    from etl.classifier import EventClassifier
+    from etl.engine import ReconciliationEngine
+
+    logger = logging.getLogger(__name__)
+    raw_content_bytes = await file.read()
+    
+    try:
+        raw_content_str = raw_content_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raw_content_str = raw_content_bytes.decode("latin1")
+
+    # 1. Detectar fonte
+    normalizer = None
+    for norm in REGISTRY:
+        if norm.can_handle(file.filename, raw_content_str):
+            normalizer = norm
+            break
+
+    if not normalizer:
+        raise HTTPException(status_code=400, detail="Formato de arquivo não reconhecido pelo ETL.")
+
+    run_id = repository.create_import_run(
+        source_type=normalizer.source_id,
+        file_name=file.filename,
+        checksum="",
+        created_by=current_user.id
+    )
+    # Marcar que usamos o ETL v2
+    with repository._get_connection() as conn:
+        conn.execute("UPDATE import_runs SET pipeline_version = 'etl_v2' WHERE id = ?", (run_id,))
+        conn.commit()
+
+    try:
+        # 2. Normalizar
+        events = normalizer.normalize(raw_content_str, run_id)
+        if not events:
+            raise HTTPException(status_code=400, detail="Nenhum evento pôde ser normalizado.")
+
+        # 3. Match (Deduplicação)
+        with repository._get_connection() as conn:
+            existing_semantic_ids, existing_cross_fps = EventMatcher.load_existing_from_db(conn)
+
+        matcher = EventMatcher()
+        match_results = matcher.match(events, existing_semantic_ids, existing_cross_fps)
+        matched_events = [r.event for r in match_results]
+
+        # 4. Reconcile (Links cross-source com Scoring Engine)
+        with repository._get_connection() as conn:
+            existing_links_rows = conn.execute("SELECT event_id_a, event_id_b FROM event_links").fetchall()
+            existing_links = [{"event_id_a": row[0], "event_id_b": row[1]} for row in existing_links_rows]
+            
+        active_hints = repository.get_active_hints()
+        reconciler = ReconciliationEngine(hints=active_hints)
+        new_links = reconciler.reconcile(matched_events, existing_links)
+
+        # 5. Classifier
+        from pathlib import Path
+        rules_path = Path("rules.csv")
+        classifier = EventClassifier(rules_path)
+        classified_events = classifier.classify(matched_events, new_links)
+
+        # 6. Persistir RAW e LINKS
+        repository.insert_raw_events(classified_events)
+        if new_links:
+            links_tuples = [
+                (lk.id, lk.event_id_a, lk.event_id_b, lk.link_type, lk.confidence, lk.match_method, lk.status, lk.notes)
+                for lk in new_links
+            ]
+            repository.create_event_links(links_tuples)
+
+        # 7. Promoção
+        promo_stats = repository.promote_raw_events(run_id)
+
+        # 8. Atualizar run
+        status = "COMPLETED" if promo_stats["inserted"] > 0 else "PARTIAL"
+        repository.update_import_run_metrics(
+            run_id=run_id,
+            status=status,
+            rows_read=len(events),
+            rows_inserted=promo_stats["inserted"],
+            rows_failed=promo_stats["errors"],
+        )
+
+        return {
+            "run_id": run_id,
+            "source": normalizer.source_id,
+            "events_read": len(events),
+            "events_promoted": promo_stats["inserted"],
+            "links_created": len(new_links),
+        }
+    except Exception as e:
+        repository.update_import_run_metrics(
+            run_id=run_id,
+            status="FAILED",
+            rows_read=0,
+            rows_inserted=0,
+            rows_failed=0,
+        )
+        logger.exception("Error during unified import")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sprint 4.6 — Inbox de Reconciliação (Backend)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/reconciliations")
+def get_reconciliations(current_user = Depends(require_admin)):
+    """Retorna a inbox de reconciliação: sugestões pendentes e eventos órfãos."""
+    try:
+        return queries.get_reconciliation_inbox()
+    except Exception as e:
+        logger.exception("Error fetching reconciliation inbox")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/links/{link_id}/confirm")
+def confirm_reconciliation_link(link_id: str, current_user = Depends(require_admin)):
+    """Aprova uma sugestão matemática (SUGGESTED -> AUTO_CONFIRMED) e promove."""
+    try:
+        repository.update_event_link_status(link_id, "AUTO_CONFIRMED")
+        run_ids = repository.get_run_ids_for_link(link_id)
+        
+        inserted = 0
+        for rid in run_ids:
+            stats = repository.promote_raw_events(rid)
+            inserted += stats.get("inserted", 0)
+            
+        return {"status": "success", "message": "Link confirmado", "promoted": inserted}
+    except Exception as e:
+        logger.exception("Error confirming link")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/links/{link_id}/reject")
+def reject_reconciliation_link(link_id: str, current_user = Depends(require_admin)):
+    """Rejeita uma sugestão (SUGGESTED -> REJECTED). Os eventos voltam para Orphan."""
+    try:
+        repository.update_event_link_status(link_id, "REJECTED")
+        return {"status": "success", "message": "Link rejeitado"}
+    except Exception as e:
+        logger.exception("Error rejecting link")
+        raise HTTPException(status_code=500, detail=str(e))

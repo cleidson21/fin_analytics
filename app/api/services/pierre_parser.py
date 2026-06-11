@@ -161,19 +161,14 @@ class PierreParser:
 
         parsed_items: list[dict[str, object]] = []
 
-        for row in reader:
-            source_line_raw = _get_value(row, "n°", "nº", "N°", "NO")
+        for line_index, row in enumerate(reader, start=1):
             date_text = _get_value(row, "Data")
             description = _get_value(row, "Descrição", "Descricao")
             category = _get_value(row, "Categoria")
             account = _get_value(row, "Conta")
             amount_text = _get_value(row, "Valor")
 
-            try:
-                source_line_no = int(str(source_line_raw).replace(".", "").strip())
-            except (TypeError, ValueError):
-                logger.warning("Linha Pierre ignorada: coluna n° inválida ou ausente.")
-                continue
+            source_line_no = line_index
 
             parsed_date = parse_br_date(date_text)
             amount_value = parse_br_currency(amount_text)
@@ -187,15 +182,17 @@ class PierreParser:
             description_normalized = normalize_description(description_clean)
             source_value = account.upper() if account else "PIERRE"
 
+            amount_normalized = amount_value.quantize(Decimal("0.01"))
+
             parsed_items.append(
                 {
                     "id_economico": generate_economic_id(
-                        Source.MANUAL,
+                        "MANUAL",
                         "PIERRE",
                         source_line_no,
                         parsed_date.isoformat(),
                         description_normalized,
-                        str(amount_value),
+                        str(amount_normalized),
                         source_value,
                     ),
                     "source": source_value,

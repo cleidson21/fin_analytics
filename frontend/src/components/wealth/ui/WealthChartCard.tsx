@@ -3,7 +3,7 @@ import { AlertCircle, RefreshCw } from "lucide-react";
 import { ReactNode } from "react";
 
 interface WealthChartCardProps {
-  title: string;
+  title: string | React.ReactNode;
   children: ReactNode;
   isLoading?: boolean;
   isError?: boolean;
@@ -73,7 +73,7 @@ export function WealthChartCard({
         </div>
       ) : (
         // Modo gráfico: conteúdo posicionado de forma absoluta para Recharts funcionar
-        <div className="flex-1 relative min-h-[200px]">
+        <div className="flex-1 relative min-h-[200px] w-full h-full flex flex-col">
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-full h-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
@@ -96,7 +96,7 @@ export function WealthChartCard({
               )}
             </div>
           ) : (
-            <div className="absolute inset-0 animate-in fade-in duration-300">{children}</div>
+            <div className="absolute inset-0 w-full h-full animate-in fade-in duration-300">{children}</div>
           )}
         </div>
       )}

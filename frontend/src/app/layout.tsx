@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RechartsConsoleWarningFix } from "@/components/providers/RechartsConsoleWarningFix";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-zinc-950 text-zinc-50">
         <AuthProvider>
+          <RechartsConsoleWarningFix />
           <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>

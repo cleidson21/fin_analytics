@@ -10,10 +10,9 @@ interface AllocationDonutProps {
 }
 
 // Custom tooltip inline para o donut (payload vem como entrada pelo Pie)
-const DonutTooltip = ({ active, payload }: any) => {
-  if (!active || !payload || payload.length === 0) return null;
+const DonutTooltip = ({ active, payload }: Record<string, unknown>) => {
+  if (!active || !Array.isArray(payload) || payload.length === 0) return null;
   const d = payload[0].payload;
-  const total = payload[0].payload?.total || d.value;
 
   return (
     <div

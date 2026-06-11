@@ -5,6 +5,7 @@ import { AdminTable, ColumnDef } from "@/components/admin/AdminTable";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { TransactionEditDialog } from "@/components/admin/TransactionEditDialog";
+import { Transaction } from "@/types/entities";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ export function TransactionsTab() {
     search: activeSearch,
   });
 
-  const [editingTx, setEditingTx] = useState<any>(null);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,16 +34,16 @@ export function TransactionsTab() {
     setActiveSearch(search);
   };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<Transaction>[] = [
     { key: "date", header: "Data" },
     { key: "description", header: "Descrição" },
     { key: "category", header: "Categoria" },
     { key: "natureza", header: "Natureza" },
     {
-      key: "amount",
+      key: "valor",
       header: "Valor",
       renderCell: (row) => {
-        const val = parseFloat(row.amount);
+        const val = typeof row.valor === "number" ? row.valor : parseFloat(String(row.valor || "0"));
         return (
           <span className={val < 0 ? "text-red-400" : "text-emerald-400"}>
             {new Intl.NumberFormat("pt-BR", {
@@ -103,12 +104,14 @@ export function TransactionsTab() {
         onPageChange={setOffset}
       />
 
-      <TransactionEditDialog
-        isOpen={!!editingTx}
-        onClose={() => setEditingTx(null)}
-        transaction={editingTx}
-        onSuccess={() => refetch()}
-      />
+      {editingTx && (
+        <TransactionEditDialog
+          isOpen={true}
+          onClose={() => setEditingTx(null)}
+          transaction={editingTx}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 }

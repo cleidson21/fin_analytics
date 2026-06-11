@@ -47,7 +47,7 @@ export function useDividendsData() {
         } else {
           setIsError(true);
         }
-      } catch (err) {
+      } catch {
         if (mounted) setIsError(true);
       } finally {
         if (mounted) setIsLoading(false);
@@ -80,7 +80,7 @@ export function useDividendsData() {
 
   // Transform for YoY Chart: group by month (Jan-Dec) and year
   // Result format: { name: 'Jan', '2023': 10, '2024': 15 }
-  const yoyData: Record<string, any> = {};
+  const yoyData: Record<string, Record<string, number | string>> = {};
   const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   
   months.forEach(m => {

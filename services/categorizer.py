@@ -128,27 +128,24 @@ def aplicar_regras_semanticas(descricao: str, valor: float) -> dict[str, object]
             Perfil.DISCRICIONARIO,
         )
 
-    if desc_upper == "PAGAMENTO RECEBIDO" or desc_upper == "RESGATE RDB":
+    if desc_upper == "PAGAMENTO RECEBIDO":
         return _classification_payload(
-            "INVESTIMENTOS",
-            "RESGATE",
-            Natureza.NEUTRAL,
-            Perfil.PATRIMONIAL,
+            "OUTROS",
+            "RECEBIMENTO",
+            Natureza.INCOME,
+            Perfil.DISCRICIONARIO,
         )
 
-    if desc_upper in {"APLICACAO RDB", "APLICACAO EM CDB"}:
+    if any(keyword in desc_upper for keyword in [
+        "APLICACAO", "RESGATE", "COMPRA DE FII", "COMPRA DE ACAO", "COMPRA DE ACOES",
+        "COMPRA DE ETF", "COMPRA DE BDR", "TESOURO DIRETO", "CORRETORA", "NUINVEST", 
+        "INTER INVEST", "XP INVESTIMENTOS", "VALOR TRANSFERIDO PARA INVESTIMENTOS",
+        "RENDA VARIAVEL"
+    ]):
         return _classification_payload(
             "INVESTIMENTOS",
-            "APORTE",
-            Natureza.NEUTRAL,
-            Perfil.PATRIMONIAL,
-        )
-
-    if desc_upper == "VALOR TRANSFERIDO PARA INVESTIMENTOS":
-        return _classification_payload(
-            "INVESTIMENTOS",
-            "APORTE",
-            Natureza.EXPENSE,
+            "MOVIMENTACAO",
+            Natureza.INVESTMENT,
             Perfil.PATRIMONIAL,
         )
 

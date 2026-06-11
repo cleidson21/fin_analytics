@@ -32,3 +32,30 @@ export function getSemanticColor(className: string): string {
   if (name.includes("outros") || name.includes("others")) return "rgba(200,200,200,0.4)";
   return "rgba(255,255,255,0.15)";
 }
+
+export interface AssetIdentity {
+  color: string;
+  bg: string;
+  label: string;
+}
+
+export function getAssetIdentity(assetClass: string | undefined): AssetIdentity {
+  const name = (assetClass || "").toLowerCase();
+  
+  if (name.includes("fii") || name.includes("fundos imobili")) {
+    return { color: "#7F77DD", bg: "rgba(127,119,221,0.12)", label: "FII" };
+  }
+  if (name.includes("ações") || name.includes("stock") || name.includes("acao")) {
+    return { color: "#7EB8F7", bg: "rgba(126,184,247,0.12)", label: "AÇÃO" };
+  }
+  if (name.includes("renda fixa") || name.includes("fixed")) {
+    return { color: "#4ecf98", bg: "rgba(78,207,152,0.12)", label: "RF" };
+  }
+  if (name.includes("etf") || name.includes("exterior") || name.includes("global") || name.includes("bdr")) {
+    return { color: "#f5a623", bg: "rgba(245,166,35,0.10)", label: "ETF" };
+  }
+  
+  // Default fallback (Greenish)
+  return { color: "#4ecf98", bg: "rgba(78,207,152,0.12)", label: "ATIVO" };
+}
+

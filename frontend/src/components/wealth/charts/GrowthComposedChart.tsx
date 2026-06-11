@@ -7,8 +7,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from "recharts";
 import { PortfolioEvolutionPoint } from "@/hooks/useGrowthData";
 import { formatCurrency } from "@/lib/utils";

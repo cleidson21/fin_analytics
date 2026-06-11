@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Position } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
 import { fetchFromAPI } from "@/lib/api";
 
 export interface PositionFilters {
@@ -12,7 +14,7 @@ export interface PositionFilters {
 }
 
 export function usePositionsAdmin(filters: PositionFilters) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Position[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -28,7 +30,7 @@ export function usePositionsAdmin(filters: PositionFilters) {
       if (filters.classe_ativo) queryParams.set("classe_ativo", filters.classe_ativo);
       if (filters.snapshot_date) queryParams.set("snapshot_date", filters.snapshot_date);
 
-      const response = await fetchFromAPI<{ items: any[]; total: number }>(
+      const response = await fetchFromAPI<PaginatedResponse<Position>>(
         `/governance/positions?${queryParams.toString()}`
       );
 
@@ -36,8 +38,8 @@ export function usePositionsAdmin(filters: PositionFilters) {
         setData(response.items || []);
         setTotal(response.total || 0);
       }
-    } catch (err: any) {
-      setError(err);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
       setData([]);
       setTotal(0);
     } finally {

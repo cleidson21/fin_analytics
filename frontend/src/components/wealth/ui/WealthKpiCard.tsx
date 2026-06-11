@@ -50,17 +50,17 @@ export function WealthKpiCard({
       }}
     >
       {/* Icon Box */}
-      <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3 flex-shrink-0", iconBgColor)}>
-        <Icon size={17} className={iconColor} />
+      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3 flex-shrink-0", iconBgColor)}>
+        <Icon size={20} className={iconColor} />
       </div>
 
       {/* Label */}
-      <h3 className="text-[10px] font-medium uppercase tracking-[0.08em] text-neutral-500 mb-1">
+      <h3 className="text-[10px] font-medium uppercase tracking-widest text-neutral-500 mb-1">
         {title}
       </h3>
 
       {/* Value */}
-      <div className="text-2xl font-semibold text-white tracking-tight leading-tight mb-2">
+      <div className="text-[20px] font-medium text-white tracking-tight leading-snug mb-1">
         {value}
       </div>
 

@@ -1,18 +1,11 @@
 import { formatCurrency } from "@/lib/utils";
+import { TooltipProps } from "recharts";
 
-interface TooltipEntry {
-  name: string;
-  value: number;
-  color: string;
-  dataKey: string;
-}
-
-interface WealthTooltipProps {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface WealthTooltipProps extends TooltipProps<any, any> {
   active?: boolean;
-  payload?: ReadonlyArray<any> | any[];
+  payload?: readonly any[];
   label?: string | number;
-  // labelFormatter is intentionally NOT in the interface to avoid collision with Recharts' own type.
-  // Override via the internal _labelFormatter prop instead.
   _labelFormatter?: (label: string) => string;
   valueFormatter?: (value: number, dataKey: string) => string;
   nameMap?: Record<string, string>;
@@ -78,13 +71,14 @@ export function WealthTooltip({
         {payload.map((entry: any, i: number) => {
           if (entry.value === undefined || entry.value === null) return null;
 
-          const displayName = nameMap[entry.dataKey] || entry.name || entry.dataKey;
-          const color = colorMap[entry.dataKey] || entry.color || entry.stroke || "#fff";
+          const dataKeyStr = String(entry.dataKey || "");
+          const displayName = nameMap[dataKeyStr] || entry.name || dataKeyStr;
+          const color = colorMap[dataKeyStr] || entry.color || entry.stroke || "#fff";
           const rawValue = Number(entry.value);
 
           let displayValue: string;
           if (valueFormatter) {
-            displayValue = valueFormatter(rawValue, entry.dataKey);
+            displayValue = valueFormatter(rawValue, dataKeyStr);
           } else if (Math.abs(rawValue) >= 100) {
             displayValue = formatCurrency(rawValue);
           } else {

@@ -63,3 +63,8 @@ def get_portfolio_evolution_summary():
 def get_asset_details(ticker: str):
     """Retorna todas as informações consolidadas de um ativo (Asset Detail)."""
     return wealth_service.get_asset_details(ticker)
+
+@router.get("/asset/{ticker}/cashflow")
+def get_asset_cashflow(ticker: str):
+    """Retorna o fluxo de caixa detalhado (cross-source) para um ativo."""
+    return wealth_service.get_asset_cashflow(ticker)

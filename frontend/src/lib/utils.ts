@@ -11,3 +11,14 @@ export function formatCurrency(value: string | number) {
     currency: 'BRL',
   });
 }
+
+export function colorForValue(value: number, invertido = false): string {
+  if (invertido) return value > 0 ? "text-[#e97070]" : "text-[#4ecf98]";
+  return value > 0 ? "text-[#4ecf98]" : "text-[#e97070]";
+}
+
+export function getScoreColor(score: number): string {
+  if (score >= 66) return "text-[#4ecf98]";
+  if (score >= 41) return "text-[#f5a623]";
+  return "text-[#e97070]";
+}

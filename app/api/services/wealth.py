@@ -223,3 +223,17 @@ class WealthAnalyticsService:
             },
             "timeline": timeline
         }
+
+    def get_asset_cashflow(self, ticker: str) -> list[dict]:
+        """
+        Retorna o fluxo de caixa detalhado (compras, vendas, proventos) de um ativo
+        através das várias fontes (cross-source do ETL v2).
+        """
+        cashflow = self.queries.get_asset_cashflow(ticker)
+        
+        # Formata os valores monetários
+        for cf in cashflow:
+            cf["amount_formatted"] = format_money(cf["amount"])
+            
+        return cashflow
+

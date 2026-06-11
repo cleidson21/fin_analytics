@@ -6,15 +6,25 @@ interface TreemapNode {
   size: number;
   fill: string;
   peso?: number; // Percentual na carteira (0-100)
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface AllocationTreemapProps {
   data: TreemapNode[];
 }
 
-const CustomizedContent = (props: any) => {
-  const { root, depth, x, y, width, height, index, name, value, fill, peso } = props;
+interface CustomizedContentProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  name?: string;
+  fill?: string;
+  peso?: number;
+}
+
+const CustomizedContent = (props: CustomizedContentProps) => {
+  const { x = 0, y = 0, width = 0, height = 0, name = "", fill = "", peso } = props;
 
   // Se a caixa for muito pequena, não renderiza texto
   const showText = width > 50 && height > 35;

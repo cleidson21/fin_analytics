@@ -38,16 +38,21 @@ export function TopNav() {
     <div className="flex justify-center pt-8 pb-0">
       <nav className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-white/[0.03] p-1 relative z-10">
         {tabs.map((tab) => {
-          let isActive = pathname === tab.href;
+          let activePath = pathname;
+          if (pathname.startsWith("/wealth/asset")) {
+            activePath = "/wealth/allocation";
+          }
+          
+          let isActive = activePath === tab.href;
 
-          if (!tabs.some(t => t.href === pathname)) {
-             if (tab.href !== "/" && tab.href !== "/wealth" && tab.href !== "/governance" && pathname.startsWith(tab.href + "/")) {
+          if (!tabs.some(t => t.href === activePath)) {
+             if (tab.href !== "/" && tab.href !== "/wealth" && tab.href !== "/governance" && activePath.startsWith(tab.href + "/")) {
                 isActive = true;
              } else {
                  const isBaseTab = tab.href === "/" || tab.href === "/wealth" || tab.href === "/governance";
                  // Only highlight base tab if NO other tab is a prefix match
-                 const hasOtherPrefixMatch = tabs.some(t => t.href !== tab.href && t.href !== "/" && pathname.startsWith(t.href + "/"));
-                 if (isBaseTab && pathname.startsWith(tab.href === "/" ? "/" : tab.href + "/") && !hasOtherPrefixMatch) {
+                 const hasOtherPrefixMatch = tabs.some(t => t.href !== tab.href && t.href !== "/" && activePath.startsWith(t.href + "/"));
+                 if (isBaseTab && activePath.startsWith(tab.href === "/" ? "/" : tab.href + "/") && !hasOtherPrefixMatch) {
                     isActive = true;
                  }
              }

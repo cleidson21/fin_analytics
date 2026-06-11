@@ -50,7 +50,7 @@ export function useAllocationData() {
         } else {
           setIsError(true);
         }
-      } catch (err) {
+      } catch {
         if (mounted) setIsError(true);
       } finally {
         if (mounted) setIsLoading(false);

@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAllocationData } from "@/hooks/useAllocationData";
+import { useAllocationData, PositionDetail } from "@/hooks/useAllocationData";
 import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
-import { WealthSectionTitle } from "@/components/wealth/ui/WealthSectionTitle";
 import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
 import { WealthTable } from "@/components/wealth/ui/WealthTable";
 import { PieChart, ShieldAlert, LayoutGrid, Target } from "lucide-react";
@@ -252,12 +251,12 @@ export default function AllocationPage() {
                 }
               },
               { header: "Qtd", accessorKey: "quantidade", align: "right" },
-              { header: "Preço Médio", cell: (item: unknown) => formatCurrency((item as any).preco_medio_value || 0), align: "right" },
-              { header: "Valor Investido", cell: (item: unknown) => formatCurrency((item as any).valor_investido_value || 0), align: "right" },
-              { header: "Valor Atual", cell: (item: unknown) => formatCurrency((item as any).valor_atual_value || 0), align: "right" },
-              { header: "Diferença (R$)", cell: (item: unknown) => (item as any).ganho, align: "right", className: (item: unknown) => ((item as any).ganho_value || 0) >= 0 ? "text-[#4ecf98]" : "text-[#e97070]" },
-              { header: "Diferença (%)", cell: (item: unknown) => {
-                 const typedItem = item as any;
+              { header: "Preço Médio", cell: (item: unknown) => formatCurrency((item as PositionDetail).preco_medio_value || 0), align: "right" },
+              { header: "Valor Investido", cell: (item: unknown) => formatCurrency((item as PositionDetail).valor_investido_value || 0), align: "right" },
+              { header: "Valor Atual", cell: (item: unknown) => formatCurrency((item as PositionDetail).valor_atual_value || 0), align: "right" },
+              { header: "Diferença (R$)", cell: (item: unknown) => (item as PositionDetail).ganho, align: "right", className: (item: unknown) => ((item as PositionDetail).ganho_value || 0) >= 0 ? "text-[#4ecf98]" : "text-[#e97070]" },
+              { header: "%", cell: (item: unknown) => {
+                 const typedItem = item as PositionDetail;
                  if (!typedItem.valor_investido_value || typedItem.valor_investido_value === 0) return "-";
                  const diff = ((typedItem.ganho_value || 0) / typedItem.valor_investido_value) * 100;
                  return (

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import accounts, catalog, dashboard, governance, investments, transactions, database_admin, audit, prompts, auth
+from app.api.routes import accounts, catalog, dashboard, governance, investments, transactions, database_admin, audit, prompts, auth, learning
 
 
 app = FastAPI(
@@ -12,7 +12,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,3 +28,4 @@ app.include_router(investments.router, prefix="/api/v1/investments", tags=["Inve
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transações"])
 app.include_router(accounts.router, prefix="/api/v1/accounts", tags=["Contas"])
 app.include_router(prompts.router, prefix="/api/v1/governance/prompts", tags=["Prompts"])
+app.include_router(learning.router, prefix="/api/v1")

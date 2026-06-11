@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     natureza TEXT NOT NULL,
     perfil TEXT NOT NULL,
     classificacao_fonte TEXT NOT NULL DEFAULT 'ETL',
+    applied_rule_id TEXT,
     parcelamento TEXT,
     observacao TEXT,
     created_by TEXT,
@@ -153,6 +154,15 @@ ON transactions(macro_categoria);
 
 CREATE INDEX IF NOT EXISTS idx_transactions_natureza
 ON transactions(natureza);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_import_run
+ON transactions(import_run_id);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_source
+ON transactions(source);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_classificacao
+ON transactions(classificacao_fonte);
 
 CREATE TABLE IF NOT EXISTS positions (
     ticker TEXT NOT NULL,
@@ -319,6 +329,10 @@ CREATE INDEX IF NOT EXISTS idx_staging_dividends_status ON staging_dividends(val
 CREATE INDEX IF NOT EXISTS idx_staging_portfolio_evo_run ON staging_portfolio_evolution(import_run_id);
 CREATE INDEX IF NOT EXISTS idx_staging_portfolio_evo_status ON staging_portfolio_evolution(validation_status);
 
+CREATE INDEX IF NOT EXISTS idx_staging_imports_run_status ON staging_imports(import_run_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_dividends_ticker ON dividends(ticker);
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_positions_lookup ON positions(ticker, data_snapshot);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_dividends_lookup ON dividends(ticker, data_pagamento, valor_liquido_cents);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_portfolio_evolution_lookup ON portfolio_evolution(reference_month);
@@ -335,4 +349,126 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
-CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Sprint 4.4 — ETL Inteligente: Pipeline Unificado
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Tabela de eventos brutos normalizados — buffer universal agnóstico de fonte
+CREATE TABLE IF NOT EXISTS raw_events (
+    id                TEXT PRIMARY KEY,           -- UUID v4
+    import_run_id     TEXT NOT NULL,
+    source            TEXT NOT NULL,              -- NUBANK_CONTA | NUBANK_FATURA | MYPROFIT | PIERRE | PIERRE_LINHA
+    event_type        TEXT NOT NULL,              -- TRANSACTION | POSITION | DIVIDEND | INVOICE | PORTFOLIO_EVO
+    source_line_no    INTEGER,
+    raw_content       TEXT,                       -- linha/bloco bruto original (auditoria)
+
+    event_date        DATE,
+    reference_month   DATE,                       -- para PORTFOLIO_EVO
+    amount_cents      INTEGER,
+    currency          TEXT NOT NULL DEFAULT 'BRL',
+
+    -- Fingerprints de deduplicação
+    semantic_id       TEXT NOT NULL,              -- SHA-256 intra-source (data+valor+ext_id)
+    cross_fingerprint TEXT,                       -- SHA-256 cross-source (sem campo source)
+    external_id       TEXT,                       -- identificador externo da fonte (ex: Nubank "Identificador")
+
+    -- Metadados específicos da fonte (JSON)
+    metadata          TEXT,                       -- ticker, tipo_evento, snapshot_date, etc.
+
+    -- Status do pipeline ETL
+    pipeline_status   TEXT NOT NULL DEFAULT 'RAW',
+    -- RAW → NORMALIZED → MATCHED → RECONCILED → CLASSIFIED → PROMOTED
+
+    match_status      TEXT NOT NULL DEFAULT 'NEW',
+    -- NEW | DUPLICATE | CROSS_SOURCE_MATCH | CONFLICT
+
+    -- Referência à entidade promovida (preenchida após CONFIRMED)
+    promoted_entity_id TEXT,
+    promoted_table     TEXT,                      -- transactions | positions | dividends | portfolio_evolution
+
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_raw_events_run         ON raw_events(import_run_id);
+CREATE INDEX IF NOT EXISTS idx_raw_events_semantic     ON raw_events(semantic_id);
+CREATE INDEX IF NOT EXISTS idx_raw_events_cross_fp     ON raw_events(cross_fingerprint);
+CREATE INDEX IF NOT EXISTS idx_raw_events_type_status  ON raw_events(event_type, pipeline_status);
+CREATE INDEX IF NOT EXISTS idx_raw_events_date         ON raw_events(event_date);
+CREATE INDEX IF NOT EXISTS idx_raw_events_source       ON raw_events(source);
+-- Garante que o mesmo evento (semantic_id) não seja importado duas vezes da mesma fonte
+CREATE UNIQUE INDEX IF NOT EXISTS idx_raw_events_semantic_source ON raw_events(semantic_id, source);
+
+
+-- Ligações cross-source entre eventos (dividendo MyProfit ↔ crédito Nubank, etc.)
+CREATE TABLE IF NOT EXISTS event_links (
+    id              TEXT PRIMARY KEY,
+    event_id_a      TEXT NOT NULL,              -- raw_events.id
+    event_id_b      TEXT NOT NULL,              -- raw_events.id
+    link_type       TEXT NOT NULL,
+    -- DIVIDEND_CREDIT      : dividendo MyProfit ↔ crédito em conta Nubank
+    -- INVOICE_PAYMENT      : fatura Nubank ↔ pagamento em conta Nubank
+    -- INVESTMENT_PURCHASE  : compra MyProfit ↔ débito em conta Nubank
+    -- SAME_EVENT           : mesmo evento em fontes diferentes (deduplication cross-source)
+    confidence      REAL NOT NULL DEFAULT 1.0,  -- 0.0 a 1.0
+    match_method    TEXT NOT NULL DEFAULT 'EXACT',
+    -- EXACT | CROSS_FP | FUZZY | MANUAL | HINT | SCORING_ENGINE
+    status          TEXT NOT NULL DEFAULT 'AUTO_CONFIRMED',
+    -- AUTO_CONFIRMED | SUGGESTED | REJECTED
+    confirmed_by    TEXT,                       -- NULL = automático; username = confirmado manualmente
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(event_id_a) REFERENCES raw_events(id) ON DELETE CASCADE,
+    FOREIGN KEY(event_id_b) REFERENCES raw_events(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_links_a    ON event_links(event_id_a);
+CREATE INDEX IF NOT EXISTS idx_event_links_b    ON event_links(event_id_b);
+CREATE INDEX IF NOT EXISTS idx_event_links_type ON event_links(link_type, confidence);
+
+
+-- Regras de aprendizado unificadas (Memory/Confidence Engine)
+CREATE TABLE IF NOT EXISTS rules (
+    id TEXT PRIMARY KEY,
+    rule_type TEXT NOT NULL,       -- CATEGORIZATION, RECONCILIATION, TICKER_TRANSLATION, NEGATIVE_MATCH
+    pattern TEXT NOT NULL,         -- JSON estruturado (ex: {"description_matches": "DROGASIL"})
+    action TEXT NOT NULL,          -- JSON estruturado (ex: {"macro_categoria": "SAUDE"})
+    reason TEXT,                   -- Explicabilidade
+    confidence_score REAL NOT NULL DEFAULT 1.0,
+    evidence_count INTEGER NOT NULL DEFAULT 1,
+    hit_count INTEGER NOT NULL DEFAULT 1,
+    miss_count INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'OBSERVING', -- OBSERVING | ACTIVE | QUARANTINED | RETIRED
+    version INTEGER NOT NULL DEFAULT 1,
+    superseded_by TEXT,            -- FK to rules.id
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used TIMESTAMP,
+    status_changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_rules_active_type ON rules(active, rule_type);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Dataset Estruturado para futura IA (Sprint 4.7)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE VIEW IF NOT EXISTS vw_rules_training_dataset AS
+SELECT 
+    t.id_economico,
+    t.data,
+    t.descricao_original,
+    t.descricao_normalizada,
+    t.valor_cents,
+    t.macro_categoria,
+    t.sub_categoria,
+    t.natureza,
+    t.classificacao_fonte,
+    t.applied_rule_id,
+    r.rule_type,
+    r.confidence_score,
+    r.evidence_count,
+    r.reason
+FROM transactions t
+LEFT JOIN rules r ON t.applied_rule_id = r.id;
+

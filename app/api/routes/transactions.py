@@ -29,7 +29,7 @@ def get_transactions(
     if start_date and end_date and start_date > end_date:
         raise HTTPException(status_code=400, detail="startDate não pode ser maior que endDate")
 
-    df, total = queries.get_transactions(
+    items_list, total = queries.get_transactions(
         limit=limit,
         offset=offset,
         start_date=start_date,
@@ -45,7 +45,7 @@ def get_transactions(
         category=category,
         natureza=natureza,
     )
-    if df.empty:
+    if not items_list:
         return TransactionListResponse(
             items=[],
             total=total,
@@ -55,7 +55,6 @@ def get_transactions(
             summary=TransactionSummary(**summary),
         )
 
-    records = df.to_dict(orient="records")
     items = [
         TransactionItem(
             id=r["id"],
@@ -67,7 +66,7 @@ def get_transactions(
             account=r["account"],
             amount=r["amount"],
         )
-        for r in records
+        for r in items_list
     ]
 
     total_pages = queries.get_transactions_total_pages(total, limit)

@@ -7,14 +7,15 @@ import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
 import { WealthPeriodToggle } from "@/components/wealth/ui/WealthPeriodToggle";
 import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
 import { Wallet, TrendingUp, PiggyBank, LayoutGrid, Check, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, colorForValue } from "@/lib/utils";
 import { GrowthComposedChart } from "@/components/wealth/charts/GrowthComposedChart";
 import { WealthTable } from "@/components/wealth/ui/WealthTable";
+import { DeltaBadge } from "@/components/ui/DeltaBadge";
 import Link from "next/link";
 
 export default function PatrimonioPage() {
   const { period, setPeriod } = useWealthStore();
-  const { summary, history, milestones, isLoading: isGrowthLoading, isError } = useGrowthData(period);
+  const { summary, history, milestones, nextTarget, isLoading: isGrowthLoading, isError } = useGrowthData(period);
   const { totalAssets, isLoading: isAllocLoading } = useAllocationData();
 
   const isLoading = isGrowthLoading || isAllocLoading;
@@ -30,91 +31,38 @@ export default function PatrimonioPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Section — Patrimônio Atual ocupa protagonismo */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-2">
-        <div>
-          {/* Label sobre o hero */}
-          <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-2">
-            Patrimônio Total
-          </p>
-
-          {/* Valor Hero */}
-          <div className="flex items-end gap-4">
-            <h1
-              className="font-semibold tracking-tight leading-none"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", color: "#ffffff" }}
-            >
-              {isLoading ? (
-                <span className="inline-block h-12 w-64 bg-white/[0.06] rounded-lg animate-pulse" />
-              ) : (
-                formatCurrency(currentPat)
-              )}
-            </h1>
-
-            {/* Badge de rentabilidade inline com o hero */}
-            {!isLoading && (
-              <div
-                className="flex items-center gap-1 px-2 py-1 rounded-lg mb-1"
-                style={{
-                  background: growthAcc >= 0 ? "rgba(78,207,152,0.12)" : "rgba(233,112,112,0.12)",
-                  border: `1px solid ${growthAcc >= 0 ? "rgba(78,207,152,0.25)" : "rgba(233,112,112,0.25)"}`,
-                }}
-              >
-                {growthAcc >= 0 ? (
-                  <ArrowUpRight size={14} color="#4ecf98" />
-                ) : (
-                  <ArrowDownRight size={14} color="#e97070" />
-                )}
-                <span
-                  className="text-sm font-semibold"
-                  style={{ color: growthAcc >= 0 ? "#4ecf98" : "#e97070" }}
-                >
-                  {growthAcc >= 0 ? "+" : ""}{growthAcc.toFixed(2)}%
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Contexto secundário */}
-          {!isLoading && (
-            <p className="text-sm text-neutral-500 mt-2">
-              Sobre{" "}
-              <span className="text-neutral-300">{formatCurrency(totalInv)}</span>
-              {" "}aportados —{" "}
-              <span style={{ color: ganhoReal >= 0 ? "#4ecf98" : "#e97070" }}>
-                {ganhoReal >= 0 ? "+" : ""}{formatCurrency(ganhoReal)} ganho real
-              </span>
-              {" "}· Alpha vs CDI:{" "}
-              <span style={{ color: alphaVsCdi >= 0 ? "#4ecf98" : "#e97070" }}>
-                {alphaVsCdi >= 0 ? "+" : ""}{alphaVsCdi.toFixed(2)}%
-              </span>
-            </p>
-          )}
-        </div>
-
+      <div className="flex justify-end mb-4">
         <WealthPeriodToggle active={period} onChange={setPeriod} />
       </div>
 
       {/* KPI Cards secundários — menores, abaixo do hero */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <WealthKpiCard
+          title="Patrimônio"
+          value={isLoading ? "..." : formatCurrency(currentPat)}
+          icon={Wallet}
+          iconBgColor="bg-[#4ecf98]/10"
+          iconColor="text-[#4ecf98]"
+          sub={isLoading ? "" : <DeltaBadge value={growthAcc} />}
+          subType="text"
+        />
+        <WealthKpiCard
           title="Total Aportado"
           value={isLoading ? "..." : formatCurrency(totalInv)}
           icon={PiggyBank}
           iconBgColor="bg-[#7EB8F7]/10"
           iconColor="text-[#7EB8F7]"
-          sub={isLoading ? "" : `Ganho real: ${formatCurrency(ganhoReal)}`}
+          sub={isLoading ? "" : <span className={`text-xs ${colorForValue(ganhoReal)}`}>Ganho real: {ganhoReal >= 0 ? "+" : ""}{formatCurrency(ganhoReal)}</span>}
           subType="text"
         />
         <WealthKpiCard
           title="Rentab. Acumulada"
-          value={isLoading ? "..." : `${growthAcc >= 0 ? "+" : ""}${growthAcc.toFixed(2)}%`}
+          value={<span className={colorForValue(growthAcc)}>{isLoading ? "..." : `${growthAcc >= 0 ? "+" : ""}${growthAcc.toFixed(2)}%`}</span>}
           icon={TrendingUp}
           iconBgColor="bg-[#7F77DD]/10"
           iconColor="text-[#7F77DD]"
-          sub={isLoading ? "" : `vs CDI: ${alphaVsCdi >= 0 ? "+" : ""}${alphaVsCdi.toFixed(2)}%`}
-          subType="badge"
-          subColor={alphaVsCdi >= 0 ? "positive" : "negative"}
+          sub={isLoading ? "" : <span className={`text-xs ${colorForValue(alphaVsCdi)}`}>vs CDI: {alphaVsCdi >= 0 ? "+" : ""}{alphaVsCdi.toFixed(2)}%</span>}
+          subType="text"
         />
         <WealthKpiCard
           title="Nº de Ativos"
@@ -124,13 +72,6 @@ export default function PatrimonioPage() {
           iconColor="text-[#f5a623]"
           sub={<Link href="/wealth/allocation" className="text-[#4ecf98]/70 hover:text-[#4ecf98] transition-colors">Ver distribuição →</Link>}
           subType="text"
-        />
-        <WealthKpiCard
-          title="Patrimônio"
-          value={isLoading ? "..." : formatCurrency(currentPat)}
-          icon={Wallet}
-          iconBgColor="bg-[#4ecf98]/10"
-          iconColor="text-[#4ecf98]"
         />
       </div>
 
@@ -149,29 +90,36 @@ export default function PatrimonioPage() {
               {milestones.length === 0 ? (
                 <p className="text-sm text-neutral-500 pl-6">Nenhum marco atingido no período.</p>
               ) : (
-                milestones.map((m, i) => (
-                  <div key={i} className="flex items-center gap-4 relative py-3 pl-6">
-                    <div className="absolute left-[-11px] w-[22px] h-[22px] rounded-full bg-[#4ecf98]/15 border border-[#4ecf98]/40 flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-[#4ecf98]" strokeWidth={3} />
+                milestones.map((m, i) => {
+                  const [y, mm] = m.date.split("-");
+                  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                  const dateStr = `${monthNames[parseInt(mm, 10)-1]}/${y}`;
+                  return (
+                    <div key={i} className="flex items-center gap-4 relative py-3 pl-6">
+                      <div className="absolute left-[-11px] w-[22px] h-[22px] rounded-full bg-[#4ecf98]/15 border border-[#4ecf98]/40 flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-[#4ecf98]" strokeWidth={3} />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-medium text-white">{m.label}</p>
+                        <p className="text-xs text-neutral-500">{dateStr}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[14px] font-medium text-white">{m.label}</p>
-                      <p className="text-xs text-neutral-600">{m.date}</p>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
 
-              {currentPat > 0 && currentPat < 500000 && (
+              {currentPat > 0 && (
                 <div className="flex items-center gap-4 relative py-3 pl-6 mt-2">
                   <div className="absolute left-[-11px] w-[22px] h-[22px] rounded-full bg-white/[0.04] border border-white/[0.08] border-dashed" />
                   <div className="flex-1">
-                    <p className="text-[14px] font-medium text-neutral-500">Próximo Marco</p>
+                    <p className="text-[14px] font-medium text-[#4ecf98]">
+                      Próximo Marco: R$ {nextTarget >= 1000 ? `${nextTarget / 1000}k` : nextTarget}
+                    </p>
                     <div className="flex items-center gap-3 mt-1">
                       <div className="flex-1 bg-white/[0.05] rounded-full h-1 overflow-hidden">
-                        <div className="bg-[#4ecf98]/50 h-full" style={{ width: `${Math.min((currentPat / 100000) * 100, 100)}%` }} />
+                        <div className="bg-[#4ecf98]/50 h-full" style={{ width: `${Math.min((currentPat / nextTarget) * 100, 100)}%` }} />
                       </div>
-                      <span className="text-xs text-neutral-600 whitespace-nowrap">{Math.min((currentPat / 100000 * 100), 100).toFixed(0)}%</span>
+                      <span className="text-xs text-[#4ecf98] whitespace-nowrap font-medium">{Math.min((currentPat / nextTarget * 100), 100).toFixed(0)}%</span>
                     </div>
                   </div>
                 </div>

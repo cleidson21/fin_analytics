@@ -7,6 +7,7 @@ interface Column<T> {
   cell?: (item: T) => ReactNode;
   align?: "left" | "center" | "right";
   className?: string | ((item: T) => string);
+  headerClassName?: string;
 }
 
 interface WealthTableProps<T> {
@@ -15,9 +16,10 @@ interface WealthTableProps<T> {
   className?: string;
   emptyMessage?: string;
   pageSize?: number;
+  rowClassName?: string | ((item: T, index: number) => string);
 }
 
-export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhum dado encontrado.", pageSize }: WealthTableProps<T>) {
+export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhum dado encontrado.", pageSize, rowClassName }: WealthTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = pageSize ? Math.ceil(data.length / pageSize) : 1;
@@ -34,7 +36,8 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
                   "px-4 pb-2 pt-3 text-[10px] tracking-[0.08em] uppercase text-neutral-500 font-normal border-b border-white/[0.05]",
                   col.align === "right" && "text-right",
                   col.align === "center" && "text-center",
-                  col.className
+                  typeof col.className === "string" ? col.className : undefined,
+                  col.headerClassName
                 )}
               >
                 {col.header}
@@ -53,7 +56,10 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
             displayData.map((row, rowIndex) => (
               <tr 
                 key={rowIndex} 
-                className="border-b border-white/[0.03] last:border-0 hover:bg-white/[0.015] transition-colors cursor-default"
+                className={cn(
+                  "border-b border-white/[0.03] last:border-0 hover:bg-white/[0.015] transition-colors cursor-default",
+                  typeof rowClassName === "function" ? rowClassName(row, rowIndex) : rowClassName
+                )}
               >
                 {columns.map((col, colIndex) => (
                   <td 

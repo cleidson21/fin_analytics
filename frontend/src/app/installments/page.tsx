@@ -100,7 +100,7 @@ export default function InstallmentsPage() {
   useEffect(() => {
     if (displayedItems.length > 0) {
       const first = displayedItems[0];
-      const rowId = `${first.base_name}-${first.date}-${first.total_installments}-0`;
+      const rowId = first.purchase_id;
       setExpandedId(rowId);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -232,7 +232,7 @@ export default function InstallmentsPage() {
         ) : (
           <div className="mt-3 space-y-2">
             {displayedItems.map((item, i) => {
-              const rowId = `${item.base_name}-${item.date}-${item.total_installments}-${i}`;
+              const rowId = item.purchase_id;
               return (
                 <InstallmentCard
                   key={rowId}

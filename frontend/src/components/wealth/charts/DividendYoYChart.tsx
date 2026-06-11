@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/utils";
 import { WealthTooltip } from "@/components/wealth/ui/WealthTooltip";
 
 interface DividendYoYChartProps {
-  data: any[];
+  data: Record<string, unknown>[];
   years: string[];
 }
 

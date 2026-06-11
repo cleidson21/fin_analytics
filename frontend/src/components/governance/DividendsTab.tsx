@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { AdminTable, ColumnDef } from "@/components/admin/AdminTable";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminFilters } from "@/components/admin/AdminFilters";
-import { DividendEditDialog } from "@/components/admin/DividendEditDialog";
+import { DividendEditDialog } from "../admin/DividendEditDialog";
+import { Dividend } from "@/types/entities";
 import { useDividendsAdmin } from "@/hooks/useDividendsAdmin";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ export function DividendsTab() {
     end_date: activeEndDate,
   });
 
-  const [editingDividend, setEditingDividend] = useState<any>(null);
+  const [editingDividend, setEditingDividend] = useState<Dividend | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,14 +46,14 @@ export function DividendsTab() {
     setActiveEndDate(endDateSearch);
   };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<Dividend>[] = [
     { key: "ticker", header: "Ticker" },
     { key: "tipo_evento", header: "Tipo Evento" },
     {
       key: "valor",
       header: "Valor",
       renderCell: (row) => {
-        const val = parseFloat(row.valor);
+        const val = typeof row.valor === 'number' ? row.valor : parseFloat(String(row.valor || "0"));
         return (
           <span>
             {new Intl.NumberFormat("pt-BR", {
@@ -164,9 +165,9 @@ export function DividendsTab() {
         onPageChange={setOffset}
       />
 
-      {isAdmin && (
+      {isAdmin && editingDividend && (
         <DividendEditDialog
-          isOpen={!!editingDividend}
+          isOpen={true}
           onClose={() => setEditingDividend(null)}
           dividend={editingDividend}
           onSuccess={() => refetch()}

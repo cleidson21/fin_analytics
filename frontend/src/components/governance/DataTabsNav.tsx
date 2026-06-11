@@ -17,7 +17,7 @@ export function DataTabsNav() {
   const currentTab = searchParams.get("tab") || "transactions";
 
   return (
-    <div className="flex w-full overflow-x-auto border-b border-zinc-800">
+    <div className="flex w-full overflow-x-auto border-b border-slate-800">
       <nav className="flex gap-6 px-1" aria-label="Tabs">
         {TABS.map((tab) => {
           const isActive = currentTab === tab.id;

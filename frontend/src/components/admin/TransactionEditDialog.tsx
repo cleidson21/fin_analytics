@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { AdminEditDialog } from "./AdminEditDialog";
 import { useTransactionAdmin } from "@/hooks/useAdminCRUD";
 import { Button } from "@/components/ui/button";
+import { Transaction } from "@/types/entities";
 
 interface TransactionEditDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  transaction: any;
+  transaction: Transaction;
   onSuccess: () => void;
 }
 
@@ -49,7 +50,7 @@ export function TransactionEditDialog({
       alert("Transação atualizada com sucesso.\nRegistro enviado para Audit Log.");
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       alert("Erro ao atualizar transação.");
     }
   };

@@ -23,7 +23,7 @@ export function useAlphaData(period: string) {
         if (histRes) setHistory(histRes);
         if (sumRes) setSummary(sumRes);
         if (!histRes || !sumRes) setIsError(true);
-      } catch (err) {
+      } catch {
         if (mounted) setIsError(true);
       } finally {
         if (mounted) setIsLoading(false);

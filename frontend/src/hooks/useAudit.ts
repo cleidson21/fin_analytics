@@ -39,9 +39,9 @@ export function useAuditRuns(filter: string = "ALL") {
           setData(result);
           setIsLoading(false);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (mounted) {
-          if (e.name === "AuthError") {
+          if (e instanceof Error && e.name === "AuthError") {
             setIsUnauthorized(true);
           } else {
             console.error(e);
@@ -74,9 +74,9 @@ export function useAuditRollbacks() {
           setData(result);
           setIsLoading(false);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (mounted) {
-          if (e.name === "AuthError") {
+          if (e instanceof Error && e.name === "AuthError") {
             setIsUnauthorized(true);
           } else {
             console.error(e);
@@ -109,9 +109,9 @@ export function useAuditRunDetail(runId: string) {
           setData(result);
           setIsLoading(false);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (mounted) {
-          if (e.name === "AuthError") {
+          if (e instanceof Error && e.name === "AuthError") {
             setIsUnauthorized(true);
           } else {
             console.error(e);

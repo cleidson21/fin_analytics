@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { AdminEditDialog } from "./AdminEditDialog";
 import { useCategoryAdmin } from "@/hooks/useAdminCRUD";
 import { Button } from "@/components/ui/button";
+import { Category } from "@/types/entities";
 
 interface CategoryMergeDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  category: any;
+  category: Category;
   onSuccess: () => void;
 }
 
@@ -41,7 +42,7 @@ export function CategoryMergeDialog({
       alert("Categorias mescladas com sucesso.\\nRegistro enviado para Audit Log.");
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       alert("Erro ao realizar o merge de categorias.");
     }
   };

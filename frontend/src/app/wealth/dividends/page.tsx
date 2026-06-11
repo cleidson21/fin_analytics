@@ -1,9 +1,8 @@
 "use client";
 
-import { useDividendsData } from "@/hooks/useDividendsData";
+import { useDividendsData, DividendBreakdown } from "@/hooks/useDividendsData";
 import Link from 'next/link';
 import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
-import { WealthSectionTitle } from "@/components/wealth/ui/WealthSectionTitle";
 import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
 import { WealthTable } from "@/components/wealth/ui/WealthTable";
 import { Coins, Percent, TrendingUp, CalendarDays } from "lucide-react";
@@ -115,7 +114,7 @@ export default function DividendsPage() {
               columns={[
                 { 
                   header: "Ativo", 
-                  cell: (item: any) => (
+                  cell: (item: DividendBreakdown) => (
                     <Link href={`/wealth/asset/${item.ticker}`} className="text-[#4ecf98] hover:underline font-medium">
                       {item.ticker}
                     </Link>

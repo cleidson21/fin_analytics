@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { AdminEditDialog } from "./AdminEditDialog";
 import { usePositionAdmin } from "@/hooks/useAdminCRUD";
 import { Button } from "@/components/ui/button";
+import { Position } from "@/types/entities";
 
 interface PositionEditDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  position: any;
+  position: Position;
   onSuccess: () => void;
 }
 
@@ -40,11 +41,11 @@ export function PositionEditDialog({
     if (!position) return;
 
     try {
-      await updatePosition(position.ticker, position.data_snapshot, formData);
+      await updatePosition(position.ticker, position.data_snapshot || position.snapshot_date || "", formData);
       alert("Posição atualizada com sucesso.\nRegistro enviado para Audit Log.");
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       alert("Erro ao atualizar posição.");
     }
   };

@@ -5,6 +5,7 @@ import { AdminTable, ColumnDef } from "@/components/admin/AdminTable";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { PositionEditDialog } from "@/components/admin/PositionEditDialog";
+import { Position } from "@/types/entities";
 import { usePositionsAdmin } from "@/hooks/usePositionsAdmin";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
@@ -21,14 +22,14 @@ export function PositionsTab() {
   const [activeTicker, setActiveTicker] = useState("");
   const [activeClasseAtivo, setActiveClasseAtivo] = useState("");
 
-  const { data, total, isLoading, error, refetch } = usePositionsAdmin({
+  const { data, total, isLoading, refetch } = usePositionsAdmin({
     limit,
     offset,
     ticker: activeTicker,
     classe_ativo: activeClasseAtivo,
   });
 
-  const [editingPos, setEditingPos] = useState<any>(null);
+  const [editingPos, setEditingPos] = useState<Position | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,19 +38,19 @@ export function PositionsTab() {
     setActiveClasseAtivo(classeAtivoSearch);
   };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<Position>[] = [
     { key: "ticker", header: "Ticker" },
     { 
       key: "classe_ativo", 
       header: "Classe de Ativo",
       renderCell: (row) => <span>{row.classe_ativo || "-"}</span> 
     },
-    { key: "snapshot_date", header: "Data Snapshot" },
+    { key: "data_snapshot", header: "Data Snapshot" },
     {
       key: "quantidade",
       header: "Quantidade",
       renderCell: (row) => {
-        const val = parseFloat(row.quantidade);
+        const val = typeof row.quantidade === 'number' ? row.quantidade : parseFloat(String(row.quantidade || "0"));
         return <span>{val.toFixed(2)}</span>;
       },
     },
@@ -57,7 +58,9 @@ export function PositionsTab() {
       key: "preco_medio",
       header: "Preço Médio",
       renderCell: (row) => {
-        const val = parseFloat(row.preco_medio);
+        const valInvestido = typeof row.valor_investido === 'number' ? row.valor_investido : parseFloat(String(row.valor_investido || "0"));
+        const valQtd = typeof row.quantidade === 'number' ? row.quantidade : parseFloat(String(row.quantidade || "0"));
+        const val = valQtd > 0 ? valInvestido / valQtd : 0;
         return (
           <span>
             {new Intl.NumberFormat("pt-BR", {
@@ -128,7 +131,7 @@ export function PositionsTab() {
         columns={columns}
         data={data}
         isLoading={isLoading}
-        keyExtractor={(row) => `${row.ticker}_${row.snapshot_date}`}
+        keyExtractor={(row) => `${row.ticker}_${row.data_snapshot || row.snapshot_date}`}
       />
 
       <AdminPagination
@@ -138,9 +141,9 @@ export function PositionsTab() {
         onPageChange={setOffset}
       />
 
-      {isAdmin && (
+      {isAdmin && editingPos && (
         <PositionEditDialog
-          isOpen={!!editingPos}
+          isOpen={true}
           onClose={() => setEditingPos(null)}
           position={editingPos}
           onSuccess={() => refetch()}

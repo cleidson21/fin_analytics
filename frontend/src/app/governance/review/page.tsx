@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { 
-  ArrowLeft, 
   CheckCircle, 
   AlertTriangle, 
   XCircle, 
-  FileText, 
-  Loader2,
   ChevronRight,
   DatabaseBackup,
-  Trash2
+  Trash2,
+  Loader2,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -58,9 +58,8 @@ function ReviewContent() {
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
-  const [parsedLog, setParsedLog] = useState<{ warnings: string[], errors: string[] } | null>(null);
-  const [previewSummary, setPreviewSummary] = useState<any | null>(null);
   const [stagingData, setStagingData] = useState<StagingData | null>(null);
+  const [parsedLog, setParsedLog] = useState<{ warnings: string[], errors: string[] } | null>(null);
   const [filter, setFilter] = useState<string>("ALL");
   const [isUnauthorized, setIsUnauthorized] = useState(false);
 
@@ -77,21 +76,12 @@ function ReviewContent() {
       const data = await fetchFromAPI<ImportRunDetail>(`/governance/imports/${id}`);
       setRunData(data);
       if (!data) return;
-      
-      if (data.preview_summary) {
-        try {
-          const parsed = JSON.parse(data.preview_summary);
-          setPreviewSummary(parsed);
-        } catch (e) {
-          console.error("Erro ao fazer parse do preview_summary");
-        }
-      }
-      
+
       if (data.error_log) {
         try {
           const parsed = JSON.parse(data.error_log);
           setParsedLog(parsed);
-        } catch (e) {
+        } catch {
           setParsedLog({ warnings: [], errors: [data.error_log] });
         }
       }
@@ -99,7 +89,7 @@ function ReviewContent() {
       try {
         const sData = await fetchFromAPI<StagingData>(`/governance/imports/${id}/staging-items`);
         setStagingData(sData);
-      } catch (e) {
+      } catch {
         console.error("Erro ao buscar itens do staging");
       }
     } catch (e: any) {
@@ -156,7 +146,7 @@ function ReviewContent() {
     return {
       valid: stagingData.items.filter(i => i.validation_status === 'VALID' || i.validation_status === 'WARNING').length,
       update: stagingData.items.filter(i => i.validation_status === 'UPDATE').length,
-      unchanged: stagingData.items.filter(i => i.validation_status === 'UNCHANGED').length,
+      unchanged: stagingData.items.filter(i => i.validation_status === 'UNCHANGED' || i.validation_status === 'DUPLICATE').length,
       error: stagingData.items.filter(i => i.validation_status === 'ERROR' || i.validation_status === 'CONFLICT').length,
     };
   };
@@ -200,7 +190,7 @@ function ReviewContent() {
       {!loading && runData && (
         <div className="space-y-6">
           {/* Main Info Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl">
             <div>
               <h1 className="text-2xl font-bold text-white mb-1">Revisão: {runData.file_name}</h1>
               <p className="text-sm text-zinc-400 font-mono">ID: {runData.id} • Data: {new Date(runData.started_at).toLocaleString()}</p>
@@ -231,19 +221,19 @@ function ReviewContent() {
           {/* Resumo Counters */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 flex flex-col items-center justify-center">
-              <span className="text-sm font-medium text-emerald-400/70 uppercase tracking-wider mb-2">Valid (Novos)</span>
+              <span className="text-sm font-medium text-emerald-400/70 uppercase tracking-wider mb-2">Válidos (Novos)</span>
               <span className="text-4xl font-bold text-emerald-400">{counters.valid}</span>
             </div>
             <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-5 flex flex-col items-center justify-center">
-              <span className="text-sm font-medium text-sky-400/70 uppercase tracking-wider mb-2">Update</span>
+              <span className="text-sm font-medium text-sky-400/70 uppercase tracking-wider mb-2">Atualizados</span>
               <span className="text-4xl font-bold text-sky-400">{counters.update}</span>
             </div>
             <div className="rounded-2xl border border-zinc-500/20 bg-zinc-500/5 p-5 flex flex-col items-center justify-center">
-              <span className="text-sm font-medium text-zinc-400/70 uppercase tracking-wider mb-2">Unchanged</span>
+              <span className="text-sm font-medium text-zinc-400/70 uppercase tracking-wider mb-2">Ignorados</span>
               <span className="text-4xl font-bold text-zinc-400">{counters.unchanged}</span>
             </div>
             <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5 flex flex-col items-center justify-center">
-              <span className="text-sm font-medium text-red-400/70 uppercase tracking-wider mb-2">Error</span>
+              <span className="text-sm font-medium text-red-400/70 uppercase tracking-wider mb-2">Erros</span>
               <span className="text-4xl font-bold text-red-400">{counters.error}</span>
             </div>
           </div>
@@ -251,16 +241,22 @@ function ReviewContent() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Table of items */}
             <div className="lg:col-span-2">
-              <section className="rounded-3xl border border-white/10 bg-white/5 shadow-xl overflow-hidden flex flex-col h-full">
+              <section className="rounded-3xl border border-slate-800 bg-slate-900/50 shadow-xl overflow-hidden flex flex-col h-full">
                 <div className="p-5 border-b border-white/10 flex flex-wrap justify-between items-center gap-4">
                   <h2 className="text-lg font-semibold text-white">Linhas do Arquivo</h2>
                   <div className="flex gap-2">
-                    {["ALL", "VALID", "UPDATE", "UNCHANGED", "ERROR"].map(f => (
+                    {[
+                      { val: "ALL", label: "TUDO" },
+                      { val: "VALID", label: "VÁLIDOS" },
+                      { val: "UPDATE", label: "ATUALIZADOS" },
+                      { val: "UNCHANGED", label: "IGNORADOS" },
+                      { val: "ERROR", label: "ERROS" }
+                    ].map(f => (
                       <button 
-                        key={f} 
-                        onClick={() => setFilter(f)} 
-                        className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors ${filter === f ? 'bg-white text-black' : 'bg-black/30 border border-white/10 text-zinc-400 hover:bg-white/10'}`}>
-                        {f}
+                        key={f.val} 
+                        onClick={() => setFilter(f.val)} 
+                        className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors ${filter === f.val ? 'bg-white text-black' : 'bg-black/30 border border-white/10 text-zinc-400 hover:bg-white/10'}`}>
+                        {f.label}
                       </button>
                     ))}
                   </div>
@@ -282,6 +278,7 @@ function ReviewContent() {
                           if (filter === "ALL") return true;
                           if (filter === "VALID") return i.validation_status === "VALID" || i.validation_status === "WARNING";
                           if (filter === "ERROR") return i.validation_status === "ERROR" || i.validation_status === "CONFLICT";
+                          if (filter === "UNCHANGED") return i.validation_status === "UNCHANGED" || i.validation_status === "DUPLICATE";
                           return i.validation_status === filter;
                         })
                         .map(item => {
@@ -301,8 +298,18 @@ function ReviewContent() {
                                   "UPDATE": "bg-sky-500/20 text-sky-400 border border-sky-500/30",
                                   "PENDING": "bg-zinc-500/20 text-zinc-400 border border-zinc-500/30"
                                 };
+                                const ptLabels: Record<string, string> = {
+                                  "VALID": "VÁLIDO",
+                                  "WARNING": "VÁLIDO (AVISO)",
+                                  "CONFLICT": "ERRO (CONFLITO)",
+                                  "ERROR": "ERRO",
+                                  "IMPORTED": "IMPORTADO",
+                                  "UNCHANGED": "IGNORADO",
+                                  "UPDATE": "ATUALIZADO",
+                                  "PENDING": "PENDENTE"
+                                };
                                 const badgeClass = map[item.validation_status] || map["PENDING"];
-                                const label = item.validation_status === 'CONFLICT' ? 'ERROR' : item.validation_status === 'WARNING' ? 'VALID' : item.validation_status;
+                                const label = ptLabels[item.validation_status] || item.validation_status;
                                 return <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${badgeClass}`}>{label}</span>;
                               })()}
                             </td>
@@ -314,6 +321,7 @@ function ReviewContent() {
                         if (filter === "ALL") return true;
                         if (filter === "VALID") return i.validation_status === "VALID" || i.validation_status === "WARNING";
                         if (filter === "ERROR") return i.validation_status === "ERROR" || i.validation_status === "CONFLICT";
+                        if (filter === "UNCHANGED") return i.validation_status === "UNCHANGED" || i.validation_status === "DUPLICATE";
                         return i.validation_status === filter;
                       }).length === 0 && (
                         <tr>
@@ -328,7 +336,7 @@ function ReviewContent() {
 
             {/* Logs Column */}
             <div className="space-y-6">
-              <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl h-full">
+              <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl h-full">
                 <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-4">
                   <FileText className="h-5 w-5 text-zinc-400" />
                   <h2 className="text-lg font-semibold text-white">Log de Detalhes</h2>

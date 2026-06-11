@@ -5,11 +5,13 @@ import { formatCurrency } from "@/lib/utils";
 import { getCategoryColor } from "@/lib/colors";
 
 export interface InstallmentItem {
+  purchase_id: string;
   base_name: string;
   original_name: string;
   date: string;
   installment_amount: number;
   current_installment: number;
+  first_installment_found: number;
   total_installments: number;
   total_estimated: number;
   already_paid: number;
@@ -51,7 +53,7 @@ export function InstallmentCard({ item, index, isExpanded, onToggle }: Installme
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggle(); }}
         className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02]"
         aria-expanded={isExpanded}
-        id={`installment-card-${item.base_name.replace(/\W/g, "-")}`}
+        id={`installment-card-${item.purchase_id}`}
       >
         {/* Icon box */}
         <div
@@ -70,15 +72,22 @@ export function InstallmentCard({ item, index, isExpanded, onToggle }: Installme
         </div>
 
         {/* Badge status */}
-        {!isFinished ? (
-          <span className="flex-shrink-0 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">
-            Ativo
-          </span>
-        ) : (
-          <span className="flex-shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-neutral-400">
-            Finalizado
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {item.first_installment_found > 1 && (
+            <span className="flex-shrink-0 rounded-full bg-[#f5a623]/10 px-2 py-0.5 text-[10px] text-[#f5a623]">
+              Histórico parcial importado
+            </span>
+          )}
+          {!isFinished ? (
+            <span className="flex-shrink-0 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">
+              Ativo
+            </span>
+          ) : (
+            <span className="flex-shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-neutral-400">
+              Finalizado
+            </span>
+          )}
+        </div>
 
         {/* Valor restante */}
         <div className="flex-shrink-0 text-right">
@@ -139,9 +148,22 @@ export function InstallmentCard({ item, index, isExpanded, onToggle }: Installme
             {Array.from({ length: item.total_installments }, (_, i) => {
               const num = i + 1;
               const isPaid = num <= item.current_installment;
+              const isMissing = num < item.first_installment_found;
+
+              if (isMissing) {
+                return (
+                  <span
+                    key={`chip-${item.purchase_id}-${num}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-neutral-500 opacity-70"
+                  >
+                    ✓ {num}/{item.total_installments} (inferida)
+                  </span>
+                );
+              }
+
               return (
                 <span
-                  key={`chip-${item.base_name}-${num}`}
+                  key={`chip-${item.purchase_id}-${num}`}
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
                     isPaid
                       ? "bg-green-500/[0.08] text-green-500"

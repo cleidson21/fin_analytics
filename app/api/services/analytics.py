@@ -255,20 +255,25 @@ class AnalyticsService:
         saldo_prev = receitas_prev - despesas_prev
 
         patrimonio_curr = Decimal(str(self.queries.get_current_net_worth()))
-        patrimonio_prev = Decimal("0")
+        
+        try:
+            portfolio_summary = self.queries.get_portfolio_evolution_summary()
+            rentabilidade_pct = float(portfolio_summary.get("rentabilidade_acumulada", 0.0))
+        except Exception:
+            rentabilidade_pct = 0.0
 
-        df_evolution = self.queries.get_net_worth_history()
-        if not df_evolution.empty:
-            previous_rows = df_evolution[df_evolution["month"] == previous_month]
-            if not previous_rows.empty:
-                patrimonio_prev = Decimal(str(previous_rows.iloc[0]["net_worth"]))
+        patrimonio_kpi = KpiItem(
+            current=float(patrimonio_curr),
+            previous=0.0,
+            delta_pct=rentabilidade_pct
+        )
 
         return DashboardSummaryV2(
             month=month,
             receitas=self._to_kpi_item(receitas_curr, receitas_prev),
             despesas=self._to_kpi_item(despesas_curr, despesas_prev),
             saldo_liquido=self._to_kpi_item(saldo_curr, saldo_prev),
-            patrimonio=self._to_kpi_item(patrimonio_curr, patrimonio_prev),
+            patrimonio=patrimonio_kpi,
         )
 
     def get_subscriptions_summary(self, month: str) -> SubscriptionsSummary:
@@ -316,19 +321,26 @@ class AnalyticsService:
             row_date = date.fromisoformat(str(row["data"]))
             installment_amount = self._cents_to_float(row["valor_cents"])
             bucket = self._installment_bucket(installment_amount)
-            key = (base_name.lower(), total_installments, bucket)
+            
+            purchase_date = self._add_months(row_date, -(current_installment - 1))
+            purchase_month = f"{purchase_date.year}-{purchase_date.month:02d}"
+            
+            key = (base_name.lower(), total_installments, bucket, purchase_month)
             sequences = grouped.setdefault(key, [])
 
             matched_sequence: dict[str, object] | None = None
             for sequence in sequences:
                 last_x = int(sequence["current_installment"])
-                last_date = sequence["date_obj"]
-                if last_x + 1 == current_installment and row_date >= last_date:
+                if current_installment > last_x:
                     matched_sequence = sequence
                     break
 
             if matched_sequence is None:
+                seq_index = len(sequences)
+                purchase_id = f"{base_name.lower()}_{total_installments}x_{bucket}_{purchase_month}_{seq_index}"
                 matched_sequence = {
+                    "purchase_id": purchase_id,
+                    "first_installment_found": current_installment,
                     "base_name": base_name,
                     "original_name": description,
                     "date": str(row["data"]),
@@ -343,8 +355,12 @@ class AnalyticsService:
                 }
                 sequences.append(matched_sequence)
             else:
+                first_found = int(matched_sequence["first_installment_found"])
+                if current_installment < first_found:
+                    first_found = current_installment
                 matched_sequence.update(
                     {
+                        "first_installment_found": first_found,
                         "original_name": description,
                         "date": str(row["data"]),
                         "date_obj": row_date,

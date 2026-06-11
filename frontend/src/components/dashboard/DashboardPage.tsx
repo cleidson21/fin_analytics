@@ -8,7 +8,8 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { fetchFromAPI } from "@/lib/api";
 import { getCategoryColor } from "@/lib/colors";
 import { addMonths, getCurrentMonth, getMonthBounds } from "@/lib/period";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, colorForValue } from "@/lib/utils";
+import { DeltaBadge } from "@/components/ui/DeltaBadge";
 
 interface KpiItem {
   current: number;
@@ -90,17 +91,6 @@ function formatDelta(delta: number) {
   return `${prefix}${delta.toFixed(1)}%`;
 }
 
-function getBadgeClasses(delta: number, isExpense = false) {
-  if (delta === 0) {
-    return "bg-white/[0.06] text-neutral-500";
-  }
-
-  const isPositive = delta > 0;
-  const positiveIsGood = !isExpense;
-  const isGood = positiveIsGood ? isPositive : !isPositive;
-
-  return isGood ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400";
-}
 
 function categoryLabel(category: string) {
   return category.toLowerCase().replace(/_/g, " ");
@@ -246,19 +236,25 @@ export function DashboardPage() {
     return { top5, highestPositive };
   }, [catsCurrent, catsPrev]);
 
-  const insightsTitle = useMemo(() => {
+  const { insightsTitle, titleColor } = useMemo(() => {
     if (categoryStats.highestPositive?.delta !== null && categoryStats.highestPositive?.delta !== undefined) {
-      return `${categoryLabel(categoryStats.highestPositive.category)} subiu ${categoryStats.highestPositive.delta.toFixed(0)}%. Bora revisar?`;
+      return {
+        insightsTitle: `${categoryLabel(categoryStats.highestPositive.category)} subiu ${categoryStats.highestPositive.delta.toFixed(0)}%. Bora revisar?`,
+        titleColor: "text-[#f5a623]"
+      };
     }
 
     const receitaDelta = summary?.receitas?.delta_pct ?? 0;
-    if (receitaDelta !== 0) {
-      return receitaDelta > 0
-        ? `Receitas subiram ${receitaDelta.toFixed(1)}% neste mês.`
-        : `Receitas recuaram ${Math.abs(receitaDelta).toFixed(1)}% neste mês.`;
-    }
+    const insightsTitle =
+      receitaDelta > 0
+        ? "Receitas a subir"
+        : receitaDelta < 0
+          ? "Receitas a recuar"
+          : "Receitas estáveis";
 
-    return "Mês estável. Vamos manter o ritmo financeiro.";
+    const titleColor = receitaDelta >= 0 ? "text-[#4ecf98]" : "text-[#f5a623]";
+
+    return { insightsTitle, titleColor };
   }, [categoryStats.highestPositive, summary?.receitas?.delta_pct]);
 
   const heatmapGrid = useMemo(() => {
@@ -295,17 +291,17 @@ export function DashboardPage() {
             ))
           ) : (
             [
-              { label: "Patrimônio Total", value: summary.patrimonio, color: "text-white", isExpense: false },
+              { label: "Patrimônio Total", value: summary.patrimonio, color: "text-[#4ecf98]", isExpense: false },
               { label: "Receitas", value: summary.receitas, color: "text-[#4ecf98]", isExpense: false },
               { label: "Despesas", value: summary.despesas, color: "text-[#e97070]", isExpense: true },
-              { label: "Saldo Líquido", value: summary.saldo_liquido, color: "text-[#7EB8F7]", isExpense: false },
+              { label: "Saldo Líquido", value: summary.saldo_liquido, color: colorForValue(summary.saldo_liquido.current), isExpense: false },
             ].map((item) => (
               <article key={item.label} className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
                 <p className="text-xs uppercase tracking-widest text-neutral-500">{item.label}</p>
                 <p className={`mt-3 text-xl font-medium ${item.color}`}>{formatCurrency(item.value.current)}</p>
-                <span className={`mt-3 inline-flex rounded-full px-2 py-1 text-xs ${getBadgeClasses(item.value.delta_pct, item.isExpense)}`}>
-                  {formatDelta(item.value.delta_pct)}
-                </span>
+                <div className="mt-3">
+                  <DeltaBadge value={item.value.delta_pct} invertido={item.isExpense} />
+                </div>
               </article>
             ))
           )}
@@ -328,7 +324,7 @@ export function DashboardPage() {
               </div>
             ) : (
               <>
-                <h3 className="text-3xl font-semibold leading-tight text-[#4ecf98]">{insightsTitle}</h3>
+                <h3 className={`text-3xl font-semibold leading-tight ${titleColor}`}>{insightsTitle}</h3>
                 <p className="mt-2 text-sm text-neutral-400">Gerado para o mês atual.</p>
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -373,9 +369,7 @@ export function DashboardPage() {
               <>
                 <div className="mt-4 flex items-end justify-between gap-4">
                   <p className="text-3xl font-semibold text-white">{formatCurrency(pacing.current_expenses)}</p>
-                  <span className={`inline-flex rounded-full px-2 py-1 text-xs ${getBadgeClasses(pacing.delta_percentage, true)}`}>
-                    {formatDelta(pacing.delta_percentage)}
-                  </span>
+                  <DeltaBadge value={pacing.delta_percentage} invertido={true} />
                 </div>
 
                 <div ref={chartWrapRef} className="mt-4" style={{ width: "100%" }}>

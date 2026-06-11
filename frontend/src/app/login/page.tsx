@@ -50,8 +50,8 @@ export default function LoginPage() {
       login(data.access_token, userData);
       router.push("/governance/database");
       
-    } catch (err: any) {
-      setError(err.message || "Erro de autenticação");
+    } catch {
+      setError("Erro de autenticação");
     } finally {
       setIsLoading(false);
     }

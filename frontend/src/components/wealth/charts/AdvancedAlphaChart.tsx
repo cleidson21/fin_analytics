@@ -12,7 +12,7 @@ import {
 import { WealthTooltip } from "@/components/wealth/ui/WealthTooltip";
 
 interface AdvancedAlphaChartProps {
-  data: any[];
+  data: Record<string, unknown>[];
   showCarteira: boolean;
   showIbov: boolean;
   showCdi: boolean;

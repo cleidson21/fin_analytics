@@ -101,19 +101,6 @@ function classifyTransaction(natureza: string): TransactionKind {
   return "other";
 }
 
-function getNaturezaLabel(kind: TransactionKind, fallback: string) {
-  switch (kind) {
-    case "income":
-      return "Receita";
-    case "expense":
-      return "Despesa";
-    case "transfer":
-      return "Transferência";
-    default:
-      return fallback || "Não classificada";
-  }
-}
-
 function TransactionsPageBody() {
   const pathname = usePathname();
   const router = useRouter();
@@ -667,7 +654,7 @@ function TransactionsPageBody() {
                       typeBadgeClasses = "bg-blue-500/10 text-blue-400";
                       typeBadgeLabel = "→ Transferência";
                     } else {
-                      typeBadgeClasses = "bg-green-500/10 text-green-400";
+                      typeBadgeClasses = "bg-blue-500/10 text-blue-400";
                       typeBadgeLabel = "⇄ Neutro·Aporte";
                     }
 
@@ -685,9 +672,14 @@ function TransactionsPageBody() {
                         : tx.date;
 
                     // Cor do valor
-                    const isIncome = kind === "income";
-                    const valueColorClass = isIncome ? "text-[#4ecf98]" : "text-[#e97070]";
-                    const valuePrefix = isIncome ? "+" : "";
+                    let valueColorClass = "text-[#e97070]"; // default expense
+                    let valuePrefix = "";
+                    if (kind === "income") {
+                      valueColorClass = "text-[#4ecf98]";
+                      valuePrefix = "+";
+                    } else if (kind === "transfer" || kind === "other") {
+                      valueColorClass = "text-blue-400";
+                    }
 
                     return (
                       <tr key={tx.id} className="group transition-colors hover:bg-white/5">

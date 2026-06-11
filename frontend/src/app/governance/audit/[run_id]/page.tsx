@@ -30,11 +30,12 @@ export default function AuditRunPage({ params }: { params: Promise<{ run_id: str
   const { data: run, isLoading, isUnauthorized } = useAuditRunDetail(resolvedParams.run_id);
   const router = useRouter();
 
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [reprocessError, setReprocessError] = useState<string | null>(null);
+
   if (isUnauthorized) {
     return <AuthRequiredCard title="Auditoria" />;
   }
-  const [isReprocessing, setIsReprocessing] = useState(false);
-  const [reprocessError, setReprocessError] = useState<string | null>(null);
 
   const handleReprocess = async () => {
     setIsReprocessing(true);

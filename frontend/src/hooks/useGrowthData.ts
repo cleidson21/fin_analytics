@@ -67,7 +67,7 @@ export function useGrowthData(period: string) {
         } else {
           setIsError(true);
         }
-      } catch (err) {
+      } catch {
         if (mounted) setIsError(true);
       } finally {
         if (mounted) setIsLoading(false);
@@ -99,17 +99,36 @@ export function useGrowthData(period: string) {
   if (history.length > 0) {
     const checkMilestone = (value: number, label: string) => {
       const point = history.find(p => p.patrimonio_value >= value);
-      if (point) milestones.push({ value, label, date: point.month });
+      if (point) {
+        milestones.push({ value, label, date: point.month });
+        return true;
+      }
+      return false;
     };
     checkMilestone(10000, "Primeiros R$ 10k");
     checkMilestone(50000, "R$ 50k Acumulados");
     checkMilestone(100000, "R$ 100k Alcançados");
+    
+    let nextCheck = 150000;
+    while (checkMilestone(nextCheck, `R$ ${nextCheck / 1000}k Alcançados`)) {
+      nextCheck += 50000;
+    }
+  }
+
+  let nextTarget = 10000;
+  const pat = summary?.patrimonio_atual_value || 0;
+  if (pat < 10000) nextTarget = 10000;
+  else if (pat < 50000) nextTarget = 50000;
+  else if (pat < 100000) nextTarget = 100000;
+  else {
+    nextTarget = Math.floor(pat / 50000) * 50000 + 50000;
   }
 
   return {
     summary,
     history: filteredHistory,
     milestones,
+    nextTarget,
     isLoading,
     isError
   };

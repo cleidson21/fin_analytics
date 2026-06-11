@@ -5,6 +5,7 @@ import { AdminTable, ColumnDef } from "@/components/admin/AdminTable";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminFilters } from "@/components/admin/AdminFilters";
 import { CategoryMergeDialog } from "@/components/admin/CategoryMergeDialog";
+import { Category } from "@/types/entities";
 import { useCategoriesAdmin } from "@/hooks/useCategoriesAdmin";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ export function CategoriesTab() {
   const [searchInput, setSearchInput] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   
-  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const { data, total, isLoading, refetch } = useCategoriesAdmin({
     limit,
@@ -45,13 +46,13 @@ export function CategoriesTab() {
     return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">Possível Duplicidade</span>;
   };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<Category>[] = [
     { key: "categoria", header: "Categoria" },
     { key: "quantidade_transacoes", header: "Qtd. Transações" },
     {
       key: "relevancia",
       header: "Indicador de Relevância",
-      renderCell: (row) => getRelevanceBadge(row.quantidade_transacoes),
+      renderCell: (row) => getRelevanceBadge(row.quantidade_transacoes || 0),
     },
   ];
 
@@ -112,9 +113,9 @@ export function CategoriesTab() {
         onPageChange={setOffset}
       />
 
-      {isAdmin && (
+      {isAdmin && editingCategory && (
         <CategoryMergeDialog
-          isOpen={!!editingCategory}
+          isOpen={true}
           onClose={() => setEditingCategory(null)}
           category={editingCategory}
           onSuccess={() => refetch()}
