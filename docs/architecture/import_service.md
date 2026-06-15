@@ -1,0 +1,3 @@
+# Import Service\n\n**Responsabilidade:** Coordenar o complexo ETL end-to-end de ingressão financeira.\n\n**Dependências:** GovernanceRepository (Staging/Rules), FinancialRepository (Persistência final).\n\n**Fluxos Principais:**\n- Ingestão RAW de CSVs e APIs.\n- Classificação e Reconciliação (Staging).\n- Promoção de STAGING para PERSISTÊNCIA.\n\n**Pontos de Extensão:** Novos conectores de banco nativo (OpenFinance API) injetando direto no pipeline de STAGING.
+
+**Production Hardening (FASE 8):** Testes end-to-end de fumaça garantem que as pipelines de inserção operam sob < 5% de overhead com as novas proteções transacionais.

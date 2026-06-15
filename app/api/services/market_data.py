@@ -1,5 +1,5 @@
 import json
-import sqlite3
+from database.financial_repository import FinancialRepository
 import re
 from datetime import datetime, timedelta
 import logging
@@ -16,7 +16,7 @@ from database.config import DATABASE_PATH
 DB_PATH = str(DATABASE_PATH)
 
 def get_db_connection():
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
+    return FinancialRepository()._get_connection()
 
 def format_ticker_for_yf(ticker: str) -> str:
     """Format the ticker symbol for yfinance."""

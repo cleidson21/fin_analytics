@@ -246,7 +246,7 @@ function StatusBadge({ status }: { status: string }) {
     return <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-full">OK</span>;
   }
   if (status === 'WARNING') {
-    return <span className="px-2 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-full">WARNING</span>;
+    return <span className="px-2 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-full">Atenção</span>;
   }
-  return <span className="px-2 py-1 bg-rose-500/10 text-rose-400 text-xs font-medium rounded-full">ERROR</span>;
+  return <span className="px-2 py-1 bg-rose-500/10 text-rose-400 text-xs font-medium rounded-full">Erro</span>;
 }

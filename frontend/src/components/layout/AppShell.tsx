@@ -22,9 +22,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside className="hidden w-72 shrink-0 flex-col border-r border-white/10 bg-white/5 px-6 py-8 backdrop-blur lg:flex">
           <Link href="/" className="mb-10 inline-flex items-center gap-3 self-start">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400/15 text-lg font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
-              W
+              F
             </span>
-            <span className="text-lg font-semibold tracking-tight text-white">Wealth OS</span>
+            <span className="text-lg font-semibold tracking-tight text-white">FinAnalytics</span>
           </Link>
 
           <nav className="flex flex-1 flex-col gap-8">

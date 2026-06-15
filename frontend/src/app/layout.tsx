@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Wealth OS",
+  title: "FinAnalytics",
   description: "Motor Financeiro Privado",
 };
 

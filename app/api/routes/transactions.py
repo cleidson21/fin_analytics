@@ -2,11 +2,11 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.api.schemas.transactions import ReclassificationRequest, TransactionItem, TransactionListResponse, TransactionSummary
 from app.api.validators import validate_date
-from database.queries import FinancialQueries
+from app.api.services.financial_service import FinancialService
 
 
 router = APIRouter()
-queries = FinancialQueries()
+service = FinancialService()
 
 
 @router.get("", response_model=TransactionListResponse)
@@ -29,7 +29,7 @@ def get_transactions(
     if start_date and end_date and start_date > end_date:
         raise HTTPException(status_code=400, detail="startDate não pode ser maior que endDate")
 
-    items_list, total = queries.get_transactions(
+    items_list, total = service.get_transactions(
         limit=limit,
         offset=offset,
         start_date=start_date,
@@ -38,7 +38,7 @@ def get_transactions(
         category=category,
         natureza=natureza,
     )
-    summary = queries.get_transactions_summary(
+    summary = service.get_transactions_summary(
         start_date=start_date,
         end_date=end_date,
         account=account,
@@ -69,7 +69,7 @@ def get_transactions(
         for r in items_list
     ]
 
-    total_pages = queries.get_transactions_total_pages(total, limit)
+    total_pages = service.get_transactions_total_pages(total, limit)
     return TransactionListResponse(
         items=items,
         total=total,
@@ -83,7 +83,7 @@ def get_transactions(
 @router.patch("/{transaction_id}/reclassify")
 def reclassify_transaction(transaction_id: str, req: ReclassificationRequest):
     """Permite corrigir a taxonomia de um registo."""
-    updated = queries.update_transaction_category(
+    updated = service.update_transaction_category(
         transaction_id=transaction_id,
         macro_categoria=req.macro_categoria,
         natureza=req.natureza,

@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BrainCircuit } from "lucide-react";
+import { fetchFromAPI } from "@/lib/api";
+import { PageLayout } from "@/components/layout/PageLayout";
+import { AuthRequiredCard } from "@/components/ui/AuthRequiredCard";
 
 export default function LearningDashboard() {
   const [metrics, setMetrics] = useState<any>(null);
@@ -11,27 +14,33 @@ export default function LearningDashboard() {
   const [probRules, setProbRules] = useState<any[]>([]);
   const [allRules, setAllRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       try {
         const [metRes, topRes, probRes, allRes] = await Promise.all([
-          fetch("http://localhost:8000/api/v1/governance/learning/metrics"),
-          fetch("http://localhost:8000/api/v1/governance/learning/rules/top?limit=10"),
-          fetch("http://localhost:8000/api/v1/governance/learning/rules/problematic?limit=10"),
-          fetch("http://localhost:8000/api/v1/governance/learning/rules?limit=50"),
+          fetchFromAPI("/governance/learning/metrics"),
+          fetchFromAPI("/governance/learning/rules/top?limit=10"),
+          fetchFromAPI("/governance/learning/rules/problematic?limit=10"),
+          fetchFromAPI("/governance/learning/rules?limit=50"),
         ]);
         
-        const [met, top, prob, all] = await Promise.all([
-          metRes.json(), topRes.json(), probRes.json(), allRes.json()
-        ]);
+        const met = metRes;
+        const top = topRes;
+        const prob = probRes;
+        const all = allRes;
 
         setMetrics(met);
         setTopRules(top);
         setProbRules(prob);
         setAllRules(all);
-      } catch (e) {
-        console.error("Error loading learning data", e);
+      } catch (e: any) {
+        if (e.message?.includes("401") || e.message?.includes("403")) {
+          setIsUnauthorized(true);
+        } else {
+          console.error("Error loading learning data", e);
+        }
       } finally {
         setLoading(false);
       }
@@ -39,8 +48,12 @@ export default function LearningDashboard() {
     loadData();
   }, []);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Carregando métricas da Memória Financeira...</div>;
-  if (!metrics) return <div className="p-8 text-center text-red-500">Erro ao carregar dados.</div>;
+  if (isUnauthorized) {
+    return <AuthRequiredCard title="Memória Financeira" />;
+  }
+
+  if (loading) return <div className="flex h-screen items-center justify-center text-slate-400">Carregando métricas da Memória Financeira...</div>;
+  if (!metrics) return <div className="flex h-screen items-center justify-center text-red-500">Erro ao carregar dados.</div>;
 
   const getStatusBadge = (status: string) => {
     const colors: any = {
@@ -64,20 +77,36 @@ export default function LearningDashboard() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-[#0a0a0a] min-h-screen text-gray-100">
-      
-      {/* HEADER & HEALTH SCORE */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <Link href="/governance" className="inline-flex items-center text-sm text-gray-400 hover:text-white mb-4 transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar para Dashboard
-          </Link>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            Memória Financeira
-          </h1>
-          <p className="text-gray-400 mt-2">Governança, métricas e observabilidade do aprendizado do sistema.</p>
+    <PageLayout 
+      title="Memória Financeira" 
+      hideTitle={true}
+      breadcrumb={
+        <div className="text-sm font-medium text-zinc-500 flex items-center gap-2">
+          <Link href="/governance" className="hover:text-white transition-colors">Governança</Link>
+          <span>/</span>
+          <span className="text-zinc-300">Memória Financeira</span>
         </div>
+      }
+    >
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <Link 
+          href="/governance"
+          className="inline-flex items-center text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="mr-2 w-4 h-4" />
+          Voltar para Dashboard
+        </Link>
+      </div>
+
+      <div className="space-y-8">
+        {/* HEADER & HEALTH SCORE */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+              Memória Financeira
+            </h1>
+            <p className="text-gray-400 mt-2">Governança, métricas e observabilidade do aprendizado do sistema.</p>
+          </div>
 
         <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl flex flex-col items-center shadow-lg backdrop-blur-sm">
           <span className="text-sm text-gray-400 font-medium tracking-wide uppercase">Saúde da Memória</span>
@@ -216,7 +245,7 @@ export default function LearningDashboard() {
           </table>
         </div>
       </div>
-
-    </div>
+      </div>
+    </PageLayout>
   );
 }

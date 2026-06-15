@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 
-from database.repository import DatabaseManager
+from app.api.services.auth_service import AuthService
 from app.api.schemas.auth import TokenData, UserInDB
 
 SECRET_KEY = "sua_chave_secreta_super_segura_para_dev"
@@ -15,8 +15,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
 
-def get_db():
-    return DatabaseManager()
+def get_auth_service():
+    return AuthService()
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -36,7 +36,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme), 
-    db: DatabaseManager = Depends(get_db)
+    service: AuthService = Depends(get_auth_service)
 ):
     if not token:
         # If auto_error=False, token can be None. If so, return None.
@@ -56,7 +56,7 @@ async def get_current_user(
     except jwt.PyJWTError:
         raise credentials_exception
         
-    user = db.get_user_by_username(username=token_data.username)
+    user = service.get_user_by_username(username=token_data.username)
     if user is None:
         raise credentials_exception
         

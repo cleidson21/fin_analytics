@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
+from app.api.deps import require_authenticated
 
 from app.api.schemas.dashboard import (
     CategoryBreakdown,
@@ -16,11 +17,11 @@ from app.api.schemas.dashboard import (
 from app.api.services.analytics import AnalyticsService
 from app.core.formatters import format_money
 from app.api.validators import validate_month
-from database.queries import FinancialQueries
+from app.api.services.financial_service import FinancialService
 
 
-router = APIRouter()
-queries = FinancialQueries()
+router = APIRouter(dependencies=[Depends(require_authenticated)])
+service = FinancialService()
 analytics_service = AnalyticsService()
 
 
@@ -34,8 +35,8 @@ def get_dashboard_summary(month: str | None = Query(None, description="Filtro de
     if month:
         validate_month(month)
 
-    net_worth = queries.get_current_net_worth()
-    df_cash = queries.get_cashflow_summary(month=month)
+    net_worth = service.get_current_net_worth()
+    df_cash = service.get_cashflow_summary(month=month)
 
     receitas_val = df_cash.loc[df_cash["natureza"] == "INCOME", "total"].sum() if not df_cash.empty else 0
     gastos_val = df_cash.loc[df_cash["natureza"] == "EXPENSE", "total"].sum() if not df_cash.empty else 0
@@ -102,7 +103,7 @@ def get_categories_breakdown(month: str | None = Query(None, description="Filtro
     """Retorna o total de gastos por categoria para o mês informado ou o mês corrente."""
     effective_month = month or datetime.now().strftime("%Y-%m")
     valid_month = validate_month(effective_month)
-    df = queries.get_expenses_by_category(month=valid_month)
+    df = service.get_expenses_by_category(month=valid_month)
 
     categories = [
         CategoryBreakdown(category=row["macro_categoria"], total=abs(float(row["total"])))

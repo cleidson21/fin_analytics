@@ -2,9 +2,9 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from database.repository import DatabaseManager
+from app.api.services.auth_service import AuthService
 from app.api.deps import (
-    get_db,
+    get_auth_service,
     verify_password,
     create_access_token,
     get_current_user,
@@ -18,9 +18,9 @@ router = APIRouter(tags=["auth"])
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: DatabaseManager = Depends(get_db)
+    service: AuthService = Depends(get_auth_service)
 ):
-    user = db.get_user_by_username(form_data.username)
+    user = service.get_user_by_username(form_data.username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

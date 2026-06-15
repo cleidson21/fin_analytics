@@ -10,12 +10,12 @@ from app.api.schemas.investments import (
     PortfolioEvolutionSummary,
 )
 from app.core.formatters import format_money
-from database.queries import FinancialQueries
+from database.financial_repository import FinancialRepository
 
 
 class WealthAnalyticsService:
     def __init__(self):
-        self.queries = FinancialQueries()
+        self.queries = FinancialRepository()
         # TODO: Future integration point for MarketDataService
         # self.market_data_service = MarketDataService() 
         # This will allow injecting real-time prices, USD conversion, and YFinance fundamental data

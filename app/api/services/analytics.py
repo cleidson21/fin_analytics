@@ -1,6 +1,6 @@
 import calendar
 import re
-import sqlite3
+
 from datetime import date
 from decimal import Decimal
 
@@ -18,14 +18,14 @@ from app.api.schemas.dashboard import (
     SubscriptionsSummary,
 )
 from app.core.formatters import format_money
-from database.queries import FinancialQueries
+from database.financial_repository import FinancialRepository
 
 
 class AnalyticsService:
     INSTALLMENT_PATTERN = re.compile(r"(.+?)\s+(\d{1,2})\s*/\s*(\d{1,2})\s*x?\b", re.IGNORECASE)
 
     def __init__(self):
-        self.queries = FinancialQueries()
+        self.queries = FinancialRepository()
 
     def _month_filter_sql(self, month: str | None) -> tuple[str, list[object]]:
         if not month:
@@ -61,7 +61,7 @@ class AnalyticsService:
         params.extend(month_params)
         query += " ORDER BY data ASC, source_line_no ASC, id_economico ASC"
 
-        with sqlite3.connect(self.queries.db_path) as conn:
+        with self.queries._get_connection() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(query, params).fetchall()
 

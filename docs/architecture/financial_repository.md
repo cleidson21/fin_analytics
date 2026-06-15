@@ -1,0 +1,3 @@
+# Financial Repository\n\n**Responsabilidade:** Acesso exclusivo de leitura e escrita ao in_analytics.db.\n\n**Dependências:** Nenhuma (Core). Conecta-se via sqlite3.\n\n**Fluxos Principais:**\n- Busca de Transações, Posições e Evolução Patrimonial.\n- Cálculos de Patrimonio Líquido e Rentabilidade.\n\n**Pontos de Extensão:** Módulos de Machine Learning poderão ler as queries de sumário diretamente daqui.
+
+**Transaction Safety (FASE 8):** Operações de escrita agora são protegidas por explícitos blocos `BEGIN/COMMIT/ROLLBACK` orquestrados pelo `app.core.observability`.

@@ -1,0 +1,3 @@
+# Financial Service\n\n**Responsabilidade:** Orquestrar dados financeiros do FinancialRepository para os Routers (Accounts, Transactions, Dashboard).\n\n**Dependências:** FinancialRepository.\n\n**Fluxos Principais:**\n- Agregação de Cashflow.\n- Listagem paginada de transações.\n- Consolidação de Catálogo de Contas.\n\n**Pontos de Extensão:** Filtros avançados combinando contas cruzadas e consolidações multi-moeda.
+
+**Observability (FASE 8):** Logs estruturados (`request_id`, `endpoint`, `duration_ms`) ofuscando dados sensíveis operam de forma subjacente.

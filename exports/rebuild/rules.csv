@@ -1,0 +1,2 @@
+﻿id,rule_type,pattern,action,reason,confidence_score,evidence_count,hit_count,miss_count,active,version,superseded_by,created_at,last_used,status,status_changed_at
+17fbe1d8-c39a-46da-bb68-3efafa0d8320,CATEGORIZATION,"{""description_matches"": ""DROGASIL""}","{""macro_categoria"": ""SAUDE"", ""sub_categoria"": ""FARMACIA"", ""natureza"": ""DESPESA""}",Usuário corrigiu DROGASIL para FARMACIA,1.0,4,4,0,1,1,,2026-06-10 23:40:19,2026-06-10 23:40:19,ACTIVE,2026-06-10 23:52:38

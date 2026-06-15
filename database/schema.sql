@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_by TEXT,
     updated_by TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS etl_runs_legacy (
@@ -118,7 +119,8 @@ CREATE TABLE IF NOT EXISTS staging_imports (
     amount_cents INTEGER,
     account TEXT,
     category_inferred TEXT,
-    status TEXT DEFAULT 'PENDING'
+    status TEXT DEFAULT 'PENDING',
+    FOREIGN KEY(import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_import_runs_checksum ON import_runs(checksum);
@@ -182,7 +184,8 @@ CREATE TABLE IF NOT EXISTS positions (
     updated_by TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (ticker, data_snapshot)
+    PRIMARY KEY (ticker, data_snapshot),
+    FOREIGN KEY(import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS dividends (
@@ -199,7 +202,8 @@ CREATE TABLE IF NOT EXISTS dividends (
     created_by TEXT,
     updated_by TEXT,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_positions_date
@@ -232,7 +236,8 @@ CREATE TABLE IF NOT EXISTS portfolio_evolution (
     idiv_acumulado_pct DECIMAL(7, 4) DEFAULT 0,
     import_run_id TEXT,
     source_line_no INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(import_run_id) REFERENCES import_runs(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_positions_date

@@ -4,21 +4,21 @@ import sys
 # Garante que o script pode rodar da raiz do projeto
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database.repository import DatabaseManager
+from app.api.services.auth_service import AuthService
 from app.api.deps import get_password_hash
 
 def seed_admin():
-    db = DatabaseManager()
+    auth_service = AuthService()
     
     # Verifica se admin já existe
-    existing = db.get_user_by_username("admin")
+    existing = auth_service.get_user_by_username("admin")
     if existing:
         print("Usuário admin já existe.")
         return
 
     print("Criando usuário admin...")
     hashed_password = get_password_hash("admin123")
-    user_id = db.create_user(
+    user_id = auth_service.create_user(
         username="admin",
         email="admin@finanalytics.local",
         password_hash=hashed_password,

@@ -33,6 +33,10 @@ export async function fetchFromAPI<T>(
     });
 
     if (response.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
       throw new AuthError();
     }
 
