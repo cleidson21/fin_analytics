@@ -42,10 +42,11 @@ def get_dashboard_summary(
     
     cashflow_service = CashflowService(db)
     expenses = cashflow_service._get_expenses_sum(year, month_number)
+    income = cashflow_service._get_income_sum(year, month_number)
     
     return DashboardSummary(
         net_worth="R$ 0,00", # Requires Wealth
-        income="R$ 0,00",
+        income=cashflow_service._format_money(income),
         expenses=cashflow_service._format_money(expenses),
-        balance=cashflow_service._format_money(-expenses)
+        balance=cashflow_service._format_money(income - expenses)
     )

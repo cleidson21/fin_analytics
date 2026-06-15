@@ -22,6 +22,18 @@ class CashflowService:
         result = query.scalar()
         return float(result) if result else 0.0
 
+    def _get_income_sum(self, year: int, month: int, up_to_day: int = None) -> float:
+        query = self.db.query(func.sum(Transaction.valor)).filter(
+            Transaction.natureza == 'INCOME',
+            extract('year', Transaction.data) == year,
+            extract('month', Transaction.data) == month
+        )
+        if up_to_day:
+            query = query.filter(extract('day', Transaction.data) <= up_to_day)
+        
+        result = query.scalar()
+        return float(result) if result else 0.0
+
     def _get_daily_expenses(self, year: int, month: int) -> dict:
         results = self.db.query(
             extract('day', Transaction.data).label('day'),
