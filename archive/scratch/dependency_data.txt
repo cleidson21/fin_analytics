@@ -1,0 +1,4357 @@
+==== src/app/page.tsx ====
+import { DashboardPage } from "@/components/dashboard/DashboardPage";
+
+export const dynamic = "force-dynamic";
+
+export default function Home() {
+  return <DashboardPage />;
+}
+
+
+==== src/app/subscriptions/page.tsx ====
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+import { PageLayout } from "@/components/layout/PageLayout";
+import { fetchFromAPI } from "@/lib/api";
+import { getCurrentMonth } from "@/lib/period";
+import { formatCurrency } from "@/lib/utils";
+
+interface SubscriptionItem {
+  original_name: string;
+  date: string;
+  amount: number;
+}
+
+interface SubscriptionsSummary {
+  month: string;
+  active_count: number;
+  monthly_total: number;
+  annual_projection: number;
+  average_per_service: number;
+  items: SubscriptionItem[];
+}
+
+function formatDate(dateValue: string) {
+  const date = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dateValue;
+  }
+
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function LoadingLine({ width = "w-full" }: { width?: string }) {
+  return <div className={`h-5 ${width} animate-pulse rounded bg-white/[0.05]`} />;
+}
+
+export default function SubscriptionsPage() {
+  const [summary, setSummary] = useState<SubscriptionsSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const month = useMemo(() => getCurrentMonth(), []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      setLoading(true);
+      const payload = await fetchFromAPI<SubscriptionsSummary>(`/dashboard/subscriptions?month=${month}`);
+
+      if (!active) {
+        return;
+      }
+
+      setSummary(payload);
+      setLoading(false);
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, [month]);
+
+  const items = summary?.items ?? [];
+
+  return (
+    <PageLayout title="Assinaturas" subtitle={`Serviços recorrentes mapeados em ${month}.`} hideTitle={true}>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {loading || !summary ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <article key={`sub-card-loading-${index}`} className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+              <LoadingLine width="w-28" />
+              <div className="mt-3">
+                <LoadingLine width="w-36" />
+              </div>
+            </article>
+          ))
+        ) : (
+          [
+            { label: "Assinaturas Ativas", value: String(summary.active_count) },
+            { label: "Gasto Mensal", value: formatCurrency(summary.monthly_total) },
+            { label: "Projeção Anual", value: formatCurrency(summary.annual_projection) },
+            { label: "Média por Serviço", value: formatCurrency(summary.average_per_service) },
+          ].map((item) => (
+            <article key={item.label} className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+              <p className="text-xs uppercase tracking-widest text-neutral-500">{item.label}</p>
+              <p className="mt-3 text-2xl font-semibold text-white">{item.value}</p>
+            </article>
+          ))
+        )}
+      </section>
+
+      <section className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+        <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 border-b border-white/[0.05] pb-3 text-xs uppercase tracking-widest text-neutral-600">
+          <span>Serviço</span>
+          <span className="text-right">Data</span>
+          <span className="text-right">Valor Mensal</span>
+        </div>
+
+        {loading ? (
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <LoadingLine key={`sub-list-loading-${index}`} width="w-full" />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <p className="py-8 text-sm text-neutral-500">Nenhuma assinatura identificada no mês selecionado.</p>
+        ) : (
+          <div className="mt-2">
+            {items.map((item, index) => (
+              <article
+                key={`${item.original_name}-${item.date}-${index}`}
+                className="grid grid-cols-[2fr_1fr_1fr] items-center gap-3 border-b border-white/[0.05] py-3 last:border-b-0"
+              >
+                <p className="truncate text-sm text-white">{item.original_name}</p>
+                <p className="text-right text-sm text-neutral-400">{formatDate(item.date)}</p>
+                <p className="text-right text-sm font-medium text-emerald-300">{formatCurrency(item.amount)}</p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </PageLayout>
+  );
+}
+
+
+==== src/app/transactions/page.tsx ====
+"use client";
+
+import { Suspense, useEffect, useMemo, useState } from "react";
+import {
+  ArrowDownRight,
+  ArrowRightLeft,
+  ArrowUpRight,
+  Building2,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Save,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+import { PageLayout } from "@/components/layout/PageLayout";
+import { fetchFromAPI } from "@/lib/api";
+import { formatCurrency } from "@/lib/utils";
+import { getCurrentMonth, getMonthBounds } from "@/lib/period";
+
+interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  natureza: string;
+  subnatureza: string;
+  account: string;
+  amount: number | string;
+}
+
+interface TransactionListResponse {
+  items: Transaction[];
+  total: number;
+  limit: number;
+  offset: number;
+  totalPages: number;
+  summary: {
+    income: number;
+    expense: number;
+    balance: number;
+  };
+}
+
+interface ReclassificationPayload {
+  macro_categoria: string;
+  natureza: string;
+  subnatureza: string;
+}
+
+interface CatalogResponse {
+  categories: string[];
+  natures: string[];
+  accounts: string[];
+}
+
+const NATURE_LABELS: Record<string, string> = {
+  INCOME: "Receita",
+  EXPENSE: "Despesa",
+  TRANSFER: "Transferência",
+  INVESTMENT: "Investimento",
+  DIVIDEND: "Dividendo",
+};
+
+const emptyPayload: ReclassificationPayload = {
+  macro_categoria: "",
+  natureza: "",
+  subnatureza: "",
+};
+
+type TransactionKind = "income" | "expense" | "transfer" | "other";
+
+function normalizeText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+}
+
+function classifyTransaction(natureza: string): TransactionKind {
+  const normalized = normalizeText(natureza);
+
+  if (["INCOME", "RECEITA", "CREDIT", "CREDITO", "CRÉDITO"].includes(normalized)) {
+    return "income";
+  }
+
+  if (["EXPENSE", "DESPESA", "DEBIT", "DEBITO", "DÉBITO"].includes(normalized)) {
+    return "expense";
+  }
+
+  if (["TRANSFER", "TRANSFERENCIA", "TRANSFERÊNCIA", "TRANSFERENCIA ENTRE CONTAS"].includes(normalized)) {
+    return "transfer";
+  }
+
+  return "other";
+}
+
+function TransactionsPageBody() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const fallbackMonth = getCurrentMonth();
+  const fallbackMonthBounds = getMonthBounds(fallbackMonth);
+
+  const [startDate, setStartDate] = useState(() => searchParams.get("startDate") ?? fallbackMonthBounds.startDate);
+  const [endDate, setEndDate] = useState(() => searchParams.get("endDate") ?? fallbackMonthBounds.endDate);
+  const [account, setAccount] = useState(() => searchParams.get("account") ?? "all");
+  const [category, setCategory] = useState(() => searchParams.get("category") ?? "all");
+  const [natureza, setNatureza] = useState(() => searchParams.get("natureza") ?? "all");
+  const [limit] = useState(50);
+  const [offset, setOffset] = useState(0);
+
+  const [catalog, setCatalog] = useState<CatalogResponse>({
+    accounts: [],
+    categories: [],
+    natures: [],
+  });
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [summary, setSummary] = useState({
+    income: 0,
+    expense: 0,
+    balance: 0,
+  });
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [form, setForm] = useState<ReclassificationPayload>(emptyPayload);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const currentPage = Math.floor(offset / limit) + 1;
+  const hasPreviousPage = offset > 0;
+  const hasNextPage = totalPages > 0 && currentPage < totalPages;
+  const rangeStart = total > 0 ? offset + 1 : 0;
+  const rangeEnd = total > 0 ? Math.min(offset + transactions.length, total) : 0;
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+
+    nextParams.set("startDate", startDate);
+    nextParams.set("endDate", endDate);
+
+    if (account !== "all") {
+      nextParams.set("account", account);
+    }
+
+    if (category !== "all") {
+      nextParams.set("category", category);
+    }
+
+    if (natureza !== "all") {
+      nextParams.set("natureza", natureza);
+    }
+
+    const nextQuery = nextParams.toString();
+
+    if (nextQuery !== searchParams.toString()) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [account, category, endDate, natureza, pathname, router, searchParams, startDate]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCatalog() {
+      const data = await fetchFromAPI<CatalogResponse>("/catalog");
+
+      if (!active) {
+        return;
+      }
+
+      if (data) {
+        setCatalog(data);
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadData() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        if (startDate > endDate) {
+          setTransactions([]);
+          setTotal(0);
+          setTotalPages(0);
+          setSummary({ income: 0, expense: 0, balance: 0 });
+          return;
+        }
+
+        const query = new URLSearchParams({
+          startDate,
+          endDate,
+          limit: String(limit),
+          offset: String(offset),
+        });
+
+        if (account !== "all") {
+          query.set("account", account);
+        }
+
+        if (category !== "all") {
+          query.set("category", category);
+        }
+
+        if (natureza !== "all") {
+          query.set("natureza", natureza);
+        }
+
+        const data = await fetchFromAPI<TransactionListResponse>(`/transactions?${query.toString()}`);
+
+        if (!active) {
+          return;
+        }
+
+        setTransactions(data?.items || []);
+        setTotal(data?.total ?? 0);
+        setTotalPages(data?.totalPages ?? 0);
+        setSummary({
+          income: data?.summary?.income ?? 0,
+          expense: data?.summary?.expense ?? 0,
+          balance: data?.summary?.balance ?? 0,
+        });
+
+        if (!data) {
+          setError("Não foi possível carregar o extrato.");
+        }
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setTransactions([]);
+        setTotal(0);
+        setTotalPages(0);
+        setSummary({ income: 0, expense: 0, balance: 0 });
+        setError("Não foi possível carregar o extrato.");
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
+  }, [account, category, endDate, limit, natureza, offset, startDate]);
+
+  const accountOptions = catalog.accounts;
+  const categoryOptions = catalog.categories;
+  const natureOptions = catalog.natures.map((nature) => ({
+    value: nature,
+    label: NATURE_LABELS[nature] ?? nature,
+  }));
+
+  const filteredTransactions = useMemo(() => {
+    const term = normalizeText(searchTerm);
+
+    return transactions.filter((tx) => {
+      const matchesSearch =
+        !term ||
+        [tx.description, tx.category, tx.natureza, tx.subnatureza, tx.account, tx.date]
+          .join(" ")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toUpperCase()
+          .includes(term);
+
+      return matchesSearch;
+    });
+  }, [searchTerm, transactions]);
+
+  const goToPreviousPage = () => {
+    if (!hasPreviousPage) {
+      return;
+    }
+
+    setOffset((current) => Math.max(current - limit, 0));
+  };
+
+  const goToNextPage = () => {
+    if (!hasNextPage) {
+      return;
+    }
+
+    setOffset((current) => current + limit);
+  };
+
+  const handleStartDateChange = (value: string) => {
+    setStartDate(value);
+    setOffset(0);
+  };
+
+  const handleEndDateChange = (value: string) => {
+    setEndDate(value);
+    setOffset(0);
+  };
+
+  const handleAccountChange = (value: string) => {
+    setAccount(value);
+    setOffset(0);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
+    setOffset(0);
+  };
+
+  const handleNaturezaChange = (value: string) => {
+    setNatureza(value);
+    setOffset(0);
+  };
+
+  const openReclassification = (tx: Transaction) => {
+    setSelectedTransaction(tx);
+    setForm({
+      macro_categoria: tx.category,
+      natureza: tx.natureza,
+      subnatureza: tx.subnatureza,
+    });
+    setMessage(null);
+  };
+
+  void openReclassification;
+
+  const cancelReclassification = () => {
+    setSelectedTransaction(null);
+    setForm(emptyPayload);
+  };
+
+  const handleReclassify = async () => {
+    if (!selectedTransaction) {
+      return;
+    }
+
+    if (!form.macro_categoria.trim() || !form.natureza.trim() || !form.subnatureza.trim()) {
+      setMessage("Preencha macro_categoria, natureza e subnatureza.");
+      return;
+    }
+
+    setSaving(true);
+    const result = await fetchFromAPI<{ status: string; message: string }>(
+      `/transactions/${selectedTransaction.id}/reclassify`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(form),
+      }
+    );
+    setSaving(false);
+
+    if (!result) {
+      setMessage("Não foi possível reclassificar a transação.");
+      return;
+    }
+
+    setTransactions((current) =>
+      current.map((tx) =>
+        tx.id === selectedTransaction.id
+          ? {
+              ...tx,
+              category: form.macro_categoria,
+              natureza: form.natureza,
+              subnatureza: form.subnatureza,
+            }
+          : tx
+      )
+    );
+    setMessage(result.message);
+    cancelReclassification();
+  };
+
+  return (
+    <PageLayout title="Transações" subtitle="Entrada e saída de capital com paginação real e filtros do backend." hideTitle={true}>
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50">Base de dados e auditoria</h2>
+            <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+              Revise e filtre o extrato com paginação real no servidor.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300">
+            <ArrowRightLeft className="size-4 text-cyan-300" />
+            <span>{filteredTransactions.length} transações visíveis</span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total de Receitas</p>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <p className="text-2xl font-semibold tracking-tight text-emerald-300">{formatCurrency(summary.income)}</p>
+              <ArrowUpRight className="size-5 text-emerald-300" />
+            </div>
+          </article>
+
+          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total de Despesas</p>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <p className="text-2xl font-semibold tracking-tight text-rose-300">{formatCurrency(summary.expense)}</p>
+              <ArrowDownRight className="size-5 text-rose-300" />
+            </div>
+          </article>
+
+          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Saldo Líquido</p>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <p className={`text-2xl font-semibold tracking-tight ${summary.balance >= 0 ? "text-cyan-300" : "text-rose-300"}`}>
+                {formatCurrency(summary.balance)}
+              </p>
+              <SlidersHorizontal className="size-5 text-cyan-300" />
+            </div>
+          </article>
+
+          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Movimentações</p>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <p className="text-2xl font-semibold tracking-tight text-zinc-50">{filteredTransactions.length}</p>
+              <Building2 className="size-5 text-zinc-400" />
+            </div>
+          </article>
+        </div>
+
+        <div className="mt-6 grid gap-3 xl:grid-cols-2">
+          <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-zinc-400">
+            <Search className="size-4" />
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Pesquisar por descrição, categoria, natureza ou conta"
+              className="w-full bg-transparent text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
+            />
+          </label>
+
+          <div className="flex items-center gap-3 rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-3 text-sm text-zinc-400">
+            <Filter className="size-4" />
+            Filtros sincronizados com o backend
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+          <label className="space-y-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
+            <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
+              <CalendarRange className="size-4" />
+              Período inicial
+            </span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(event) => handleStartDateChange(event.target.value)}
+              className="w-full bg-transparent text-zinc-100 outline-none"
+            />
+          </label>
+
+          <label className="space-y-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
+            <span className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
+              <CalendarRange className="size-4" />
+              Período final
+            </span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(event) => handleEndDateChange(event.target.value)}
+              className="w-full bg-transparent text-zinc-100 outline-none"
+            />
+          </label>
+
+          <label className="space-y-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
+            <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Conta</span>
+            <select
+              value={account}
+              onChange={(event) => handleAccountChange(event.target.value)}
+              className="w-full bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
+            >
+              <option value="all">Todas as contas</option>
+              {accountOptions.map((accountOption) => (
+                <option key={accountOption} value={accountOption}>
+                  {accountOption}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
+            <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Categoria</span>
+            <select
+              value={category}
+              onChange={(event) => handleCategoryChange(event.target.value)}
+              className="w-full bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
+            >
+              <option value="all">Todas as categorias</option>
+              {categoryOptions.map((categoryOption) => (
+                <option key={categoryOption} value={categoryOption}>
+                  {categoryOption}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
+          <label className="flex flex-1 min-w-[220px] items-center gap-3 text-zinc-400">
+            <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Tipo</span>
+            <select
+              value={natureza}
+              onChange={(event) => handleNaturezaChange(event.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
+            >
+              <option value="all">Todos os tipos</option>
+              {natureOptions.map((nature) => (
+                <option key={nature.value} value={nature.value}>
+                  {nature.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
+            <Filter className="size-4" />
+            {limit} por página
+          </div>
+        </div>
+
+        {message ? (
+          <div className="mt-4 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-100">
+            {message}
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+            {error}
+          </div>
+        ) : null}
+
+        {selectedTransaction ? (
+          <div className="mt-6 rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-emerald-200/80">Reclassificação</p>
+                <h3 className="mt-2 text-lg font-semibold text-zinc-50">{selectedTransaction.description}</h3>
+                <p className="mt-1 text-sm text-zinc-300">{selectedTransaction.date} • {selectedTransaction.account}</p>
+              </div>
+
+              <Button variant="ghost" size="sm" onClick={cancelReclassification} className="self-start">
+                <X className="mr-2 size-4" />
+                Fechar
+              </Button>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <label className="space-y-2 text-sm text-zinc-300">
+                <span className="block text-xs uppercase tracking-[0.2em] text-zinc-500">Macro categoria</span>
+                <input
+                  value={form.macro_categoria}
+                  onChange={(event) => setForm((current) => ({ ...current, macro_categoria: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-emerald-400/50"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm text-zinc-300">
+                <span className="block text-xs uppercase tracking-[0.2em] text-zinc-500">Natureza</span>
+                <input
+                  value={form.natureza}
+                  onChange={(event) => setForm((current) => ({ ...current, natureza: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-emerald-400/50"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm text-zinc-300">
+                <span className="block text-xs uppercase tracking-[0.2em] text-zinc-500">Subnatureza</span>
+                <input
+                  value={form.subnatureza}
+                  onChange={(event) => setForm((current) => ({ ...current, subnatureza: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-emerald-400/50"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Button onClick={handleReclassify} disabled={saving} className="bg-emerald-500 text-emerald-950 hover:bg-emerald-400">
+                <Save className="mr-2 size-4" />
+                {saving ? "Salvando..." : "Salvar reclassificação"}
+              </Button>
+              <span className="text-xs text-zinc-400">A ação chama PATCH /transactions/{selectedTransaction.id}/reclassify.</span>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-white/10 text-sm">
+              <thead className="bg-black/25 text-left text-xs uppercase tracking-[0.18em] text-zinc-500">
+                <tr>
+                  <th className="px-4 py-3 w-[30%]">Descrição</th>
+                  <th className="px-4 py-3 w-[30%]">Classificação</th>
+                  <th className="px-4 py-3 w-[15%]">Conta</th>
+                  <th className="px-4 py-3 w-[15%]">Data</th>
+                  <th className="px-4 py-3 w-[10%] text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10 bg-white/5">
+                {loading ? (
+                  <tr>
+                    <td className="px-4 py-6 text-zinc-400" colSpan={5}>
+                      A carregar extrato...
+                    </td>
+                  </tr>
+                ) : filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-6 text-zinc-400" colSpan={5}>
+                      Nenhuma transação encontrada.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((tx) => {
+                    const amountValue = Number(tx.amount) || 0;
+                    const amountAbs = Math.abs(amountValue);
+                    const kind = classifyTransaction(tx.natureza);
+
+                    // Badge de tipo (linha superior)
+                    let typeBadgeClasses: string;
+                    let typeBadgeLabel: string;
+                    if (kind === "income") {
+                      typeBadgeClasses = "bg-green-500/10 text-green-400";
+                      typeBadgeLabel = "↑ Receita";
+                    } else if (kind === "expense") {
+                      typeBadgeClasses = "bg-red-500/10 text-red-400";
+                      typeBadgeLabel = "↓ Despesa";
+                    } else if (kind === "transfer") {
+                      typeBadgeClasses = "bg-blue-500/10 text-blue-400";
+                      typeBadgeLabel = "→ Transferência";
+                    } else {
+                      typeBadgeClasses = "bg-blue-500/10 text-blue-400";
+                      typeBadgeLabel = "⇄ Neutro·Aporte";
+                    }
+
+                    // Badge de categoria (linha inferior)
+                    const categoryLabel = (tx.category ?? "")
+                      .replace(/_/g, " ")
+                      .toLowerCase()
+                      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+                    // Formata data DD/MM/YY
+                    const dateParts = tx.date.split("-");
+                    const formattedDate =
+                      dateParts.length === 3
+                        ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0].slice(2)}`
+                        : tx.date;
+
+                    // Cor do valor
+                    let valueColorClass = "text-[#e97070]"; // default expense
+                    let valuePrefix = "";
+                    if (kind === "income") {
+                      valueColorClass = "text-[#4ecf98]";
+                      valuePrefix = "+";
+                    } else if (kind === "transfer" || kind === "other") {
+                      valueColorClass = "text-blue-400";
+                    }
+
+                    return (
+                      <tr key={tx.id} className="group transition-colors hover:bg-white/5">
+                        <td className="px-4 py-4">
+                          <p className="truncate max-w-xs text-sm text-white">{tx.description}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md w-fit ${typeBadgeClasses}`}>
+                              {typeBadgeLabel}
+                            </span>
+                            {categoryLabel ? (
+                              <span className="bg-white/[0.05] text-neutral-500 text-[10px] px-1.5 py-0.5 rounded w-fit mt-1">
+                                {categoryLabel}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-neutral-500">{tx.account}</td>
+                        <td className="px-4 py-4 text-sm text-neutral-500">{formattedDate}</td>
+                        <td className="px-4 py-4 text-right">
+                          <span className={`text-sm font-medium ${valueColorClass}`}>
+                            {valuePrefix}{formatCurrency(amountAbs)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 rounded-3xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-zinc-400 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <span>{filteredTransactions.length} transações nesta página</span>
+            <span className="text-zinc-600">|</span>
+            <span>Página {currentPage}</span>
+            <span className="text-zinc-600">|</span>
+            <span>
+              {rangeStart} a {rangeEnd}
+            </span>
+            <span className="text-zinc-600">|</span>
+            <span>{total} no total</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={goToPreviousPage} disabled={!hasPreviousPage || loading}>
+              <ChevronLeft className="mr-2 size-4" />
+              Anterior
+            </Button>
+            <Button variant="ghost" size="sm" onClick={goToNextPage} disabled={!hasNextPage || loading}>
+              Próxima
+              <ChevronRight className="ml-2 size-4" />
+            </Button>
+          </div>
+        </div>
+      </section>
+    </PageLayout>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-zinc-400">A carregar extrato...</div>}>
+      <TransactionsPageBody />
+    </Suspense>
+  );
+}
+
+==== src/app/wealth/page.tsx ====
+"use client";
+
+import { useGrowthData } from "@/hooks/useGrowthData";
+import { useDividendsData } from "@/hooks/useDividendsData";
+import { useAllocationData } from "@/hooks/useAllocationData";
+import { useAlphaData } from "@/hooks/useAlphaData";
+import { useWealthStore } from "@/hooks/useWealthStore";
+import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
+import { WealthPeriodToggle } from "@/components/wealth/ui/WealthPeriodToggle";
+import { Wallet, TrendingUp, PieChart, Coins, Activity, Target, ShieldAlert } from "lucide-react";
+import { formatCurrency, cn, colorForValue, getScoreColor } from "@/lib/utils";
+import Link from "next/link";
+import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer } from "recharts";
+import { getSemanticColor } from "@/lib/colors";
+
+export default function WealthHome() {
+  const { period, setPeriod } = useWealthStore();
+  
+  const growth = useGrowthData(period);
+  const dividends = useDividendsData();
+  const allocation = useAllocationData();
+  const alpha = useAlphaData(period);
+
+  const isLoading = growth.isLoading || dividends.isLoading || allocation.isLoading || alpha.isLoading;
+
+  const currentPatrimonio = growth.summary?.patrimonio_atual_value || 0;
+  const growthAcc = growth.summary?.rentabilidade_acumulada || 0;
+  const div12m = dividends.average12m;
+  const divYield = dividends.yieldOnCost;
+  const alphaVal = alpha.summary?.alpha_vs_ibov || 0;
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end mb-4">
+        <WealthPeriodToggle active={period} onChange={setPeriod} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link href="/wealth/patrimonio" className="block group">
+          <WealthKpiCard
+            title="Patrimônio Consolidado"
+            value={isLoading ? "..." : formatCurrency(currentPatrimonio)}
+            icon={Wallet}
+            iconBgColor="bg-[#4ecf98]/10"
+            iconColor="text-[#4ecf98]"
+            sub={isLoading ? "" : `Crescimento: ${growthAcc >= 0 ? "+" : ""}${growthAcc.toFixed(2)}%`}
+            subColor={growthAcc >= 0 ? "positive" : "negative"}
+            className="group-hover:border-[#4ecf98]/30 transition-all"
+          />
+        </Link>
+
+        <Link href="/wealth/dividends" className="block group">
+          <WealthKpiCard
+            title="Média Mensal (12m)"
+            value={isLoading ? "..." : formatCurrency(div12m)}
+            icon={Coins}
+            iconBgColor="bg-[#f5a623]/10"
+            iconColor="text-[#f5a623]"
+            sub={isLoading ? "" : `Yield on Cost: ${divYield.toFixed(2)}%`}
+            subColor="neutral"
+            className="group-hover:border-[#f5a623]/30 transition-all"
+          />
+        </Link>
+
+        <Link href="/wealth/evolution" className="block group">
+          <WealthKpiCard
+            title="Alpha vs IBOV"
+            value={<span className={colorForValue(alphaVal)}>{isLoading ? "..." : `${alphaVal >= 0 ? "+" : ""}${alphaVal.toFixed(2)}%`}</span>}
+            icon={Activity}
+            iconBgColor={alphaVal >= 0 ? "bg-[#4ecf98]/10" : "bg-[#e97070]/10"}
+            iconColor={alphaVal >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}
+            sub={isLoading ? "" : <span className="text-[#7EB8F7]">IBOV: {alpha.summary?.ibov_acumulado_pct.toFixed(2)}%</span>}
+            subType="text"
+            className="group-hover:border-white/20 transition-all"
+          />
+        </Link>
+
+        <Link href="/wealth/allocation" className="block group">
+          <WealthKpiCard
+            title="Score de Diversificação"
+            value={<span className={getScoreColor(allocation.diversificationScore)}>{isLoading ? "..." : `${allocation.diversificationScore}/100`}</span>}
+            icon={PieChart}
+            iconBgColor="bg-[#7F77DD]/10"
+            iconColor="text-[#7F77DD]"
+            sub={isLoading ? "" : `${allocation.totalAssets} Ativos na Carteira`}
+            subColor="neutral"
+            className="group-hover:border-[#7F77DD]/30 transition-all"
+          />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <WealthChartCard title="Acesso Rápido" tableMode>
+           <div className="flex flex-col gap-2">
+             {[
+               { href: "/wealth/patrimonio", icon: Wallet, label: "Patrimônio: Detalhes & Marcos", badge: "CRESCIMENTO", iconBg: "rgba(78,207,152,0.12)", iconColor: "#4ecf98", badgeColor: "#4ecf98", badgeBg: "rgba(78,207,152,0.1)" },
+               { href: "/wealth/allocation", icon: PieChart, label: "Alocação: Concentração de Risco", badge: "RISCO", iconBg: "rgba(233,112,112,0.12)", iconColor: "#e97070", badgeColor: "#e97070", badgeBg: "rgba(233,112,112,0.1)" },
+               { href: "/wealth/dividends", icon: Coins, label: "Dividendos: Fluxo Anual", badge: "PROVENTOS", iconBg: "rgba(245,166,35,0.12)", iconColor: "#f5a623", badgeColor: "#f5a623", badgeBg: "rgba(245,166,35,0.1)" },
+               { href: "/wealth/evolution", icon: TrendingUp, label: "Evolução: Benchmarks & Alpha", badge: "ANÁLISE", iconBg: "rgba(127,119,221,0.12)", iconColor: "#7F77DD", badgeColor: "#7F77DD", badgeBg: "rgba(127,119,221,0.1)" },
+             ].map((item) => (
+               <Link
+                 key={item.href}
+                 href={item.href}
+                 className="flex items-center justify-between gap-3 p-3 rounded-xl transition-colors"
+                 style={{ background: "rgba(255,255,255,0.02)" }}
+                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
+               >
+                 <div className="flex items-center gap-3 min-w-0">
+                   {/* Icon-box colorido */}
+                   <div
+                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                     style={{ background: item.iconBg }}
+                   >
+                     <item.icon size={15} style={{ color: item.iconColor }} />
+                   </div>
+                   <span className="text-sm font-medium text-neutral-300 break-words">{item.label}</span>
+                 </div>
+                 {/* Badge colorido por categoria */}
+                 <span
+                   className="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0 ml-2"
+                   style={{ color: item.badgeColor, background: item.badgeBg }}
+                 >
+                   {item.badge}
+                 </span>
+               </Link>
+             ))}
+           </div>
+        </WealthChartCard>
+        
+        <WealthChartCard title="Insight de Risco" className="min-h-[200px]">
+          <div className="flex flex-col h-full justify-center p-6 bg-white/[0.01] rounded-xl border border-white/[0.02]">
+            
+            {/* Insight 1: Classe Dominante */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-[#7F77DD]" />
+                  <h4 className="text-white font-medium text-sm">Classe Dominante</h4>
+                </div>
+                <p className="text-neutral-400 text-xs max-w-[200px]">
+                  Sua carteira está concentrada em <span className="text-white font-semibold">{allocation.dominantClass.name}</span>, 
+                  representando <span className="text-white">{allocation.dominantClass.percentage.toFixed(1)}%</span> do total.
+                </p>
+              </div>
+              <div className="w-12 h-12 flex-shrink-0 relative">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                  <RechartsPie>
+                    <Pie
+                      data={[
+                        { value: allocation.dominantClass.percentage, color: getSemanticColor(allocation.dominantClass.name) },
+                        { value: 100 - allocation.dominantClass.percentage, color: "rgba(255,255,255,0.05)" }
+                      ]}
+                      cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" dataKey="value" stroke="none"
+                    >
+                      <Cell fill={getSemanticColor(allocation.dominantClass.name)} />
+                      <Cell fill="rgba(255,255,255,0.05)" />
+                    </Pie>
+                  </RechartsPie>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="border-t border-white/[0.05] my-4" />
+
+            {/* Insight 2: Concentração Top 5 */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <ShieldAlert className={cn("w-4 h-4", allocation.top5Concentration > 70 ? "text-[#e97070]" : allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-[#4ecf98]")} />
+                <span className={cn("text-[10px] uppercase tracking-widest font-medium", allocation.top5Concentration > 70 ? "text-[#e97070]" : allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-[#4ecf98]")}>Concentração Top 5</span>
+              </div>
+              <div className="flex items-end gap-2 mb-1">
+                <span className={cn("text-xl font-semibold", allocation.top5Concentration > 70 ? "text-[#e97070]" : allocation.top5Concentration > 50 ? "text-[#f5a623]" : "text-[#4ecf98]")}>
+                  {allocation.top5Concentration.toFixed(1)}%
+                </span>
+                <span className="text-xs text-neutral-500 mb-1">das 5 maiores posições no patrimônio</span>
+              </div>
+              <div className="w-full bg-white/[0.05] rounded-full h-1 overflow-hidden mt-1 mb-3">
+                <div 
+                  className={cn("h-full", allocation.top5Concentration > 70 ? "bg-[#e97070]" : allocation.top5Concentration > 50 ? "bg-[#f5a623]" : "bg-[#4ecf98]")} 
+                  style={{ width: `${allocation.top5Concentration}%` }} 
+                />
+              </div>
+              <Link href="/wealth/allocation" className="text-xs text-neutral-500 hover:text-white transition-colors self-start">
+                Ver análise de risco &rarr;
+              </Link>
+            </div>
+
+          </div>
+        </WealthChartCard>
+      </div>
+
+    </div>
+  );
+}
+
+
+==== src/app/wealth/allocation/page.tsx ====
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useAllocationData, PositionDetail } from "@/hooks/useAllocationData";
+import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
+import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
+import { WealthTable } from "@/components/wealth/ui/WealthTable";
+import { PieChart, ShieldAlert, LayoutGrid, Target } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { AllocationTreemap } from "@/components/wealth/charts/AllocationTreemap";
+import { AllocationDonut } from "@/components/wealth/charts/AllocationDonut";
+import { DiversificationGauge } from "@/components/wealth/charts/DiversificationGauge";
+
+// ── Classify ticker into asset class ──────────────────────────────────────────
+type AssetClass = "Todos" | "Renda Fixa" | "Fundos Imobiliários (FIIs)" | "Ações Brasil" | "ETFs Globais" | "Criptomoedas" | "Outros";
+
+function getTickerColor(assetClass: string): string {
+  if (assetClass === "Renda Fixa") return "#4ecf98";
+  if (assetClass === "Fundos Imobiliários (FIIs)") return "#7F77DD";
+  if (assetClass === "Ações Brasil") return "#7EB8F7";
+  if (assetClass === "Criptomoedas") return "#e97070";
+  return "#f5a623"; // ETFs Globais / Outros
+}
+
+const FILTER_PILLS: { label: string; value: AssetClass }[] = [
+  { label: "Todos", value: "Todos" },
+  { label: "Renda Fixa", value: "Renda Fixa" },
+  { label: "FIIs", value: "Fundos Imobiliários (FIIs)" },
+  { label: "Ações BR", value: "Ações Brasil" },
+  { label: "ETFs Globais", value: "ETFs Globais" },
+  { label: "Criptomoedas", value: "Criptomoedas" },
+];
+
+export default function AllocationPage() {
+  const [activeFilter, setActiveFilter] = useState<AssetClass>("Todos");
+
+  const {
+    allocation, positions, top5Concentration,
+    totalAssets, dominantClass, diversificationScore,
+    isLoading, isError
+  } = useAllocationData();
+
+  const treemapData = positions.map((p) => ({
+    name: p.ticker,
+    size: p.valor_atual_value,
+    fill: getTickerColor(p.asset_class),
+    peso: p.peso_percentual_value
+  }));
+
+  // ── Donut Data ───────────────────────────────────────────────────────────────
+  const donutData = allocation.map((a) => ({
+    name: a.asset_class,
+    value: a.current_total_value,
+    color: getTickerColor(a.asset_class)
+  }));
+
+  const totalValue = positions.reduce((acc, p) => acc + p.valor_atual_value, 0);
+
+  // ── Filtered positions for table ─────────────────────────────────────────────
+  const filteredPositions = activeFilter === "Todos"
+    ? positions
+    : positions.filter((p) => p.asset_class === activeFilter);
+
+  // ── Top 5 of filtered ────────────────────────────────────────────────────────
+  const filteredTop5 = [...filteredPositions]
+    .sort((a, b) => b.valor_atual_value - a.valor_atual_value)
+    .slice(0, 5);
+
+  const filterLabel = activeFilter === "Todos" ? "Top 5 Posições (Risco)" : `Top 5 — ${activeFilter}`;
+
+
+
+  return (
+    <div className="space-y-6">
+
+
+      {/* KPI Cards — Score com Gauge embutido */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card especial: Score com Gauge visual */}
+        <div
+          className="rounded-2xl p-5 transition-all duration-200"
+          style={{ background: "rgba(26,26,26,0.9)", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                style={{
+                  background: diversificationScore >= 66
+                    ? "rgba(78,207,152,0.12)"
+                    : diversificationScore >= 41
+                    ? "rgba(245,166,35,0.12)"
+                    : "rgba(233,112,112,0.12)"
+                }}
+              >
+                <Target
+                  size={17}
+                  style={{
+                    color: diversificationScore >= 66 ? "#4ecf98"
+                      : diversificationScore >= 41 ? "#f5a623"
+                      : "#e97070"
+                  }}
+                />
+              </div>
+              <h3 className="text-[10px] font-medium uppercase tracking-[0.08em] text-neutral-500 mb-1">
+                Score de Diversificação
+              </h3>
+            </div>
+            {!isLoading && (
+              <DiversificationGauge score={diversificationScore} />
+            )}
+          </div>
+          {!isLoading && (
+            <span
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mt-1"
+              style={{
+                background: diversificationScore >= 66 ? "rgba(78,207,152,0.1)" : diversificationScore >= 41 ? "rgba(245,166,35,0.1)" : "rgba(233,112,112,0.1)",
+                color: diversificationScore >= 66 ? "#4ecf98" : diversificationScore >= 41 ? "#f5a623" : "#e97070",
+                border: `1px solid ${diversificationScore >= 66 ? "rgba(78,207,152,0.2)" : diversificationScore >= 41 ? "rgba(245,166,35,0.2)" : "rgba(233,112,112,0.2)"}`,
+              }}
+            >
+              {diversificationScore >= 66 ? "Bem Diversificado" : diversificationScore >= 41 ? "Moderado" : "Atenção: Concentrado"}
+            </span>
+          )}
+        </div>
+
+        <WealthKpiCard
+          title="Classe Dominante"
+          value={isLoading ? "..." : dominantClass.name}
+          icon={PieChart}
+          iconBgColor="bg-[#7F77DD]/10"
+          iconColor="text-[#7F77DD]"
+          sub={isLoading ? "" : `${dominantClass.percentage.toFixed(1)}% do portfólio`}
+          subType="text"
+        />
+        <WealthKpiCard
+          title="Concentração Top 5"
+          value={isLoading ? "..." : `${top5Concentration.toFixed(1)}%`}
+          icon={ShieldAlert}
+          iconBgColor="bg-[#e97070]/10"
+          iconColor="text-[#e97070]"
+          sub={top5Concentration > 50 ? "Risco Elevado" : "Nível Saudável"}
+          subType="badge"
+          subColor={top5Concentration > 50 ? "negative" : "positive"}
+        />
+        <WealthKpiCard
+          title="Total de Ativos"
+          value={isLoading ? "..." : `${totalAssets}`}
+          icon={LayoutGrid}
+          iconBgColor="bg-[#7EB8F7]/10"
+          iconColor="text-[#7EB8F7]"
+        />
+      </div>
+
+      {/* Filtro por classe de ativo */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {FILTER_PILLS.map((pill) => {
+          const isActive = activeFilter === pill.value;
+          return (
+            <button
+              key={pill.value}
+              onClick={() => setActiveFilter(pill.value)}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200"
+              style={
+                isActive
+                  ? { background: "rgba(78,207,152,0.1)", color: "#4ecf98", border: "1px solid rgba(78,207,152,0.3)" }
+                  : { background: "rgba(255,255,255,0.03)", color: "#6b7280", border: "1px solid rgba(255,255,255,0.06)" }
+              }
+            >
+              {pill.label}
+            </button>
+          );
+        })}
+        {activeFilter !== "Todos" && (
+          <span className="text-xs text-neutral-500 ml-2">
+            {filteredPositions.length} posição{filteredPositions.length !== 1 ? "ões" : ""}
+          </span>
+        )}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <WealthChartCard title="Alocação Macro" isLoading={isLoading} isError={isError} className="lg:col-span-1 h-[350px]">
+          <div className="flex flex-col h-full">
+            <div className="flex-1 min-h-0">
+              <AllocationDonut data={donutData} />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 max-h-[120px] overflow-y-auto pr-1">
+              {donutData.map((d, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                  <span className="text-xs text-neutral-300 truncate">{d.name}</span>
+                  <span className="text-xs text-neutral-500 ml-auto">
+                    {totalValue > 0 ? ((d.value / totalValue) * 100).toFixed(1) : 0}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </WealthChartCard>
+
+        <WealthChartCard title="Posições por Ativo" isLoading={isLoading} isError={isError} className="lg:col-span-2 h-[350px]">
+          <AllocationTreemap data={treemapData} />
+        </WealthChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <WealthChartCard title={filterLabel} isLoading={isLoading} isError={isError} className="lg:col-span-1" tableMode>
+          <div className="space-y-4 mt-2">
+            {filteredTop5.map((p, i) => (
+              <div key={i} className="flex flex-col gap-1">
+                <div className="flex justify-between items-center text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getTickerColor(p.asset_class) }} />
+                    <Link href={`/wealth/asset/${p.ticker}`} className="font-medium text-[#4ecf98] hover:underline cursor-pointer">{p.ticker}</Link>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded text-neutral-500" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {p.asset_class}
+                    </span>
+                  </div>
+                  <span className="text-neutral-400">{formatCurrency(p.valor_atual_value)} ({p.peso_percentual})</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: p.peso_percentual,
+                      backgroundColor: getTickerColor(p.asset_class),
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </WealthChartCard>
+
+        <WealthChartCard title="Lista Completa de Posições" isLoading={isLoading} isError={isError} className="lg:col-span-2" tableMode>
+          <WealthTable
+            data={filteredPositions}
+            pageSize={10}
+            columns={[
+              { 
+                header: "Ticker", 
+                cell: (item: unknown) => {
+                  const typedItem = item as { ticker: string };
+                  return (
+                    <Link href={`/wealth/asset/${typedItem.ticker}`} className="text-[#4ecf98] hover:underline font-medium">
+                      {typedItem.ticker}
+                    </Link>
+                  );
+                }
+              },
+              { header: "Qtd", accessorKey: "quantidade", align: "right" },
+              { header: "Preço Médio", cell: (item: unknown) => formatCurrency((item as PositionDetail).preco_medio_value || 0), align: "right" },
+              { header: "Valor Investido", cell: (item: unknown) => formatCurrency((item as PositionDetail).valor_investido_value || 0), align: "right" },
+              { header: "Valor Atual", cell: (item: unknown) => formatCurrency((item as PositionDetail).valor_atual_value || 0), align: "right" },
+              { header: "Diferença (R$)", cell: (item: unknown) => (item as PositionDetail).ganho, align: "right", className: (item: unknown) => ((item as PositionDetail).ganho_value || 0) >= 0 ? "text-[#4ecf98]" : "text-[#e97070]" },
+              { header: "%", cell: (item: unknown) => {
+                 const typedItem = item as PositionDetail;
+                 if (!typedItem.valor_investido_value || typedItem.valor_investido_value === 0) return "-";
+                 const diff = ((typedItem.ganho_value || 0) / typedItem.valor_investido_value) * 100;
+                 return (
+                   <span className={diff >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
+                     {diff >= 0 ? "+" : ""}{diff.toFixed(2)}%
+                   </span>
+                 );
+              }, align: "right" },
+              { header: "Peso", accessorKey: "peso_percentual", align: "right" },
+            ]}
+          />
+        </WealthChartCard>
+      </div>
+    </div>
+  );
+}
+
+
+==== src/app/wealth/asset/[ticker]/page.tsx ====
+'use client';
+
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import { Percent, TrendingUp, ChevronLeft, Wallet, Hash, PieChart, ClipboardList, Receipt, Scale, Droplets, Activity } from "lucide-react";
+import { Dividend } from "@/types/entities";
+import Link from 'next/link';
+import { BarChart, Bar, ResponsiveContainer } from 'recharts';
+
+import { WealthKpiCard } from '@/components/wealth/ui/WealthKpiCard';
+import { WealthChartCard } from '@/components/wealth/ui/WealthChartCard';
+
+import { formatCurrency } from '@/lib/utils';
+import { getAssetIdentity } from '@/lib/colors';
+
+// Types (reusing original + custom for UI)
+interface AssetDetails {
+  position: {
+    ticker: string;
+    quantidade: number;
+    preco_medio: number;
+    valor_investido: number;
+    preco_atual: number;
+    valor_atual: number;
+    ganho: number;
+    asset_class: string;
+    asset_subclass: string;
+    peso: number;
+  };
+  market_data: { available: boolean; history: Record<string, unknown>[] };
+  indicators: { available: boolean; indicators: Record<string, string> };
+  dividends: { items: Dividend[]; kpis: { total: number; last_12m: number; yoc: number; }; };
+  timeline: { date: string; title: string; description: string; type: string; }[];
+}
+
+export default function AssetDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const ticker = params.ticker as string;
+
+  const [data, setData] = useState<AssetDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  
+
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`http://127.0.0.1:8000/api/v1/investments/asset/${ticker}`);
+        if (!res.ok) throw new Error('Failed to fetch');
+        const json = await res.json();
+        if (mounted) {
+          setData(json);
+          setIsError(false);
+        }
+      } catch {
+        if (mounted) setIsError(true);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+    fetchData();
+    return () => { mounted = false; };
+  }, [ticker]);
+
+  const { position, dividends, timeline } = data || {};
+
+  const identity = useMemo(() => {
+    return getAssetIdentity(position?.asset_class);
+  }, [position?.asset_class]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6 p-6 animate-pulse">
+        <div className="h-[120px] bg-white/5 rounded-2xl border border-white/[0.07]"></div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-[90px] bg-white/5 rounded-2xl"></div>)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-[400px] bg-white/5 rounded-2xl"></div>
+          <div className="h-[400px] bg-white/5 rounded-2xl"></div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-[400px] bg-white/5 rounded-2xl"></div>
+          <div className="h-[400px] bg-white/5 rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !data || !position) {
+    return (
+      <div className="p-6">
+        <button onClick={() => router.back()} className="flex items-center text-neutral-400 hover:text-white transition-colors mb-6 text-sm">
+          <ChevronLeft size={16} className="mr-1" />
+          Voltar ao Patrimônio
+        </button>
+        <div className="bg-[#1a1a1a] border border-white/[0.07] rounded-2xl p-8 flex items-center gap-6">
+           <div className="w-[52px] h-[52px] rounded-[14px] bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 font-semibold text-xs">
+             —
+           </div>
+           <div>
+             <div className="flex items-center gap-3 mb-1">
+               <h1 className="text-[22px] font-medium text-white">{ticker}</h1>
+               <span className="px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30">
+                 Não Encontrado
+               </span>
+             </div>
+             <p className="text-sm text-neutral-500">O ativo não foi encontrado na sua carteira.</p>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pre-calculated values
+  const pm = position.quantidade > 0 ? (position.valor_investido / position.quantidade) : 0;
+  const isPositive = position.ganho >= 0;
+  const ganhoPct = position.valor_investido > 0 ? (position.ganho / position.valor_investido) * 100 : 0;
+  
+  const yoc = position.valor_investido > 0 ? (dividends!.kpis.last_12m / position.valor_investido) * 100 : 0;
+  
+  // Recharts dividend chart data (needs to aggregate by month or just take last few)
+  // Reversing so oldest is left, newest right
+  const chartData = [...dividends!.items].reverse().map(d => ({
+    date: d.data,
+    value: d.valor
+  }));
+
+
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-neutral-500">
+        <Link href="/wealth" className="hover:text-neutral-300 transition-colors">Investimentos</Link>
+        <span>/</span>
+        <Link href="/wealth/allocation" className="hover:text-neutral-300 transition-colors">Alocação</Link>
+        <span>/</span>
+        <span className="text-white font-medium">{ticker}</span>
+      </div>
+
+      {/* Hero Section */}
+      <div className="bg-[#1a1a1a] border border-white/[0.07] rounded-2xl p-6 flex flex-col items-start gap-4">
+        <div className="flex items-center gap-4 w-full">
+          <div 
+            className="w-[52px] h-[52px] rounded-[14px] flex items-center justify-center font-bold text-sm flex-shrink-0"
+            style={{ backgroundColor: identity.bg, border: `1px solid ${identity.color}40`, color: identity.color }}
+          >
+            {identity.label}
+          </div>
+          <div className="flex flex-col gap-1 w-full">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <h1 className="text-[22px] font-medium text-white tracking-tight">{ticker}</h1>
+                <span className="px-3 py-1 rounded-full text-[11px] font-medium tracking-wide border"
+                      style={{ backgroundColor: identity.bg, borderColor: `${identity.color}40`, color: identity.color }}>
+                  {identity.label} · {position.asset_class}
+                </span>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium tracking-wide bg-[#4ecf98]/10 text-[#4ecf98]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4ecf98] animate-pulse" />
+                  Na Carteira
+                </span>
+              </div>
+              <p className="text-sm text-neutral-500 ml-auto">{ticker} · {position.asset_class} listado na B3</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Secção 1 - KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <WealthKpiCard 
+          title="Valor Atual" 
+          value={formatCurrency(position.valor_atual)}
+          icon={Wallet}
+          iconBgColor="bg-[#4ecf98]/10"
+          iconColor="text-[#4ecf98]"
+          sub={`Investido: ${formatCurrency(position.valor_investido)}`}
+          subType="text"
+        />
+        
+        {/* Ganho/Perda card customizado */}
+        <div className="relative rounded-2xl p-5 transition-all duration-200 bg-[#1a1a1a]/90 border border-white/[0.07] hover:bg-[#1e1e1e]/95 hover:border-white/[0.12] group">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 flex-shrink-0 ${isPositive ? 'bg-[#4ecf98]/10 text-[#4ecf98]' : 'bg-[#e97070]/10 text-[#e97070]'}`}>
+            <TrendingUp size={20} />
+          </div>
+          <h3 className="text-[10px] font-medium uppercase tracking-widest text-neutral-500 mb-1">
+            Ganho / Perda
+          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`text-[20px] font-medium tracking-tight leading-snug ${isPositive ? 'text-[#4ecf98]' : 'text-[#e97070]'}`}>
+              {isPositive ? '+' : ''}{formatCurrency(position.ganho)}
+            </span>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${isPositive ? 'bg-[#4ecf98]/10 text-[#4ecf98]' : 'bg-[#e97070]/10 text-[#e97070]'}`}>
+              {isPositive ? '+' : ''}{ganhoPct.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+
+        <WealthKpiCard 
+          title="Quantidade" 
+          value={position.quantidade.toString()}
+          icon={Hash}
+          iconBgColor="bg-[#7EB8F7]/10"
+          iconColor="text-[#7EB8F7]"
+          sub={pm > 0 ? `Preço Médio: ${formatCurrency(pm)}` : 'Preço Médio: —'}
+          subType="text"
+        />
+
+        <WealthKpiCard 
+          title="Peso na Carteira" 
+          value={`${position.peso.toFixed(2)}%`}
+          icon={PieChart}
+          iconBgColor={identity.bg.replace("0.12", "0.1").replace("0.10", "0.1")}
+          iconColor={`text-[${identity.color}]`} // Dynamic class won't work in Tailwind this way.
+          // Workaround for icon styling if color is dynamically set:
+          // We can use style object if WealthKpiCard supports it. If not, we will just use a generic style.
+          // For now, let's let WealthKpiCard use default or we can override. I'll just pass a standard text-white/50 for now 
+          // or rely on the prop.
+        />
+      </div>
+
+      {/* Secção 2 - Layout Principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Histórico de Preço */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <WealthChartCard title="Histórico de Preço" className="h-full flex-1">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex gap-2">
+                {["1M", "6M", "1A", "Tudo"].map(p => (
+                  <button key={p} disabled className="px-3 py-1 rounded-full text-xs font-medium text-neutral-600 bg-black/20 cursor-not-allowed">
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Empty State Graph */}
+            <div className="relative w-full h-[220px] bg-[#141414] rounded-xl border border-white/[0.04] overflow-hidden flex items-center justify-center">
+               <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                 <path d="M 0,200 Q 100,180 200,150 T 400,100 T 600,80 T 800,40" 
+                       fill="none" 
+                       stroke={identity.color} 
+                       strokeOpacity={0.15}
+                       strokeWidth={2}
+                       strokeDasharray="6 4" />
+               </svg>
+               <div className="z-10 flex flex-col items-center gap-3 bg-[#141414]/80 px-6 py-4 rounded-xl backdrop-blur-sm border border-white/5">
+                 <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center">
+                   <TrendingUp size={18} className="text-neutral-500" />
+                 </div>
+                 <p className="text-xs text-neutral-500 text-center max-w-[200px]">
+                   Cotações em tempo real disponíveis após integração yfinance
+                 </p>
+               </div>
+            </div>
+
+            {/* Mini cards */}
+            <div className="grid grid-cols-4 gap-3 mt-4">
+              {['Abertura', 'Máxima', 'Mínima', 'Volume'].map(label => (
+                <div key={label} className="bg-[#141414] rounded-lg p-2.5 border border-white/[0.04]">
+                  <p className="text-[10px] uppercase text-neutral-600 tracking-wider mb-1">{label}</p>
+                  <p className="text-sm font-medium text-neutral-700">—</p>
+                </div>
+              ))}
+            </div>
+          </WealthChartCard>
+        </div>
+
+        {/* Indicadores & Proventos */}
+        <div className="flex flex-col gap-6">
+          <WealthChartCard title="Indicadores" className="flex-1">
+            <div className="flex flex-col mt-2">
+              {/* Dividend Yield */}
+              <div className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04]">
+                <div className="flex items-center gap-[7px]">
+                  <Percent size={15} className="text-neutral-600 flex-shrink-0" />
+                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">Dividend Yield</span>
+                </div>
+                <span className="text-[13px] font-medium text-[#4ecf98]">{dividends?.kpis?.yoc?.toFixed(2) || '0.00'}%</span>
+              </div>
+              
+              {/* Yield on Cost */}
+              <div className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04]">
+                <div className="flex items-center gap-[7px]">
+                  <Receipt size={15} className="text-neutral-600 flex-shrink-0" />
+                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">Yield on Cost</span>
+                </div>
+                <span className="text-[13px] font-medium text-[#4ecf98]">{yoc.toFixed(2)}%</span>
+              </div>
+              
+              {/* P/VPA */}
+              <div className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04]">
+                <div className="flex items-center gap-[7px]">
+                  <Scale size={15} className="text-neutral-600 flex-shrink-0" />
+                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">P/VPA</span>
+                </div>
+                <div className="flex items-center whitespace-nowrap">
+                  <span className="text-[13px] font-medium text-neutral-700">—</span>
+                  <span className="text-[9px] text-neutral-700 bg-white/[0.03] border border-white/[0.05] rounded px-[5px] py-[1px] ml-1.5 whitespace-nowrap">yfinance</span>
+                </div>
+              </div>
+              
+              {/* Liquidez Diária */}
+              <div className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04]">
+                <div className="flex items-center gap-[7px]">
+                  <Droplets size={15} className="text-neutral-600 flex-shrink-0" />
+                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">Liquidez Diária</span>
+                </div>
+                <div className="flex items-center whitespace-nowrap">
+                  <span className="text-[13px] font-medium text-neutral-700">—</span>
+                  <span className="text-[9px] text-neutral-700 bg-white/[0.03] border border-white/[0.05] rounded px-[5px] py-[1px] ml-1.5 whitespace-nowrap">yfinance</span>
+                </div>
+              </div>
+              
+              {/* Volatilidade 12M */}
+              <div className="flex justify-between items-center gap-3 py-[9px]">
+                <div className="flex items-center gap-[7px]">
+                  <Activity size={15} className="text-neutral-600 flex-shrink-0" />
+                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">Volatilidade 12M</span>
+                </div>
+                <div className="flex items-center whitespace-nowrap">
+                  <span className="text-[13px] font-medium text-neutral-700">—</span>
+                  <span className="text-[9px] text-neutral-700 bg-white/[0.03] border border-white/[0.05] rounded px-[5px] py-[1px] ml-1.5 whitespace-nowrap">yfinance</span>
+                </div>
+              </div>
+            </div>
+          </WealthChartCard>
+
+          <WealthChartCard title="Resumo Proventos">
+            <div className="space-y-4 mt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-neutral-400">Total recebido</span>
+                <span className="text-sm font-semibold text-[#f5a623]">{formatCurrency(dividends!.kpis.total)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-neutral-400">Últimos 12M</span>
+                <span className="text-sm font-semibold text-[#f5a623]">{formatCurrency(dividends!.kpis.last_12m)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-neutral-400">Média mensal</span>
+                <span className="text-sm font-semibold text-[#f5a623]">{formatCurrency(dividends!.kpis.last_12m / 12)}</span>
+              </div>
+            </div>
+          </WealthChartCard>
+        </div>
+      </div>
+
+      {/* Secção 3 - Proventos e Timeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Tabela de Proventos Recebidos */}
+        <div className="lg:col-span-2">
+          <WealthChartCard 
+            title={
+              <div className="flex items-center gap-3">
+                <span>Proventos Recebidos</span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider bg-[#f5a623]/10 text-[#f5a623] border border-[#f5a623]/20">
+                  {dividends!.items.length} pagamentos
+                </span>
+              </div>
+            } 
+            className="h-full flex flex-col"
+          >
+            {chartData.length >= 2 && (
+              <div className="w-full h-[50px] mb-6 mt-4 opacity-70">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                  <BarChart data={chartData}>
+                    <Bar dataKey="value" fill="#f5a623" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-zinc-400">
+                <thead className="text-[10px] uppercase tracking-wider text-neutral-600 border-b border-white/5">
+                  <tr>
+                    <th className="pb-3 font-medium">Data</th>
+                    <th className="pb-3 font-medium">Tipo</th>
+                    <th className="pb-3 font-medium">Valor/Cota</th>
+                    <th className="pb-3 font-medium text-right">Total Recebido</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {dividends!.items.map((item: Dividend, i: number) => {
+                    const parts = (item.data || "").split("-");
+                    const dtFormat = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : item.data;
+                    return (
+                      <tr key={i} className="hover:bg-white/5 transition-colors">
+                        <td className="py-3 text-neutral-300 font-mono text-[13px]">{dtFormat}</td>
+                        <td className="py-3">
+                           <span className="bg-[#f5a623]/10 border border-[#f5a623]/20 text-[#f5a623] px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                             {item.tipo}
+                           </span>
+                        </td>
+                        <td className="py-3 text-neutral-500">—</td>
+                          <td className="px-4 py-3 text-[#4ecf98] font-medium text-right">{formatCurrency(item.valor || 0)}</td>
+                      </tr>
+                    );
+                  })}
+                  {dividends!.items.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-neutral-600 text-xs">
+                        Nenhum provento registrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </WealthChartCard>
+        </div>
+
+        {/* Timeline & Negócios */}
+        <div className="flex flex-col gap-6">
+          <WealthChartCard title="Marcos Históricos" className="flex-1">
+            <div className="relative flex flex-col gap-0 mt-4 pl-[11px]">
+               <div className="absolute left-[11px] top-0 bottom-0 w-px bg-white/[0.06]" />
+               
+               {/* Exemplo de Marcos hardcoded adaptados se n tivermos da api de forma rica, senao usar timeline */}
+               {timeline && timeline.length > 0 ? (
+                 timeline.map((event: { date: string; title: string; description: string; type: string; }, idx: number) => (
+                    <div key={idx} className="flex items-start gap-4 relative py-3 pl-6">
+                      <div className="absolute left-[-5px] top-4 w-[12px] h-[12px] rounded-full bg-[#4ecf98] ring-4 ring-[#141414]" />
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-0.5">{event.date}</p>
+                        <p className="text-sm font-medium text-white mb-0.5">{event.title}</p>
+                        <p className="text-xs text-neutral-500">{event.description}</p>
+                      </div>
+                    </div>
+                 ))
+               ) : (
+                 <>
+                  {/* Fallbacks placeholder se a api n tiver */}
+                  <div className="flex items-start gap-4 relative py-3 pl-6">
+                    <div className="absolute left-[-5px] top-4 w-[12px] h-[12px] rounded-full bg-[#4ecf98] ring-4 ring-[#141414]" />
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-0.5">Jan 2026</p>
+                      <p className="text-sm font-medium text-white mb-0.5">Primeira Compra</p>
+                      <p className="text-xs text-neutral-500">Início de posição</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4 relative py-3 pl-6 opacity-50">
+                    <div className="absolute left-[-5px] top-4 w-[12px] h-[12px] rounded-full bg-neutral-700 ring-4 ring-[#141414]" />
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-600 mb-0.5">Em breve</p>
+                      <p className="text-sm font-medium text-neutral-500 mb-0.5">Marcos por performance</p>
+                      <p className="text-xs text-neutral-600">+10%, +20%, +30% de ganho</p>
+                    </div>
+                  </div>
+                 </>
+               )}
+            </div>
+          </WealthChartCard>
+
+          <WealthChartCard title="Negócios Realizados" className="flex-none">
+            <div className="bg-[#141414] rounded-xl p-6 border border-white/[0.04] flex flex-col items-center justify-center text-center gap-4 h-full min-h-[160px]">
+              <div className="w-12 h-12 rounded-full bg-white/[0.02] flex items-center justify-center">
+                <ClipboardList className="text-neutral-800" size={24} />
+              </div>
+              <p className="text-xs text-neutral-600 max-w-[200px] mx-auto">
+                Histórico de negociações disponível em futura atualização
+              </p>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider bg-white/[0.03] text-neutral-700 border border-white/[0.05]">
+                📅 Fase 3 do roadmap
+              </span>
+            </div>
+          </WealthChartCard>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+
+==== src/app/wealth/dividends/page.tsx ====
+"use client";
+
+import { useDividendsData, DividendBreakdown } from "@/hooks/useDividendsData";
+import Link from 'next/link';
+import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
+import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
+import { WealthTable } from "@/components/wealth/ui/WealthTable";
+import { Coins, Percent, TrendingUp, CalendarDays } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { DividendFlowChart } from "@/components/wealth/charts/DividendFlowChart";
+import { DividendYoYChart } from "@/components/wealth/charts/DividendYoYChart";
+
+export default function DividendsPage() {
+  const { 
+    history, breakdown, yoyArray, availableYears, 
+    totalDividends, average12m, yieldOnCost, ytdReceived,
+    isLoading, isError 
+  } = useDividendsData();
+
+  // Create table data: reversed history
+  const tableData = [...history].reverse();
+
+  return (
+    <div className="space-y-6">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <WealthKpiCard
+          title="Média Mensal (12m)"
+          value={isLoading ? "..." : formatCurrency(average12m)}
+          icon={CalendarDays}
+          iconBgColor="bg-[#f5a623]/10"
+          iconColor="text-[#f5a623]"
+        />
+        <WealthKpiCard
+          title="Yield on Cost"
+          value={isLoading ? "..." : `${yieldOnCost.toFixed(2)}%`}
+          icon={Percent}
+          iconBgColor="bg-[#4ecf98]/10"
+          iconColor="text-[#4ecf98]"
+        />
+        <WealthKpiCard
+          title="Total Acumulado"
+          value={isLoading ? "..." : formatCurrency(totalDividends)}
+          icon={Coins}
+          iconBgColor="bg-[#7EB8F7]/10"
+          iconColor="text-[#7EB8F7]"
+        />
+        <WealthKpiCard
+          title="PROJEÇÃO ANUAL"
+          value={isLoading ? "..." : formatCurrency(average12m * 12)}
+          icon={TrendingUp}
+          iconBgColor="bg-[#7F77DD]/10"
+          iconColor="text-[#7F77DD]"
+          sub={
+            isLoading ? "" : (
+              <div className="w-full mt-1">
+                {/* Barra de progresso YTD */}
+                <div className="w-full rounded-full overflow-hidden" style={{ height: "4px", background: "rgba(255,255,255,0.06)" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${Math.min((ytdReceived / (average12m * 12)) * 100, 100)}%`,
+                      background: "#f5a623",
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-500 mt-1.5">
+                  {formatCurrency(ytdReceived)} recebido de {formatCurrency(average12m * 12)} projetados
+                </p>
+              </div>
+            )
+          }
+          subType="text"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <WealthChartCard title="Fluxo Mensal de Proventos" isLoading={isLoading} isError={isError} className="h-[350px]">
+          <DividendFlowChart data={history} />
+        </WealthChartCard>
+        
+        <WealthChartCard title="Crescimento Ano a Ano (YoY)" isLoading={isLoading} isError={isError} className="h-[350px]">
+          <DividendYoYChart data={yoyArray} years={availableYears} />
+        </WealthChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <WealthChartCard title="Histórico de Recebimentos" isLoading={isLoading} isError={isError} tableMode>
+           <WealthTable
+              data={tableData}
+              pageSize={12}
+              columns={[
+                { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
+                { header: "Total Recebido", cell: (item) => formatCurrency(item.amount_received_value), align: "right", className: "text-[#f5a623] font-medium" },
+                { header: "Variação M/M", cell: (item) => {
+                   const index = tableData.indexOf(item);
+                   const prev = tableData[index + 1];
+                   if (!prev || prev.amount_received_value === 0) return "-";
+                   const variation = ((item.amount_received_value - prev.amount_received_value) / prev.amount_received_value) * 100;
+                   return (
+                     <span className={variation >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
+                       {variation >= 0 ? "+" : ""}{variation.toFixed(1)}%
+                     </span>
+                   );
+                }, align: "right" }
+              ]}
+           />
+        </WealthChartCard>
+
+        <WealthChartCard title="Maiores Pagadores Históricos" isLoading={isLoading} isError={isError} tableMode>
+           <WealthTable
+              data={breakdown}
+              pageSize={10}
+              columns={[
+                { 
+                  header: "Ativo", 
+                  cell: (item: DividendBreakdown) => (
+                    <Link href={`/wealth/asset/${item.ticker}`} className="text-[#4ecf98] hover:underline font-medium">
+                      {item.ticker}
+                    </Link>
+                  )
+                },
+                { header: "Pagamentos", accessorKey: "quantidade_eventos", align: "right" },
+                { header: "Total Recebido", cell: (item) => formatCurrency(item.total_recebido_value), align: "right", className: "text-[#4ecf98] font-medium" },
+                { header: "Participação", cell: (item) => totalDividends > 0 ? `${((item.total_recebido_value / totalDividends) * 100).toFixed(1)}%` : "0%", align: "right" },
+              ]}
+           />
+        </WealthChartCard>
+      </div>
+
+    </div>
+  );
+}
+
+
+==== src/app/wealth/evolution/page.tsx ====
+"use client";
+
+import { useState } from "react";
+import { useAlphaData } from "@/hooks/useAlphaData";
+import { useWealthStore } from "@/hooks/useWealthStore";
+import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
+import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
+import { WealthPeriodToggle } from "@/components/wealth/ui/WealthPeriodToggle";
+import { WealthTable } from "@/components/wealth/ui/WealthTable";
+import { Activity, Target, TrendingUp, Coins } from "lucide-react";
+import { formatCurrency, cn, colorForValue } from "@/lib/utils";
+import { AdvancedAlphaChart } from "@/components/wealth/charts/AdvancedAlphaChart";
+import { CashflowBarChart } from "@/components/wealth/charts/CashflowBarChart";
+
+export default function EvolutionPage() {
+  const { period, setPeriod } = useWealthStore();
+  const { history, rawHistory, summary, isLoading, isError } = useAlphaData(period);
+
+  const [showCarteira, setShowCarteira] = useState(true);
+  const [showIbov, setShowIbov] = useState(true);
+  const [showCdi, setShowCdi] = useState(false);
+  const [showIpca, setShowIpca] = useState(false);
+  const [showIfix, setShowIfix] = useState(false);
+  const [showSp500, setShowSp500] = useState(false);
+  const [showIdiv, setShowIdiv] = useState(false);
+
+  const alphaIbov = summary?.alpha_vs_ibov || 0;
+  const alphaCdi = summary?.alpha_vs_cdi || 0;
+  const rentabTotal = summary?.rentabilidade_acumulada || 0;
+  const proventosTotais = summary?.proventos_totais || 0;
+  const dy = summary?.patrimonio_atual_value && summary.patrimonio_atual_value > 0 
+    ? (proventosTotais / summary.patrimonio_atual_value) * 100 
+    : 0;
+
+  // We use reversed rawHistory for the table
+  const tableData = [...rawHistory].reverse();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end mb-4">
+        <WealthPeriodToggle active={period} onChange={setPeriod} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <WealthKpiCard
+          title="Alpha vs IBOV"
+          value={<span className={colorForValue(alphaIbov)}>{isLoading ? "..." : `${alphaIbov >= 0 ? "+" : ""}${alphaIbov.toFixed(2)}%`}</span>}
+          icon={Activity}
+          iconBgColor={alphaIbov >= 0 ? "bg-[#4ecf98]/10" : "bg-[#e97070]/10"}
+          iconColor={alphaIbov >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}
+          sub={isLoading ? "" : <span className="text-[#7EB8F7]">IBOV: {summary?.ibov_acumulado_pct.toFixed(2)}%</span>}
+          subType="text"
+        />
+        <WealthKpiCard
+          title="Alpha vs CDI"
+          value={<span className={colorForValue(alphaCdi)}>{isLoading ? "..." : `${alphaCdi >= 0 ? "+" : ""}${alphaCdi.toFixed(2)}%`}</span>}
+          icon={Target}
+          iconBgColor={alphaCdi >= 0 ? "bg-[#4ecf98]/10" : "bg-[#e97070]/10"}
+          iconColor={alphaCdi >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}
+          sub={isLoading ? "" : <span className="text-[#7F77DD]">CDI: {summary?.cdi_acumulado_pct.toFixed(2)}%</span>}
+          subType="text"
+        />
+        <WealthKpiCard
+          title="Rentabilidade Total"
+          value={isLoading ? "..." : `${rentabTotal >= 0 ? "+" : ""}${rentabTotal.toFixed(2)}%`}
+          icon={TrendingUp}
+          iconBgColor="bg-[#7F77DD]/10"
+          iconColor="text-[#7F77DD]"
+        />
+        <WealthKpiCard
+          title="PROVENTOS NO PERÍODO"
+          value={<span className="text-[#7EB8F7]">{isLoading ? "..." : formatCurrency(proventosTotais)}</span>}
+          icon={Coins}
+          iconBgColor="bg-[#7EB8F7]/10"
+          iconColor="text-[#7EB8F7]"
+          sub={isLoading ? "" : `DY: ${dy.toFixed(2)}%`}
+          subType="badge"
+          subColor="neutral"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <WealthChartCard 
+          title="Rentabilidade Avançada vs Benchmarks (Rebased)" 
+          isLoading={isLoading} 
+          isError={isError} 
+          className="h-[450px]"
+          action={
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <button onClick={() => setShowCarteira(!showCarteira)} className={cn("px-3 py-1 rounded-full transition-colors border", showCarteira ? "bg-[#4ecf98]/05 text-[#4ecf98] border-[#4ecf98]/40" : "bg-transparent text-neutral-600 border-white/[0.08]")}>Carteira</button>
+              <button onClick={() => setShowIbov(!showIbov)} className={cn("px-3 py-1 rounded-full transition-colors border", showIbov ? "bg-[#7EB8F7]/05 text-[#7EB8F7] border-[#7EB8F7]/40" : "bg-transparent text-neutral-600 border-white/[0.08]")}>IBOV</button>
+              <button onClick={() => setShowCdi(!showCdi)} className={cn("px-3 py-1 rounded-full transition-colors border", showCdi ? "bg-[#7F77DD]/05 text-[#7F77DD] border-[#7F77DD]/40" : "bg-transparent text-neutral-600 border-white/[0.08]")}>CDI</button>
+              <button onClick={() => setShowIpca(!showIpca)} className={cn("px-3 py-1 rounded-full transition-colors border", showIpca ? "bg-[#f5a623]/05 text-[#f5a623] border-[#f5a623]/40" : "bg-transparent text-neutral-600 border-white/[0.08]")}>IPCA</button>
+              <button onClick={() => setShowIfix(!showIfix)} className={cn("px-3 py-1 rounded-full transition-colors border", showIfix ? "bg-[#f687b3]/05 text-[#f687b3] border-[#f687b3]/40" : "bg-transparent text-neutral-600 border-white/[0.08]")}>IFIX</button>
+              <button onClick={() => setShowSp500(!showSp500)} className={cn("px-3 py-1 rounded-full transition-colors border", showSp500 ? "bg-[#5DCAA5]/05 text-[#5DCAA5] border-[#5DCAA5]/40" : "bg-transparent text-neutral-600 border-white/[0.08]")}>S&P 500</button>
+              <button onClick={() => setShowIdiv(!showIdiv)} className={cn("px-3 py-1 rounded-full transition-colors border", showIdiv ? "bg-[#EF9F27]/05 text-[#EF9F27] border-[#EF9F27]/40" : "bg-transparent text-neutral-600 border-white/[0.08]")}>IDIV</button>
+            </div>
+          }
+        >
+          <AdvancedAlphaChart 
+            data={history} 
+            showCarteira={showCarteira} 
+            showIbov={showIbov} 
+            showCdi={showCdi} 
+            showIpca={showIpca} 
+            showIfix={showIfix}
+            showSp500={showSp500}
+            showIdiv={showIdiv}
+          />
+        </WealthChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <WealthChartCard title="Fluxo de Caixa de Investimentos" isLoading={isLoading} isError={isError} className="h-[350px]">
+          <CashflowBarChart data={rawHistory} />
+        </WealthChartCard>
+        
+        <WealthChartCard title="Matriz Analítica Completa" isLoading={isLoading} isError={isError} tableMode>
+          <WealthTable
+            data={tableData}
+            pageSize={12}
+            rowClassName={(item, index) => index === 0 ? "bg-white/[0.02]" : ""}
+            columns={[
+              { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
+              { header: "Cart % (Mês)", cell: (item) => `${item.rentabilidade_mensal_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#4ecf98]", className: (item) => item.rentabilidade_mensal_pct === 0 ? "text-neutral-600 font-medium" : `${colorForValue(item.rentabilidade_mensal_pct)} font-medium` },
+              { header: "Cart % (Acum)", cell: (item) => `${item.rentabilidade_acumulada_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#4ecf98]", className: (item) => item.rentabilidade_acumulada_pct === 0 ? "text-neutral-600 font-medium" : `${colorForValue(item.rentabilidade_acumulada_pct)} font-medium` },
+              { header: "IBOV (Mês)", cell: (item) => `${item.ibov_mensal_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#7EB8F7]", className: (item) => item.ibov_mensal_pct === 0 ? "text-neutral-600" : colorForValue(item.ibov_mensal_pct) },
+              { header: "IBOV (Acum)", cell: (item) => `${item.ibov_acumulado_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#7EB8F7]", className: (item) => item.ibov_acumulado_pct === 0 ? "text-neutral-600" : colorForValue(item.ibov_acumulado_pct) },
+              { header: "CDI (Mês)", cell: (item) => `${item.cdi_mensal_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#7F77DD]", className: (item) => item.cdi_mensal_pct === 0 ? "text-neutral-600" : colorForValue(item.cdi_mensal_pct) },
+              { header: "CDI (Acum)", cell: (item) => `${item.cdi_acumulado_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#7F77DD]", className: (item) => item.cdi_acumulado_pct === 0 ? "text-neutral-600" : colorForValue(item.cdi_acumulado_pct) },
+              { header: "Aportes", cell: (item) => formatCurrency(item.compras_value), align: "right" },
+              { header: "Vendas", cell: (item) => formatCurrency(item.vendas_value), align: "right" },
+            ]}
+          />
+        </WealthChartCard>
+      </div>
+
+    </div>
+  );
+}
+
+
+==== src/app/wealth/patrimonio/page.tsx ====
+"use client";
+
+import { useGrowthData } from "@/hooks/useGrowthData";
+import { useAllocationData } from "@/hooks/useAllocationData";
+import { useWealthStore } from "@/hooks/useWealthStore";
+import { WealthKpiCard } from "@/components/wealth/ui/WealthKpiCard";
+import { WealthPeriodToggle } from "@/components/wealth/ui/WealthPeriodToggle";
+import { WealthChartCard } from "@/components/wealth/ui/WealthChartCard";
+import { Wallet, TrendingUp, PiggyBank, LayoutGrid, Check, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { formatCurrency, colorForValue } from "@/lib/utils";
+import { GrowthComposedChart } from "@/components/wealth/charts/GrowthComposedChart";
+import { WealthTable } from "@/components/wealth/ui/WealthTable";
+import { DeltaBadge } from "@/components/ui/DeltaBadge";
+import Link from "next/link";
+
+export default function PatrimonioPage() {
+  const { period, setPeriod } = useWealthStore();
+  const { summary, history, milestones, nextTarget, isLoading: isGrowthLoading, isError } = useGrowthData(period);
+  const { totalAssets, isLoading: isAllocLoading } = useAllocationData();
+
+  const isLoading = isGrowthLoading || isAllocLoading;
+
+  const currentPat = summary?.patrimonio_atual_value || 0;
+  const growthAcc = summary?.rentabilidade_acumulada || 0;
+  const totalInv = summary?.compras_totais || 0;
+  const ganhoReal = currentPat - totalInv;
+  const cdiAcc = summary?.cdi_acumulado_pct || 0;
+  const alphaVsCdi = growthAcc - cdiAcc;
+
+  const tableData = [...history].reverse();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end mb-4">
+        <WealthPeriodToggle active={period} onChange={setPeriod} />
+      </div>
+
+      {/* KPI Cards secundários — menores, abaixo do hero */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <WealthKpiCard
+          title="Patrimônio"
+          value={isLoading ? "..." : formatCurrency(currentPat)}
+          icon={Wallet}
+          iconBgColor="bg-[#4ecf98]/10"
+          iconColor="text-[#4ecf98]"
+          sub={isLoading ? "" : <DeltaBadge value={growthAcc} />}
+          subType="text"
+        />
+        <WealthKpiCard
+          title="Total Aportado"
+          value={isLoading ? "..." : formatCurrency(totalInv)}
+          icon={PiggyBank}
+          iconBgColor="bg-[#7EB8F7]/10"
+          iconColor="text-[#7EB8F7]"
+          sub={isLoading ? "" : <span className={`text-xs ${colorForValue(ganhoReal)}`}>Ganho real: {ganhoReal >= 0 ? "+" : ""}{formatCurrency(ganhoReal)}</span>}
+          subType="text"
+        />
+        <WealthKpiCard
+          title="Rentab. Acumulada"
+          value={<span className={colorForValue(growthAcc)}>{isLoading ? "..." : `${growthAcc >= 0 ? "+" : ""}${growthAcc.toFixed(2)}%`}</span>}
+          icon={TrendingUp}
+          iconBgColor="bg-[#7F77DD]/10"
+          iconColor="text-[#7F77DD]"
+          sub={isLoading ? "" : <span className={`text-xs ${colorForValue(alphaVsCdi)}`}>vs CDI: {alphaVsCdi >= 0 ? "+" : ""}{alphaVsCdi.toFixed(2)}%</span>}
+          subType="text"
+        />
+        <WealthKpiCard
+          title="Nº de Ativos"
+          value={isLoading ? "..." : totalAssets.toString()}
+          icon={LayoutGrid}
+          iconBgColor="bg-[#f5a623]/10"
+          iconColor="text-[#f5a623]"
+          sub={<Link href="/wealth/allocation" className="text-[#4ecf98]/70 hover:text-[#4ecf98] transition-colors">Ver distribuição →</Link>}
+          subType="text"
+        />
+      </div>
+
+      {/* Gráfico principal + Marcos */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <WealthChartCard title="Patrimônio vs Aportes" isLoading={isLoading} isError={isError} className="h-[400px]">
+            <GrowthComposedChart data={history} />
+          </WealthChartCard>
+        </div>
+        <div className="flex flex-col gap-6">
+          <WealthChartCard title="Marcos Patrimoniais" isLoading={isLoading} isError={isError} className="flex-1">
+            <div className="relative flex flex-col gap-0 mt-4 pl-[11px]">
+              <div className="absolute left-[11px] top-0 bottom-0 w-px bg-white/[0.06]" />
+
+              {milestones.length === 0 ? (
+                <p className="text-sm text-neutral-500 pl-6">Nenhum marco atingido no período.</p>
+              ) : (
+                milestones.map((m, i) => {
+                  const [y, mm] = m.date.split("-");
+                  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                  const dateStr = `${monthNames[parseInt(mm, 10)-1]}/${y}`;
+                  return (
+                    <div key={i} className="flex items-center gap-4 relative py-3 pl-6">
+                      <div className="absolute left-[-11px] w-[22px] h-[22px] rounded-full bg-[#4ecf98]/15 border border-[#4ecf98]/40 flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-[#4ecf98]" strokeWidth={3} />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-medium text-white">{m.label}</p>
+                        <p className="text-xs text-neutral-500">{dateStr}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {currentPat > 0 && (
+                <div className="flex items-center gap-4 relative py-3 pl-6 mt-2">
+                  <div className="absolute left-[-11px] w-[22px] h-[22px] rounded-full bg-white/[0.04] border border-white/[0.08] border-dashed" />
+                  <div className="flex-1">
+                    <p className="text-[14px] font-medium text-[#4ecf98]">
+                      Próximo Marco: R$ {nextTarget >= 1000 ? `${nextTarget / 1000}k` : nextTarget}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="flex-1 bg-white/[0.05] rounded-full h-1 overflow-hidden">
+                        <div className="bg-[#4ecf98]/50 h-full" style={{ width: `${Math.min((currentPat / nextTarget) * 100, 100)}%` }} />
+                      </div>
+                      <span className="text-xs text-[#4ecf98] whitespace-nowrap font-medium">{Math.min((currentPat / nextTarget * 100), 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </WealthChartCard>
+        </div>
+      </div>
+
+      {/* Tabela */}
+      <WealthChartCard title="Histórico de Crescimento Mensal" isLoading={isLoading} isError={isError} tableMode>
+        <WealthTable
+          data={tableData}
+          pageSize={12}
+          columns={[
+            { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
+            { header: "Patrimônio", cell: (item) => formatCurrency(item.patrimonio_value), align: "right" },
+            { header: "Aportes", cell: (item) => formatCurrency(item.compras_value), align: "right" },
+            { header: "Proventos", cell: (item) => formatCurrency(item.proventos_value), align: "right", className: "text-[#f5a623]" },
+            { header: "Rentabilidade", cell: (item) => `${item.rentabilidade_mensal_pct.toFixed(2)}%`, align: "right", className: (item) => item.rentabilidade_mensal_pct >= 0 ? "text-[#4ecf98] font-medium" : "text-[#e97070] font-medium" },
+          ]}
+        />
+      </WealthChartCard>
+    </div>
+  );
+}
+
+
+==== src/components/dashboard/DashboardPage.tsx ====
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Line, LineChart } from "recharts";
+
+import { PageLayout } from "@/components/layout/PageLayout";
+import { fetchFromAPI } from "@/lib/api";
+import { getCategoryColor } from "@/lib/colors";
+import { addMonths, getCurrentMonth, getMonthBounds } from "@/lib/period";
+import { formatCurrency, colorForValue } from "@/lib/utils";
+import { DeltaBadge } from "@/components/ui/DeltaBadge";
+
+interface KpiItem {
+  current: number;
+  previous: number;
+  delta_pct: number;
+}
+
+interface DashboardSummaryV2 {
+  month: string;
+  receitas: KpiItem;
+  despesas: KpiItem;
+  saldo_liquido: KpiItem;
+  patrimonio: KpiItem;
+}
+
+interface DailyDataPoint {
+  date: string;
+  current_amount: number;
+  previous_amount: number;
+}
+
+interface PacingV2 {
+  current_month: string;
+  previous_month: string;
+  current_expenses: number;
+  previous_expenses: number;
+  delta_percentage: number;
+  trend: string;
+  severity: string;
+  message: string;
+  daily_data: DailyDataPoint[];
+}
+
+interface HeatmapDay {
+  date: string;
+  amount: string;
+  intensity: number;
+}
+
+interface CategoryBreakdown {
+  category: string;
+  total: number;
+}
+
+interface TransactionItem {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  natureza: string;
+  subnatureza: string;
+  account: string;
+  amount: number | string;
+}
+
+interface TransactionListResponse {
+  items: TransactionItem[];
+}
+
+type LoadState = {
+  summary: boolean;
+  pacing: boolean;
+  heatmap: boolean;
+  categories: boolean;
+  transactions: boolean;
+};
+
+function toNumber(value: number | string | null | undefined): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function formatDelta(delta: number) {
+  const prefix = delta > 0 ? "+" : "";
+  return `${prefix}${delta.toFixed(1)}%`;
+}
+
+
+function categoryLabel(category: string) {
+  return category.toLowerCase().replace(/_/g, " ");
+}
+
+function formatTxDate(value: string) {
+  const dt = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(dt.getTime())) {
+    return value;
+  }
+
+  return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
+function getTxVisual(tx: TransactionItem) {
+  const natureza = tx.natureza?.toUpperCase();
+  if (natureza === "INCOME") {
+    return { icon: "↗", box: "bg-green-500/15 text-green-300", value: "text-green-400" };
+  }
+
+  if (natureza === "EXPENSE") {
+    return { icon: "↘", box: "bg-red-500/15 text-red-300", value: "text-red-400" };
+  }
+
+  return { icon: "↔", box: "bg-white/[0.08] text-neutral-300", value: "text-neutral-300" };
+}
+
+function LoadingBar({ width = "w-32" }: { width?: string }) {
+  return <div className={`h-6 ${width} animate-pulse rounded bg-white/[0.04]`} />;
+}
+
+export function DashboardPage() {
+  const router = useRouter();
+  const chartWrapRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState<number>(0);
+
+  const currentMonth = useMemo(() => getCurrentMonth(), []);
+  const prevMonth = useMemo(() => addMonths(currentMonth, -1), [currentMonth]);
+  const monthBounds = useMemo(() => getMonthBounds(currentMonth), [currentMonth]);
+
+  const [summary, setSummary] = useState<DashboardSummaryV2 | null>(null);
+  const [pacing, setPacing] = useState<PacingV2 | null>(null);
+  const [heatmap, setHeatmap] = useState<HeatmapDay[] | null>(null);
+  const [catsCurrent, setCatsCurrent] = useState<CategoryBreakdown[] | null>(null);
+  const [catsPrev, setCatsPrev] = useState<CategoryBreakdown[] | null>(null);
+  const [recentTxs, setRecentTxs] = useState<TransactionItem[] | null>(null);
+
+  const [loading, setLoading] = useState<LoadState>({
+    summary: true,
+    pacing: true,
+    heatmap: true,
+    categories: true,
+    transactions: true,
+  });
+
+  useEffect(() => {
+    const resize = () => {
+      if (!chartWrapRef.current) {
+        return;
+      }
+      setChartWidth(Math.max(0, Math.floor(chartWrapRef.current.clientWidth)));
+    };
+
+    resize();
+
+    const observer = new ResizeObserver(() => resize());
+    if (chartWrapRef.current) {
+      observer.observe(chartWrapRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadDashboardData() {
+      const [summaryData, pacingData, heatmapData, categoriesCurrent, categoriesPrev, recentTransactions] = await Promise.all([
+        fetchFromAPI<DashboardSummaryV2>(`/dashboard/summary-v2?month=${currentMonth}`),
+        fetchFromAPI<PacingV2>(`/dashboard/pacing-v2?month=${currentMonth}`),
+        fetchFromAPI<HeatmapDay[]>(`/dashboard/heatmap?month=${currentMonth}`),
+        fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${currentMonth}`),
+        fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${prevMonth}`),
+        fetchFromAPI<TransactionListResponse>("/transactions?limit=5&sortBy=date&sortOrder=desc"),
+      ]);
+
+      if (!active) {
+        return;
+      }
+
+      setSummary(summaryData);
+      setPacing(pacingData);
+      setHeatmap(heatmapData ?? []);
+      setCatsCurrent(categoriesCurrent ?? []);
+      setCatsPrev(categoriesPrev ?? []);
+      setRecentTxs(recentTransactions?.items ?? []);
+
+      setLoading({
+        summary: false,
+        pacing: false,
+        heatmap: false,
+        categories: false,
+        transactions: false,
+      });
+    }
+
+    void loadDashboardData();
+
+    return () => {
+      active = false;
+    };
+  }, [currentMonth, prevMonth]);
+
+  const pushTransactionsRange = (startDate: string, endDate: string, category?: string) => {
+    const base = `/transactions?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+    const withCategory = category ? `${base}&category=${encodeURIComponent(category)}` : base;
+    router.push(withCategory);
+  };
+
+  const categoryStats = useMemo(() => {
+    const current = (catsCurrent ?? []).slice().sort((a, b) => b.total - a.total);
+    const prevMap = new Map((catsPrev ?? []).map((item) => [item.category, item.total]));
+
+    const ranked = current.map((item) => {
+      const previous = prevMap.get(item.category);
+      const hasPrevious = typeof previous === "number";
+      const delta = hasPrevious && previous !== 0 ? ((item.total - previous) / Math.abs(previous)) * 100 : null;
+
+      return {
+        category: item.category,
+        current: item.total,
+        previous: previous ?? 0,
+        delta,
+        isNew: !hasPrevious,
+      };
+    });
+
+    const top5 = ranked.slice(0, 5);
+    const highestPositive = ranked
+      .filter((item) => item.delta !== null && item.delta > 0)
+      .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0))[0];
+
+    return { top5, highestPositive };
+  }, [catsCurrent, catsPrev]);
+
+  const { insightsTitle, titleColor } = useMemo(() => {
+    if (categoryStats.highestPositive?.delta !== null && categoryStats.highestPositive?.delta !== undefined) {
+      return {
+        insightsTitle: `${categoryLabel(categoryStats.highestPositive.category)} subiu ${categoryStats.highestPositive.delta.toFixed(0)}%. Bora revisar?`,
+        titleColor: "text-[#f5a623]"
+      };
+    }
+
+    const receitaDelta = summary?.receitas?.delta_pct ?? 0;
+    const insightsTitle =
+      receitaDelta > 0
+        ? "Receitas a subir"
+        : receitaDelta < 0
+          ? "Receitas a recuar"
+          : "Receitas estáveis";
+
+    const titleColor = receitaDelta >= 0 ? "text-[#4ecf98]" : "text-[#f5a623]";
+
+    return { insightsTitle, titleColor };
+  }, [categoryStats.highestPositive, summary?.receitas?.delta_pct]);
+
+  const heatmapGrid = useMemo(() => {
+    const days = heatmap ?? [];
+    if (days.length === 0) {
+      return [] as Array<HeatmapDay | null>;
+    }
+
+    const firstWeekday = new Date(`${days[0].date}T00:00:00`).getDay();
+    return [...Array(firstWeekday).fill(null), ...days];
+  }, [heatmap]);
+
+  const heatmapTotals = useMemo(() => {
+    const days = heatmap ?? [];
+    const total = days.reduce((acc, day) => acc + toNumber(day.amount), 0);
+    const average = days.length > 0 ? total / days.length : 0;
+    return { total, average };
+  }, [heatmap]);
+
+  const resolvedChartWidth = chartWidth > 0 ? chartWidth : 320;
+
+  return (
+    <PageLayout title="Visão Geral" subtitle={`Dados do mês: ${currentMonth}`} hideTitle={true}>
+      <div className="space-y-6 text-white">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {loading.summary || !summary ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <article key={`kpi-loading-${index}`} className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+                <LoadingBar width="w-24" />
+                <div className="mt-3">
+                  <LoadingBar width="w-36" />
+                </div>
+              </article>
+            ))
+          ) : (
+            [
+              { label: "Patrimônio Total", value: summary.patrimonio, color: "text-[#4ecf98]", isExpense: false },
+              { label: "Receitas", value: summary.receitas, color: "text-[#4ecf98]", isExpense: false },
+              { label: "Despesas", value: summary.despesas, color: "text-[#e97070]", isExpense: true },
+              { label: "Saldo Líquido", value: summary.saldo_liquido, color: colorForValue(summary.saldo_liquido.current), isExpense: false },
+            ].map((item) => (
+              <article key={item.label} className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+                <p className="text-xs uppercase tracking-widest text-neutral-500">{item.label}</p>
+                <p className={`mt-3 text-xl font-medium ${item.color}`}>{formatCurrency(item.value.current)}</p>
+                <div className="mt-3">
+                  <DeltaBadge value={item.value.delta_pct} invertido={item.isExpense} />
+                </div>
+              </article>
+            ))
+          )}
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <article
+            className="cursor-pointer rounded-xl border border-white/[0.07] border-l-2 border-l-[#4ecf98] bg-gradient-to-br from-[#1a2620] to-[#1a1a1a] p-4"
+            onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+          >
+            {loading.summary || !summary ? (
+              <div className="space-y-3">
+                <LoadingBar width="w-60" />
+                <LoadingBar width="w-44" />
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <LoadingBar width="w-full" />
+                  <LoadingBar width="w-full" />
+                  <LoadingBar width="w-full" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <h3 className={`text-3xl font-semibold leading-tight ${titleColor}`}>{insightsTitle}</h3>
+                <p className="mt-2 text-sm text-neutral-400">Gerado para o mês atual.</p>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-lg border border-white/[0.05] bg-white/[0.03] p-3">
+                    <p className="text-xs text-neutral-500">Gasto Mai.</p>
+                    <p className="mt-1 text-lg font-medium text-white">{formatCurrency(summary.despesas.current)}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/[0.05] bg-white/[0.03] p-3">
+                    <p className="text-xs text-neutral-500">Variação %</p>
+                    <p className="mt-1 text-lg font-medium text-white">{formatDelta(summary.despesas.delta_pct)}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/[0.05] bg-white/[0.03] p-3">
+                    <p className="text-xs text-neutral-500">Maior categoria</p>
+                    <p className="mt-1 text-lg font-medium capitalize text-white">
+                      {categoryStats.top5[0] ? categoryLabel(categoryStats.top5[0].category) : "-"}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </article>
+
+          <article className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs uppercase tracking-widest text-neutral-500">Ritmo de Gastos</p>
+              <button
+                type="button"
+                onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+                className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+              >
+                ver todas ↗
+              </button>
+            </div>
+
+            {loading.pacing || !pacing ? (
+              <div className="mt-4 space-y-3">
+                <LoadingBar width="w-36" />
+                <LoadingBar width="w-24" />
+                <LoadingBar width="w-full" />
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex items-end justify-between gap-4">
+                  <p className="text-3xl font-semibold text-white">{formatCurrency(pacing.current_expenses)}</p>
+                  <DeltaBadge value={pacing.delta_percentage} invertido={true} />
+                </div>
+
+                <div ref={chartWrapRef} className="mt-4" style={{ width: "100%" }}>
+                  <LineChart width={resolvedChartWidth} height={70} data={pacing.daily_data}>
+                    <Line dataKey="current_amount" stroke="#4ecf98" dot={false} strokeWidth={2} />
+                    <Line
+                      dataKey="previous_amount"
+                      stroke="#444"
+                      dot={false}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                    />
+                  </LineChart>
+                </div>
+
+                <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-[2px] w-4 bg-[#4ecf98]" />
+                    Este mês
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-[2px] w-4 bg-[#444]" />
+                    Mês passado
+                  </span>
+                </div>
+              </>
+            )}
+          </article>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <article className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-neutral-500">Mapa de Calor</p>
+                {loading.heatmap || !heatmap ? (
+                  <div className="mt-2 space-y-2">
+                    <LoadingBar width="w-32" />
+                    <LoadingBar width="w-28" />
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-2 text-3xl font-semibold text-white">{formatCurrency(heatmapTotals.total)}</p>
+                    <p className="text-sm text-neutral-500">Média diária: {formatCurrency(heatmapTotals.average)}</p>
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+                className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+              >
+                ver mais ↗
+              </button>
+            </div>
+
+            {loading.heatmap || !heatmap ? (
+              <div className="mt-4 grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, index) => (
+                  <div key={`heat-loading-${index}`} className="h-[22px] animate-pulse rounded-[3px] bg-white/[0.04]" />
+                ))}
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs text-neutral-600">
+                  {"DSTQQSS".split("").map((day, index) => (
+                    <span key={`${day}-${index}`}>{day}</span>
+                  ))}
+                </div>
+
+                <div className="mt-2 grid grid-cols-7 gap-1">
+                  {heatmapGrid.map((day, index) => {
+                    if (!day) {
+                      return <div key={`empty-${index}`} className="h-[22px] rounded-[3px] bg-transparent" />;
+                    }
+
+                    const dayNumber = new Date(`${day.date}T00:00:00`).getDate();
+
+                    if (day.intensity <= 0) {
+                      return (
+                        <div
+                          key={day.date}
+                          className="flex h-[22px] cursor-default items-center justify-center rounded-[3px] bg-[#1e1e1e] text-[10px] font-medium text-white"
+                        >
+                          {dayNumber}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        key={day.date}
+                        className="flex h-[22px] cursor-pointer items-center justify-center rounded-[3px] text-[10px] font-medium text-white transition-all hover:brightness-125"
+                        style={{ background: `rgba(216,90,48,${Math.max(0.08, day.intensity)})` }}
+                        onClick={() => pushTransactionsRange(day.date, day.date)}
+                        aria-label={`Abrir transações do dia ${day.date}`}
+                      >
+                        {dayNumber}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 flex items-center justify-end gap-2 text-xs text-neutral-600">
+                  <span>Menos</span>
+                  {[0.12, 0.3, 0.5, 0.7, 0.95].map((alpha, index) => (
+                    <span
+                      key={`legend-${index}`}
+                      className="h-3 w-3 rounded-[2px]"
+                      style={{ background: `rgba(216,90,48,${alpha})` }}
+                    />
+                  ))}
+                  <span>Mais</span>
+                </div>
+              </>
+            )}
+          </article>
+
+          <article className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs uppercase tracking-widest text-neutral-500">Principais Categorias</p>
+              <button
+                type="button"
+                onClick={() => router.push("/categories")}
+                className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+              >
+                ver mais ↗
+              </button>
+            </div>
+
+            <div className="mt-3 grid grid-cols-[1.6fr_1fr_1fr_1fr] gap-2 text-xs text-neutral-600">
+              <span>Categoria</span>
+              <span className="text-right">Atual</span>
+              <span className="text-right">Variação</span>
+              <span className="text-right">Anterior</span>
+            </div>
+
+            {loading.categories || !catsCurrent || !catsPrev ? (
+              <div className="mt-3 space-y-2">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <LoadingBar key={`cat-loading-${index}`} width="w-full" />
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2">
+                {categoryStats.top5.map((item, index) => {
+                  const badgeClass = item.delta === null
+                    ? "bg-white/[0.06] text-neutral-500"
+                    : item.delta < 0
+                      ? "bg-green-500/10 text-green-400"
+                      : item.delta > 0
+                        ? "bg-red-500/10 text-red-400"
+                        : "bg-white/[0.06] text-neutral-500";
+
+                  return (
+                    <button
+                      type="button"
+                      key={item.category}
+                      onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate, item.category)}
+                      className="grid w-full grid-cols-[1.6fr_1fr_1fr_1fr] items-center gap-2 rounded-lg px-2 py-2 text-left transition hover:bg-white/[0.03]"
+                    >
+                      <span className="inline-flex items-center gap-2 text-sm text-white">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: getCategoryColor(item.category, index) }}
+                        />
+                        <span className="capitalize">{categoryLabel(item.category)}</span>
+                      </span>
+                      <span className="text-right text-sm text-white">{formatCurrency(item.current)}</span>
+                      <span className="text-right">
+                        <span className={`inline-flex rounded-full px-2 py-1 text-[11px] ${badgeClass}`}>
+                          {item.isNew || item.delta === null ? "novo" : formatDelta(item.delta)}
+                        </span>
+                      </span>
+                      <span className="text-right text-sm text-neutral-400">{formatCurrency(item.previous)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </article>
+        </section>
+
+        <section className="rounded-xl border border-white/[0.07] bg-[#1a1a1a] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs uppercase tracking-widest text-neutral-500">Transações Recentes</p>
+            <button
+              type="button"
+              onClick={() => pushTransactionsRange(monthBounds.startDate, monthBounds.endDate)}
+              className="cursor-pointer text-xs text-neutral-600 transition hover:text-neutral-400"
+            >
+              ver todas ↗
+            </button>
+          </div>
+
+          {loading.transactions || !recentTxs ? (
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <LoadingBar key={`tx-loading-${index}`} width="w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4">
+              {recentTxs.slice(0, 5).map((tx, index, list) => {
+                const visual = getTxVisual(tx);
+                const amount = toNumber(tx.amount);
+
+                return (
+                  <article
+                    key={tx.id}
+                    className={`flex items-center justify-between gap-3 py-3 ${index < list.length - 1 ? "border-b border-white/[0.05]" : ""}`}
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className={`flex h-5 w-5 items-center justify-center rounded ${visual.box}`}>
+                        <span className="text-[10px] leading-none">{visual.icon}</span>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-white">{tx.description}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                          <span className="rounded bg-white/[0.06] px-1.5 py-0.5">{categoryLabel(tx.category)}</span>
+                          <span>{tx.account}</span>
+                          <span>{formatTxDate(tx.date)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className={`whitespace-nowrap text-base font-medium ${visual.value}`}>
+                      {formatCurrency(amount)}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </PageLayout>
+  );
+}
+
+==== src/components/dashboard/SummaryCards.tsx ====
+import { formatCurrency } from "@/lib/utils";
+
+export interface DashboardSummary {
+  net_worth: string;
+  income: string;
+  expenses: string;
+  balance: string;
+}
+
+export function SummaryCards({ summary }: { summary: DashboardSummary | null }) {
+  if (!summary) return null;
+
+  return (
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <article className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+        <p className="text-sm text-zinc-400">Patrimônio Total</p>
+        <p className="mt-4 text-3xl font-semibold tracking-tight">
+          {formatCurrency(summary.net_worth)}
+        </p>
+      </article>
+
+      <article className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+        <p className="text-sm text-zinc-400">Receitas</p>
+        <p className="mt-4 text-3xl font-semibold tracking-tight text-emerald-300">
+          {formatCurrency(summary.income)}
+        </p>
+      </article>
+
+      <article className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+        <p className="text-sm text-zinc-400">Despesas</p>
+        <p className="mt-4 text-3xl font-semibold tracking-tight text-rose-300">
+          {formatCurrency(summary.expenses)}
+        </p>
+      </article>
+
+      <article className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+        <p className="text-sm text-zinc-400">Saldo Líquido</p>
+        <p className="mt-4 text-3xl font-semibold tracking-tight text-cyan-300">
+          {formatCurrency(summary.balance)}
+        </p>
+      </article>
+    </section>
+  );
+}
+
+==== src/components/dashboard/CategoriesCard.tsx ====
+import { formatCurrency } from "@/lib/utils";
+
+export interface CategoryComparison {
+  category: string;
+  current_amount: string;
+  previous_amount: string;
+  delta_percentage: string;
+  severity: "good" | "warning" | "danger";
+}
+
+export function CategoriesCard({ categories }: { categories: CategoryComparison[] | null }) {
+  if (!categories || categories.length === 0) {
+    return (
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+        <p className="text-sm text-zinc-400">Categorias</p>
+        <p className="mt-4 text-sm text-zinc-400">Sem dados de comparação.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+      <p className="text-sm text-zinc-400">Categorias</p>
+
+      <div className="mt-4 space-y-3">
+        {categories.map((item) => (
+          <article key={item.category} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-medium text-zinc-50">{item.category}</p>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Anterior: {formatCurrency(item.previous_amount)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-semibold text-zinc-50">
+                  {formatCurrency(item.current_amount)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-400">{item.delta_percentage}%</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+==== src/components/dashboard/InstallmentCard.tsx ====
+"use client";
+
+import { ChevronDown } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { getCategoryColor } from "@/lib/colors";
+
+export interface InstallmentItem {
+  purchase_id: string;
+  base_name: string;
+  original_name: string;
+  date: string;
+  installment_amount: number;
+  current_installment: number;
+  first_installment_found: number;
+  total_installments: number;
+  total_estimated: number;
+  already_paid: number;
+  remaining: number;
+  projected_end_date: string | null; // data projetada de término (ex: 'Novembro 2026')
+  is_active: boolean; // calculado no backend com regra de "sobrevivência no mês"
+}
+
+interface InstallmentCardProps {
+  item: InstallmentItem;
+  index: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}
+
+export function InstallmentCard({ item, index, isExpanded, onToggle }: InstallmentCardProps) {
+  const isFinished = item.current_installment >= item.total_installments;
+  const progress =
+    item.total_installments > 0
+      ? Math.min((item.current_installment / item.total_installments) * 100, 100)
+      : 0;
+
+  // Icon box color from palette
+  const hexColor = getCategoryColor("", index);
+  const iconBg = hexColor + "26"; // 15% opacity
+  const initial = item.base_name.charAt(0).toUpperCase();
+
+  // Projected end date from backend
+  const projectedEnd = item.projected_end_date ?? "-";
+
+  return (
+    <article className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#131313]">
+
+      {/* ── Header — sempre visível ──────────────────────────────── */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggle(); }}
+        className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02]"
+        aria-expanded={isExpanded}
+        id={`installment-card-${item.purchase_id}`}
+      >
+        {/* Icon box */}
+        <div
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] text-lg font-semibold"
+          style={{ background: iconBg, color: hexColor }}
+        >
+          {initial}
+        </div>
+
+        {/* Info central */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-white">{item.base_name}</p>
+          <p className="text-xs text-neutral-500">
+            {item.current_installment}/{item.total_installments}x · {formatCurrency(item.installment_amount)}/mês
+          </p>
+        </div>
+
+        {/* Badge status */}
+        <div className="flex shrink-0 items-center gap-2">
+          {item.first_installment_found > 1 && (
+            <span className="flex-shrink-0 rounded-full bg-[#f5a623]/10 px-2 py-0.5 text-[10px] text-[#f5a623]">
+              Histórico parcial importado
+            </span>
+          )}
+          {!isFinished ? (
+            <span className="flex-shrink-0 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] text-green-400">
+              Ativo
+            </span>
+          ) : (
+            <span className="flex-shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-neutral-400">
+              Finalizado
+            </span>
+          )}
+        </div>
+
+        {/* Valor restante */}
+        <div className="flex-shrink-0 text-right">
+          <p className="text-sm font-medium text-[#f5a623]">{formatCurrency(item.remaining)}</p>
+          <p className="text-xs text-neutral-600">restante</p>
+        </div>
+
+        {/* Chevron */}
+        <ChevronDown
+          className={`ml-2 h-4 w-4 flex-shrink-0 text-neutral-600 transition-transform duration-300 ${isExpanded ? "rotate-180" : "rotate-0"}`}
+        />
+      </div>
+
+      {/* ── Progress bar — sempre visível ────────────────────────── */}
+      <div className="px-4 pb-3">
+        <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.04]">
+          <div
+            className="h-full rounded-full bg-[#4ecf98] transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* ── Body — expansível ─────────────────────────────────────── */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ${isExpanded ? "max-h-[700px] opacity-100" : "max-h-0 opacity-0"}`}
+        aria-hidden={!isExpanded}
+      >
+        <div className="border-t border-white/[0.05] p-4">
+
+          {/* Mini-stats */}
+          <div className="mb-4 grid grid-cols-4 gap-3 text-center">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-neutral-600">Total</p>
+              <p className="mt-1 text-sm font-medium text-white">{formatCurrency(item.total_estimated)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-neutral-600">Pago</p>
+              <p className="mt-1 text-sm font-medium text-[#4ecf98]">{formatCurrency(item.already_paid)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-neutral-600">Restante</p>
+              <p className="mt-1 text-sm font-medium text-[#f5a623]">{formatCurrency(item.remaining)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-neutral-600">Término</p>
+              <p className="mt-1 text-sm font-medium text-white">{projectedEnd}</p>
+            </div>
+          </div>
+
+          {/* Label de parcelas */}
+          <p className="mb-2 text-xs text-neutral-600">
+            Parcelas — {item.total_installments}x {formatCurrency(item.installment_amount)}/parcela
+          </p>
+
+          {/* Chips de parcelas */}
+          <div className="flex flex-wrap gap-1">
+            {Array.from({ length: item.total_installments }, (_, i) => {
+              const num = i + 1;
+              const isPaid = num <= item.current_installment;
+              const isMissing = num < item.first_installment_found;
+
+              if (isMissing) {
+                return (
+                  <span
+                    key={`chip-${item.purchase_id}-${num}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-neutral-500 opacity-70"
+                  >
+                    ✓ {num}/{item.total_installments} (inferida)
+                  </span>
+                );
+              }
+
+              return (
+                <span
+                  key={`chip-${item.purchase_id}-${num}`}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                    isPaid
+                      ? "bg-green-500/[0.08] text-green-500"
+                      : "bg-white/[0.05] text-neutral-500"
+                  }`}
+                >
+                  {isPaid ? "✓" : "○"} {num}/{item.total_installments}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+
+==== src/components/dashboard/PacingCard.tsx ====
+import { formatCurrency } from "@/lib/utils";
+
+export interface PacingComparison {
+  current_month: string;
+  previous_month: string;
+  current_expenses: string;
+  previous_expenses: string;
+  delta_percentage: string;
+  trend: "up" | "down" | "stable";
+  severity: "good" | "warning" | "danger";
+  message: string;
+}
+
+export function PacingCard({ pacing }: { pacing: PacingComparison | null }) {
+  if (!pacing) return <p>Sem dados.</p>;
+
+  return (
+    <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+      <p className="text-sm text-zinc-400">Ritmo de Gastos</p>
+
+      <div className="mt-4 space-y-3">
+        <div className="flex items-end justify-between gap-4">
+          <p className="text-3xl font-semibold tracking-tight text-zinc-50">
+            {formatCurrency(pacing.current_expenses)}
+          </p>
+          <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-sm text-zinc-300">
+            {pacing.delta_percentage}%
+          </span>
+        </div>
+
+        <p className="text-sm leading-6 text-zinc-300">{pacing.message}</p>
+      </div>
+    </section>
+  );
+}
+
+==== src/components/dashboard/AllocationChart.tsx ====
+"use client";
+
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+
+import { formatCurrency } from "@/lib/utils";
+
+interface AllocationData {
+  asset_class: string;
+  current_total: string;
+}
+
+// TODO: Numa fase posterior, migrar para variáveis CSS do Tailwind (ex: var(--chart-1))
+const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899", "#64748b"];
+
+export function AllocationChart({ data }: { data: AllocationData[] }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-sm text-zinc-400 backdrop-blur">
+        Sem dados de investimentos.
+      </div>
+    );
+  }
+
+  const chartData = data.map((entry) => ({
+    name: entry.asset_class,
+    value: Number.parseFloat(entry.current_total),
+  }));
+
+  return (
+    <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur">
+      <p className="text-sm text-zinc-400">Alocação de Ativos</p>
+
+      <div className="mt-6 h-80">
+        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={70}
+              outerRadius={110}
+              paddingAngle={2}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${entry.name}-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value) => formatCurrency(Number(value))}
+              contentStyle={{
+                backgroundColor: "#18181b",
+                border: "1px solid #27272a",
+                borderRadius: "8px",
+                color: "#f4f4f5",
+              }}
+              itemStyle={{ color: "#f4f4f5" }}
+            />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
+  );
+}
+
+==== src/hooks/useAdminCRUD.ts ====
+import { useState } from "react";
+import { fetchFromAPI } from "@/lib/api";
+import { UpdateTransactionDTO, UpdatePositionDTO, UpdateDividendDTO } from "@/types/dto";
+
+export function useTransactionAdmin() {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const updateTransaction = async (idEconomico: string, payload: UpdateTransactionDTO) => {
+    setIsUpdating(true);
+    try {
+      await fetchFromAPI(`/governance/transactions/${idEconomico}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return { updateTransaction, isUpdating };
+}
+
+export function usePositionAdmin() {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const updatePosition = async (ticker: string, dataSnapshot: string, payload: UpdatePositionDTO) => {
+    setIsUpdating(true);
+    try {
+      await fetchFromAPI(`/governance/positions/${ticker}/${dataSnapshot}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return { updatePosition, isUpdating };
+}
+
+export function useDividendAdmin() {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const updateDividend = async (idEconomico: string, payload: UpdateDividendDTO) => {
+    setIsUpdating(true);
+    try {
+      await fetchFromAPI(`/governance/dividends/${idEconomico}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return { updateDividend, isUpdating };
+}
+
+export function useCategoryAdmin() {
+  const [isMerging, setIsMerging] = useState(false);
+
+  const mergeCategories = async (payload: { source_category: string; target_category: string }) => {
+    setIsMerging(true);
+    try {
+      await fetchFromAPI(`/governance/categories/merge`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  return { mergeCategories, isMerging };
+}
+
+
+==== src/hooks/useAllocationData.ts ====
+import { useState, useEffect } from "react";
+import { fetchFromAPI } from "@/lib/api";
+
+export interface AssetAllocation {
+  asset_class: string;
+  current_total: string;
+  current_total_value: number;
+}
+
+export interface PositionDetail {
+  ticker: string;
+  asset_class: string;
+  asset_subclass: string;
+  quantidade: string;
+  preco_medio: string;
+  valor_investido: string;
+  valor_atual: string;
+  ganho: string;
+  peso_percentual: string;
+  quantidade_value?: number;
+  preco_medio_value?: number;
+  valor_investido_value?: number;
+  valor_atual_value: number;
+  ganho_value?: number;
+  peso_percentual_value: number;
+}
+
+export function useAllocationData() {
+  const [allocation, setAllocation] = useState<AssetAllocation[]>([]);
+  const [positions, setPositions] = useState<PositionDetail[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadData() {
+      setIsLoading(true);
+      setIsError(false);
+      try {
+        const [allocRes, posRes] = await Promise.all([
+          fetchFromAPI<AssetAllocation[]>("/investments/allocation"),
+          fetchFromAPI<PositionDetail[]>("/investments/positions")
+        ]);
+
+        if (!mounted) return;
+
+        if (allocRes && posRes) {
+          setAllocation(allocRes);
+          setPositions(posRes);
+        } else {
+          setIsError(true);
+        }
+      } catch {
+        if (mounted) setIsError(true);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
+
+  const totalAssets = positions.length;
+  
+  // Sort positions by value desc
+  const sortedPositions = [...positions].sort((a, b) => b.valor_atual_value - a.valor_atual_value);
+  const top5 = sortedPositions.slice(0, 5);
+  
+  const totalValue = positions.reduce((acc, p) => acc + p.valor_atual_value, 0);
+  const top5Value = top5.reduce((acc, p) => acc + p.valor_atual_value, 0);
+  const top5Concentration = totalValue > 0 ? (top5Value / totalValue) * 100 : 0;
+
+  let dominantClass = { name: "N/A", percentage: 0 };
+  if (allocation.length > 0 && totalValue > 0) {
+    const sortedAlloc = [...allocation].sort((a, b) => b.current_total_value - a.current_total_value);
+    dominantClass = {
+      name: sortedAlloc[0].asset_class,
+      percentage: (sortedAlloc[0].current_total_value / totalValue) * 100
+    };
+  }
+
+  // Very simple diversification score: penalizes high top-5 concentration and rewards number of assets
+  const calcScore = () => {
+    if (totalAssets === 0) return 0;
+    let score = 100;
+    // penalty for top 5 concentration > 30%
+    if (top5Concentration > 30) {
+      score -= (top5Concentration - 30) * 1.5; 
+    }
+    // penalty for few assets
+    if (totalAssets < 10) score -= (10 - totalAssets) * 2;
+    return Math.max(0, Math.min(100, Math.round(score)));
+  };
+
+  const diversificationScore = calcScore();
+
+  return {
+    allocation,
+    positions: sortedPositions,
+    top5,
+    top5Concentration,
+    totalAssets,
+    dominantClass,
+    diversificationScore,
+    isLoading,
+    isError
+  };
+}
+
+
+==== src/hooks/useAlphaData.ts ====
+import { useState, useEffect } from "react";
+import { fetchFromAPI } from "@/lib/api";
+import { PortfolioEvolutionPoint, PortfolioEvolutionSummary } from "./useGrowthData";
+
+export function useAlphaData(period: string) {
+  const [history, setHistory] = useState<PortfolioEvolutionPoint[]>([]);
+  const [summary, setSummary] = useState<PortfolioEvolutionSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadData() {
+      setIsLoading(true);
+      setIsError(false);
+      try {
+        const [histRes, sumRes] = await Promise.all([
+          fetchFromAPI<PortfolioEvolutionPoint[]>("/investments/evolution/history"),
+          fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary")
+        ]);
+
+        if (!mounted) return;
+        if (histRes) setHistory(histRes);
+        if (sumRes) setSummary(sumRes);
+        if (!histRes || !sumRes) setIsError(true);
+      } catch {
+        if (mounted) setIsError(true);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
+
+  let filteredHistory = history;
+  if (period !== "ALL" && history.length > 0) {
+    let monthsToKeep = history.length;
+    switch (period) {
+      case "3M": monthsToKeep = 3; break;
+      case "6M": monthsToKeep = 6; break;
+      case "1A": monthsToKeep = 12; break;
+      case "2A": monthsToKeep = 24; break;
+    }
+    filteredHistory = history.slice(Math.max(history.length - monthsToKeep, 0));
+  }
+
+  // Lógica de Rebase: Subtrair o acumulado do primeiro mês do período
+  // para que todas as linhas comecem do zero relativo ao período filtrado.
+  const rebasedHistory = filteredHistory.map((point, index) => {
+    if (index === 0 || !filteredHistory[0]) return { ...point, rebased_cart: 0, rebased_ibov: 0, rebased_cdi: 0, rebased_ipca: 0, rebased_ifix: 0, rebased_sp500: 0, rebased_idiv: 0 };
+    
+    const base = filteredHistory[0];
+    return {
+      ...point,
+      rebased_cart: point.rentabilidade_acumulada_pct - base.rentabilidade_acumulada_pct,
+      rebased_ibov: point.ibov_acumulado_pct - base.ibov_acumulado_pct,
+      rebased_cdi: point.cdi_acumulado_pct - base.cdi_acumulado_pct,
+      rebased_ipca: point.ipca_acumulado_pct - base.ipca_acumulado_pct,
+      rebased_ifix: point.ifix_acumulado_pct - base.ifix_acumulado_pct,
+      rebased_sp500: point.sp500_acumulado_pct - base.sp500_acumulado_pct,
+      rebased_idiv: point.idiv_acumulado_pct - base.idiv_acumulado_pct
+    };
+  });
+
+  return {
+    history: rebasedHistory,
+    rawHistory: filteredHistory,
+    summary,
+    isLoading,
+    isError
+  };
+}
+
+
+==== src/hooks/useAudit.ts ====
+import { useState, useEffect } from "react";
+import { fetchFromAPI } from "@/lib/api";
+
+export interface AuditRun {
+  id: string;
+  file_name: string;
+  source_type: string;
+  started_at: string;
+  status: string;
+  created_by: string;
+  rows_read: number;
+  rows_inserted: number;
+  rows_updated: number;
+  rows_failed: number;
+}
+
+export interface AuditRollback {
+  id: string;
+  file_name: string;
+  rollback_timestamp: string | null;
+  rollback_user: string | null;
+  rollback_reason: string | null;
+  started_at: string;
+}
+
+export function useAuditRuns(filter: string = "ALL") {
+  const [data, setData] = useState<AuditRun[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchRuns = async () => {
+      setIsLoading(true);
+      setIsUnauthorized(false);
+      try {
+        const result = await fetchFromAPI<AuditRun[]>(`/governance/audit?status_filter=${filter}`);
+        if (mounted) {
+          setData(result);
+          setIsLoading(false);
+        }
+      } catch (e: unknown) {
+        if (mounted) {
+          if (e instanceof Error && e.name === "AuthError") {
+            setIsUnauthorized(true);
+          } else {
+            console.error(e);
+            setData([]);
+          }
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchRuns();
+    return () => { mounted = false; };
+  }, [filter]);
+
+  return { data, isLoading, isUnauthorized };
+}
+
+export function useAuditRollbacks() {
+  const [data, setData] = useState<AuditRollback[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchRollbacks = async () => {
+      setIsLoading(true);
+      setIsUnauthorized(false);
+      try {
+        const result = await fetchFromAPI<AuditRollback[]>("/governance/audit/rollbacks");
+        if (mounted) {
+          setData(result);
+          setIsLoading(false);
+        }
+      } catch (e: unknown) {
+        if (mounted) {
+          if (e instanceof Error && e.name === "AuthError") {
+            setIsUnauthorized(true);
+          } else {
+            console.error(e);
+            setData([]);
+          }
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchRollbacks();
+    return () => { mounted = false; };
+  }, []);
+
+  return { data, isLoading, isUnauthorized };
+}
+
+export function useAuditRunDetail(runId: string) {
+  const [data, setData] = useState<AuditRun | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchRun = async () => {
+      setIsLoading(true);
+      setIsUnauthorized(false);
+      try {
+        const result = await fetchFromAPI<AuditRun>(`/governance/audit/${runId}`);
+        if (mounted) {
+          setData(result);
+          setIsLoading(false);
+        }
+      } catch (e: unknown) {
+        if (mounted) {
+          if (e instanceof Error && e.name === "AuthError") {
+            setIsUnauthorized(true);
+          } else {
+            console.error(e);
+            setData(null);
+          }
+          setIsLoading(false);
+        }
+      }
+    };
+    if (runId) {
+      fetchRun();
+    }
+    return () => { mounted = false; };
+  }, [runId]);
+
+  return { data, isLoading, isUnauthorized };
+}
+
+
+==== src/hooks/useCategoriesAdmin.ts ====
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Category } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
+import { fetchFromAPI } from "@/lib/api";
+
+export interface CategoryFilters {
+  limit: number;
+  offset: number;
+  search?: string;
+}
+
+export function useCategoriesAdmin(filters: CategoryFilters) {
+  const [data, setData] = useState<Category[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.set("limit", filters.limit.toString());
+      queryParams.set("offset", filters.offset.toString());
+
+      const response = await fetchFromAPI<PaginatedResponse<Category>>(
+        `/governance/categories?${queryParams.toString()}`
+      );
+
+      if (response && response.items) {
+        let filteredItems = response.items;
+        
+        // Fase 5 - Busca Local (Frontend)
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          filteredItems = response.items.filter((item) =>
+            item.categoria.toLowerCase().includes(searchLower)
+          );
+        }
+
+        setData(filteredItems);
+        // Quando tem busca, o total é o tamanho da lista filtrada. 
+        // Quando não tem, usa o total do backend.
+        setTotal(filters.search ? filteredItems.length : response.total || 0);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
+      setData([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters.limit, filters.offset, filters.search]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  return {
+    data,
+    total,
+    isLoading,
+    error,
+    refetch: fetchCategories,
+  };
+}
+
+
+==== src/hooks/useDividendsAdmin.ts ====
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Dividend } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
+import { fetchFromAPI } from "@/lib/api";
+
+export interface DividendFilters {
+  limit: number;
+  offset: number;
+  ticker?: string;
+  tipo_evento?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+export function useDividendsAdmin(filters: DividendFilters) {
+  const [data, setData] = useState<Dividend[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchDividends = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.set("limit", filters.limit.toString());
+      queryParams.set("offset", filters.offset.toString());
+      if (filters.ticker) queryParams.set("ticker", filters.ticker);
+      if (filters.tipo_evento) queryParams.set("tipo_evento", filters.tipo_evento);
+      if (filters.start_date) queryParams.set("start_date", filters.start_date);
+      if (filters.end_date) queryParams.set("end_date", filters.end_date);
+
+      const response = await fetchFromAPI<PaginatedResponse<Dividend>>(
+        `/governance/dividends?${queryParams.toString()}`
+      );
+
+      if (response) {
+        setData(response.items || []);
+        setTotal(response.total || 0);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
+      setData([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    filters.limit,
+    filters.offset,
+    filters.ticker,
+    filters.tipo_evento,
+    filters.start_date,
+    filters.end_date,
+  ]);
+
+  useEffect(() => {
+    fetchDividends();
+  }, [fetchDividends]);
+
+  return {
+    data,
+    total,
+    isLoading,
+    error,
+    refetch: fetchDividends,
+  };
+}
+
+
+==== src/hooks/useDividendsData.ts ====
+import { useState, useEffect } from "react";
+import { fetchFromAPI } from "@/lib/api";
+import { PortfolioEvolutionSummary } from "./useGrowthData";
+
+export interface DividendHistory {
+  month: string; // e.g. "2023-01"
+  amount_received: string;
+  amount_received_value: number;
+  amount_dividend_value?: number;
+  amount_jcp_value?: number;
+  amount_rendimento_value?: number;
+}
+
+export interface DividendBreakdown {
+  ticker: string;
+  total_recebido: string;
+  total_recebido_value: number;
+  quantidade_eventos: number;
+  primeiro_recebimento: string;
+  ultimo_recebimento: string;
+}
+
+export function useDividendsData() {
+  const [history, setHistory] = useState<DividendHistory[]>([]);
+  const [breakdown, setBreakdown] = useState<DividendBreakdown[]>([]);
+  const [summary, setSummary] = useState<PortfolioEvolutionSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadData() {
+      setIsLoading(true);
+      setIsError(false);
+      try {
+        const [histRes, sumRes, breakRes] = await Promise.all([
+          fetchFromAPI<DividendHistory[]>("/investments/dividends/history"),
+          fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary"),
+          fetchFromAPI<DividendBreakdown[]>("/investments/dividends/breakdown")
+        ]);
+
+        if (!mounted) return;
+        if (histRes) {
+          setHistory(histRes);
+          setSummary(sumRes || null);
+          setBreakdown(breakRes || []);
+        } else {
+          setIsError(true);
+        }
+      } catch {
+        if (mounted) setIsError(true);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+    loadData();
+    return () => { mounted = false; };
+  }, []);
+
+  const totalDividends = summary?.proventos_totais || 0;
+  
+  // Calculate 12-month average
+  let average12m = 0;
+  if (history.length > 0) {
+    const last12 = history.slice(Math.max(history.length - 12, 0));
+    const sum12m = last12.reduce((acc, curr) => acc + (curr.amount_received_value || 0), 0);
+    average12m = sum12m / (last12.length || 1);
+  }
+
+  // Calculate yield on cost
+  const yieldOnCost = summary?.compras_totais && summary.compras_totais > 0 
+    ? (totalDividends / summary.compras_totais) * 100 
+    : 0;
+
+  // Calculate YTD received (current calendar year)
+  const currentYear = new Date().getFullYear().toString();
+  const ytdReceived = history
+    .filter((h) => h.month?.startsWith(currentYear))
+    .reduce((acc, h) => acc + (h.amount_received_value || 0), 0);
+
+  // Transform for YoY Chart: group by month (Jan-Dec) and year
+  // Result format: { name: 'Jan', '2023': 10, '2024': 15 }
+  const yoyData: Record<string, Record<string, number | string>> = {};
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  
+  months.forEach(m => {
+    yoyData[m] = { name: m };
+  });
+
+  const availableYears = new Set<string>();
+
+  history.forEach(item => {
+    if (!item.month) return;
+    const [year, monthStr] = item.month.split('-');
+    if (year && monthStr) {
+      const monthIdx = parseInt(monthStr, 10) - 1;
+      const monthName = months[monthIdx];
+      availableYears.add(year);
+      yoyData[monthName][year] = item.amount_received_value;
+    }
+  });
+
+  const yoyArray = months.map(m => yoyData[m]);
+
+  return {
+    history,
+    breakdown,
+    yoyArray,
+    availableYears: Array.from(availableYears).sort(),
+    totalDividends,
+    average12m,
+    yieldOnCost,
+    ytdReceived,
+    isLoading,
+    isError
+  };
+}
+
+
+==== src/hooks/useGrowthData.ts ====
+import { useState, useEffect } from "react";
+import { fetchFromAPI } from "@/lib/api";
+// Let's define local types based on the backend schema.
+
+export interface PortfolioEvolutionSummary {
+  patrimonio_atual: string;
+  patrimonio_atual_value: number;
+  rentabilidade_acumulada: number;
+  proventos_totais: number;
+  compras_totais: number;
+  vendas_totais: number;
+  ibov_acumulado_pct: number;
+  cdi_acumulado_pct: number;
+  alpha_vs_ibov: number;
+  alpha_vs_cdi: number;
+}
+
+export interface PortfolioEvolutionPoint {
+  month: string;
+  patrimonio: string;
+  patrimonio_value: number;
+  compras: string;
+  compras_value: number;
+  vendas: string;
+  vendas_value: number;
+  proventos: string;
+  proventos_value: number;
+  rentabilidade_mensal_pct: number;
+  rentabilidade_acumulada_pct: number;
+  ibov_mensal_pct: number;
+  ibov_acumulado_pct: number;
+  cdi_mensal_pct: number;
+  cdi_acumulado_pct: number;
+  ipca_mensal_pct: number;
+  ipca_acumulado_pct: number;
+  ifix_mensal_pct: number;
+  ifix_acumulado_pct: number;
+  sp500_mensal_pct: number;
+  sp500_acumulado_pct: number;
+  idiv_mensal_pct: number;
+  idiv_acumulado_pct: number;
+}
+
+export function useGrowthData(period: string) {
+  const [summary, setSummary] = useState<PortfolioEvolutionSummary | null>(null);
+  const [history, setHistory] = useState<PortfolioEvolutionPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadData() {
+      setIsLoading(true);
+      setIsError(false);
+      try {
+        const [sumRes, histRes] = await Promise.all([
+          fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary"),
+          fetchFromAPI<PortfolioEvolutionPoint[]>("/investments/evolution/history")
+        ]);
+
+        if (!mounted) return;
+
+        if (sumRes && histRes) {
+          setSummary(sumRes);
+          setHistory(histRes);
+        } else {
+          setIsError(true);
+        }
+      } catch {
+        if (mounted) setIsError(true);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Filter history based on period
+  let filteredHistory = history;
+  if (period !== "ALL" && history.length > 0) {
+    let monthsToKeep = history.length;
+    switch (period) {
+      case "3M": monthsToKeep = 3; break;
+      case "6M": monthsToKeep = 6; break;
+      case "1A": monthsToKeep = 12; break;
+      case "2A": monthsToKeep = 24; break;
+    }
+    filteredHistory = history.slice(Math.max(history.length - monthsToKeep, 0));
+  }
+
+  // Calculate milestones
+  const milestones: { value: number; label: string; date: string }[] = [];
+  if (history.length > 0) {
+    const checkMilestone = (value: number, label: string) => {
+      const point = history.find(p => p.patrimonio_value >= value);
+      if (point) {
+        milestones.push({ value, label, date: point.month });
+        return true;
+      }
+      return false;
+    };
+    checkMilestone(10000, "Primeiros R$ 10k");
+    checkMilestone(50000, "R$ 50k Acumulados");
+    checkMilestone(100000, "R$ 100k Alcançados");
+    
+    let nextCheck = 150000;
+    while (checkMilestone(nextCheck, `R$ ${nextCheck / 1000}k Alcançados`)) {
+      nextCheck += 50000;
+    }
+  }
+
+  let nextTarget = 10000;
+  const pat = summary?.patrimonio_atual_value || 0;
+  if (pat < 10000) nextTarget = 10000;
+  else if (pat < 50000) nextTarget = 50000;
+  else if (pat < 100000) nextTarget = 100000;
+  else {
+    nextTarget = Math.floor(pat / 50000) * 50000 + 50000;
+  }
+
+  return {
+    summary,
+    history: filteredHistory,
+    milestones,
+    nextTarget,
+    isLoading,
+    isError
+  };
+}
+
+
+==== src/hooks/usePositionsAdmin.ts ====
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Position } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
+import { fetchFromAPI } from "@/lib/api";
+
+export interface PositionFilters {
+  limit: number;
+  offset: number;
+  ticker?: string;
+  classe_ativo?: string;
+  snapshot_date?: string;
+}
+
+export function usePositionsAdmin(filters: PositionFilters) {
+  const [data, setData] = useState<Position[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchPositions = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.set("limit", filters.limit.toString());
+      queryParams.set("offset", filters.offset.toString());
+      if (filters.ticker) queryParams.set("ticker", filters.ticker);
+      if (filters.classe_ativo) queryParams.set("classe_ativo", filters.classe_ativo);
+      if (filters.snapshot_date) queryParams.set("snapshot_date", filters.snapshot_date);
+
+      const response = await fetchFromAPI<PaginatedResponse<Position>>(
+        `/governance/positions?${queryParams.toString()}`
+      );
+
+      if (response) {
+        setData(response.items || []);
+        setTotal(response.total || 0);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
+      setData([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    filters.limit,
+    filters.offset,
+    filters.ticker,
+    filters.classe_ativo,
+    filters.snapshot_date,
+  ]);
+
+  useEffect(() => {
+    fetchPositions();
+  }, [fetchPositions]);
+
+  return {
+    data,
+    total,
+    isLoading,
+    error,
+    refetch: fetchPositions,
+  };
+}
+
+
+==== src/hooks/useTransactions.ts ====
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Transaction } from "@/types/entities";
+import { PaginatedResponse } from "@/types/dto";
+import { fetchFromAPI } from "@/lib/api";
+
+export interface TransactionFilters {
+  limit: number;
+  offset: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  category?: string;
+}
+
+export function useTransactions(filters: TransactionFilters) {
+  const [data, setData] = useState<Transaction[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchTransactions = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.set("limit", filters.limit.toString());
+      queryParams.set("offset", filters.offset.toString());
+      if (filters.search) queryParams.set("search", filters.search);
+      if (filters.startDate) queryParams.set("startDate", filters.startDate);
+      if (filters.endDate) queryParams.set("endDate", filters.endDate);
+      if (filters.category) queryParams.set("category", filters.category);
+
+      const response = await fetchFromAPI<PaginatedResponse<Transaction>>(
+        `/transactions?${queryParams.toString()}`
+      );
+
+      if (response) {
+        setData(response.items || []);
+        setTotal(response.total || 0);
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err);
+      setData([]);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    filters.limit,
+    filters.offset,
+    filters.search,
+    filters.startDate,
+    filters.endDate,
+    filters.category,
+  ]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  return {
+    data,
+    total,
+    isLoading,
+    error,
+    refetch: fetchTransactions,
+  };
+}
+
+
+==== src/hooks/useWealthStore.ts ====
+import { create } from "zustand";
+import { WealthPeriod } from "@/components/wealth/ui/WealthPeriodToggle";
+
+interface WealthState {
+  period: WealthPeriod;
+  setPeriod: (period: WealthPeriod) => void;
+}
+
+export const useWealthStore = create<WealthState>((set) => ({
+  period: "1A",
+  setPeriod: (period) => set({ period }),
+}));
+
+
+==== src/types/entities.ts ====
+export interface Transaction {
+  id: string;
+  descricao?: string;
+  categoria?: string;
+  category?: string; // Fallback used in some places
+  macro_categoria: string;
+  parcelamento: string;
+  observacao?: string;
+  data_transacao?: string;
+  valor?: number;
+  valor_cents?: number;
+}
+
+export interface Position {
+  ticker: string;
+  classe_ativo?: string;
+  asset_class?: string; // Fallback
+  observacao?: string;
+  data_snapshot?: string;
+  snapshot_date?: string; // Fallback
+  quantidade: number;
+  valor_investido: number;
+  valor_atual: number;
+  ganho: number;
+  peso: number;
+}
+
+export interface Dividend {
+  id_economico: string;
+  ticker: string;
+  tipo_evento?: string;
+  tipo?: string; // Fallback
+  observacao?: string;
+  valor?: number;
+  data_pagamento?: string;
+  data?: string; // Fallback
+}
+
+export interface Category {
+  categoria: string;
+  macro_categoria?: string;
+  quantidade_transacoes?: number;
+}
+
+export interface Installment {
+  purchase_id: string;
+  current_installment: number;
+  total_installments: number;
+  amount: number;
+}
+
+export interface AuditRun {
+  id?: string;
+  run_id?: string;
+  file_name?: string;
+  started_at: string;
+  created_by?: string;
+  source_type?: string;
+  rows_read?: number;
+  rows_inserted?: number;
+  rows_updated?: number;
+  rows_failed?: number;
+  status: string;
+}
+
+export interface PortfolioEvolution {
+  patrimonio_atual_value: number;
+  rentabilidade_acumulada: number;
+  compras_totais: number;
+  cdi_acumulado_pct: number;
+  history?: PortfolioEvolutionPoint[];
+}
+
+export interface PortfolioEvolutionPoint {
+  month: string;
+  patrimonio_value: number;
+  compras_value: number;
+  proventos_value: number;
+  rentabilidade_mensal_pct: number;
+}
+
+export interface DatabaseSummary {
+  total_tables: number;
+  total_size: string;
+  total_records: number;
+  last_vacuum?: string;
+}
+
+
+==== src/types/dto.ts ====
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+}
+
+export interface UpdateTransactionDTO {
+  categoria: string;
+  macro_categoria: string;
+  parcelamento: string;
+  observacao: string;
+}
+
+export interface UpdatePositionDTO {
+  classe_ativo: string;
+  observacao: string;
+}
+
+export interface UpdateDividendDTO {
+  ticker: string;
+  tipo_evento: string;
+  observacao: string;
+}
+
+
+
