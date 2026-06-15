@@ -1,0 +1,1563 @@
+
+====================
+FILE: app/api/services/analytics.py
+====================
+import calendar
+import re
+
+from datetime import date
+from decimal import Decimal
+
+from app.api.schemas.dashboard import (
+    CategoryComparison,
+    DailyDataPoint,
+    DailyHeatmap,
+    DashboardSummaryV2,
+    InstallmentItem,
+    InstallmentsSummary,
+    KpiItem,
+    PacingComparison,
+    PacingV2,
+    SubscriptionItem,
+    SubscriptionsSummary,
+)
+from app.core.formatters import format_money
+from database.financial_repository import FinancialRepository
+
+
+class AnalyticsService:
+    INSTALLMENT_PATTERN = re.compile(r"(.+?)\s+(\d{1,2})\s*/\s*(\d{1,2})\s*x?\b", re.IGNORECASE)
+
+    def __init__(self):
+        self.queries = FinancialRepository()
+
+    def _month_filter_sql(self, month: str | None) -> tuple[str, list[object]]:
+        if not month:
+            return "", []
+        return " AND strftime('%Y-%m', data) = ?", [month]
+
+    def _fetch_expense_rows(
+        self,
+        month: str | None = None,
+        macro_categoria: str | None = None,
+    ) -> list[dict[str, object]]:
+        query = """
+            SELECT
+                source_line_no,
+                id_economico,
+                data,
+                descricao_original,
+                valor_cents,
+                macro_categoria,
+                natureza,
+                source
+            FROM transactions
+            WHERE natureza = 'EXPENSE'
+        """
+        params: list[object] = []
+
+        if macro_categoria:
+            query += " AND UPPER(macro_categoria) = UPPER(?)"
+            params.append(macro_categoria)
+
+        month_sql, month_params = self._month_filter_sql(month)
+        query += month_sql
+        params.extend(month_params)
+        query += " ORDER BY data ASC, source_line_no ASC, id_economico ASC"
+
+        with self.queries._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(query, params).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def _cents_to_float(self, value: object) -> float:
+        return float(Decimal(str(value or 0)) / Decimal("100"))
+
+    def _installment_bucket(self, amount: float) -> int:
+        return int(round(amount / 10))
+
+    def _parse_money(self, value: str) -> float:
+        normalized = value.replace("R$", "").replace(".", "").replace(" ", "").replace(",", ".").strip()
+        return float(Decimal(normalized or "0"))
+
+    def _add_months(self, source_date: date, months: int) -> date:
+        total_months = (source_date.year * 12 + (source_date.month - 1)) + months
+        year = total_months // 12
+        month = (total_months % 12) + 1
+        last_day = calendar.monthrange(year, month)[1]
+        return date(year, month, min(source_date.day, last_day))
+
+    def _format_month_year_pt(self, source_date: date) -> str:
+        months = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+        ]
+        return f"{months[source_date.month - 1]} {source_date.year}"
+
+    def get_expense_pacing(self, current_month: str) -> PacingComparison:
+        """Calcula o ritmo de gastos mês a mês e devolve dados prontos para a UI."""
+        year, month = map(int, current_month.split("-"))
+        previous_month = f"{year - 1}-12" if month == 1 else f"{year}-{month - 1:02d}"
+
+        df_curr = self.queries.get_cashflow_summary(month=current_month)
+        df_prev = self.queries.get_cashflow_summary(month=previous_month)
+
+        raw_curr = df_curr.loc[df_curr["natureza"] == "EXPENSE", "total"].sum() if not df_curr.empty else 0
+        raw_prev = df_prev.loc[df_prev["natureza"] == "EXPENSE", "total"].sum() if not df_prev.empty else 0
+
+        exp_curr = abs(Decimal(str(raw_curr)))
+        exp_prev = abs(Decimal(str(raw_prev)))
+
+        if exp_prev == 0:
+            delta_pct = Decimal("100.00") if exp_curr > 0 else Decimal("0.00")
+        else:
+            delta_pct = ((exp_curr - exp_prev) / exp_prev) * Decimal("100")
+
+        delta_fmt = format_money(delta_pct)
+
+        if delta_pct > 0:
+            trend = "up"
+            severity = "danger"
+            message = f"Seus gastos subiram {delta_fmt}% em relação ao mês anterior."
+        elif delta_pct < 0:
+            trend = "down"
+            severity = "good"
+            message = f"Excelente! Seus gastos caíram {format_money(abs(delta_pct))}% em relação ao mês passado."
+        else:
+            trend = "stable"
+            severity = "warning"
+            message = "Seus gastos ficaram estáveis em relação ao mês anterior."
+
+        return PacingComparison(
+            current_month=current_month,
+            previous_month=previous_month,
+            current_expenses=format_money(exp_curr),
+            previous_expenses=format_money(exp_prev),
+            delta_percentage=delta_fmt,
+            trend=trend,
+            severity=severity,
+            message=message,
+        )
+
+    def get_monthly_heatmap(self, month: str) -> list[DailyHeatmap]:
+        import calendar
+        from datetime import date
+
+        year, month_number = map(int, month.split("-"))
+        _, last_day = calendar.monthrange(year, month_number)
+        df_daily = self.queries.get_daily_expenses(month)
+
+        expenses_dict = {}
+        max_amount = Decimal("0.00")
+
+        if not df_daily.empty:
+            for _, row in df_daily.iterrows():
+                value = abs(Decimal(str(row["total"])))
+                expenses_dict[row["data"]] = value
+                if value > max_amount:
+                    max_amount = value
+
+        heatmap = []
+        for day in range(1, last_day + 1):
+            date_str = f"{year}-{month_number:02d}-{day:02d}"
+            amount = expenses_dict.get(date_str, Decimal("0.00"))
+            intensity = float(amount / max_amount) if max_amount > 0 else 0.0
+
+            heatmap.append(
+                DailyHeatmap(
+                    date=date.fromisoformat(date_str),
+                    amount=format_money(amount),
+                    intensity=round(intensity, 2),
+                )
+            )
+
+        return heatmap
+
+    def get_categories_comparison(self, current_month: str) -> list[CategoryComparison]:
+        year, month = map(int, current_month.split("-"))
+        previous_month = f"{year - 1}-12" if month == 1 else f"{year}-{month - 1:02d}"
+
+        df_curr = self.queries.get_expenses_by_category(month=current_month)
+        df_prev = self.queries.get_expenses_by_category(month=previous_month)
+
+        curr_dict = (
+            {row["macro_categoria"]: abs(row["total"]) for _, row in df_curr.iterrows()}
+            if not df_curr.empty
+            else {}
+        )
+        prev_dict = (
+            {row["macro_categoria"]: abs(row["total"]) for _, row in df_prev.iterrows()}
+            if not df_prev.empty
+            else {}
+        )
+
+        comparisons = []
+        for category, curr_value in curr_dict.items():
+            prev_value = prev_dict.get(category, 0)
+
+            curr_fmt = format_money(curr_value)
+            prev_fmt = format_money(prev_value)
+
+            if Decimal(prev_fmt) == 0:
+                delta = Decimal("100.00") if Decimal(curr_fmt) > 0 else Decimal("0.00")
+            else:
+                delta = ((Decimal(curr_fmt) - Decimal(prev_fmt)) / Decimal(prev_fmt)) * 100
+
+            severity = "good"
+            if delta > 20:
+                severity = "danger"
+            elif delta > 0:
+                severity = "warning"
+
+            comparisons.append(
+                CategoryComparison(
+                    category=category,
+                    current_amount=curr_fmt,
+                    previous_amount=prev_fmt,
+                    delta_percentage=format_money(delta),
+                    severity=severity,
+                )
+            )
+
+        return sorted(comparisons, key=lambda item: item.current_amount, reverse=True)
+
+    def _to_kpi_item(self, current: Decimal, previous: Decimal) -> KpiItem:
+        current_float = float(current)
+        previous_float = float(previous)
+
+        if previous == 0:
+            delta_pct = 0.0
+        else:
+            delta_pct = float(((current - previous) / abs(previous)) * Decimal("100"))
+
+        return KpiItem(
+            current=current_float,
+            previous=previous_float,
+            delta_pct=delta_pct,
+        )
+
+    def _month_minus_one(self, month: str) -> str:
+        year, month_number = map(int, month.split("-"))
+        if month_number == 1:
+            return f"{year - 1}-12"
+        return f"{year}-{month_number - 1:02d}"
+
+    def get_summary_v2(self, month: str) -> DashboardSummaryV2:
+        previous_month = self._month_minus_one(month)
+
+        df_curr = self.queries.get_cashflow_summary(month=month)
+        df_prev = self.queries.get_cashflow_summary(month=previous_month)
+
+        receitas_curr = Decimal(str(df_curr.loc[df_curr["natureza"] == "INCOME", "total"].sum())) if not df_curr.empty else Decimal("0")
+        despesas_curr = abs(Decimal(str(df_curr.loc[df_curr["natureza"] == "EXPENSE", "total"].sum()))) if not df_curr.empty else Decimal("0")
+
+        receitas_prev = Decimal(str(df_prev.loc[df_prev["natureza"] == "INCOME", "total"].sum())) if not df_prev.empty else Decimal("0")
+        despesas_prev = abs(Decimal(str(df_prev.loc[df_prev["natureza"] == "EXPENSE", "total"].sum()))) if not df_prev.empty else Decimal("0")
+
+        saldo_curr = receitas_curr - despesas_curr
+        saldo_prev = receitas_prev - despesas_prev
+
+        patrimonio_curr = Decimal(str(self.queries.get_current_net_worth()))
+        
+        try:
+            portfolio_summary = self.queries.get_portfolio_evolution_summary()
+            rentabilidade_pct = float(portfolio_summary.get("rentabilidade_acumulada", 0.0))
+        except Exception:
+            rentabilidade_pct = 0.0
+
+        patrimonio_kpi = KpiItem(
+            current=float(patrimonio_curr),
+            previous=0.0,
+            delta_pct=rentabilidade_pct
+        )
+
+        return DashboardSummaryV2(
+            month=month,
+            receitas=self._to_kpi_item(receitas_curr, receitas_prev),
+            despesas=self._to_kpi_item(despesas_curr, despesas_prev),
+            saldo_liquido=self._to_kpi_item(saldo_curr, saldo_prev),
+            patrimonio=patrimonio_kpi,
+        )
+
+    def get_subscriptions_summary(self, month: str) -> SubscriptionsSummary:
+        rows = self._fetch_expense_rows(month=month, macro_categoria="ASSINATURAS")
+
+        items = [
+            SubscriptionItem(
+                original_name=str(row["descricao_original"] or ""),
+                date=str(row["data"]),
+                amount=self._cents_to_float(row["valor_cents"]),
+            )
+            for row in rows
+        ]
+
+        monthly_total = sum(item.amount for item in items)
+        active_count = len(items)
+        average_per_service = monthly_total / active_count if active_count else 0.0
+
+        return SubscriptionsSummary(
+            month=month,
+            active_count=active_count,
+            monthly_total=monthly_total,
+            annual_projection=monthly_total * 12,
+            average_per_service=average_per_service,
+            items=items,
+        )
+
+    def get_installments_summary(self, month: str | None = None) -> InstallmentsSummary:
+        rows = self._fetch_expense_rows(month=None)
+        grouped: dict[tuple[str, int, int], list[dict[str, object]]] = {}
+
+        for row in rows:
+            description = str(row["descricao_original"] or "").strip()
+            match = self.INSTALLMENT_PATTERN.search(description)
+            if not match:
+                continue
+
+            base_name = match.group(1).strip()
+            current_installment = int(match.group(2))
+            total_installments = int(match.group(3))
+
+            if total_installments <= 1 or current_installment < 0 or current_installment > total_installments:
+                continue
+
+            row_date = date.fromisoformat(str(row["data"]))
+            installment_amount = self._cents_to_float(row["valor_cents"])
+            bucket = self._installment_bucket(installment_amount)
+            
+            purchase_date = self._add_months(row_date, -(current_installment - 1))
+            purchase_month = f"{purchase_date.year}-{purchase_date.month:02d}"
+            
+            key = (base_name.lower(), total_installments, bucket, purchase_month)
+            sequences = grouped.setdefault(key, [])
+
+            matched_sequence: dict[str, object] | None = None
+            for sequence in sequences:
+                last_x = int(sequence["current_installment"])
+                if current_installment > last_x:
+                    matched_sequence = sequence
+                    break
+
+            if matched_sequence is None:
+                seq_index = len(sequences)
+                purchase_id = f"{base_name.lower()}_{total_installments}x_{bucket}_{purchase_month}_{seq_index}"
+                matched_sequence = {
+                    "purchase_id": purchase_id,
+                    "first_installment_found": current_installment,
+                    "base_name": base_name,
+                    "original_name": description,
+                    "date": str(row["data"]),
+                    "date_obj": row_date,
+                    "installment_amount": installment_amount,
+                    "current_installment": current_installment,
+                    "total_installments": total_installments,
+                    "total_estimated": installment_amount * total_installments,
+                    "already_paid": installment_amount * current_installment,
+                    "remaining": installment_amount * (total_installments - current_installment),
+                    "bucket": bucket,
+                }
+                sequences.append(matched_sequence)
+            else:
+                first_found = int(matched_sequence["first_installment_found"])
+                if current_installment < first_found:
+                    first_found = current_installment
+                matched_sequence.update(
+                    {
+                        "first_installment_found": first_found,
+                        "original_name": description,
+                        "date": str(row["data"]),
+                        "date_obj": row_date,
+                        "installment_amount": installment_amount,
+                        "current_installment": current_installment,
+                        "total_installments": total_installments,
+                        "total_estimated": installment_amount * total_installments,
+                        "already_paid": installment_amount * current_installment,
+                        "remaining": installment_amount * (total_installments - current_installment),
+                    }
+                )
+
+        normalized_items: list[dict[str, object]] = []
+        for sequences in grouped.values():
+            normalized_items.extend(sequences)
+
+        # ── Mês de contexto ────────────────────────────────────────────
+        # Usamos a maior data de transação importada no banco como referência
+        # de "mês corrente". Isso evita dependência do relógio do servidor e
+        # garante consistência com os dados reais.
+        context_date: date | None = None
+        for item in normalized_items:
+            d = item["date_obj"]
+            if context_date is None or d > context_date:
+                context_date = d
+
+        # Fallback para a data real do sistema se não houver transações
+        if context_date is None:
+            context_date = date.today()
+
+        # Tupla (ano, mês) do mês de contexto para comparação
+        context_ym = (context_date.year, context_date.month)
+
+        # ── Calcular projected_end_date por item ────────────────────────
+        # Para cada grupo, projetamos a data final: last_date + meses_restantes.
+        # Se current == total, meses_restantes == 0, data projetada == last_date.
+        for item in normalized_items:
+            last_x: int = int(item["current_installment"])
+            total_y: int = int(item["total_installments"])
+            last_date_val: date = item["date_obj"]
+            meses_restantes = total_y - last_x
+            if meses_restantes > 0:
+                projected = self._add_months(last_date_val, meses_restantes)
+            else:
+                projected = last_date_val  # última parcela — mês de referência é o próprio
+            item["projected_end_date"] = self._format_month_year_pt(projected)
+            item["projected_end_date_obj"] = projected
+
+        # ── Lógica de status com "sobrevivência no mês" ─────────────────
+        # Uma parcela X/X paga NESTE mês permanece ATIVA até o fim do mês.
+        # Só migra para 'finalizadas' quando o mês de contexto for estritamente
+        # posterior ao mês da última transação registada.
+        def _is_active(norm: dict[str, object]) -> bool:
+            last_x = int(norm["current_installment"])
+            total_y = int(norm["total_installments"])
+            if last_x < total_y:
+                return True  # ainda tem parcelas futuras → definitivamente ativo
+            # last_x == total_y: verifica se ainda estamos no mesmo mês
+            last_date_obj: date = norm["date_obj"]
+            item_ym = (last_date_obj.year, last_date_obj.month)
+            return item_ym >= context_ym  # mesmo mês ou posterior → ativo
+
+        # Construir InstallmentItems com o novo campo projected_end_date
+        exclude_keys = {"date_obj", "bucket", "projected_end_date_obj"}
+
+        def _to_item(norm: dict[str, object]) -> InstallmentItem:
+            fields = {k: v for k, v in norm.items() if k not in exclude_keys}
+            fields["is_active"] = _is_active(norm)
+            return InstallmentItem(**fields)
+
+        all_items = [_to_item(n) for n in normalized_items]
+        all_items.sort(key=lambda i: (i.remaining, i.total_installments, i.current_installment), reverse=True)
+
+        active_items = [i for i in all_items if i.is_active]
+        finished_items = [i for i in all_items if not i.is_active]
+
+        global_estimated = sum(i.total_estimated for i in active_items)
+        global_paid = sum(i.already_paid for i in active_items)
+        global_remaining = sum(i.remaining for i in active_items)
+
+        # ── last_installment_date global = máximo das projected_end_date dos ativos ──
+        active_projections: list[date] = [
+            norm["projected_end_date_obj"]
+            for norm in normalized_items
+            if _is_active(norm)
+        ]
+
+        last_installment_date: str | None = None
+        if active_projections:
+            last_installment_date = self._format_month_year_pt(max(active_projections))
+
+        return InstallmentsSummary(
+            month=month or "",
+            active_installments=len(active_items),
+            finished_installments=len(finished_items),
+            global_estimated=global_estimated,
+            global_paid=global_paid,
+            global_remaining=global_remaining,
+            last_installment_date=last_installment_date,
+            items=all_items,
+        )
+
+    def get_pacing_v2(self, month: str) -> PacingV2:
+        base = self.get_expense_pacing(month)
+        previous_month = self._month_minus_one(month)
+
+        current_daily_df = self.queries.get_daily_expenses(month)
+        previous_daily_df = self.queries.get_daily_expenses(previous_month)
+
+        current_daily_map: dict[str, Decimal] = {}
+        previous_daily_map: dict[str, Decimal] = {}
+
+        if not current_daily_df.empty:
+            for _, row in current_daily_df.iterrows():
+                current_daily_map[row["data"]] = abs(Decimal(str(row["total"])))
+
+        if not previous_daily_df.empty:
+            for _, row in previous_daily_df.iterrows():
+                previous_daily_map[row["data"]] = abs(Decimal(str(row["total"])))
+
+        year, month_number = map(int, month.split("-"))
+        prev_year, prev_month_number = map(int, previous_month.split("-"))
+
+        _, current_last_day = calendar.monthrange(year, month_number)
+        _, previous_last_day = calendar.monthrange(prev_year, prev_month_number)
+
+        daily_data: list[DailyDataPoint] = []
+        for day in range(1, current_last_day + 1):
+            current_date = f"{year}-{month_number:02d}-{day:02d}"
+
+            prev_amount = Decimal("0")
+            if day <= previous_last_day:
+                previous_date = f"{prev_year}-{prev_month_number:02d}-{day:02d}"
+                prev_amount = previous_daily_map.get(previous_date, Decimal("0"))
+
+            daily_data.append(
+                DailyDataPoint(
+                    date=date.fromisoformat(current_date).isoformat(),
+                    current_amount=float(current_daily_map.get(current_date, Decimal("0"))),
+                    previous_amount=float(prev_amount),
+                )
+            )
+
+        current_expenses = float(Decimal(str(base.current_expenses)))
+        previous_expenses = float(Decimal(str(base.previous_expenses)))
+        delta_percentage = float(Decimal(str(base.delta_percentage)))
+
+        return PacingV2(
+            current_month=base.current_month,
+            previous_month=base.previous_month,
+            current_expenses=current_expenses,
+            previous_expenses=previous_expenses,
+            delta_percentage=delta_percentage,
+            trend=base.trend,
+            severity=base.severity,
+            message=base.message,
+            daily_data=daily_data,
+        )
+====================
+FILE: app/api/services/wealth.py
+====================
+from typing import List
+
+from app.api.schemas.investments import (
+    AssetAllocation,
+    DividendBreakdown,
+    DividendHistory,
+    NetWorthEvolution,
+    PositionDetail,
+    PortfolioEvolutionPoint,
+    PortfolioEvolutionSummary,
+)
+from app.core.formatters import format_money
+from database.financial_repository import FinancialRepository
+
+
+class WealthAnalyticsService:
+    def __init__(self):
+        self.queries = FinancialRepository()
+        # TODO: Future integration point for MarketDataService
+        # self.market_data_service = MarketDataService() 
+        # This will allow injecting real-time prices, USD conversion, and YFinance fundamental data
+        # without modifying the public methods exposed to the controllers.
+
+    def get_dividend_history(self) -> List[DividendHistory]:
+        df = self.queries.get_dividend_history()
+        if df.empty:
+            return []
+        
+        records = df.to_dict(orient="records")
+        return [
+            DividendHistory(
+                month=r["month"],
+                amount_received=format_money(r["amount_received"]),
+                amount_received_value=float(r["amount_received"]),
+                amount_dividend=format_money(r["amount_dividend"]) if "amount_dividend" in r else None,
+                amount_dividend_value=float(r["amount_dividend"]) if "amount_dividend" in r else 0.0,
+                amount_jcp=format_money(r["amount_jcp"]) if "amount_jcp" in r else None,
+                amount_jcp_value=float(r["amount_jcp"]) if "amount_jcp" in r else 0.0,
+                amount_rendimento=format_money(r["amount_rendimento"]) if "amount_rendimento" in r else None,
+                amount_rendimento_value=float(r["amount_rendimento"]) if "amount_rendimento" in r else 0.0,
+            )
+            for r in records
+        ]
+
+    def get_portfolio_allocation(self) -> List[AssetAllocation]:
+        df = self.queries.get_portfolio_allocation()
+        if df.empty:
+            return []
+        
+        records = df.to_dict(orient="records")
+        return [
+            AssetAllocation(
+                asset_class=r["asset_class"],
+                current_total=format_money(r["current_total"]),
+                current_total_value=float(r["current_total"])
+            )
+            for r in records
+        ]
+
+    def get_net_worth_evolution(self) -> List[NetWorthEvolution]:
+        df = self.queries.get_net_worth_history()
+        if df.empty:
+            return []
+
+        records = df.to_dict(orient="records")
+        return [
+            NetWorthEvolution(
+                month=r["month"],
+                net_worth=format_money(r["net_worth"]),
+                net_worth_value=float(r["net_worth"])
+            )
+            for r in records
+        ]
+
+    def get_detailed_positions(self) -> List[PositionDetail]:
+        df = self.queries.get_detailed_positions()
+        if df.empty:
+            return []
+
+        records = df.to_dict(orient="records")
+        return [
+            PositionDetail(
+                ticker=r["ticker"],
+                asset_class=r.get("asset_class", "Outros"),
+                asset_subclass=r.get("asset_subclass", ""),
+                quantidade=str(r["quantidade"]),
+                preco_medio=format_money(r["preco_medio"]),
+                valor_investido=format_money(r["valor_investido"]),
+                valor_atual=format_money(r["valor_atual"]),
+                ganho=format_money(r["ganho"]),
+                peso_percentual=f"{float(r['peso_percentual']):.2f}%",
+                quantidade_value=float(r["quantidade"]),
+                preco_medio_value=float(r["preco_medio"]),
+                valor_investido_value=float(r["valor_investido"]),
+                valor_atual_value=float(r["valor_atual"]),
+                ganho_value=float(r["ganho"]),
+                peso_percentual_value=float(r["peso_percentual"])
+            )
+            for r in records
+        ]
+
+    def get_dividends_by_asset(self) -> List[DividendBreakdown]:
+        df = self.queries.get_dividends_by_asset()
+        if df.empty:
+            return []
+
+        records = df.to_dict(orient="records")
+        return [
+            DividendBreakdown(
+                ticker=r["ticker"],
+                total_recebido=format_money(r["total_recebido"]),
+                quantidade_eventos=int(r["quantidade_eventos"]),
+                primeiro_recebimento=str(r["primeiro_recebimento"]),
+                ultimo_recebimento=str(r["ultimo_recebimento"]),
+                total_recebido_value=float(r["total_recebido"])
+            )
+            for r in records
+        ]
+
+    def get_portfolio_evolution_history(self) -> List[PortfolioEvolutionPoint]:
+        df = self.queries.get_portfolio_evolution_history()
+        if df.empty:
+            return []
+
+        records = df.to_dict(orient="records")
+        return [
+            PortfolioEvolutionPoint(
+                month=r["month"],
+                patrimonio=format_money(r["patrimonio"]),
+                patrimonio_value=float(r["patrimonio"]),
+                compras=format_money(r["compras"]),
+                compras_value=float(r["compras"]),
+                vendas=format_money(r["vendas"]),
+                vendas_value=float(r["vendas"]),
+                proventos=format_money(r["proventos"]),
+                proventos_value=float(r["proventos"]),
+                rentabilidade_mensal_pct=float(r["rentabilidade_mensal_pct"]),
+                rentabilidade_acumulada_pct=float(r["rentabilidade_acumulada_pct"]),
+                ibov_mensal_pct=float(r["ibov_mensal_pct"]),
+                ibov_acumulado_pct=float(r["ibov_acumulado_pct"]),
+                cdi_mensal_pct=float(r["cdi_mensal_pct"]),
+                cdi_acumulado_pct=float(r["cdi_acumulado_pct"]),
+                ipca_mensal_pct=float(r["ipca_mensal_pct"]),
+                ipca_acumulado_pct=float(r["ipca_acumulado_pct"]),
+                ifix_mensal_pct=float(r["ifix_mensal_pct"]),
+                ifix_acumulado_pct=float(r["ifix_acumulado_pct"]),
+                sp500_mensal_pct=float(r["sp500_mensal_pct"]),
+                sp500_acumulado_pct=float(r["sp500_acumulado_pct"]),
+                idiv_mensal_pct=float(r["idiv_mensal_pct"]),
+                idiv_acumulado_pct=float(r["idiv_acumulado_pct"])
+            )
+            for r in records
+        ]
+
+    def get_portfolio_evolution_summary(self) -> PortfolioEvolutionSummary:
+        summary_dict = self.queries.get_portfolio_evolution_summary()
+        
+        rent_acum = summary_dict["rentabilidade_acumulada"]
+        ibov_acum = summary_dict["ibov_acumulado_pct"]
+        cdi_acum = summary_dict["cdi_acumulado_pct"]
+        
+        alpha_vs_ibov = rent_acum - ibov_acum
+        alpha_vs_cdi = rent_acum - cdi_acum
+        
+        return PortfolioEvolutionSummary(
+            patrimonio_atual=format_money(summary_dict["patrimonio_atual"]),
+            patrimonio_atual_value=float(summary_dict["patrimonio_atual"]),
+            rentabilidade_acumulada=rent_acum,
+            proventos_totais=float(summary_dict["proventos_totais"]),
+            compras_totais=float(summary_dict["compras_totais"]),
+            vendas_totais=float(summary_dict["vendas_totais"]),
+            ibov_acumulado_pct=ibov_acum,
+            cdi_acumulado_pct=cdi_acum,
+            alpha_vs_ibov=alpha_vs_ibov,
+            alpha_vs_cdi=alpha_vs_cdi
+        )
+
+    def get_asset_details(self, ticker: str) -> dict:
+        """Consolida as informações do ativo (posições, histórico de preços, indicadores, proventos, timeline)."""
+        from app.api.services.market_data import get_asset_history, get_asset_indicators
+        from fastapi import HTTPException
+        
+        # 1. Posição
+        position = self.queries.get_asset_position(ticker)
+        if not position:
+            raise HTTPException(status_code=404, detail="Ativo não encontrado na carteira.")
+            
+        # Para saber o peso, precisamos do valor_atual de todas as posições
+        all_positions = self.queries.get_detailed_positions()
+        total_wallet = float(all_positions["valor_atual"].sum()) if not all_positions.empty and "valor_atual" in all_positions else 0.0
+        peso = (position["valor_atual"] / total_wallet * 100) if total_wallet > 0 else 0
+        position["peso"] = peso
+        
+        # 2. Market Data e Indicadores
+        market_history = get_asset_history(ticker)
+        indicators = get_asset_indicators(ticker)
+        
+        # 3. Proventos
+        dividends = self.queries.get_asset_dividends(ticker)
+        
+        # KPI Proventos: Total e 12 Meses
+        total_dividends = sum(d["valor"] for d in dividends)
+        
+        # Soma os últimos 12 proventos recebidos
+        dividends_12m = sum(d["valor"] for d in dividends[:12])
+        
+        yoc = (total_dividends / position["valor_investido"] * 100) if position["valor_investido"] > 0 else 0
+        
+        # 4. Timeline
+        timeline = self.queries.get_asset_timeline(ticker)
+        
+        return {
+            "position": position,
+            "market_data": market_history,
+            "indicators": indicators,
+            "dividends": {
+                "items": dividends,
+                "kpis": {
+                    "total": total_dividends,
+                    "last_12m": dividends_12m,
+                    "yoc": yoc
+                }
+            },
+            "timeline": timeline
+        }
+
+    def get_asset_cashflow(self, ticker: str) -> list[dict]:
+        """
+        Retorna o fluxo de caixa detalhado (compras, vendas, proventos) de um ativo
+        através das várias fontes (cross-source do ETL v2).
+        """
+        cashflow = self.queries.get_asset_cashflow(ticker)
+        
+        # Formata os valores monetários
+        for cf in cashflow:
+            cf["amount_formatted"] = format_money(cf["amount"])
+            
+        return cashflow
+
+
+====================
+FILE: services/categorizer.py
+====================
+import csv
+import re
+from pathlib import Path
+
+from models.core import CanonicalTransaction
+from taxonomy.categories import Natureza, Perfil
+from utils.semantic import normalize_description
+
+
+PIERRE_CATEGORY_MAP = {
+    "Transferências": {"macro": "TRANSFERENCIA_INTERNA", "sub": "INTERNAL_TRANSFER", "natureza": Natureza.TRANSFER, "perfil": Perfil.PATRIMONIAL},
+    "Transferências para terceiros": {"macro": "PAGAMENTO_DIRETO", "sub": "THIRD_PARTY_TRANSFER", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Investimentos": {"macro": "INVESTIMENTOS", "sub": "GERAL", "natureza": Natureza.INVESTMENT, "perfil": Perfil.PATRIMONIAL},
+    "Compras online": {"macro": "ALIMENTACAO", "sub": "E_COMMERCE", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Serviços": {"macro": "SERVICOS", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Compras": {"macro": "COMPRAS", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Restaurantes, bares e lanchonetes": {"macro": "ALIMENTACAO", "sub": "RESTAURANTES", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Postos de gasolina": {"macro": "TRANSPORTE", "sub": "COMBUSTIVEL", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Supermercado": {"macro": "ALIMENTACAO", "sub": "SUPERMERCADO", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Farmácia": {"macro": "SAUDE", "sub": "FARMACIA", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Telecomunicação": {"macro": "MORADIA", "sub": "TELECOM", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Entre contas": {"macro": "TRANSFERENCIA_INTERNA", "sub": "ENTRE_CONTAS", "natureza": Natureza.TRANSFER, "perfil": Perfil.PATRIMONIAL},
+    "Saúde": {"macro": "SAUDE", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Seguros": {"macro": "MORADIA", "sub": "SEGUROS", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Alimentos e bebidas": {"macro": "ALIMENTACAO", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Serviços automotivos": {"macro": "TRANSPORTE", "sub": "AUTOMOTIVO", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Hospitais, clínicas e laboratórios": {"macro": "SAUDE", "sub": "ATENDIMENTO", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Ética": {"macro": "SAUDE", "sub": "ETICA", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Serviços digitais": {"macro": "SERVICOS", "sub": "DIGITAIS", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Utensílios para casa": {"macro": "MORADIA", "sub": "CASA", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Ótica": {"macro": "SAUDE", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Vestiário": {"macro": "VESTUARIO", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Apostas": {"macro": "OUTROS", "sub": "APOSTAS", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Lazer": {"macro": "LAZER", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Manutenção de veículos": {"macro": "TRANSPORTE", "sub": "MANUTENCAO", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Livraria": {"macro": "EDUCACAO", "sub": "LIVRARIA", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Táxi e transporte privado urbano": {"macro": "TRANSPORTE", "sub": "APLICATIVO", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Eletrônicos": {"macro": "MORADIA", "sub": "ELETRONICOS", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Celular": {"macro": "MORADIA", "sub": "CELULAR", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Aluguel de veículos": {"macro": "TRANSPORTE", "sub": "ALUGUEL_VEICULOS", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Streaming de música": {"macro": "ASSINATURAS", "sub": "STREAMING", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Restaurantes, bares lanchonetes": {"macro": "ALIMENTACAO", "sub": "RESTAURANTES", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Moradia": {"macro": "MORADIA", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Renda fixa": {"macro": "INVESTIMENTOS", "sub": "RENDA_FIXA", "natureza": Natureza.INVESTMENT, "perfil": Perfil.PATRIMONIAL},
+    "Outros": {"macro": "OUTROS", "sub": "INDEFINIDO", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Eletricidade": {"macro": "MORADIA", "sub": "ENERGIA", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Transferência - PIX": {"macro": "TRANSFERENCIA_INTERNA", "sub": "PIX", "natureza": Natureza.TRANSFER, "perfil": Perfil.PATRIMONIAL},
+    "Aluguel de bicicletas": {"macro": "TRANSPORTE", "sub": "BICICLETAS", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Estacionamentos": {"macro": "TRANSPORTE", "sub": "ESTACIONAMENTO", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Transporte": {"macro": "TRANSPORTE", "sub": "GERAL", "natureza": Natureza.EXPENSE, "perfil": Perfil.ESSENCIAL},
+    "Hospedagem": {"macro": "VIAGEM", "sub": "HOSPEDAGEM", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Papelaria": {"macro": "EDUCACAO", "sub": "PAPELARIA", "natureza": Natureza.EXPENSE, "perfil": Perfil.DISCRICIONARIO},
+    "Transferência - Mesma instituição": {"macro": "TRANSFERENCIA_INTERNA", "sub": "MESMA_INSTITUICAO", "natureza": Natureza.TRANSFER, "perfil": Perfil.PATRIMONIAL},
+    "Pagamento de cartão de crédito": {"macro": "PASSIVOS", "sub": "CARTAO_CREDITO", "natureza": Natureza.TRANSFER, "perfil": Perfil.IGNORADO},
+}
+
+PIERRE_CATEGORY_LOOKUP = {normalize_description(key): value for key, value in PIERRE_CATEGORY_MAP.items()}
+
+
+OWNERS = ["CLEIDSON RAMOS", "C RAMOS", "CLEIDSON R", "CLEIDSON RAMOS DE CARVALHO"]
+SEMANTIC_MACRO_CATEGORIES = [
+    "RECEBIMENTO_DIRETO",
+    "TRANSFERENCIA_INTERNA",
+    "SALARIO",
+    "DIVIDENDOS",
+    "PAGAMENTO_DIRETO",
+    "OUTROS",
+]
+
+
+def _classification_payload(
+    macro: str,
+    sub: str,
+    natureza: Natureza,
+    perfil: Perfil,
+) -> dict[str, object]:
+    return {
+        "macro": macro,
+        "sub": sub,
+        "macro_categoria": macro,
+        "subnatureza": sub,
+        "natureza": natureza,
+        "perfil": perfil,
+    }
+
+
+def aplicar_regras_semanticas(descricao: str, valor: float) -> dict[str, object] | None:
+    desc_upper = normalize_description(descricao).upper()
+
+    if any(keyword in desc_upper for keyword in ["MERCADOLIVRE", "SHOPEE", "AMAZON", "MERCADOPAGO", "ALIEXPRESS"]):
+        return _classification_payload(
+            "ALIMENTACAO",
+            "E_COMMERCE",
+            Natureza.EXPENSE,
+            Perfil.DISCRICIONARIO,
+        )
+
+    is_owner = any(owner in desc_upper for owner in OWNERS)
+    if is_owner and any(keyword in desc_upper for keyword in ["TRANSFER", "PIX", "TED"]):
+        return _classification_payload(
+            "TRANSFERENCIA_INTERNA",
+            "INTERNAL_TRANSFER",
+            Natureza.NEUTRAL,
+            Perfil.PATRIMONIAL,
+        )
+
+    if desc_upper.startswith("TRANSFERENCIA RECEBIDA"):
+        return _classification_payload(
+            "TRANSFERENCIA_INTERNA",
+            "RECEBIMENTO_TRANSFERENCIA",
+            Natureza.INCOME,
+            Perfil.PATRIMONIAL,
+        )
+
+    if desc_upper == "VALOR RECEBIDO DE INVESTIMENTOS":
+        return _classification_payload(
+            "INVESTIMENTOS",
+            "RENDIMENTO",
+            Natureza.INCOME,
+            Perfil.PATRIMONIAL,
+        )
+
+    if desc_upper.startswith("CREDITO DE ") or desc_upper.startswith("CREDITO EM CONTA"):
+        return _classification_payload(
+            "RECEBIMENTO_DIRETO",
+            "CREDITO_CONTA",
+            Natureza.INCOME,
+            Perfil.DISCRICIONARIO,
+        )
+
+    if desc_upper == "PAGAMENTO RECEBIDO":
+        return _classification_payload(
+            "OUTROS",
+            "RECEBIMENTO",
+            Natureza.INCOME,
+            Perfil.DISCRICIONARIO,
+        )
+
+    if any(keyword in desc_upper for keyword in [
+        "APLICACAO", "RESGATE", "COMPRA DE FII", "COMPRA DE ACAO", "COMPRA DE ACOES",
+        "COMPRA DE ETF", "COMPRA DE BDR", "TESOURO DIRETO", "CORRETORA", "NUINVEST", 
+        "INTER INVEST", "XP INVESTIMENTOS", "VALOR TRANSFERIDO PARA INVESTIMENTOS",
+        "RENDA VARIAVEL"
+    ]):
+        return _classification_payload(
+            "INVESTIMENTOS",
+            "MOVIMENTACAO",
+            Natureza.INVESTMENT,
+            Perfil.PATRIMONIAL,
+        )
+
+    if valor > 0:
+        if any(keyword in desc_upper for keyword in ["SALARIO", "ORDEM BANCARIA", "FOLHA DE PAGAMENTO"]):
+            return _classification_payload(
+                "SALARIO",
+                "SALARY",
+                Natureza.INCOME,
+                Perfil.ESSENCIAL,
+            )
+
+        if any(keyword in desc_upper for keyword in ["DIVIDENDO", "RENDIMENTO", "JUROS"]):
+            return _classification_payload(
+                "DIVIDENDOS",
+                "DIVIDEND",
+                Natureza.DIVIDEND,
+                Perfil.PATRIMONIAL,
+            )
+
+        if any(keyword in desc_upper for keyword in ["TRANSFERENCIA ENVIADA", "TRANSFER ENVIADO", "PIX", "TED"]):
+            return _classification_payload(
+                "PAGAMENTO_DIRETO",
+                "THIRD_PARTY_TRANSFER",
+                Natureza.EXPENSE,
+                Perfil.DISCRICIONARIO,
+            )
+
+    if valor < 0 and any(keyword in desc_upper for keyword in ["PIX", "TED", "TRANSFER"]):
+        return _classification_payload(
+            "PAGAMENTO_DIRETO",
+            "PIX_TED_OUT",
+            Natureza.EXPENSE,
+            Perfil.DISCRICIONARIO,
+        )
+
+    return None
+
+
+class SmartCategorizer:
+    def __init__(self, rules_path: Path):
+        self.rules = self._load_rules(rules_path)
+
+    def available_categories(self) -> list[str]:
+        categories = {rule["macro"] for rule in self.rules if rule.get("macro")}
+        categories.update(SEMANTIC_MACRO_CATEGORIES)
+        return sorted(categories)
+
+    def _load_rules(self, path: Path) -> list[dict[str, str]]:
+        rules: list[dict[str, str]] = []
+        if path.exists():
+            with open(path, mode="r", encoding="utf-8") as file_handle:
+                reader = csv.DictReader(file_handle)
+                for row in reader:
+                    if row.get("keyword"):
+                        rules.append(row)
+        return rules
+
+    def classify(self, transaction: CanonicalTransaction) -> dict[str, object]:
+        descricao = transaction.get("descricao_normalizada") or transaction.get("descricao_original") or ""
+        descricao = normalize_description(descricao)
+        valor = transaction.get("valor", 0)
+
+        semantica = aplicar_regras_semanticas(descricao, valor)
+        if semantica:
+            return semantica
+
+        categoria_origem = normalize_description(str(transaction.get("categoria_origem") or ""))
+        if categoria_origem and categoria_origem in PIERRE_CATEGORY_LOOKUP:
+            mapped = PIERRE_CATEGORY_LOOKUP[categoria_origem]
+            return _classification_payload(
+                mapped["macro"],
+                mapped["sub"],
+                mapped["natureza"],
+                mapped["perfil"],
+            )
+
+        for rule in self.rules:
+            if re.search(rule["keyword"], descricao, re.IGNORECASE):
+                return _classification_payload(
+                    rule["macro"],
+                    rule["sub"],
+                    Natureza(rule["natureza"]),
+                    Perfil(rule["perfil"]),
+                )
+
+        return _classification_payload(
+            "OUTROS",
+            "INDEFINIDO",
+            Natureza.EXPENSE,
+            Perfil.DISCRICIONARIO,
+        )
+====================
+FILE: app/api/services/governance_service.py
+====================
+from database.governance_repository import GovernanceRepository
+
+class GovernanceService:
+    def __init__(self):
+        self.repo = GovernanceRepository()
+
+    def get_learning_metrics(self):
+        return self.repo.get_learning_metrics()
+
+    def get_top_rules(self, limit: int):
+        return self.repo.get_top_rules(limit=limit)
+
+    def get_problematic_rules(self, limit: int):
+        return self.repo.get_problematic_rules(limit=limit)
+
+    def get_rules_audit(self, limit: int, offset: int, status: str = None):
+        return self.repo.get_rules_audit(limit=limit, offset=offset, status=status)
+
+    def get_prompt_version_exists(self, name: str, version: int):
+        return self.repo.get_prompt_version_exists(name, version)
+
+    def insert_prompt_version(self, id: str, name: str, version: int, content: str, active: int, notes: str):
+        return self.repo.insert_prompt_version(id, name, version, content, active, notes)
+
+    def get_all_prompts(self, active_only: bool = False):
+        return self.repo.get_all_prompts(active_only)
+
+    def get_prompt_by_id(self, prompt_id: str):
+        return self.repo.get_prompt_by_id(prompt_id)
+
+    def activate_prompt_version(self, prompt_id: str):
+        return self.repo.activate_prompt_version(prompt_id)
+
+    def get_audit_runs(self, status_filter: str = "ALL"):
+        return self.repo.get_audit_runs(status_filter)
+
+    def get_audit_rollbacks(self):
+        return self.repo.get_audit_rollbacks()
+
+    def get_database_path(self):
+        return self.repo.db_path
+
+    def vacuum_database(self):
+        with self.repo._get_connection() as conn:
+            conn.execute("VACUUM")
+
+    def analyze_database(self):
+        with self.repo._get_connection() as conn:
+            conn.execute("ANALYZE")
+
+    def get_admin_metrics(self):
+        summary = {}
+        with self.repo._get_connection() as conn:
+            cursor = conn.cursor()
+            summary['total_import_runs'] = cursor.execute('SELECT COUNT(*) FROM import_runs').fetchone()[0] or 0
+            summary['runs_confirmed'] = cursor.execute("SELECT COUNT(*) FROM import_runs WHERE status = 'CONFIRMED'").fetchone()[0] or 0
+            summary['runs_pending'] = cursor.execute("SELECT COUNT(*) FROM import_runs WHERE status IN ('PENDING', 'AWAITING_CONFIRMATION')").fetchone()[0] or 0
+            summary['lines_inserted'] = cursor.execute('SELECT SUM(rows_inserted) FROM import_runs').fetchone()[0] or 0
+            summary['lines_updated'] = cursor.execute('SELECT SUM(rows_updated) FROM import_runs').fetchone()[0] or 0
+            summary['lines_failed'] = cursor.execute('SELECT SUM(rows_failed) FROM import_runs').fetchone()[0] or 0
+            last_import = cursor.execute("SELECT MAX(finished_at) FROM import_runs WHERE status = 'CONFIRMED'").fetchone()[0]
+            summary['last_import'] = str(last_import) if last_import else None
+        return summary
+
+    def get_table_counts(self):
+        gov_tables = ['import_runs', 'staging_imports', 'staging_positions', 'staging_dividends', 'staging_portfolio_evolution', 'governance_rules', 'governance_prompt_versions']
+        results = []
+        with self.repo._get_connection() as conn:
+            cursor = conn.cursor()
+            for t in gov_tables:
+                try:
+                    count = cursor.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]
+                    results.append({'table_name': t, 'row_count': count, 'status': 'OK' if count < 1000000 else 'WARNING'})
+                except:
+                    results.append({'table_name': t, 'row_count': 0, 'status': 'ERROR'})
+        return results
+
+    def get_integrity_metrics(self):
+        integrity = {}
+        with self.repo._get_connection() as conn:
+            cursor = conn.cursor()
+            integrity['pending_staging'] = cursor.execute("SELECT COUNT(*) FROM staging_imports WHERE status = 'PENDING'").fetchone()[0]
+            integrity['gov_run_ids'] = set([r[0] for r in cursor.execute('SELECT id FROM import_runs').fetchall()])
+        return integrity
+
+====================
+FILE: etl/classifier.py
+====================
+"""
+etl/classifier.py — EventClassifier
+
+Wraps o SmartCategorizer existente e adiciona regras cross-source baseadas
+nos event_links gerados pelo EventReconciler.
+
+Atualiza o pipeline_status dos eventos para CLASSIFIED.
+"""
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+
+from models.core import EventType, PipelineStatus, RawFinancialEvent
+
+logger = logging.getLogger(__name__)
+
+
+class EventClassifier:
+    """
+    Classifica eventos financeiros usando:
+    1. SmartCategorizer (regras CSV + heurísticas) para TRANSACTIONs
+    2. Regras hard-coded para eventos com context cross-source (DIVIDEND, INVOICE, etc.)
+    3. Context boost: se um evento tem event_link, a classificação é enriquecida
+    """
+
+    def __init__(self, rules_path: Path | None = None, db_manager=None):
+        self._categorizer = None
+        self._db_manager = db_manager
+        self._active_rules = []
+        if self._db_manager:
+            try:
+                self._active_rules = self._db_manager.get_active_rules()
+            except Exception as e:
+                logger.warning(f"[Classifier] Erro ao carregar regras da Memória Financeira: {e}")
+
+        if rules_path and rules_path.exists():
+            try:
+                from services.categorizer import SmartCategorizer
+                self._categorizer = SmartCategorizer(rules_path)
+            except Exception as e:
+                logger.warning(f"[Classifier] SmartCategorizer não carregado: {e}")
+
+    def classify(
+        self,
+        events: list[RawFinancialEvent],
+        event_links: list | None = None,
+    ) -> list[RawFinancialEvent]:
+        """
+        Classifica cada evento e atualiza pipeline_status para CLASSIFIED.
+
+        Args:
+            events: Eventos com pipeline_status >= MATCHED
+            event_links: EventLink gerados pelo Reconciler (para context boost)
+
+        Returns:
+            Mesmos eventos com metadata enriquecido e pipeline_status = CLASSIFIED
+        """
+        # Índice de links para lookup rápido
+        linked_ids: dict[str, str] = {}  # event_id → link_type
+        for lk in (event_links or []):
+            link_type = lk.link_type if hasattr(lk, "link_type") else lk.get("link_type", "")
+            linked_ids[lk.event_id_a if hasattr(lk, "event_id_a") else lk.get("event_id_a")] = link_type
+            linked_ids[lk.event_id_b if hasattr(lk, "event_id_b") else lk.get("event_id_b")] = link_type
+
+        for event in events:
+            event_type = event["event_type"]
+            link_type  = linked_ids.get(event["id"])
+
+            if event_type == EventType.TRANSACTION.value or event_type == EventType.INVOICE.value:
+                self._classify_transaction(event, link_type)
+            elif event_type == EventType.DIVIDEND.value:
+                self._classify_dividend(event, link_type)
+            elif event_type == EventType.POSITION.value:
+                event["metadata"]["macro_categoria"] = "INVESTIMENTOS"
+                event["metadata"]["natureza"]        = "PATRIMONIAL"
+            elif event_type == EventType.PORTFOLIO_EVO.value:
+                event["metadata"]["macro_categoria"] = "INVESTIMENTOS"
+                event["metadata"]["natureza"]        = "EVOLUCAO_PATRIMONIAL"
+
+            event["pipeline_status"] = PipelineStatus.CLASSIFIED.value
+
+        classified = sum(1 for e in events if e["pipeline_status"] == PipelineStatus.CLASSIFIED.value)
+        logger.info(f"[Classifier] {classified} eventos classificados")
+        return events
+
+    def _classify_transaction(
+        self,
+        event: RawFinancialEvent,
+        link_type: str | None,
+    ) -> None:
+        """Classifica uma TRANSACTION ou INVOICE com prioridade estrita de regras."""
+        meta = event.get("metadata", {})
+        desc = meta.get("descricao_normalizada") or meta.get("descricao_original", "")
+
+        import json
+        import re
+        from models.core import ClassificationSource
+
+        # PRIORITY 1: NEGATIVE_MATCH
+        # PRIORITY 2: RECONCILIATION
+        # PRIORITY 3: TICKER_TRANSLATION
+        # PRIORITY 4: DIVIDEND_TRANSLATION
+        # PRIORITY 5: CATEGORIZATION
+
+        # Context boost a partir de event_links (Isso engloba RECONCILIATION rules já consolidadas)
+        if link_type == "DIVIDEND_CREDIT":
+            event["metadata"]["macro_categoria"] = "RENDA_PASSIVA"
+            event["metadata"]["sub_categoria"]   = "DIVIDENDO"
+            event["metadata"]["natureza"]        = "RECEITA"
+            event["metadata"]["classificacao_fonte"] = ClassificationSource.RULE.value
+            return
+
+        if link_type == "INVOICE_PAYMENT":
+            event["metadata"]["macro_categoria"] = "FINANCEIRO"
+            event["metadata"]["sub_categoria"]   = "PAGAMENTO_CARTAO"
+            event["metadata"]["natureza"]        = "DESPESA"
+            event["metadata"]["classificacao_fonte"] = ClassificationSource.RULE.value
+            return
+
+        if link_type == "INVESTMENT_PURCHASE":
+            event["metadata"]["macro_categoria"] = "INVESTIMENTOS"
+            event["metadata"]["sub_categoria"]   = "COMPRA_ATIVO"
+            event["metadata"]["natureza"]        = "DESPESA"
+            event["metadata"]["classificacao_fonte"] = ClassificationSource.RULE.value
+            return
+
+        # PRIORITY 5: CATEGORIZATION rules
+        if desc:
+            for rule in self._active_rules:
+                if rule["rule_type"] == "CATEGORIZATION":
+                    try:
+                        pattern_obj = json.loads(rule["pattern"])
+                        keyword = pattern_obj.get("description_matches", "")
+                        if keyword and keyword.upper() in desc.upper():
+                            action_obj = json.loads(rule["action"])
+                            event["metadata"]["macro_categoria"] = action_obj.get("macro_categoria", "OUTROS")
+                            event["metadata"]["sub_categoria"]   = action_obj.get("sub_categoria", "INDEFINIDO")
+                            event["metadata"]["natureza"]        = action_obj.get("natureza", "INDEFINIDO")
+                            event["metadata"]["classificacao_fonte"] = ClassificationSource.RULE.value
+                            event["metadata"]["applied_rule_id"] = rule["id"]
+                            event["metadata"]["confidence_score"] = rule["confidence_score"]
+                            return
+                    except Exception as e:
+                        logger.warning(f"[Classifier] Erro ao aplicar regra {rule['id']}: {e}")
+
+        # PRIORITY 6: Heurísticas SmartCategorizer
+        if self._categorizer and desc:
+            try:
+                cat_result = self._categorizer.categorize(desc)
+                event["metadata"]["macro_categoria"] = cat_result.get("macro_categoria", "OUTROS")
+                event["metadata"]["sub_categoria"]   = cat_result.get("sub_categoria", "INDEFINIDO")
+                event["metadata"]["natureza"]        = cat_result.get("natureza", "INDEFINIDO")
+                event["metadata"]["classificacao_fonte"] = ClassificationSource.HEURISTIC.value
+            except Exception as e:
+                logger.warning(f"[Classifier] SmartCategorizer error: {e}")
+                self._set_pending(event)
+        else:
+            # PRIORITY 7: Fallback
+            self._set_pending(event)
+
+    def _classify_dividend(
+        self,
+        event: RawFinancialEvent,
+        link_type: str | None,
+    ) -> None:
+        """Classifica um DIVIDEND."""
+        from models.core import ClassificationSource
+        event["metadata"]["macro_categoria"] = "RENDA_PASSIVA"
+        event["metadata"]["sub_categoria"]   = event["metadata"].get("tipo_evento", "DIVIDENDO")
+        event["metadata"]["natureza"]        = "RECEITA"
+        event["metadata"]["classificacao_fonte"] = ClassificationSource.IMPORT.value
+
+    @staticmethod
+    def _set_pending(event: RawFinancialEvent) -> None:
+        from models.core import ClassificationSource
+        event["metadata"]["macro_categoria"] = "OUTROS"
+        event["metadata"]["sub_categoria"]   = "INDEFINIDO"
+        event["metadata"]["natureza"]        = "INDEFINIDO"
+        event["metadata"]["classificacao_fonte"] = ClassificationSource.IMPORT.value
+
+====================
+FILE: etl/reconciler.py
+====================
+"""
+etl/reconciler.py — EventReconciler
+
+Identifica ligações semânticas entre eventos de fontes diferentes:
+  - DIVIDEND_CREDIT: dividendo MyProfit ↔ crédito em conta Nubank
+  - INVOICE_PAYMENT: pagamento de fatura Nubank ↔ débito em conta Nubank
+  - INVESTMENT_PURCHASE: compra MyProfit ↔ débito em conta Nubank
+
+Produz event_links prontos para persistência.
+"""
+from __future__ import annotations
+
+import logging
+import re
+import uuid
+from datetime import date, timedelta
+from typing import NamedTuple
+
+from models.core import EventType, RawFinancialEvent
+
+logger = logging.getLogger(__name__)
+
+# Janela temporal para fuzzy matching (dias)
+FUZZY_DATE_WINDOW = 3
+# Tolerância percentual no valor
+FUZZY_AMOUNT_TOLERANCE = 0.01  # 1%
+
+# Palavras-chave que indicam crédito de dividendo na conta Nubank
+_DIVIDEND_KEYWORDS = re.compile(
+    r"(rendimento|dividendo|provento|jscp|jcp|fii|fundo\s+imobil)",
+    re.IGNORECASE,
+)
+
+# Palavras-chave que indicam pagamento de fatura
+_INVOICE_PAYMENT_KEYWORDS = re.compile(
+    r"(pagamento\s+nubank|fatura\s+nubank|pg\s+nubank|nubank\s+cartao)",
+    re.IGNORECASE,
+)
+
+
+class EventLink(NamedTuple):
+    """Estrutura de um link entre dois eventos cross-source."""
+    id: str
+    event_id_a: str          # raw_events.id
+    event_id_b: str          # raw_events.id
+    link_type: str           # DIVIDEND_CREDIT | INVOICE_PAYMENT | INVESTMENT_PURCHASE | SAME_EVENT
+    confidence: float        # 0.0 a 1.0
+    match_method: str        # EXACT | CROSS_FP | FUZZY | MANUAL | HINT
+    notes: str | None = None
+
+
+class EventReconciler:
+    """
+    Cruza eventos de fontes diferentes e produz event_links.
+
+    Casos suportados:
+      A) DIVIDEND_CREDIT: dividendo MyProfit ↔ crédito Nubank conta
+      B) INVOICE_PAYMENT: lançamento fatura ↔ pagamento em conta
+      C) SAME_EVENT: cross_fingerprint exato entre fontes distintas
+    """
+
+    def reconcile(
+        self,
+        events: list[RawFinancialEvent],
+        existing_links: list[dict] | None = None,
+    ) -> list[EventLink]:
+        """
+        Recebe todos os eventos (de todas as fontes) do import atual
+        e retorna uma lista de EventLink detectados.
+
+        Args:
+            events: Todos os RawFinancialEvent normalizados e matchados.
+            existing_links: Links já existentes no DB (para evitar duplicatas de links).
+
+        Returns:
+            list[EventLink] prontos para inserção em event_links.
+        """
+        links: list[EventLink] = []
+        existing_link_pairs: set[tuple[str, str]] = {
+            (lk["event_id_a"], lk["event_id_b"])
+            for lk in (existing_links or [])
+        }
+
+        # Separa por tipo e fonte para cruzamento eficiente
+        dividends_myprofit = [
+            e for e in events
+            if e["event_type"] == EventType.DIVIDEND.value
+            and e["source"] == "MYPROFIT"
+        ]
+        transactions_nubank_conta = [
+            e for e in events
+            if e["event_type"] == EventType.TRANSACTION.value
+            and e["source"] in ("NUBANK_CONTA", "NUBANK", "PIERRE")
+        ]
+        invoices_nubank_fatura = [
+            e for e in events
+            if e["event_type"] == EventType.INVOICE.value
+            and e["source"] == "NUBANK_FATURA"
+        ]
+
+        # ── Caso A: DIVIDEND_CREDIT ──────────────────────────────────
+        links += self._match_dividend_credits(
+            dividends_myprofit, transactions_nubank_conta, existing_link_pairs
+        )
+
+        # ── Caso B: INVOICE_PAYMENT ──────────────────────────────────
+        links += self._match_invoice_payments(
+            invoices_nubank_fatura, transactions_nubank_conta, existing_link_pairs
+        )
+
+        # ── Caso C: SAME_EVENT (cross_fp exato, fontes diferentes) ──
+        links += self._match_same_events_cross_fp(events, existing_link_pairs)
+
+        logger.info(
+            f"[Reconciler] {len(links)} links criados "
+            f"(A_div={len([l for l in links if l.link_type == 'DIVIDEND_CREDIT'])} "
+            f"B_inv={len([l for l in links if l.link_type == 'INVOICE_PAYMENT'])} "
+            f"C_same={len([l for l in links if l.link_type == 'SAME_EVENT'])})"
+        )
+        return links
+
+    def _match_dividend_credits(
+        self,
+        dividends: list[RawFinancialEvent],
+        transactions: list[RawFinancialEvent],
+        existing_pairs: set[tuple[str, str]],
+    ) -> list[EventLink]:
+        """
+        Cruza dividendos MyProfit com créditos bancários Nubank.
+        Match: mesmo ticker (na descrição) + data ±3 dias + valor ±1%.
+        """
+        links: list[EventLink] = []
+
+        for div in dividends:
+            ticker = div.get("metadata", {}).get("ticker", "").upper()
+            if not ticker:
+                continue
+            div_date   = div["event_date"]
+            div_amount = abs(div["amount_cents"] or 0)
+
+            for tx in transactions:
+                if not tx["event_date"] or not tx["amount_cents"]:
+                    continue
+                tx_desc = (tx.get("metadata", {}).get("descricao_original", "") or "").lower()
+
+                # Ticker na descrição da transação
+                if ticker.lower() not in tx_desc and not _DIVIDEND_KEYWORDS.search(tx_desc):
+                    continue
+
+                # Janela de datas
+                if abs((tx["event_date"] - div_date).days) > FUZZY_DATE_WINDOW:
+                    continue
+
+                # Valor aproximado (crédito → positivo)
+                tx_amount = abs(tx["amount_cents"])
+                if div_amount == 0 or abs(tx_amount - div_amount) / div_amount > FUZZY_AMOUNT_TOLERANCE:
+                    continue
+
+                # Determina confiança
+                is_exact_date   = tx["event_date"] == div_date
+                is_ticker_exact = ticker.lower() in tx_desc
+                confidence = 1.0 if (is_exact_date and is_ticker_exact) else 0.75
+                method     = "CROSS_FP" if is_exact_date else "FUZZY"
+
+                pair = (div["id"], tx["id"])
+                if pair not in existing_pairs:
+                    links.append(EventLink(
+                        id=str(uuid.uuid4()),
+                        event_id_a=div["id"],
+                        event_id_b=tx["id"],
+                        link_type="DIVIDEND_CREDIT",
+                        confidence=confidence,
+                        match_method=method,
+                        notes=f"ticker={ticker} div_date={div_date} tx_date={tx['event_date']} "
+                              f"div_amount={div_amount} tx_amount={tx_amount}",
+                    ))
+                    existing_pairs.add(pair)
+                    logger.debug(f"DIVIDEND_CREDIT: {ticker} {div_date} → {tx['id'][:8]}")
+
+        return links
+
+    def _match_invoice_payments(
+        self,
+        invoices: list[RawFinancialEvent],
+        transactions: list[RawFinancialEvent],
+        existing_pairs: set[tuple[str, str]],
+    ) -> list[EventLink]:
+        """
+        Tenta casar lançamentos de fatura com seu pagamento em conta.
+        Heurística: valor total da fatura ≈ débito na conta + descrição 'nubank'.
+        
+        Nota: faturas têm N lançamentos, mas o pagamento é um único débito.
+        Aqui agrupamos o total da fatura por mês e cruzamos com o pagamento.
+        """
+        links: list[EventLink] = []
+        if not invoices or not transactions:
+            return links
+
+        # Agrupa lançamentos de fatura por mês (reference_month ou event_date.month)
+        from collections import defaultdict
+        fatura_by_month: dict[tuple, list] = defaultdict(list)
+        for inv in invoices:
+            if inv["event_date"]:
+                key = (inv["event_date"].year, inv["event_date"].month)
+                fatura_by_month[key].append(inv)
+
+        for (year, month), inv_list in fatura_by_month.items():
+            total_fatura = sum(abs(inv["amount_cents"] or 0) for inv in inv_list)
+            if total_fatura == 0:
+                continue
+
+            # Busca pagamento de fatura nas transações (±3 dias do vencimento usual)
+            for tx in transactions:
+                if not tx["event_date"] or not tx["amount_cents"]:
+                    continue
+                tx_desc = (tx.get("metadata", {}).get("descricao_original", "") or "").lower()
+                if not _INVOICE_PAYMENT_KEYWORDS.search(tx_desc):
+                    continue
+
+                tx_amount = abs(tx["amount_cents"])
+                if total_fatura == 0 or abs(tx_amount - total_fatura) / total_fatura > 0.02:
+                    continue
+
+                # Cria um link para cada lançamento da fatura → pagamento
+                for inv in inv_list:
+                    pair = (inv["id"], tx["id"])
+                    if pair not in existing_pairs:
+                        links.append(EventLink(
+                            id=str(uuid.uuid4()),
+                            event_id_a=inv["id"],
+                            event_id_b=tx["id"],
+                            link_type="INVOICE_PAYMENT",
+                            confidence=0.85,
+                            match_method="FUZZY",
+                            notes=f"fatura_month={year}-{month:02d} total={total_fatura} tx={tx_amount}",
+                        ))
+                        existing_pairs.add(pair)
+
+        return links
+
+    def _match_same_events_cross_fp(
+        self,
+        events: list[RawFinancialEvent],
+        existing_pairs: set[tuple[str, str]],
+    ) -> list[EventLink]:
+        """
+        Detecta eventos com cross_fingerprint idêntico mas fontes diferentes.
+        Indica o mesmo evento reportado por duas fontes distintas.
+        """
+        links: list[EventLink] = []
+        fp_map: dict[str, RawFinancialEvent] = {}
+
+        for event in events:
+            cross_fp = event.get("cross_fingerprint")
+            if not cross_fp:
+                continue
+
+            if cross_fp in fp_map:
+                other = fp_map[cross_fp]
+                # Só cria link se fontes são realmente diferentes
+                if event["source"] != other["source"]:
+                    pair = (other["id"], event["id"])
+                    if pair not in existing_pairs:
+                        links.append(EventLink(
+                            id=str(uuid.uuid4()),
+                            event_id_a=other["id"],
+                            event_id_b=event["id"],
+                            link_type="SAME_EVENT",
+                            confidence=1.0,
+                            match_method="CROSS_FP",
+                            notes=f"cross_fp={cross_fp[:16]}… {other['source']} ↔ {event['source']}",
+                        ))
+                        existing_pairs.add(pair)
+            else:
+                fp_map[cross_fp] = event
+
+        return links

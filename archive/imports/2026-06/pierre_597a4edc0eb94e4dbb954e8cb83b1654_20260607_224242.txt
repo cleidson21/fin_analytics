@@ -1,0 +1,2 @@
+n°;Data;Descrição;Categoria;Conta;Valor
+1066;07/06/2026;Resgate RDB;Investimentos;Nubank;+R$ 1.460,00

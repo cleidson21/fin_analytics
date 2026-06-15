@@ -1,0 +1,2 @@
+Data;Descrição;Categoria;Conta;Valor
+10/06/2026;Transferência enviada|Cleidson Ramos de Carvalho;Entre contas;Nubank;R$ 14,00
