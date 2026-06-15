@@ -11,7 +11,7 @@ PRAGMA foreign_keys=ON;
 -- One record per file import attempt.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS import_runs (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     user_id         TEXT NOT NULL REFERENCES users(id),
     source          TEXT NOT NULL CHECK(source IN (
                         'NUBANK_CSV',
@@ -49,7 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_import_runs_status ON import_runs(status);
 -- Raw rows from imported files, stored for debug/re-processing.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS import_artifacts (
-    id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id          TEXT PRIMARY KEY,
     run_id      TEXT NOT NULL REFERENCES import_runs(id) ON DELETE CASCADE,
     row_number  INTEGER NOT NULL,
     raw_data    TEXT NOT NULL,              -- JSON blob of the original row
@@ -67,7 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_import_artifacts_run ON import_artifacts(run_id);
 -- INSERT-only table, never UPDATE or DELETE.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id          TEXT PRIMARY KEY,
     user_id     TEXT REFERENCES users(id),
     action      TEXT NOT NULL CHECK(action IN (
                     'CREATE','UPDATE','DELETE','IMPORT','CLASSIFY','CORRECT',
@@ -94,7 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_date   ON audit_logs(created_at);
 -- The application reads the latest correction to determine effective state.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS data_corrections (
-    id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id                  TEXT PRIMARY KEY,
     user_id             TEXT NOT NULL REFERENCES users(id),
     entity_type         TEXT NOT NULL,      -- 'transaction', 'invoice_item'
     entity_id           TEXT NOT NULL,

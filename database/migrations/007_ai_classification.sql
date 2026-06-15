@@ -1,7 +1,6 @@
 -- ==========================================================================
 -- MIGRATION 007 — AI & CLASSIFICATION ENGINE
 -- FinAnalytics V3 | Context: AI (Classification Pipeline)
--- Replaces Pierre. 4-layer chain: Regex → MerchantMap → Embeddings → LLM
 -- ==========================================================================
 
 PRAGMA foreign_keys=ON;
@@ -12,7 +11,7 @@ PRAGMA foreign_keys=ON;
 -- match_type: REGEX = pattern match; EXACT = normalized string exact match
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS classification_rules (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     match_type      TEXT NOT NULL CHECK(match_type IN ('REGEX','EXACT','PREFIX','CONTAINS')),
     pattern         TEXT NOT NULL,              -- the regex or string to match against description
     merchant_id     TEXT REFERENCES merchants(id),
@@ -31,10 +30,9 @@ CREATE INDEX IF NOT EXISTS idx_rules_type      ON classification_rules(match_typ
 -- --------------------------------------------------------------------------
 -- LEARNING EXAMPLES
 -- Layer 3: Vector search corpus. Embeddings stored as JSON array of floats.
--- (SQLite doesn't have pgvector; we store as JSON blob and do cosine sim in Python)
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS learning_examples (
-    id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id                  TEXT PRIMARY KEY,
     original_description TEXT NOT NULL,         -- raw bank string
     normalized_input    TEXT NOT NULL,          -- cleaned version used for embedding
     merchant_id         TEXT REFERENCES merchants(id),
@@ -56,7 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_learning_examples_category  ON learning_examples(
 -- Versioned prompt templates for LLM classification (Layer 4)
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS ai_prompts (
-    id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL UNIQUE,       -- 'classify_transaction', 'extract_merchant', etc.
     description TEXT,
     template    TEXT NOT NULL,              -- Jinja2 / f-string template
@@ -71,7 +69,7 @@ CREATE TABLE IF NOT EXISTS ai_prompts (
 -- Log of every LLM call made by the classification engine
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS ai_runs (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     prompt_id       TEXT REFERENCES ai_prompts(id),
     input_text      TEXT NOT NULL,
     output_json     TEXT,                   -- raw JSON response from LLM
@@ -97,7 +95,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_runs_status ON ai_runs(status);
 -- This automatically generates a new learning_example (handled by app layer).
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS classification_feedback (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     user_id         TEXT NOT NULL REFERENCES users(id),
     entity_type     TEXT NOT NULL,          -- 'transaction', 'invoice_item'
     entity_id       TEXT NOT NULL,
@@ -118,26 +116,21 @@ CREATE INDEX IF NOT EXISTS idx_feedback_user   ON classification_feedback(user_i
 -- SEED: Bootstrap classification rules from Pierre data analysis
 -- --------------------------------------------------------------------------
 INSERT OR IGNORE INTO classification_rules (id, match_type, pattern, category_id, priority, source) VALUES
-    -- PIX / Transfers
     ('rule-pix-out-001',   'REGEX',    '(?i)Transferência enviada pelo Pix',   'cat-xfer-000001', 10, 'SYSTEM'),
     ('rule-pix-in-001',    'REGEX',    '(?i)Transferência (R|r)ecebida',       'cat-xfer-000001', 10, 'SYSTEM'),
     ('rule-own-xfer-001',  'REGEX',    '(?i)Entre contas|mesma titularidade',  'cat-xfer-int-0001',5, 'SYSTEM'),
-    -- Investments
     ('rule-rdb-apply-001', 'REGEX',    '(?i)Aplicação RDB|Aplicação - Tesouro','cat-inv-000001',   5, 'SYSTEM'),
     ('rule-rdb-resgt-001', 'REGEX',    '(?i)Resgate RDB',                      'cat-invest-inc-01',5, 'SYSTEM'),
     ('rule-nuinvest-001',  'REGEX',    '(?i)Transferência de saldo NuInvest',  'cat-invest-inc-01',5, 'SYSTEM'),
     ('rule-irrf-001',      'REGEX',    '(?i)IRRF sobre resgate',               'cat-tax-000001',   5, 'SYSTEM'),
     ('rule-fatura-001',    'REGEX',    '(?i)Pagamento de fatura',              'cat-xfer-int-0001',5, 'SYSTEM'),
     ('rule-stock-buy-001', 'REGEX',    '(?i)Compra de Renda Variável',         'cat-inv-000001',   5, 'SYSTEM'),
-    -- Utilities
     ('rule-energy-001',    'CONTAINS', 'NEOENERGIA',                           'cat-house-el-0001',20,'SYSTEM'),
     ('rule-energy-002',    'CONTAINS', 'COELBA',                               'cat-house-el-0001',20,'SYSTEM'),
     ('rule-telecom-001',   'REGEX',    '(?i)^Multi$',                          'cat-house-tel-001',20,'SYSTEM'),
-    -- Food & Streaming
     ('rule-spotify-001',   'CONTAINS', 'Spotify',                              'cat-svc-strea-001',20,'SYSTEM'),
     ('rule-shopee-001',    'CONTAINS', 'Shopee',                               'cat-shop-on-0001', 20,'SYSTEM'),
     ('rule-mercadol-001',  'CONTAINS', 'Mercadolivre',                         'cat-shop-on-0001', 20,'SYSTEM'),
     ('rule-gambling-001',  'REGEX',    '(?i)KAIZEN GAMING|Order O-',           'cat-gamb-000001',  15,'SYSTEM'),
-    -- Taxes
     ('rule-iof-001',       'CONTAINS', 'IOF de compra',                        'cat-tax-000001',   10,'SYSTEM'),
     ('rule-natura-001',    'CONTAINS', 'NATURA',                               'cat-shop-on-0001', 20,'SYSTEM');

@@ -1,6 +1,7 @@
 -- ==========================================================================
 -- MIGRATION 001 — CORE IDENTITY
 -- FinAnalytics V3 | Context: Identity & Banking
+-- CORRECTIONS: UUID generation removed (backend responsibility)
 -- ==========================================================================
 
 PRAGMA journal_mode=WAL;
@@ -10,7 +11,7 @@ PRAGMA foreign_keys=ON;
 -- USERS
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
-    id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id          TEXT PRIMARY KEY,
     email       TEXT NOT NULL UNIQUE,
     name        TEXT NOT NULL,
     created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Nubank (0260), Banco do Brasil (0001), B3/NuInvest, CAIXA (0104), etc.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS institutions (
-    id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id          TEXT PRIMARY KEY,
     code        TEXT NOT NULL UNIQUE,   -- BACEN ISPB code or mnemonic (e.g. '0260', 'B3', 'NUINVEST')
     name        TEXT NOT NULL,
     short_name  TEXT,
@@ -36,7 +37,7 @@ CREATE TABLE IF NOT EXISTS institutions (
 -- One user may have multiple accounts: checking, brokerage, credit-card holder
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS accounts (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     institution_id  TEXT NOT NULL REFERENCES institutions(id),
     name            TEXT NOT NULL,

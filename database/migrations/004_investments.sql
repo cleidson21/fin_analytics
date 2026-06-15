@@ -1,8 +1,6 @@
 -- ==========================================================================
 -- MIGRATION 004 — INVESTMENTS MODULE
 -- FinAnalytics V3 | Context: Investments (Wealth)
--- Covers: assets, broker notes, trades, corporate actions, dividends
--- Principle: price average is COMPUTED from trades, never stored directly.
 -- ==========================================================================
 
 PRAGMA foreign_keys=ON;
@@ -12,7 +10,7 @@ PRAGMA foreign_keys=ON;
 -- Master catalog of all investable instruments
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS assets (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     ticker          TEXT NOT NULL UNIQUE,   -- BBAS3, MXRF11, IVV, BTC
     name            TEXT,                   -- full name: "Banco do Brasil S.A."
     asset_class     TEXT NOT NULL CHECK(asset_class IN (
@@ -38,22 +36,20 @@ CREATE INDEX IF NOT EXISTS idx_assets_asset_class ON assets(asset_class);
 
 -- --------------------------------------------------------------------------
 -- BROKER NOTES (Notas de Corretagem)
--- The official settlement document from B3.
--- One note can contain multiple trades.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS broker_notes (
-    id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id                  TEXT PRIMARY KEY,
     account_id          TEXT NOT NULL REFERENCES accounts(id),
     note_number         TEXT NOT NULL,          -- sequential number on document
     note_date           TEXT NOT NULL,          -- trade date (D+0), ISO 8601
     settlement_date     TEXT,                   -- D+2 settlement date
-    brokerage_fee       REAL NOT NULL DEFAULT 0,    -- taxa de corretagem
-    clearing_fee        REAL NOT NULL DEFAULT 0,    -- taxa de liquidação CBLC
-    registration_fee    REAL NOT NULL DEFAULT 0,    -- taxa de registro
-    iss_tax             REAL NOT NULL DEFAULT 0,    -- ISS sobre corretagem
-    irrf_tax            REAL NOT NULL DEFAULT 0,    -- IRRF (day-trade only)
-    other_fees          REAL NOT NULL DEFAULT 0,
-    total_fees          REAL GENERATED ALWAYS AS (
+    brokerage_fee       INTEGER NOT NULL DEFAULT 0,    -- taxa de corretagem (centavos)
+    clearing_fee        INTEGER NOT NULL DEFAULT 0,    -- taxa de liquidação CBLC (centavos)
+    registration_fee    INTEGER NOT NULL DEFAULT 0,    -- taxa de registro (centavos)
+    iss_tax             INTEGER NOT NULL DEFAULT 0,    -- ISS (centavos)
+    irrf_tax            INTEGER NOT NULL DEFAULT 0,    -- IRRF (centavos)
+    other_fees          INTEGER NOT NULL DEFAULT 0,    -- centavos
+    total_fees          INTEGER GENERATED ALWAYS AS (
                             brokerage_fee + clearing_fee + registration_fee + iss_tax + irrf_tax + other_fees
                         ) STORED,
     source              TEXT NOT NULL DEFAULT 'PDF' CHECK(source IN ('PDF','B3_API','MANUAL','MYPROFIT_IMPORT')),
@@ -68,24 +64,22 @@ CREATE INDEX IF NOT EXISTS idx_broker_notes_date    ON broker_notes(note_date);
 
 -- --------------------------------------------------------------------------
 -- TRADES
--- Individual buy/sell executions within a broker note.
--- quantity uses REAL to support fractional shares (IVV=0.88, etc.)
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS trades (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     broker_note_id  TEXT REFERENCES broker_notes(id) ON DELETE SET NULL,  -- NULL = manual/legacy entry
     asset_id        TEXT NOT NULL REFERENCES assets(id),
     account_id      TEXT NOT NULL REFERENCES accounts(id),
     type            TEXT NOT NULL CHECK(type IN ('BUY','SELL')),
     trade_date      TEXT NOT NULL,              -- ISO 8601
     quantity        REAL NOT NULL CHECK(quantity > 0),
-    unit_price      REAL NOT NULL CHECK(unit_price >= 0),
-    gross_value     REAL GENERATED ALWAYS AS (quantity * unit_price) STORED,
-    fees_allocated  REAL NOT NULL DEFAULT 0,    -- prorated share of broker_note total fees
-    net_value       REAL GENERATED ALWAYS AS (
+    unit_price      INTEGER NOT NULL CHECK(unit_price >= 0),  -- centavos
+    gross_value     INTEGER GENERATED ALWAYS AS (CAST(quantity * unit_price AS INTEGER)) STORED,
+    fees_allocated  INTEGER NOT NULL DEFAULT 0,    -- prorated share of fees (centavos)
+    net_value       INTEGER GENERATED ALWAYS AS (
                         CASE WHEN type = 'BUY'
-                             THEN (quantity * unit_price) + fees_allocated
-                             ELSE (quantity * unit_price) - fees_allocated
+                             THEN CAST(quantity * unit_price AS INTEGER) + fees_allocated
+                             ELSE CAST(quantity * unit_price AS INTEGER) - fees_allocated
                         END
                     ) STORED,
     source          TEXT NOT NULL DEFAULT 'BROKER_NOTE' CHECK(source IN (
@@ -102,11 +96,9 @@ CREATE INDEX IF NOT EXISTS idx_trades_type      ON trades(type);
 
 -- --------------------------------------------------------------------------
 -- CORPORATE ACTIONS
--- Splits, reverse splits, bonifications that adjust historical quantities/prices.
--- CRITICAL: position engine must apply these when rebuilding cost basis.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS corporate_actions (
-    id          TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id          TEXT PRIMARY KEY,
     asset_id    TEXT NOT NULL REFERENCES assets(id),
     type        TEXT NOT NULL CHECK(type IN (
                     'SPLIT',            -- desdobramento: qty * ratio, price / ratio
@@ -126,11 +118,9 @@ CREATE INDEX IF NOT EXISTS idx_corporate_actions_ex_date ON corporate_actions(ex
 
 -- --------------------------------------------------------------------------
 -- DIVIDENDS
--- Income events: dividends, JCP, amortization, rent (FII)
--- amount = TOTAL received (quantity_held * value_per_share), net of tax
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS dividends (
-    id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    id              TEXT PRIMARY KEY,
     asset_id        TEXT NOT NULL REFERENCES assets(id),
     account_id      TEXT NOT NULL REFERENCES accounts(id),
     type            TEXT NOT NULL CHECK(type IN (
@@ -140,13 +130,14 @@ CREATE TABLE IF NOT EXISTS dividends (
                         'FII_RENT',         -- rendimento mensal de FII (isenção PF)
                         'FOREIGN_DIVIDEND'  -- dividendo de BDR/ação US
                     )),
+    currency        TEXT NOT NULL DEFAULT 'BRL',
     ex_date         TEXT NOT NULL,          -- data COM (last day to be entitled)
     payment_date    TEXT NOT NULL,          -- data do pagamento efetivo
     quantity_held   REAL NOT NULL,          -- shares held on ex_date
-    value_per_share REAL NOT NULL,          -- R$ per share
-    gross_amount    REAL NOT NULL,          -- = quantity_held * value_per_share
-    irrf_tax        REAL NOT NULL DEFAULT 0, -- 15% on JCP
-    net_amount      REAL GENERATED ALWAYS AS (gross_amount - irrf_tax) STORED,
+    value_per_share INTEGER NOT NULL,       -- centavos per share
+    gross_amount    INTEGER NOT NULL,       -- centavos
+    irrf_tax        INTEGER NOT NULL DEFAULT 0, -- centavos
+    net_amount      INTEGER GENERATED ALWAYS AS (gross_amount - irrf_tax) STORED,
     transaction_id  TEXT REFERENCES transactions(id), -- linked cashflow IN if credited to account
     source          TEXT NOT NULL DEFAULT 'BROKER_NOTE' CHECK(source IN (
                         'BROKER_NOTE','MYPROFIT_IMPORT','MANUAL','B3_API'
@@ -163,37 +154,31 @@ CREATE INDEX IF NOT EXISTS idx_dividends_payment_date ON dividends(payment_date)
 -- --------------------------------------------------------------------------
 -- SEED: Known assets from arquivos_base
 -- --------------------------------------------------------------------------
-INSERT OR IGNORE INTO assets (ticker, name, asset_class, sector, yfinance_ticker) VALUES
-    -- FIIs (Papeis)
-    ('MXRF11', 'Maxi Renda FII',              'FII', 'Papeis',          'MXRF11.SA'),
-    ('KNCR11', 'Kinea Rendimentos Imob. FII', 'FII', 'Papeis',          'KNCR11.SA'),
-    ('RZAK11', 'Riza Akin FII',               'FII', 'Papeis',          'RZAK11.SA'),
-    ('RBRY11', 'RBR High Grade FII',          'FII', 'Papeis',          'RBRY11.SA'),
-    ('BTHF11', 'BTG Pactual High Yield FII',  'FII', 'Fundo de Fundos', 'BTHF11.SA'),
-    -- FIIs (Misto)
-    ('HGRU11', 'CSHG Renda Urbana FII',       'FII', 'Misto',           'HGRU11.SA'),
-    ('XPML11', 'XP Malls FII',                'FII', 'Shoppings',       'XPML11.SA'),
-    ('JSRE11', 'JS Real Estate FII',          'FII', 'Misto',           'JSRE11.SA'),
-    ('TRXF11', 'TRX Real Estate FII',         'FII', 'Misto',           'TRXF11.SA'),
-    -- Ações BR
-    ('PRIO3', 'Petro Rio S.A.',               'STOCK', 'Petróleo',      'PRIO3.SA'),
-    ('VALE3', 'Vale S.A.',                    'STOCK', 'Materiais Básicos','VALE3.SA'),
-    ('BBSE3', 'BB Seguridade S.A.',           'STOCK', 'Serviços Financeiros','BBSE3.SA'),
-    ('BBAS3', 'Banco do Brasil S.A.',         'STOCK', 'Serviços Financeiros','BBAS3.SA'),
-    ('KLBN4', 'Klabin S.A.',                  'STOCK', 'Materiais Básicos','KLBN4.SA'),
-    ('TAEE11', 'Transmissora Aliança de Energia Elétrica','STOCK','Utilidade Pública','TAEE11.SA'),
-    ('GGBR4', 'Gerdau S.A.',                  'STOCK', 'Materiais Básicos','GGBR4.SA'),
-    -- BDRs / ETFs US
-    ('IVV',   'iShares Core S&P 500 ETF',     'BDR',  'Outros',         'IVV'),
-    ('AGG',   'iShares Core US Aggregate Bond','BDR', 'Outros',          'AGG'),
-    ('VXUS',  'Vanguard Total International', 'BDR',  'Outros',          'VXUS'),
-    ('MORT',  'VanEck Mortgage REIT Income',  'BDR',  'Outros',          'MORT'),
-    ('BABA',  'Alibaba Group Holding Ltd.',   'BDR',  'Diversos',        'BABA'),
-    -- Renda Fixa
-    ('RDB-100-CDI', 'RDB Pós 100% CDI',       'FIXED_INCOME', 'RDB', NULL),
-    ('RDB-120-CDI', 'RDB Pós 120% CDI',       'FIXED_INCOME', 'RDB', NULL),
-    ('TESOURO-SELIC-2031', 'Tesouro Selic 2031','FIXED_INCOME','Tesouro Direto', NULL),
-    ('TESOURO-SELIC-2029', 'Tesouro Selic 2029','FIXED_INCOME','Tesouro Direto', NULL),
-    ('TESOURO-IPCA-2035',  'Tesouro IPCA+ 2035','FIXED_INCOME','Tesouro Direto', NULL),
-    -- Cripto
-    ('BTC',   'Bitcoin',                      'CRYPTO','Criptomoeda',    'BTC-USD');
+INSERT OR IGNORE INTO assets (id, ticker, name, asset_class, sector, yfinance_ticker) VALUES
+    ('asset-001', 'MXRF11', 'Maxi Renda FII',              'FII', 'Papeis',          'MXRF11.SA'),
+    ('asset-002', 'KNCR11', 'Kinea Rendimentos Imob. FII', 'FII', 'Papeis',          'KNCR11.SA'),
+    ('asset-003', 'RZAK11', 'Riza Akin FII',               'FII', 'Papeis',          'RZAK11.SA'),
+    ('asset-004', 'RBRY11', 'RBR High Grade FII',          'FII', 'Papeis',          'RBRY11.SA'),
+    ('asset-005', 'BTHF11', 'BTG Pactual High Yield FII',  'FII', 'Fundo de Fundos', 'BTHF11.SA'),
+    ('asset-006', 'HGRU11', 'CSHG Renda Urbana FII',       'FII', 'Misto',           'HGRU11.SA'),
+    ('asset-007', 'XPML11', 'XP Malls FII',                'FII', 'Shoppings',       'XPML11.SA'),
+    ('asset-008', 'JSRE11', 'JS Real Estate FII',          'FII', 'Misto',           'JSRE11.SA'),
+    ('asset-009', 'TRXF11', 'TRX Real Estate FII',         'FII', 'Misto',           'TRXF11.SA'),
+    ('asset-010', 'PRIO3', 'Petro Rio S.A.',               'STOCK', 'Petróleo',      'PRIO3.SA'),
+    ('asset-011', 'VALE3', 'Vale S.A.',                    'STOCK', 'Materiais Básicos','VALE3.SA'),
+    ('asset-012', 'BBSE3', 'BB Seguridade S.A.',           'STOCK', 'Serviços Financeiros','BBSE3.SA'),
+    ('asset-013', 'BBAS3', 'Banco do Brasil S.A.',         'STOCK', 'Serviços Financeiros','BBAS3.SA'),
+    ('asset-014', 'KLBN4', 'Klabin S.A.',                  'STOCK', 'Materiais Básicos','KLBN4.SA'),
+    ('asset-015', 'TAEE11', 'Transmissora Aliança de Energia Elétrica','STOCK','Utilidade Pública','TAEE11.SA'),
+    ('asset-016', 'GGBR4', 'Gerdau S.A.',                  'STOCK', 'Materiais Básicos','GGBR4.SA'),
+    ('asset-017', 'IVV',   'iShares Core S&P 500 ETF',     'BDR',  'Outros',         'IVV'),
+    ('asset-018', 'AGG',   'iShares Core US Aggregate Bond','BDR', 'Outros',          'AGG'),
+    ('asset-019', 'VXUS',  'Vanguard Total International', 'BDR',  'Outros',          'VXUS'),
+    ('asset-020', 'MORT',  'VanEck Mortgage REIT Income',  'BDR',  'Outros',          'MORT'),
+    ('asset-021', 'BABA',  'Alibaba Group Holding Ltd.',   'BDR',  'Diversos',        'BABA'),
+    ('asset-022', 'RDB-100-CDI', 'RDB Pós 100% CDI',       'FIXED_INCOME', 'RDB', NULL),
+    ('asset-023', 'RDB-120-CDI', 'RDB Pós 120% CDI',       'FIXED_INCOME', 'RDB', NULL),
+    ('asset-024', 'TESOURO-SELIC-2031', 'Tesouro Selic 2031','FIXED_INCOME','Tesouro Direto', NULL),
+    ('asset-025', 'TESOURO-SELIC-2029', 'Tesouro Selic 2029','FIXED_INCOME','Tesouro Direto', NULL),
+    ('asset-026', 'TESOURO-IPCA-2035',  'Tesouro IPCA+ 2035','FIXED_INCOME','Tesouro Direto', NULL),
+    ('asset-027', 'BTC',   'Bitcoin',                      'CRYPTO','Criptomoeda',    'BTC-USD');

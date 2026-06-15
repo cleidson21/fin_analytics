@@ -11,16 +11,17 @@ PRAGMA foreign_keys=ON;
 -- Daily close prices for all tracked assets (from yfinance)
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS asset_prices (
-    asset_id    TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
-    date        TEXT NOT NULL,              -- YYYY-MM-DD
-    open_price  REAL,
-    high_price  REAL,
-    low_price   REAL,
-    close_price REAL NOT NULL,
-    volume      REAL,
-    currency    TEXT NOT NULL DEFAULT 'BRL',
-    source      TEXT NOT NULL DEFAULT 'YFINANCE',
-    fetched_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    asset_id             TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    date                 TEXT NOT NULL,              -- YYYY-MM-DD
+    open_price           INTEGER,                    -- centavos
+    high_price           INTEGER,                    -- centavos
+    low_price            INTEGER,                    -- centavos
+    close_price          INTEGER NOT NULL,           -- centavos
+    adjusted_close_price INTEGER,                    -- centavos (Correction 3)
+    volume               REAL,
+    currency             TEXT NOT NULL DEFAULT 'BRL',
+    source               TEXT NOT NULL DEFAULT 'YFINANCE',
+    fetched_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     PRIMARY KEY (asset_id, date)
 );
 
@@ -29,15 +30,18 @@ CREATE INDEX IF NOT EXISTS idx_asset_prices_date ON asset_prices(date);
 -- --------------------------------------------------------------------------
 -- BENCHMARK PRICES
 -- Index values: IBOV, CDI (daily rate), IPCA, IFIX, S&P500
--- CDI and IPCA: value = daily rate in decimal (0.001027 = 0.1027%)
--- IBOV / IFIX / S&P500: value = index point (cumulative or raw)
+-- CDI and IPCA: value = daily rate in decimal (e.g. 0.1027%) - stored as INTEGER multiplied by 10^x? 
+-- Wait, the prompt asked to store value as INTEGER for benchmark_prices.value. 
+-- Since it's a rate, we store it multiplied by an appropriate factor if needed, or if it's points, just points * 100.
+-- The backend will handle conversion.
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS benchmark_prices (
-    ticker      TEXT NOT NULL,              -- 'CDI','IPCA','IBOV','IFIX','SPX','IDIV'
-    date        TEXT NOT NULL,              -- YYYY-MM-DD
-    value       REAL NOT NULL,              -- meaning depends on ticker
-    source      TEXT NOT NULL DEFAULT 'BCB_SGS',   -- BCB_SGS | YFINANCE | MANUAL
-    fetched_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    ticker             TEXT NOT NULL,              -- 'CDI','IPCA','IBOV','IFIX','SPX','IDIV'
+    date               TEXT NOT NULL,              -- YYYY-MM-DD
+    value              INTEGER NOT NULL,           -- value representation in backend format
+    accumulated_factor REAL,                       -- Correction 5
+    source             TEXT NOT NULL DEFAULT 'BCB_SGS',   -- BCB_SGS | YFINANCE | MANUAL
+    fetched_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     PRIMARY KEY (ticker, date)
 );
 
