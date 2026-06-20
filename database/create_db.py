@@ -17,6 +17,7 @@ Migration history:
     009 — Fixed Income Events (fixed_income_events)
     010 — Ledger Events (transaction_events)
     011 — AI Prompt Versioning (ai_prompt_versions + ALTER ai_runs)
+    012 — Freeze Fixes (fixed_income_events CORRECTION, benchmark_prices REAL, installments CANCELLED, installment_plans status)
 
 Usage:
     python database/create_db.py [--db-path PATH]
@@ -47,6 +48,7 @@ MIGRATION_ORDER = [
     "009_fixed_income_events.sql",
     "010_ledger_events.sql",
     "011_ai_prompt_versioning.sql",
+    "012_freeze_fixes.sql",
 ]
 
 
