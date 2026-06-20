@@ -1,1 +1,0 @@
-"""Servicos de dominio financeiro."""
