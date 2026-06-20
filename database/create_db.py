@@ -4,10 +4,24 @@ FinAnalytics V3 — Database Bootstrap
 Executes all migrations in order to build the SQLite database from scratch.
 Replaces any prior SQLAlchemy ORM setup. The database IS the source of truth.
 
+Migration history:
+    001 — Core Identity (users, institutions, accounts)
+    002 — Cashflow Ledger (transactions, transfers, categories, merchants)
+    003 — Credit Card (invoices, installment_plans, installments, invoice_items)
+    004 — Investments (assets, trades, broker_notes, corporate_actions, dividends)
+    005 — Market Data (asset_prices, benchmark_prices, benchmarks)
+    006 — Governance (import_runs, import_artifacts, audit_logs, data_corrections)
+    007 — AI Classification (classification_rules, learning_examples, ai_prompts, ai_runs, classification_feedback)
+    008 — Analytics (asset_positions, asset_valuations, portfolio_snapshots, benchmark_snapshots, cashflow_summaries)
+    --- FREEZE PREPARATION ---
+    009 — Fixed Income Events (fixed_income_events)
+    010 — Ledger Events (transaction_events)
+    011 — AI Prompt Versioning (ai_prompt_versions + ALTER ai_runs)
+
 Usage:
     python database/create_db.py [--db-path PATH]
 
-Default DB path: fin_analytics_v3.db (in project root)
+Default DB path: database/fin_analytics_v3.db
 """
 
 import sqlite3
@@ -20,6 +34,7 @@ MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 DEFAULT_DB_PATH = Path(__file__).parent / "fin_analytics_v3.db"
 
 MIGRATION_ORDER = [
+    # --- Core domain ---
     "001_core_identity.sql",
     "002_cashflow_ledger.sql",
     "003_credit_card.sql",
@@ -28,6 +43,10 @@ MIGRATION_ORDER = [
     "006_governance.sql",
     "007_ai_classification.sql",
     "008_analytics.sql",
+    # --- Freeze preparation (schema certification) ---
+    "009_fixed_income_events.sql",
+    "010_ledger_events.sql",
+    "011_ai_prompt_versioning.sql",
 ]
 
 
