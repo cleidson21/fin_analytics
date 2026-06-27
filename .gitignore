@@ -16,4 +16,7 @@ logs/
 fin_analytics.db
 _temp/
 archive
-plans
+plans 
+samples
+test
+backend/tests/results/

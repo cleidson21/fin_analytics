@@ -104,11 +104,24 @@ FinAnalytics V3 é um sistema pessoal de gestão financeira e patrimonial Single
 | 2 | Identity & Autenticação | 1 conversa | ⬜ Não iniciada |
 | 3 | Ledger Core (Banking + Dashboard) | 2 conversas | ⬜ Não iniciada |
 | 4 | Credit & Installments | 1 conversa | ⬜ Não iniciada |
-| 5 | Importadores & Governança | 3 conversas | ⬜ Não iniciada |
+| 5 | Data Ingestion Platform (Ver Detalhamento) | 3 conversas | ⬜ Não iniciada |
 | 6 | Investments & Market Data | 3 conversas | ⬜ Não iniciada |
 | 7 | Engines Analíticas | 3 conversas | ⬜ Não iniciada |
 | 8 | AI & Learning | 2 conversas | ⬜ Não iniciada |
 | 9 | Validação E2E & Hardening | 1 conversa | ⬜ Não iniciada |
+
+### Detalhamento da Fase 5 (Data Ingestion Platform)
+Para isolar responsabilidades e garantir auditoria, a Fase 5 foi desmembrada em 10 subsistemas independentes:
+- **5.1 Foundation**: DTOs e Repositories unificados (ImportRun, CanonicalEvent).
+- **5.2 Readers**: Módulos brutos (pandas, openpyxl, pdfplumber). Sem lógica financeira.
+- **5.3 OCR**: Extração em imagens (PaddleOCR, Tesseract fallback).
+- **5.4 AI Parsing**: Conversão por LLM quando Regex/OCR falham.
+- **5.5 Canonical Normalization**: Padronização obrigatória de todos os inputs em `Canonical Financial Event`.
+- **5.6 Reconciliation**: Cruzamento e desambiguação anti-duplicidade. 
+- **5.7 Governance**: Rollbacks, Warnings e Auditoria das Importações.
+- **5.8 Import Engine**: Orquestração e fluxo estrito (Commit apenas no final).
+- **5.9 Learning Engine**: Classificador local treinado via Teacher Forcing usando FAISS e Embeddings.
+- **5.10 Open Finance**: Stubs (Adapters passivos) para integrações diretas de bancos via API (Fase Futura).
 
 **Estimativa total:** ~18 conversas Sonnet
 
@@ -162,11 +175,15 @@ Uma fase **SOMENTE** pode ser aprovada quando:
 
 ### Evidências Obrigatórias
 Cada fase deve apresentar, de forma explícita:
-- Endpoints testados localmente
+- Endpoints testados localmente (ou via scripts unitários)
 - JSON de resposta do payload
 - Logs relevantes do terminal
-- Screenshots (quando aplicável)
 - Relatório de testes
 - Problemas encontrados e corrigidos
+- **[A partir da Fase 5] 4 Níveis de Auditoria:**
+  1. Testes unitários (`pytest`)
+  2. Pacote funcional End-to-End (`tests/results/.../`) contendo JSONs e Markdown Reports gerados a partir de `samples/`
+  3. Golden Test Visual (geração de `canonical_events.csv` interpretável)
+  4. Fluxograma Rastreável (`pipeline.txt` demonstrando aprovação/bloqueio no Governance)
 
 **Sem evidências apresentadas ao usuário, o Gate NÃO PODE ser aprovado e a fase permanece em Auditoria.**

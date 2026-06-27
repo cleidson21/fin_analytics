@@ -25,9 +25,9 @@
 | **0.9** | Governança do Projeto | ✅ Aprovado | 2026-06-22 | 2026-06-23 | 2 |
 | **1** | Fundação & Infraestrutura | ✅ Aprovado | 2026-06-23 | 2026-06-24 | 1 |
 | **2** | Identity & Autenticação | ✅ Aprovado | 2026-06-24 | 2026-06-25 | 1 |
-| **3** | Ledger Core (Banking + Dashboard) | 🔄 Em andamento | 2026-06-25 | — | — |
-| **4** | Credit & Installments | ⬜ Não iniciada | — | — | — |
-| **5** | Importadores & Governança | ⬜ Não iniciada | — | — | — |
+| **3** | Ledger Core (Banking + Dashboard) | ✅ Aprovado | 2026-06-25 | 2026-06-25 | 1 |
+| **4** | Credit & Installments | ✅ Aprovado | 2026-06-25 | 2026-06-25 | 1 |
+| **5** | Importadores & Governança | 🔄 Em andamento | 2026-06-25 | — | — |
 | **6** | Investments & Market Data | ⬜ Não iniciada | — | — | — |
 | **7** | Engines Analíticas | ⬜ Não iniciada | — | — | — |
 | **8** | AI & Learning | ⬜ Não iniciada | — | — | — |

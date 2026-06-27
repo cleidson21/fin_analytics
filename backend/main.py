@@ -4,10 +4,13 @@ from backend.shared.db import get_db_connection
 from backend.domains.identity.router import router as auth_router
 from backend.domains.banking.router import router as banking_router
 
+from backend.domains.credit.router import router as credit_router
+
 app = FastAPI(title="FinAnalytics V3", version="1.0.0")
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(banking_router, prefix="/api/v1")
+app.include_router(credit_router, prefix="/api/v1")
 
 @app.get("/api/v1/health")
 def health_check(db=Depends(get_db_connection)):

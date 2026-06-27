@@ -13,13 +13,22 @@
 - **Última aprovação recebida:** Certificação Formal da Fase 2.1
 - **Próxima ação permitida:** Iniciar a próxima microetapa ou fase.
 
+- **Data:** 2026-06-26
+- **Fase atual:** 5 — Data Ingestion Platform
+- **Status da fase:** 🟢 EM EXECUÇÃO
+- **Gate atual:** Sprint V3 Ready
+- **Última aprovação recebida:** Validação de Refatorações P1
+- **Gate atual:** Sprint V4 Ready
+- **Última aprovação recebida:** Validação de Sprints V3
+- **Próxima ação permitida:** Iniciar TSK-5.5-1 (Sprint V4)
+
 ---
 
 ## 2. Tarefa Atual
 
-- **ID:** TSK-3.1-3
-- **Nome:** Dashboard Banking (Fase 3.1)
-- **Fase:** 3.1 (Microetapa 3)
+- **ID:** TSK-5.4-1
+- **Nome:** Sprint V3 — Pierre (TXT)
+- **Fase:** 5 (Data Ingestion Platform)
 - **Responsável:** Agente AI
 - **Status:** COMPLETED
 
@@ -29,67 +38,56 @@
 
 | ID | Descrição | Status | Responsável | Dependências |
 |---|---|---|---|---|
-| SUB-3.1-3.1 | Criar `DashboardRepository` com raw SQL queries | [x] COMPLETED | Agente AI | TSK-3.1-2 |
-| SUB-3.1-3.2 | Implementar rotas agregadoras em `banking/router.py` | [x] COMPLETED | Agente AI | SUB-3.1-3.1 |
-| SUB-3.1-3.3 | Validar DTOs e compatibilidade com Frontend Contract | [x] COMPLETED | Agente AI | SUB-3.1-3.2 |
-| SUB-3.1-3.4 | Testar requests E2E e asserção de schema do Dashboard | [x] COMPLETED | Agente AI | SUB-3.1-3.3 |
+| SUB-5.4-1.1 | Implementar Reader e Validator para Pierre TXT | [x] COMPLETED | Agente AI | Nenhuma |
+| SUB-5.4-1.2 | Implementar Parser (extração de blocos via regex) e Normalizer | [x] COMPLETED | Agente AI | SUB-5.4-1.1 |
+| SUB-5.4-1.3 | Criar Pipeline, testes unitários e testes funcionais | [x] COMPLETED | Agente AI | SUB-5.4-1.2 |
 
 ---
 
 ## 4. Evidências
 
-*(Evidências da Fase 3.1 - Microetapa 3)*
-
-- **Endpoints testados:** `GET /dashboard/summary-v2`, `pacing-v2`, `heatmap`, `categories`, `catalog`
-- **JSON retornado:** `{"income": 0.0, "expenses": 0.0, ...}`, `{"budget": 10000.0, ...}`
-- **Logs relevantes:** Testes efetuaram queries puras com `SUM(CASE WHEN...)` preservando `is_ignored = 0` e devolvendo o JSON matematicamente compatível com a visão React. Resposta de todas as rotas foi HTTP 200.
-- **Prints / Screenshots:** N/A
-- **Arquivos alterados:** `backend/domains/banking/dashboard_repository.py`, `backend/domains/banking/router.py`
+- **Testes:** 23/23 unitários passando. Testes funcionais executados com a amostra `Exemplo_Extrato_Pierre.txt`.
+- **Golden Tests:** Arquivos gerados em `tests/results/V3_Pierre`. Conversão perfeita de texto não-estruturado para `CanonicalFinancialEvent`.
 - **Commits relacionados:** Pendente de envio
 
 ---
 
-## 5. Pendências
+## 5. Próxima Tarefa
 
-- **Bloqueios:** Nenhum.
-- **Dúvidas arquiteturais:** Nenhuma.
-- **Decisões aguardando aprovação:** Nenhuma.
+- **ID:** TSK-5.5-1
+- **Nome:** Sprint V4 — MyProfit (Ativos e Proventos)
+- **Fase:** 5
 
 ---
 
-## 6. Histórico de Execução
+## 6. Histórico Recente
 
-| Data | Responsável | Ação executada | Resultado |
+| Data | Responsável | Tarefa | Status |
 |---|---|---|---|
-| 2026-06-23 | Agente AI | Auditoria Pré-Implementação concluída | FASE 1 LIBERADA |
-| 2026-06-23 | Agente AI | Fundação do Backend e Setup do Banco SQLite (Testes T1.1-T1.4) | MICROETAPA CONCLUÍDA |
-| 2026-06-24 | Agente AI | Módulo de segurança JWT (TSK-2.1-1) | MICROETAPA CONCLUÍDA |
-| 2026-06-24 | Agente AI | Criação do UserRepository (TSK-2.1-2) | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Reconstrução Oficial do Banco V3 | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Auditoria Definitiva de Autenticação | 🚨 FASE EM HOLD |
-| 2026-06-25 | Agente AI | Parecer Técnico Final de Autenticação | FASE DESBLOQUEADA |
-| 2026-06-25 | Agente AI | AuthService, Login, JWT e Seed Automático (TSK-2.1-3) | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Auditoria Frontend ↔ Auth (TSK-2.1-4) | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Validação Final e Correção Auth (TSK-2.1-5) | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Higienização da pasta plans/ (Remoção V2) | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Banking DTOs e TransactionRepository (TSK-3.1-1) | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Banking Router e GET /transactions (TSK-3.1-2) | MICROETAPA CONCLUÍDA |
-| 2026-06-25 | Agente AI | Dashboard Banking (TSK-3.1-3) | MICROETAPA CONCLUÍDA |
+| 2026-06-25 | Agente AI | Implementação de Reconciliação (Fase 3) | CERTIFICADA |
+| 2026-06-25 | Agente AI | Refatoração de DTOs e Testes (Fase 4) | CERTIFICADA |
+| 2026-06-26 | Agente AI | Data Ingestion Foundation (TSK-5.1-1) | MICROETAPA CONCLUÍDA |
+| 2026-06-26 | Agente AI | Testing and Audit Pipeline (TSK-5.1-1B) | MICROETAPA CONCLUÍDA |
+| 2026-06-26 | Agente AI | Sprint V1 Nubank Conta (TSK-5.2-1) | MICROETAPA CONCLUÍDA |
+| 2026-06-26 | Agente AI | Sprint V2 Nubank Fatura (TSK-5.3-1) | MICROETAPA CONCLUÍDA |
+| 2026-06-26 | Agente AI | Enterprise Review Fase 5 (TSK-5.ER) | APROVADA COM RESSALVAS |
+| 2026-06-26 | Agente AI | Refatorações P1 (TSK-5.R1) | MICROETAPA CONCLUÍDA |
+| 2026-06-26 | Agente AI | Sprint V3 Pierre TXT (TSK-5.4-1) | MICROETAPA CONCLUÍDA |
 
 ---
 
 ## 7. INSTRUÇÕES PARA RETOMADA
 
 **Documentos obrigatórios para leitura:**
-1. `project/01_PROJECT_MASTER_PLAN.md`
-2. `project/04_CURRENT_PHASE.md`
-3. `project/03_PHASE_STATUS.md`
-4. `project/09_IMPLEMENTATION_QUEUE.md`
+1. `project/14_READERS_ENGINE.md`
+2. `project/23_SOURCE_PRIORITY_MATRIX.md`
+3. `project/24_CANONICAL_FINANCIAL_EVENT.md`
+4. `project/04_CURRENT_PHASE.md`
 
-**Fase atual:** 3 — Ledger Core (Banking + Dashboard)
-**Tarefa atual:** Concluída (TSK-3.1-3 - Dashboard Banking)
+**Fase atual:** 5 — Data Ingestion Platform
+**Tarefa atual:** Concluída (TSK-5.4-1)
 **Subtarefa atual:** Concluída
 
 **Próximos passos:**
-1. Aguardar validação das rotas e queries do Dashboard.
-2. Aguardar instrução sobre o próximo passo (encerrar Fase 3 ou progredir para Fase 4 - Credit & Installments).
+1. Iniciar Sprint V4 — MyProfit. V3.
+2. Aguardar instrução do usuário para avançar.
