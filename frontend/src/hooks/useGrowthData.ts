@@ -41,6 +41,8 @@ export interface PortfolioEvolutionPoint {
   idiv_acumulado_pct: number;
 }
 
+import { PerformanceSummary, fetchPerformanceDataShared } from "./usePerformanceData";
+
 export function useGrowthData(period: string) {
   const [summary, setSummary] = useState<PortfolioEvolutionSummary | null>(null);
   const [history, setHistory] = useState<PortfolioEvolutionPoint[]>([]);
@@ -54,16 +56,24 @@ export function useGrowthData(period: string) {
       setIsLoading(true);
       setIsError(false);
       try {
-        const [sumRes, histRes] = await Promise.all([
-          fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary"),
-          fetchFromAPI<PortfolioEvolutionPoint[]>("/investments/evolution/history")
-        ]);
+        const perfRes = await fetchPerformanceDataShared();
 
         if (!mounted) return;
 
-        if (sumRes && histRes) {
-          setSummary(sumRes);
-          setHistory(histRes);
+        if (perfRes) {
+          setSummary({
+            patrimonio_atual: String(perfRes.market_value),
+            patrimonio_atual_value: Number(perfRes.market_value || 0),
+            rentabilidade_acumulada: Number(perfRes.metrics?.cagr || 0),
+            proventos_totais: Number(perfRes.metrics?.dividends_received || 0),
+            compras_totais: Number(perfRes.cost_basis || 0),
+            vendas_totais: 0,
+            ibov_acumulado_pct: 0,
+            cdi_acumulado_pct: 0,
+            alpha_vs_ibov: Number(perfRes.metrics?.cagr || 0),
+            alpha_vs_cdi: Number(perfRes.metrics?.cagr || 0)
+          });
+          setHistory([]); // History will be implemented when backend supports series
         } else {
           setIsError(true);
         }

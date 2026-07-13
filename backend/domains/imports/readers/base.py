@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 class BaseCsvReader:
     """Classe base abstrata para leitura de arquivos CSV."""
     
-    source_system = "BASE_CSV"
+    @property
+    def source_system(self) -> str:
+        raise NotImplementedError("As subclasses devem definir a propriedade 'source_system'")
     
     def read(self, filepath: str) -> RawDocument:
         try:

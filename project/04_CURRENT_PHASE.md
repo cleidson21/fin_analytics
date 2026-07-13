@@ -9,31 +9,48 @@
 **Status:** 🔄 Em andamento
 **Iniciada em:** 2026-06-25
 **Objetivo:** Implementar o domínio de Banking, provendo repositórios, rotas e engines de DTOs para Transações e Dashboard Financeiro base.
-## ⚡ FASE ATUAL: 5 — Importadores & Governança
+## ⚡ MACROFASE ATUAL: Plataforma de Investimentos
 
-A Fase 4 (Credit & Installments) foi ✅ CERTIFICADA e congelada.
+A Plataforma de Ingestão (Fase 5 base) encontra-se **✅ CERTIFICADA E CONSOLIDADA**. O ciclo contínuo de auditorias da fundação foi encerrado na EA6.
 
-## Objetivo Principal da Fase 5
-Estabelecer os pipelines de importação assíncrona/síncrona (Pierre e MyProfit) respeitando as restrições de governança V3 (Auditabilidade e Rollback total através das chaves de `run_id`).
+### Objetivo Principal da Plataforma de Investimentos
+Estruturar e unificar a ingestão de custódia, negociação e proventos (Renda Variável e Fixa) mantendo total compatibilidade com a infraestrutura e governança (Event Sourcing) criadas na fase anterior.
 
-## Tarefas desta fase
+### Domínios da Arquitetura de Investimentos
+- **Custódia**: Posição estática (ex: Área do Investidor B3, Snapshots). Requer abstração não-transacional.
+- **Movimentações**: Trades, Compras/Vendas via Notas de Corretagem (Event Sourcing integral).
+- **Proventos**: Rendimentos já tratados parcialmente, com necessidade de consolidação de calendários.
+- **Carteiras**: Agrupamento lógico para cálculo de rentabilidade (MyProfit, CEI).
+- **Reconciliação**: Cruzamento do financeiro da conta com a liquidação na B3.
 
-- [x] TSK-5.0-1: Construir Catálogo de Fontes de Dados (Data Sources Catalog) e Matrizes de Reconciliação.
-- [x] TSK-5.1-0: Modelagem da Camada de Importação, Matrizes de Precedência, Duplicidade e Conflitos.
-- [x] TSK-5.1-00: Reorganização Documental e Desmembramento da Fase 5 (10 Subsistemas).
-- [x] TSK-5.1-00B: Matriz Suprema (23), Canonical Event Base (24), e Importers Catalog (25).
-- [x] TSK-5.1-1: [Foundation] Implementar entidades ImportRun, ImportBatch, ImportSession e CanonicalFinancialEvent em Python.
-- [x] TSK-5.1-1B: [Foundation] Instituir a política de 4 Níveis de Auditoria Visual (Doc 27).
-- [x] TSK-5.2-1: [Sprint V1] Nubank Conta (Pipeline Completo: Reader -> Normalizer -> Reconciliation -> Governança -> Banco).
-- [x] TSK-5.3-1: [Sprint V2] Nubank Fatura (Pipeline Completo).
-- [x] TSK-5.ER: [Enterprise Review] Auditoria arquitetural completa da Fase 5 (Docs 30–33). APROVADA COM RESSALVAS.
-- [x] TSK-5.R1: [Refactoring] Refatorações P1 Pós Enterprise Review (BaseCsvReader, Parser Defensivo).
-- [x] TSK-5.4-1: [Sprint V3] Pierre TXT (Pipeline Completo).
-- [x] TSK-5.R2: [Hardening] REF-010 (parser estrutural) + REF-011 (67 testes Pierre).
-- [ ] TSK-5.5-1: [Sprint V4] MyProfit Ativos e Proventos (Pipeline Completo).
-- [ ] TSK-5.6-1: [Sprint V5] B3 Custódia (Pipeline Completo).
-- [ ] TSK-5.7-1: [Sprint V6] Pierre TXT (Pipeline Completo).
-- [ ] TSK-5.8-1: [Sprint V7] Nota de Negociação PDF (OCR + Pipeline Completo).
+### Roadmap Oficial (Sprints de Investimento)
+- [x] TSK-INV-1A: [Sprint 1A] Arquitetura B3 (Zero parser, apenas DTOs e Domínio Isolado).
+- [x] TSK-INV-1A.5: [Sprint 1A.5] Levantamento Técnico da B3 (Especificação Oficial).
+- [x] TSK-INV-1B: [Sprint 1B] Reader B3 Custódia.
+- [x] TSK-INV-1C: [Sprint 1C] Parser B3 Custódia.
+- [x] TSK-INV-1D: [Sprint 1D] Normalizer B3 Custódia.
+- [x] TSK-INV-1E: [Sprint 1E] Pipeline B3 Custódia.
+- [x] TSK-INV-2: [Sprint 2] Persistência B3 e Valuation.
+- [x] TSK-INV-3A: [Sprint 3A] CEI (Levantamento e Arquitetura).
+- [x] TSK-INV-3B: [Sprint 3B] CEI (Homologação).
+- [x] TSK-INV-3C.1: [Sprint 3C.1] CEI (Homologação Funcional).
+- [x] TSK-INV-3C.2: [Sprint 3C.2] CEI (Implementação) - Gate 6.5 (Idempotência Financeira TD-02) Concluído.
+- [x] TSK-INV-4.0: [Sprint 4] Open Finance Investimentos - Gate 7.0 (Auditoria de Entrada) Concluído.
+- [x] TSK-INV-4.1: [Sprint 4] Open Finance Investimentos - Gate 7.1 (Migration 005) Concluído.
+- [x] TSK-INV-4.2: [Sprint 4] Open Finance Investimentos - Gate 7.2 (SnapshotRepository) Concluído.
+- [x] TSK-INV-4.3: [Sprint 4] Open Finance Investimentos - Gate 7.3 (Adapters) Concluído.
+- [x] TSK-INV-4.4: [Sprint 4] Open Finance Investimentos - Gate 7.4 (Orquestração CLI/API) Concluído.
+- [x] TSK-INV-5.0: [Sprint 5] Position Engine - Gate 8.1 (Motor de Consolidação Patrimonial) Concluído.
+- [x] TSK-INV-5.1: [Sprint 5] Position Engine - Gate 8.2 (Valuation Engine MTM) Concluído.
+- [x] TSK-INV-5.2: [Sprint 5] Position Engine - Gate 8.3 (Wealth Engine Global) Concluído.
+- [x] TSK-INV-5.3: [Sprint 5] Performance Engine - Gate 8.4 (MWR, TWR, CAGR, YoC) Concluído.
+- [x] TSK-INV-6.0: [Sprint 6] Dashboard Analítico - Gate 9.0 (Auditoria de Adaptação do Frontend) Concluído.
+- [x] TSK-INV-6.1: [Sprint 6] Dashboard Analítico - Gate 9.1 (Investments Router) Concluído.
+- [x] TSK-INV-6.2: [Sprint 6] Dashboard Analítico - Gate 9.2 (Hooks de Integração) Concluído.
+- [x] TSK-INV-6.3: [Sprint 6] Dashboard Analítico - Gate 9.3 (Integração de Banco) Concluído.
+- [x] TSK-INV-6.4: [Sprint 6] Dashboard Analítico - Gate 9.4 (Nova Tela de Posições MTM) Concluído.
+- [x] TSK-INV-6.5: [Sprint 6] Dashboard Analítico - Gate 9.5 (Nova Tela de Performance) Concluído.
+- [ ] TSK-INV-6.6: [Sprint 6] Dashboard Analítico - Gate 9.6 (Tela de Ingestão e Conciliação).
 
 ---
 
@@ -41,17 +58,7 @@ Estabelecer os pipelines de importação assíncrona/síncrona (Pierre e MyProfi
 
 ---
 
-## Próximo Gate
-
-- `GET /transactions` retorna paginação correta, filtrando de acordo com os DTOs documentados no Front.
-- Dashboard básico responde métricas (ainda que zeradas ou processadas por mock engine inicial).
-
----
-
 ## O que vem após esta fase
 
 ### FASE 3 — Ledger Core (Banking + Dashboard)
-**Primeiro passo exato:**
-1. Criar `backend/domains/banking` e suas subpastas.
-2. Mapear DTOs para `Transaction`.
-3. Criar repositório `transactions` com suporte a paginação e filtros.
+Com a ingestão estruturada e as carteiras importadas, será iniciada a construção das APIs do Ledger.

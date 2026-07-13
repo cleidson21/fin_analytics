@@ -137,6 +137,16 @@ Motivo: Eliminar ruído, reduzir alucinações de contexto de IA e solidificar o
 Impacto: Segurança e clareza para a execução das Fases subsequentes.
 
 **[2026-06-25] [BANKING] CRIAÇÃO DO DOMÍNIO BANCÁRIO E TRANSACTIONS REPO (TSK-3.1-1)**
+- Auditoria do Frontend gerada e validada (Gate 9.0). O design será mantido integralmente.
+- Router FastAPI `backend/domains/investments/router.py` (Gate 9.1) criado.
+- Endpoints: `/portfolio`, `/positions`, `/performance`, `/allocation`, `/institutions`.
+- Testes unitários para o router `test_investments_router.py`.
+- Novos Hooks Frontend: `usePortfolioData`, `usePositionsData`, `usePerformanceData` consumindo o router (Gate 9.2).
+- Adaptação sem quebra visual (`useGrowthData`, `useAllocationData`, etc) mapeando os novos DTOs para interfaces legado (Gate 9.2).
+- Repositórios `TradeRepository` e `SnapshotRepository` implementaram operações de leitura (Gate 9.3).
+- Router FastAPI integrado com o banco de dados SQL (via Repositories), injetando dados reais nas Engines (Gate 9.3).
+- Criação da tela de Posições MTM (`/wealth/positions`) utilizando o hook `usePositionsData` com memoização de cálculos e componentes do Design System legado (Gate 9.4).
+- Criação da tela de Performance (`/wealth/performance`), expondo métricas avançadas (TWR, MWR, CAGR, Rentabilidade Mensal/Diária) e otimizando o fetch no hook `usePerformanceData` com singleton de Promise para evitar duplicação com `useGrowthData` (Gate 9.5).
 Abertura formal da Fase 3 (Ledger Core). Criados `backend/domains/banking`, `dto.py` (`TransactionDTO`) e `repository.py` (`TransactionRepository`). Mapeamento exato de raw SQL unindo a tabela `transactions` com `categories` (parentalidade) para suprir o contrato visual do Frontend. 
 Motivo: Lançar as fundações de acesso a dados da tela principal de Transações.
 Impacto: Domínio `banking` iniciado e compatível com as regras de raw SQL do V3. Banco inalterado.
@@ -245,7 +255,299 @@ Emissão do parecer técnico final confirmando a adoção da Alternativa B (Aute
 Motivo: Evitar violações de schema e destravar a progressão da Fase 2.
 Impacto: O banco V3 permanecerá intocado. O Login utilizará verificação por variável de ambiente enquanto o DB garantirá as FKs através do Seed Automático do admin na tabela `users`.
 
-**[2026-06-22] [AUTH] DECISÃO**
+**[2026-06-25] [AUTH] DECISÃO**
 Backend retornará `username: user.email` na resposta de `/auth/me`.
 Motivo: `AuthContext.tsx` espera campo `username`, mas schema V3 só possui `email` e `name`. Adaptar backend, não o frontend.
 Impacto: Zero alteração no frontend. Backend faz o mapeamento.
+
+---
+
+### [2026-06-26] ENTERPRISE AUDIT 3 (EA3)
+**[2026-06-26] [AUDITORIA] ENTERPRISE AUDIT 3 — DEEP AUDIT 3 (TSK-5.EA3)**
+Auditoria extremamente rigorosa para caçar inconsistências sutis antes de expandir (MyProfit, B3).
+Resultado: APROVADO COM RESSALVAS. 1 Crítico (EA3-12), 5 Altos.
+Impacto: Geração da tarefa TSK-5.H1 obrigatória para sanar os riscos críticos de robustez.
+
+---
+
+### [2026-06-27] HARDENING EA3 (TSK-5.H1)
+**[2026-06-27] [HARDENING] HARDENING PLATAFORMA DE INGESTÃO (TSK-5.H1)**
+Auditoria realizada: Executadas correções obrigatórias (P1/Altas) mapeadas na EA3. Adicionado `try/except` em parsers (EA3-12) e pipelines (EA3-24). Corrigido risco de deduplicação na fatura removendo `raw_doc_id` do UUID (EA3-20). Transformado `source_system` em abstrato no CSV (EA3-05). Adicionados testes rigorosos de resiliência (EA3-27).
+Motivo: Encerrar definitivamente a estabilização estrutural e de tratamento de exceções.
+Resultado: ✅ PLATAFORMA TOTALMENTE CERTIFICADA. 73/73 testes unitários. Golden Tests sem nenhuma perda semântica. Freeze respeitado.
+Impacto: Fase 5 destravada para MyProfit (Sprint V4).
+
+---
+
+### [2026-06-28] SPRINT V4 — MYPROFIT PROVENTOS (TSK-5.5-1)
+**[2026-06-28] [INGESTION] PIPELINE MYPROFIT PROVENTOS**
+Implementação completa do importador do CSV de Proventos do MyProfit.
+Motivo: Expansão do portfólio de origens integradas da Fase 5.
+Resultado: Reader, Validator, Parser e Normalizer criados. Testes unitários (7 testes novos, total 80) e Funcionais (76 proventos importados do snapshot).
+Decisão Arquitetural Crítica: Optado por abortar o importador de "Ativos" do MyProfit temporariamente, visto que consistem em snapshots de posições e não em eventos transacionais (`CanonicalFinancialEvent`). Mapeado como EA4-NEW-001.
+
+---
+
+### [2026-06-28] ENTERPRISE AUDIT 6 (EA6) — CONSOLIDAÇÃO DA FASE 5
+**[2026-06-28] [GOVERNANCE] CERTIFICAÇÃO DEFINITIVA DA PLATAFORMA DE INGESTÃO**
+Auditoria realizada: Consolidado o ciclo contínuo de Enterprise Audits. Verificado que a Plataforma de Ingestão atende a 100% dos requisitos de resiliência, padronização (BaseCsvReader) e cobertura de testes. As inconsistências de governança levantadas (EA6-INCONSISTENCY-001) foram analisadas e descartadas como falsos positivos (referiam-se à postergação lícita de dívidas P2 e não bloqueios de *hard gate*).
+Motivo: Encerrar definitivamente a Fase 5 e preparar terreno para a Próxima Macrofase (Plataforma de Investimentos).
+Resultado: ✅ A PLATAFORMA DE INGESTÃO ENCONTRA-SE CONSOLIDADA E CERTIFICADA.
+Impacto: Fase 5 encapsulada. Numerações futuras de "Enterprise Audit" não se aplicarão à Ingestão. Nova Macrofase iniciada com foco inicial na Integração B3 (Sprint V5).
+
+---
+
+### [2026-06-29] SPRINT 0 — PLATAFORMA DE INVESTIMENTOS (TSK-INV-0)
+**[2026-06-29] [PLANNING] PREPARAÇÃO E ROADMAP DE INVESTIMENTOS**
+Atividade realizada: Auditoria de transição de fase, planejamento arquitetural (domínios de Custódia, Movimentações, Proventos, Posições, Carteiras e Reconciliação) e aprovação de Roadmap de 6 Sprints.
+Motivo: Formalizar o início da Macrofase Plataforma de Investimentos após a conclusão da Plataforma de Ingestão. Refinamento crítico realizado: Isolamento completo da plataforma de investimentos no domínio `backend/domains/investments/` e desmembramento da Sprint 1 em sub-sprints verticalizadas (1A a 1E) para mitigar riscos arquiteturais.
+Resultado: ✅ SPRINT 0 CONCLUÍDA. Gerado o *Relatório de Preparação da Plataforma de Investimentos* e Roadmap detalhado.
+Impacto: Roadmap definido; Próxima ação é a execução da Sprint 1A (Arquitetura B3 Custódia).
+
+---
+
+### [2026-06-29] SPRINT 1A — ARQUITETURA B3 CUSTÓDIA (TSK-INV-1A)
+**[2026-06-29] [ARCHITECTURE] DOMÍNIO DE INVESTIMENTOS E POSITIONSNAPSHOT**
+Atividade realizada: Criação do domínio `backend/domains/investments/` com suas subpastas (readers, parsers, normalizers, etc). Elaboração do DTO `PositionSnapshot`, mapeando campos estáticos (quantity, reference_date, ticker) e estabelecendo a estratégia de Hash (reference_date + ticker + institution) para deduplicação sem violar os eventos de fluxo de caixa (CanonicalFinancialEvent).
+Motivo: Garantir isolamento conceitual e de banco de dados entre os estados patrimoniais (snapshots) e os eventos transacionais contábeis da Fase 5.
+Resultado: ✅ DOMÍNIO E DTO CRIADOS. 
+Impacto: Plataforma de Ingestão transacional 100% preservada. Sprint 1B (Reader B3 Custódia) está pronta para iniciar seu desenvolvimento isolado.
+
+---
+
+### [2026-06-29] SPRINT 1A.5 — LEVANTAMENTO TÉCNICO B3 (TSK-INV-1A.5)
+**[2026-06-29] [ANALYSIS] ESPECIFICAÇÃO DE DADOS DA B3**
+Atividade realizada: Análise binária do arquivo `samples/Exemplo_Ativos_B3.csv` confirmando sua natureza real (`.xlsx`). Mapeamento da tipologia de abas (Ações, Fundos, Tesouro, Proventos), identificação de cabeçalhos, inconsistências de valores e modelagem da estratégia de parse (engine openpyxl + descarte de rodapés nulos).
+Motivo: Evitar surpresas estruturais (feature creep) ou refatorações severas durante a codificação do Reader (Sprint 1B).
+Resultado: ✅ LEVANTAMENTO CONCLUÍDO. Gerado o contrato técnico oficial em `project/B3_IMPORT_SPEC.md`.
+Impacto: Eliminação de riscos operacionais. Caminho completamente livre e previsível para o codificação do B3 Reader.
+
+---
+
+### [2026-06-29] SPRINT 1B — READER B3 CUSTÓDIA (TSK-INV-1B)
+**[2026-06-29] [IMPLEMENTATION] DESENVOLVIMENTO DO B3 READER**
+Atividade realizada: Implementação de `backend/domains/investments/readers/b3_reader.py` suportando o parse binário de `.xlsx` da Área do Investidor (B3) através da biblioteca `openpyxl`. Adicionado detecção proativa de formato (`zipfile.is_zipfile`), iteração dinâmica de abas (Ações, Fundos, Tesouro Direto, Proventos Recebidos) e retorno nativo como Dicionário de DataFrames estruturados.
+Motivo: Garantir uma camada agnóstica de extração de dados sem poluição de regras de negócio ou de domínio.
+Resultado: ✅ SPRINT 1B CONCLUÍDA. Cobertura de 100% de testes unitários e funcionais no `test_b3_reader.py`. O Reader está 100% isolado, sem importar `imports/dto.py`.
+Impacto: Caminho limpo e testado para que a Sprint 1C (Parser B3 Custódia) possa iterar sobre os DataFrames brutos e extrair metadados úteis (Tickers, ISINs, Quantidades).
+
+---
+
+### [2026-07-03] SPRINT 1C — PARSER B3 CUSTÓDIA (TSK-INV-1C)
+**[2026-07-03] [IMPLEMENTATION] DESENVOLVIMENTO DO B3 PARSER**
+Atividade realizada: Implementação de `backend/domains/investments/parsers/b3_parser.py` responsável por converter DataFrames em DTOs intermediários (RawB3StockPosition, RawB3FundPosition, RawB3TreasuryPosition, RawB3Dividend). O Parser descarta corretamente as linhas nulas de rodapé e converte os valores numéricos com tratamento específico para campos nulos e formatação em strings (`-` substituído por `None`).
+Motivo: Mapear os dados brutos iterando linha a linha com tipagem forte antes da aplicação de regras de negócio.
+Resultado: ✅ SPRINT 1C CONCLUÍDA. Cobertura de 100% (unitários + integração).
+Impacto: A etapa de normalização (Sprint 1D) já poderá consumir objetos Python nativamente validados em vez de DataFrames crus.
+
+---
+
+### [2026-07-03] SPRINT 1D — NORMALIZER B3 CUSTÓDIA (TSK-INV-1D)
+**[2026-07-03] [IMPLEMENTATION] DESENVOLVIMENTO DO B3 NORMALIZER**
+Atividade realizada: Implementação de `backend/domains/investments/normalizers/b3_normalizer.py` responsável por converter DTOs intermediários (brutos) em instâncias completas de `PositionSnapshot`. O normalizador uniformiza nomes de tickers (removendo prefixos de fracionários "F"), converte nomes de instituições para caixa alta e tipifica o ativo (AssetTypeEnum) além de gerar o `snapshot_hash` (idempotência visual/lógica).
+Motivo: Garantir que a camada de pipeline receba entidades padronizadas e imutáveis da custódia, independente do formato de entrada (B3 ou outras corretoras no futuro).
+Resultado: ✅ SPRINT 1D CONCLUÍDA. Cobertura completa de testes sobre normalização numéricas, hashes e conversão textual.
+Impacto: A Pipeline B3 (Sprint 1E) terá acesso à estrutura imaculada de estado (PositionSnapshot) pronta para persistência via repositório. Nenhuma modificação no banco de dados, API, Frontend ou MyProfit foi realizada.
+
+---
+
+### [2026-07-03] SPRINT 1E — PIPELINE B3 CUSTÓDIA (TSK-INV-1E)
+**[2026-07-03] [IMPLEMENTATION] ORQUESTRAÇÃO B3 CUSTÓDIA**
+Atividade realizada: Construção do coordenador `backend/domains/investments/pipelines/b3_custody_pipeline.py`. Ele instanciou e orquestrou sequencialmente o Reader, Parser e Normalizer de forma encapsulada. Criada a estrutura de `PipelineResult` retornando os snapshots computados, as métricas de sucesso, taxas de descarte e tratamento explícito de exceções das três camadas (ReaderException, ParserException e genéricas).
+Motivo: Concentrar a responsabilidade de orquestração do processamento do arquivo em um único ponto isolado, sem acoplar diretamente com a interface de persistência de banco de dados.
+Resultado: ✅ SPRINT 1E CONCLUÍDA. Arquitetura testada em 5 frentes incluindo 100% de end-to-end simulado em `test_b3_custody_pipeline.py`.
+Impacto: O domínio de Investimentos atingiu o seu primeiro "Golden Path". Todo o fluxo lógico de extração B3 está isolado e funcional. O sistema está homologado para iniciar a persistência no banco (Sprint 2).
+
+---
+
+### [2026-07-03] ARCHITECTURE TRANSITION AUDIT — MACROFASE 1
+**[2026-07-03] [AUDIT] CERTIFICAÇÃO DA MACROFASE 1**
+Atividade realizada: Auditoria de Transição Arquitetural certificando integralmente as Sprints 1A, 1A.5, 1B, 1C, 1D e 1E da Plataforma de Investimentos. Validação da cobertura 23/23 testes, isolamento do domínio (zero cross-imports com `imports/`) e consistência documental de toda a governança.
+Resultado: ✅ MACROFASE 1 CERTIFICADA OFICIALMENTE.
+Impacto: Sprint 2 (Persistência B3 e Valuation) oficialmente liberada.
+
+---
+
+### [2026-07-03] SPRINT 2 — PERSISTÊNCIA B3 CUSTÓDIA (TSK-INV-2)
+**[2026-07-03] [IMPLEMENTATION] CAMADA DE PERSISTÊNCIA B3**
+Atividade realizada: Criação da migration SQL `013_position_snapshots.sql` definindo a tabela `position_snapshots` com 6 índices. Implementação do `PositionRepository` com UPSERT via `ON CONFLICT(snapshot_hash) DO UPDATE`, transacão única com rollback automático (SQLAlchemy 2.0 `engine.begin()`). Integração opcional ao Pipeline via duck typing (sem criar acoplamento rígido).
+Resultado: ✅ SPRINT 2 CONCLUÍDA. 33/33 testes PASSED. Banco atualizado.
+Impacto: O fluxo completo `Reader -> Parser -> Normalizer -> Repository -> Banco` está operacional e idempotente.
+
+---
+
+### [2026-07-03] SPRINT 3A — CEI (LEVANTAMENTO TÉCNICO E ARQUITETURA) (TSK-INV-3A)
+**[2026-07-03] [ARCHITECTURE] ESPECIFICAÇÃO DE EVENTOS TRANSACIONAIS CEI**
+Atividade realizada: Levantamento do diretório `samples/` constatando a ausência de arquivo físico de Movimentação/CEI. Definição arquitetural teórica do domínio `backend/domains/investments/cei/`. Estabelecimento da diferenciação entre Snapshot (estado patrimonial) e Evento (transação/corporate action). Criação do documento canônico `CEI_IMPORT_SPEC.md` contendo riscos, dependências e catálogo esperado de eventos da B3 (compra, venda, desdobramento, etc).
+Resultado: ✅ SPRINT 3A CONCLUÍDA. Zero código implementado, zero tabelas criadas.
+Impacto: Domínio preparado teoricamente para iniciar ingestão de transações B3 assim que arquivo de amostra for providenciado.
+
+---
+
+### [2026-07-04] SPRINT 3B — HOMOLOGAÇÃO DO ARQUIVO DE MOVIMENTAÇÕES B3 (TSK-INV-3B)
+**[2026-07-04] [ARCHITECTURE] CONTRATO TÉCNICO CEI MOVIMENTAÇÕES**
+Atividade realizada: Homologação técnica estrutural baseada no arquivo físico `Exemplo_Negociacao_B3.xlsx` (SHA256: a7847fb4c35e63a83258b1f874a520c6e5b37b65fd3d9663a76c034ccdeb566d). A análise atestou um contrato fixo isolando a Aba `Negociação` (9 colunas, sem nulos). Catálogo de eventos ancorado (Trades). Conduzida auditoria de sobreposição provando independência plena (sem conflito) entre o arquivo de Negociação e o de Custódia. Chave de Idempotência formulada baseando-se em MD5(Data+Ticker+Instituição+Tipo+Qtde+Preço) para suprimir a ausência de IDs únicos na B3.
+Resultado: ✅ SPRINT 3B CONCLUÍDA. Nenhuma linha de código foi implementada.
+Impacto: O contrato técnico `CEI_MOVEMENTS_SPEC.md` está selado, atestando independência de pipelines (Snapshot vs Trade) pavimentando as regras exatas para a Sprint 3C.
+
+---
+
+### [2026-07-05] SPRINT 3C.1 — HOMOLOGAÇÃO FUNCIONAL DO PIPELINE CEI (TSK-INV-3C.1)
+**[2026-07-05] [ARCHITECTURE] CONSOLIDAÇÃO DO PIPELINE TEÓRICO E2E**
+Atividade realizada: Etapa de "Zero Code" para extração de métricas de qualidade. Conduzida Etapa 0 confirmando integridade entre diretórios e documentações vigentes. Executadas Etapas 1-5 (Inventário e Sobreposição Temporal, identificando 14 transações num gap de 155 dias em `Exemplo_Negociacao_B3.xlsx`). Gerados artefatos `PIPELINE_FUNCTIONAL_SPEC.md`, `TRADE_MAPPING_MATRIX.md`, `IMPORT_COMPATIBILITY_MATRIX.md` e `DATA_QUALITY_REPORT.md` descrevendo exaustivamente a estratégia do Reader, Parser, Normalizer e Repository, atestando resiliência e tratando anomalias (`BBAS3F`, nulos e consolidação MD5).
+Resultado: ✅ SPRINT 3C.1 CONCLUÍDA. Arquivos `.md` criados e revisados. Código fonte congelado respeitado integralmente.
+Impacto: Contratos e tipos rigorosamente mapeados liberando a implementação do Reader (Sprint 3C.2) sob a barreira de aprovação.
+
+---
+
+### [2026-07-08] SPRINT 3C.2 — CEI MOVIMENTAÇÕES (TSK-INV-3C.2)
+**[2026-07-08] [IMPLEMENTATION] GATE 2 (READER CEI)**
+Atividade realizada: Implementação e homologação do Reader CEI (`backend/domains/investments/readers/cei_reader.py`) focado exclusivamente na extração da aba `Negociação` do arquivo `samples/Exemplo_Negociacao_B3.xlsx` via `openpyxl`.
+Motivo: Iniciar o pipeline transacional separando o processamento das Movimentações CEI do arquivo de Custódia.
+Resultado: ✅ READER IMPLEMENTADO. Aprovado nos testes físicos de tipagem e extração, validando 14 linhas contendo 9 colunas.
+Impacto: A infraestrutura basal para processar as transações B3 foi injetada no sistema. O parser (Gate 3) está liberado para codificação.
+
+**[2026-07-08] [ARCHITECTURE] GATE 3A (AUDITORIA PARSER)**
+Atividade realizada: Homologação estrutural e definição rigorosa dos limites funcionais do `B3MovementsParser` visando a conversão limpa do DataFrame `Negociação` para a entidade estrita `RawB3Movement`. 
+Motivo: Prevenir lógicas de normalização prematuras ou buscas no banco durante o estágio de tipagem.
+Resultado: ✅ AUDITORIA CONCLUÍDA. Nenhum código escrito.
+Impacto: Caminho perfeitamente delineado para a implementação do Parser (Gate 3B).
+
+**[2026-07-08] [IMPLEMENTATION] GATE 3B.1 (ESTRUTURA PARSER)**
+Atividade realizada: Criação estrutural e docstrings da classe `B3MovementsParser` no módulo `cei_parser.py`, estritamente com signatures e exceptions, desprovido de lógica algorítmica.
+Motivo: Garantir aderência do contrato Python ao plano da arquitetura (Gate 3A) antes da codificação real, isolando dependências.
+Resultado: ✅ ESTRUTURA PARSER CRIADA. Testes sintáticos (py_compile, import e instanciação) certificados.
+Impacto: A infraestrutura física do parser B3 encontra-se pronta para o desenvolvimento do algoritmo no Gate 3B.2.
+
+**[2026-07-08] [IMPLEMENTATION] GATE 3B.2A (PARSER CEI FASE 1)**
+Atividade realizada: Implementação parcial do algoritmo do `B3MovementsParser` iterando e validando de maneira estrita a presença das 7 colunas obrigatórias mapeadas na matriz B3, com suporte a DataFrame vazio e setup do Logger.
+Motivo: Evitar desenvolvimento de parser monolítico, injetando uma camada de resiliência e bloqueio estrito `KeyError` antes de converter strings brutas.
+Resultado: ✅ PARSER BASE IMPLEMENTADO. Lógica de controle pronta e testada com DataFrame vazio.
+Impacto: A carcaça de repetição está 100% segura; a próxima etapa processará de fato os DTOs no Gate 3B.2B.
+
+**[2026-07-08] [IMPLEMENTATION] GATE 3B.2B (PARSER CEI FINALIZADO)**
+Atividade realizada: Implementação completa do algoritmo do `B3MovementsParser` (`cei_parser.py`).
+Motivo: Alimentar o DTO fraco `RawB3Movement` com os dados purificados da planliha (hífens para None, Floats para Decimal).
+Resultado: ✅ PARSER CONCLUÍDO. Script leu 14 linhas do Pandas e gerou exatos 14 DTOs Pydantic.
+Impacto: A etapa de tipificação fraca e bruta encerrou-se completamente. O sistema avança para aplicar as lógicas financeiras no Gate 4 (Normalizer).
+
+**[2026-07-08] [ARCHITECTURE] GATE 4A (AUDITORIA NORMALIZER)**
+Atividade realizada: Homologação estrutural e definição da Matriz de Transformação para o `B3MovementsNormalizer`. Estabelecidos limites funcionais (sem consultas de banco) para conversão do `RawB3Movement` para o evento canônico `TradeDTO`.
+Motivo: Evitar acoplamento lógico da camada de banco de dados na camada funcional do pipeline CEI.
+Resultado: ✅ AUDITORIA CONCLUÍDA. Plano de implementação formulado (sem codificação).
+Impacto: Caminho limpo para o desenvolvimento algorítmico (Gate 4B).
+
+**[2026-07-08] [IMPLEMENTATION] GATE 4B.1 (NORMALIZER CEI IMPLEMENTADO)**
+Atividade realizada: Codificação total do componente `B3MovementsNormalizer` no módulo `cei_normalizer.py`.
+Motivo: Aplicar semântica financeira e gerar a Entidade Universal `TradeDTO` selada pelo hash de idempotência MD5, essencial para impedir duplicidade no Ledger de Ingestão.
+Resultado: ✅ NORMALIZER CONCLUÍDO E TESTADO E2E (Sem Banco). Transformadas 14 abstrações sujas em 14 Transações Imaculadas.
+Impacto: Pipeline lógico encerrado. O sistema agora está matematicamente seguro e preparado para injetar DTOs purificados no Banco de Dados (Gate 5).
+
+**[2026-07-09] [ARCHITECTURE] GATE 5A (AUDITORIA REPOSITORY)**
+Atividade realizada: Homologação arquitetural do mapeamento entre o objeto `TradeDTO` e o DDL da tabela `trades` (migration `004_investments.sql`). Planejado "Upsert em Lote" com conversões passivas de lookup (resolução de `asset_id` e `account_id`) e câmbio estrutural (preço para centavos).
+Motivo: Proteger o banco de dados assegurando obediência absoluta ao SQL Schema puro e atomicidade relacional.
+Resultado: ✅ AUDITORIA CONCLUÍDA. Plano de implementação pronto e sem codificação escrita.
+Impacto: Destravamento da construção física da camada final de persistência (Gate 5B).
+
+**[2026-07-10] [IMPLEMENTATION] GATE 5B.1 (ESTRUTURA DO REPOSITORY)**
+Atividade realizada: Scaffold estrutural e inofensivo do arquivo `trade_repository.py` definindo contratos e tipos para queries e persistência, preenchidos com `NotImplementedError`.
+Motivo: Abordagem defensiva ditada pelo protocolo. A arquitetura exige separação em micro-etapas para validação contínua (Compilação isolada), prevenindo acoplamentos ou importações antecipadas da lógica transacional.
+Resultado: ✅ SKELETON CONCLUÍDO E COMPILADO (PyCompile).
+Impacto: Cria-se o contrato passivo base, destravando o próximo degrau: Escrita rigorosa das lógicas de Foreign Key Lookup (Gate 5B.2).
+
+**[2026-07-10] [IMPLEMENTATION] GATE 5B.2 (LOOKUPS REPOSITORY)**
+Atividade realizada: Codificação das rotinas de lookup (`_resolve_asset_id` e `_resolve_account_id`) equipadas com in-memory caching (`_asset_cache`, `_account_cache`). Testes unitários com Mock de SQLAlchemy comprovaram a resiliência sem manipulação de banco de dados.
+Motivo: Evitar chamadas (SELECT) duplicadas para Tickers que podem aparecer em centenas de blocos transacionais seguidos na planilha da B3.
+Resultado: ✅ LOOKUPS CONCLUÍDOS. Sem acesso real ao banco na testagem.
+Impacto: Habilita a implementação final de Persistência (Gate 5B.3).
+
+**[2026-07-11] [IMPLEMENTATION] GATE 5B.3 (PERSISTÊNCIA REPOSITORY)**
+Atividade realizada: Codificação e testes do núcleo atômico `save()` e `save_many()` no `TradeRepository`. Implementada query RAW otimizada via SQLAlchemy Core combinando insert com `ON CONFLICT DO UPDATE` (SQLite Upsert).
+Motivo: Persistir permanentemente as abstrações tratadas sem causar travamentos de constraint caso lotes anteriores sejam reprocessados para atualizações.
+Resultado: ✅ REPOSITÓRIO FINALIZADO E APROVADO E2E em DB Memory Mock.
+Impacto: A Ingestão transacional V3 está pronta estrutural e matematicamente. Faltando apenas a orquestração do fluxo unificado (Gate 6).
+
+**[2026-07-11] [IMPLEMENTATION] GATE 6.1 (PIPELINE CLI)**
+Atividade realizada: Criação do `cli.py`, unificando a cadeia (Reader -> Parser -> Normalizer -> Repository). Injeção rigorosa de Engine e Session delimitando a transação via Context Manager. Tratamento assertivo de exceções falhando rápido (`Fail-Fast`). Correção prévia do truncamento do `unit_price` em centavos no `trade_repository.py`.
+Motivo: Orquestrar e executar a macrofase de ingestão de ativos de investimento B3 via CLI, mantendo o banco protegido por Atomicidade (Commit/Rollback isolados).
+Resultado: ✅ PIPELINE IMPLEMENTADO COM SUCESSO. Testado ponta a ponta (identificada corretamente falha por corretora não-existente no DB).
+Impacto: Pipeline C.E.I 100% Finalizado e Orquestrável via Terminal.
+
+**[2026-07-11] [IMPLEMENTATION] GATE 6.2 (BROKER ALIAS LAYER)**
+Atividade realizada: Criação de `BrokerAliasResolver` para o `TradeRepository` e estabelecimento do dicionário de nomes canônicos.
+Motivo: Evitar corrupção e duplicidade em contas (ex: "NU INVESTIMENTOS S.A. - CTVM" x "Nubank") através de uma barreira estática leve em RAM antes do hit ao DB.
+Resultado: ✅ SUCESSO. A abstração funcionou ponta-a-ponta e capturou os mocks definidos em testes locais.
+Impacto: Escalabilidade de mapeamentos para futuras fontes sem encostar no schema do SQLite ou nos parsers já prontos.
+
+**[2026-07-11] [IMPLEMENTATION] GATE 6.3 (IMPORT REPORT)**
+Atividade realizada: Criação do DTO `ImportReport` e acoplamento exclusivo na CLI.
+Motivo: Centralizar todas as métricas não-financeiras da importação (rows_read, rows_persisted, warnings, elapsed_time) num objeto unificado canônico, mantendo o núcleo dos parsers limpos de preocupações de telemetria.
+Resultado: ✅ SUCESSO. Relatório gerado no terminal cobrindo exatamente os indicadores exigidos.
+Impacto: Cria-se o contrato para futura gravação do relatório na tabela de `import_runs` sem corromper a arquitetura atômica atual.
+
+**[2026-07-11] [AUDIT] GATE 6.4 (HOMOLOGAÇÃO FINAL DO PIPELINE)**
+Atividade realizada: Executada auditoria E2E em todos os pontos da malha de importação. Criação das matrizes de responsabilidade e verificação rigorosa de leaks.
+Motivo: Encerrar a fase 3C.2 e garantir que as fundações de orquestração suportem novas integrações sem retrabalho arquitetural.
+Resultado: ✅ HOMOLOGAÇÃO CONCLUÍDA. Nenhum desvio de fluxo ou responsabilidade encontrado.
+Impacto: A Plataforma de Importação de Investimentos está estabilizada e apta para escalar.
+
+**[2026-07-12] [FIX] GATE 6.5 (CORREÇÃO TD-02 — IDEMPOTÊNCIA FINANCEIRA)**
+Atividade realizada: Correção do `B3MovementsNormalizer` para gerar o hash de idempotência com o broker canônico normalizado pelo `BrokerAliasResolver`, eliminando o risco de duplicatas financeiras causadas por variações de grafia da B3.
+Arquivos: `backend/domains/investments/normalizers/cei_normalizer.py`
+Motivo: TD-02 identificado na re-auditoria do Gate 6.4 (Claude Sonnet). Hash com broker cru poderia gerar duplicatas financeiras reais.
+Resultado: ✅ 4/4 casos de teste aprovados. Hash convergente para aliases distintos da mesma corretora.
+Impacto: Garantia definitiva de idempotência financeira em todas as importações futuras.
+
+**[2026-07-12] [AUDIT] GATE 7.0 (AUDITORIA DE ENTRADA SPRINT 4)**
+Atividade realizada: Auditoria de entrada para a arquitetura de Open Finance Investimentos.
+Motivo: Mapeamento de dívidas técnicas e lacunas no schema (Migration 004) antes do desenvolvimento de adapters Open Finance.
+Resultado: ✅ APROVADO. Levantadas as necessidades de expandir constraints de `source` no banco e de criar a persistência para `PositionSnapshot`.
+Impacto: Início do planejamento da Sprint 4 (Open Finance) guiado por restrições bem mapeadas.
+
+**[2026-07-12] [MIGRATION] GATE 7.1 (MIGRATION 005 — OPEN FINANCE & POSITION SNAPSHOTS)**
+Atividade realizada: Criação segura do script de migração `005_open_finance.sql`. Adicionou suporte estrutural à `source` = `'OPEN_FINANCE'` e implementou a estrutura relacional para abrigar a custódia patrimonial unificada (`position_snapshots`).
+Motivo: Necessidade de adequar o banco a um novo tipo de importador de dados sem quebrar o framework existente.
+Resultado: ✅ SUCESSO. Testes realizados isolando DDL e DML, mantendo a proteção contra dados não homologados nas pipelines.
+Impacto: A base de dados FinAnalytics V3 passa a suportar ingestão dinâmica de múltiplos provedores e abrigar as futuras conciliações de snapshots de custódia.
+
+**[2026-07-12] [IMPLEMENTATION] GATE 7.2 (SNAPSHOT REPOSITORY)**
+Atividade realizada: Criação do repositório `SnapshotRepository` para persistir objetos `PositionSnapshot`.
+Motivo: Viabilizar a ingestão de Posição Consolidada (Custódia) proveniente de integrações futuras (Open Finance e Área do Investidor).
+Resultado: ✅ 8/8 testes aprovados. O repositório realiza Upsert idempotente na nova tabela `position_snapshots`.
+Impacto: A camada de persistência para a Macrofase Open Finance está pronta para receber adaptadores de integração.
+
+**[2026-07-12] [IMPLEMENTATION] GATE 7.3 (OPEN FINANCE ADAPTER LAYER)**
+Atividade realizada: Criação de um ACL (Anti-Corruption Layer) puro para receber dicionários de payloads do Open Finance (Custódia e Movimentações) e instanciar rigorosamente as classes `TradeDTO` e `PositionSnapshot`.
+Motivo: Isolar a lógica de sanitização, cast monetário via `Decimal` e geração de hash das lógicas de banco, garantindo Fail-Fast sem abrir conexões.
+Resultado: ✅ SUCESSO absoluto (100% testado). O sistema processa os dicionários e converte valores financeiros, aplicando formatações de data iso, e impedindo lotes sujos.
+Impacto: Permite integração plug-and-play do sistema com orquestradores recebendo Webhooks/JSONs sem violar a regra de pureza do domínio de Investimentos.
+
+**[2026-07-12] [IMPLEMENTATION] GATE 7.4 (OPEN FINANCE CLI/ORQUESTRADOR)**
+Atividade realizada: Criação do orquestrador de Ingestão de Open Finance acoplando JSON, Adapter, Repositórios e ImportReport.
+Motivo: Ligar todos os gates da Sprint 4 numa pipeline isolada e transacional.
+Resultado: ✅ SUCESSO. A pipeline opera sob contexto atômico e faz o gerenciamento unificado de Snapshot e Trades, imprimindo o ImportReport no formato canônico da plataforma e fechando as conexões do banco de modo seguro.
+Impacto: Fim da infraestrutura de Ingestão Open Finance. Apto para receber payloads do frontend/API ou arquivos físicos simulando callbacks de parceiros bancários.
+
+**[2026-07-12] [IMPLEMENTATION] GATE 8.1 (POSITION ENGINE)**
+Atividade realizada: Criação do motor puro `PositionEngine` e evolução das `TradeType` no `dto.py`.
+Motivo: Implementar o algoritmo central que lê o histórico de eventos financeiros (Trades, Transferências, Amortizações) para projetar a quantidade e custo médio atualizado dos ativos, cruzando a informação com os relatórios estáticos (`PositionSnapshot`).
+Resultado: ✅ SUCESSO. Engine implementada com `decimal.Decimal` em 100% das operações matemáticas. Validada em baterias in-memory contra todos os cenários corriqueiros de contabilidade (venda total, split invertido, capital devolvido).
+Impacto: A base de Reconciliação Patrimonial está pronta, possibilitando que as futuras interfaces do usuário exibam divergências reais entre B3, Corretoras e o Banco de Dados.
+
+**[2026-07-12] [IMPLEMENTATION] GATE 8.2 (VALUATION ENGINE)**
+Atividade realizada: Criação do motor MTM (Mark-to-Market) acoplado logicamente à saída da Position Engine.
+Motivo: Dotar a plataforma de inteligência financeira para calcular variações patrimoniais não-realizadas com base em cotações ativas, preservando a base de custo estática contra flutuações e ausência temporária de mercado.
+Resultado: ✅ SUCESSO. Engine pura isolada que computa Gains % e Market Value instantaneamente, mapeando ativos sem preço como lastreados ao custo e ativos falidos como perdas de 100%.
+Impacto: Apto a iniciar as agregações macro-financeiras da Wealth Engine e montar os dashboards de Rentabilidade da carteira.
+
+**[2026-07-12] [IMPLEMENTATION] GATE 8.3 (WEALTH ENGINE)**
+Atividade realizada: Criação do motor agregador de portfólio (Wealth Engine).
+Motivo: Sintetizar as avaliações atomizadas (por ativo e corretora) em uma visão gerencial de portfólio, sumarizando posições em macro-classes, fatias institucionais e exibindo os pesos da carteira (Asset Allocation).
+Resultado: ✅ SUCESSO. O sistema agrupa instâncias do `ValuationResult` de forma O(N), isola divisões por zero e emite a DTO final `WealthSummary`, perfeitamente alinhada para ser devolvida via API ao Frontend.
+Impacto: Fechamento da cadeia de Inteligência Patrimonial da Sprint 5, restando apenas as métricas temporais (Performance Engine / TWRR) no próximo Gate.
+
+**[2026-07-12] [IMPLEMENTATION] GATE 8.4 (PERFORMANCE ENGINE)**
+Atividade realizada: Criação do motor de desempenho financeiro (`PerformanceEngine`) com cálculo de CAGR, TWR, MWR, Yield on Cost, retornos anualizados, mensais e diários.
+Motivo: Complementar a Wealth Engine com a dimensão temporal da performance patrimonial — fundamental para exibição de rentabilidade no Dashboard e para integração futura com APIs de comparação de benchmarks (CDI, IBOV).
+Resultado: ✅ SUCESSO. Engine implementada com `Decimal` exclusivo. TWR exato por produto encadeado. CAGR por exponenciação. Proteção integral a divisões por zero, Overflows e cenarios de falência.
+Impacto: Encerra a Sprint 5. O backend agora possui infraestrutura analítica completa: Posição -> MTM -> Patrimônio -> Performance.

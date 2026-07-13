@@ -17,9 +17,10 @@ interface WealthTableProps<T> {
   emptyMessage?: string;
   pageSize?: number;
   rowClassName?: string | ((item: T, index: number) => string);
+  isLoading?: boolean;
 }
 
-export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhum dado encontrado.", pageSize, rowClassName }: WealthTableProps<T>) {
+export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhum dado encontrado.", pageSize, rowClassName, isLoading }: WealthTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = pageSize ? Math.ceil(data.length / pageSize) : 1;
@@ -46,7 +47,16 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
           </tr>
         </thead>
         <tbody>
-          {displayData.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={columns.length} className="px-4 py-8 text-center">
+                <div className="flex flex-col items-center justify-center space-y-3 opacity-50">
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+                  <span className="text-[13px] text-neutral-400">Carregando dados...</span>
+                </div>
+              </td>
+            </tr>
+          ) : displayData.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-8 text-center text-[13px] text-neutral-500">
                 {emptyMessage}

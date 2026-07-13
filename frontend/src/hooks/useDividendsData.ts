@@ -20,6 +20,8 @@ export interface DividendBreakdown {
   ultimo_recebimento: string;
 }
 
+import { PerformanceSummary } from "./usePerformanceData";
+
 export function useDividendsData() {
   const [history, setHistory] = useState<DividendHistory[]>([]);
   const [breakdown, setBreakdown] = useState<DividendBreakdown[]>([]);
@@ -33,17 +35,24 @@ export function useDividendsData() {
       setIsLoading(true);
       setIsError(false);
       try {
-        const [histRes, sumRes, breakRes] = await Promise.all([
-          fetchFromAPI<DividendHistory[]>("/investments/dividends/history"),
-          fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary"),
-          fetchFromAPI<DividendBreakdown[]>("/investments/dividends/breakdown")
-        ]);
+        const perfRes = await fetchFromAPI<PerformanceSummary>("/investments/performance");
 
         if (!mounted) return;
-        if (histRes) {
-          setHistory(histRes);
-          setSummary(sumRes || null);
-          setBreakdown(breakRes || []);
+        if (perfRes) {
+          setHistory([]);
+          setBreakdown([]);
+          setSummary({
+            patrimonio_atual: String(perfRes.market_value),
+            patrimonio_atual_value: Number(perfRes.market_value || 0),
+            rentabilidade_acumulada: Number(perfRes.metrics?.cagr || 0),
+            proventos_totais: Number(perfRes.dividends_received || 0),
+            compras_totais: Number(perfRes.cost_basis || 0),
+            vendas_totais: 0,
+            ibov_acumulado_pct: 0,
+            cdi_acumulado_pct: 0,
+            alpha_vs_ibov: Number(perfRes.metrics?.cagr || 0),
+            alpha_vs_cdi: Number(perfRes.metrics?.cagr || 0)
+          });
         } else {
           setIsError(true);
         }

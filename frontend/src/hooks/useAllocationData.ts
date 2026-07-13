@@ -25,6 +25,8 @@ export interface PositionDetail {
   peso_percentual_value: number;
 }
 
+import { WealthSummary } from "./usePortfolioData";
+
 export function useAllocationData() {
   const [allocation, setAllocation] = useState<AssetAllocation[]>([]);
   const [positions, setPositions] = useState<PositionDetail[]>([]);
@@ -37,16 +39,37 @@ export function useAllocationData() {
       setIsLoading(true);
       setIsError(false);
       try {
-        const [allocRes, posRes] = await Promise.all([
-          fetchFromAPI<AssetAllocation[]>("/investments/allocation"),
-          fetchFromAPI<PositionDetail[]>("/investments/positions")
-        ]);
+        const wealth = await fetchFromAPI<WealthSummary>("/investments/portfolio");
 
         if (!mounted) return;
 
-        if (allocRes && posRes) {
-          setAllocation(allocRes);
-          setPositions(posRes);
+        if (wealth) {
+          const allocMapped: AssetAllocation[] = (wealth.by_class || []).map(cls => ({
+            asset_class: cls.asset_type || "N/A",
+            current_total: String(cls.total_market_value || 0),
+            current_total_value: Number(cls.total_market_value || 0)
+          }));
+
+          const posMapped: PositionDetail[] = (wealth.by_asset || []).map(asset => ({
+            ticker: asset.ticker || "N/A",
+            asset_class: asset.asset_type || "N/A",
+            asset_subclass: "N/A",
+            quantidade: String(asset.quantity || 0),
+            preco_medio: String(asset.average_cost || 0),
+            valor_investido: String(asset.cost_basis || 0),
+            valor_atual: String(asset.market_value || 0),
+            ganho: String(asset.unrealized_gain || 0),
+            peso_percentual: String(asset.percent_of_portfolio || 0),
+            quantidade_value: Number(asset.quantity || 0),
+            preco_medio_value: Number(asset.average_cost || 0),
+            valor_investido_value: Number(asset.cost_basis || 0),
+            valor_atual_value: Number(asset.market_value || 0),
+            ganho_value: Number(asset.unrealized_gain || 0),
+            peso_percentual_value: Number(asset.percent_of_portfolio || 0)
+          }));
+
+          setAllocation(allocMapped);
+          setPositions(posMapped);
         } else {
           setIsError(true);
         }

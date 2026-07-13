@@ -1,5 +1,8 @@
+import logging
 from typing import Tuple, List
 from backend.domains.imports.dto import RawDocument, CanonicalFinancialEvent
+
+logger = logging.getLogger(__name__)
 from backend.domains.imports.readers.nubank_conta import NubankContaReader
 from backend.domains.imports.validators.nubank_conta import NubankContaValidator
 from backend.domains.imports.parsers.nubank_conta import NubankContaParser
@@ -15,16 +18,20 @@ class NubankContaPipeline:
         self.normalizer = NubankContaNormalizer()
         
     def execute(self, filepath: str) -> Tuple[RawDocument, List[CanonicalFinancialEvent]]:
-        # 1. Leitura
-        raw_doc = self.reader.read(filepath)
-        
-        # 2. Validação
-        self.validator.validate(raw_doc)
-        
-        # 3. Parsing
-        parsed_rows = self.parser.parse(raw_doc)
-        
-        # 4. Normalização
-        canonical_events = self.normalizer.normalize(parsed_rows, raw_doc.document_hash)
-        
-        return raw_doc, canonical_events
+        try:
+            # 1. Leitura
+            raw_doc = self.reader.read(filepath)
+            
+            # 2. Validação
+            self.validator.validate(raw_doc)
+            
+            # 3. Parsing
+            parsed_rows = self.parser.parse(raw_doc)
+            
+            # 4. Normalização
+            canonical_events = self.normalizer.normalize(parsed_rows, raw_doc.document_hash)
+            
+            return raw_doc, canonical_events
+        except Exception as e:
+            logger.error(f"Erro fatal no pipeline Nubank Conta para o arquivo {filepath}: {e}")
+            raise

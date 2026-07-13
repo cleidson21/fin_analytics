@@ -5,6 +5,7 @@ from backend.domains.imports.dto import RawDocument, EventTypeEnum
 from backend.domains.imports.validators.nubank_fatura import NubankFaturaValidator
 from backend.domains.imports.parsers.nubank_fatura import NubankFaturaParser
 from backend.domains.imports.normalizers.nubank_fatura import NubankFaturaNormalizer
+from backend.domains.imports.pipelines.nubank_fatura import NubankFaturaPipeline
 
 def get_mock_raw_document():
     return RawDocument(
@@ -63,3 +64,26 @@ def test_normalizer_success():
     assert events[0].amount == Decimal("270.00")
     assert events[1].normalized_description == "Pagamento de Fatura"
     assert events[1].amount == Decimal("-3077.10")
+
+def test_parser_invalid_date_dropped():
+    parser = NubankFaturaParser()
+    doc = get_mock_raw_document()
+    doc.content.append({"date": "invalid", "title": "Teste", "amount": "10,00"})
+    parsed = parser.parse(doc)
+    assert len(parsed) == 2
+
+def test_parser_invalid_amount_dropped():
+    parser = NubankFaturaParser()
+    doc = get_mock_raw_document()
+    doc.content.append({"date": "2025-05-01", "title": "Teste", "amount": "invalid"})
+    parsed = parser.parse(doc)
+    assert len(parsed) == 2
+
+def test_pipeline_catches_exception(monkeypatch):
+    pipeline = NubankFaturaPipeline()
+    def mock_read(*args, **kwargs):
+        raise RuntimeError("Mock error")
+    monkeypatch.setattr(pipeline.reader, "read", mock_read)
+    
+    with pytest.raises(RuntimeError, match="Mock error"):
+        pipeline.execute("dummy.csv")

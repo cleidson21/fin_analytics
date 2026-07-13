@@ -21,6 +21,11 @@ Prioridade: P1 = Obrigatório antes da próxima Sprint | P2 = Obrigatório antes
 | **REF-011** | ~~Antes V4~~ | `tests/.../test_pierre_pipeline.py` | 67 testes: validator, emoji filter, parser (happy path, edge cases, encoding), normalizer. | Cobertura completa | REF-009 | **P2** | 2h | ✅ **RESOLVIDO** |
 | **REF-012** | Oportunístico | `normalizers/pierre_txt.py` + `nubank_fatura.py` | Migrar `md5` → `sha256` para `external_uuid`. | Baixo — inconsistência de padrão | — | **P3** | 30min | **PENDENTE** |
 | **REF-013** | Oportunístico | `readers/pierre_txt.py` | Criar `BaseReader` genérica ou extrair `_build_document()` helper. | Baixo — DRY | REF-009 | **P3** | 2h | **PENDENTE** |
+| **REF-014** | ~~Antes V4~~ | `parsers/nubank_conta.py` | EA3-12: Adicionar try/except defensivo p/ Pandas NaN. | CRÍTICO | — | **P1** | 10min | ✅ **RESOLVIDO** |
+| **REF-015** | ~~Antes V4~~ | `readers/base.py` | EA3-05: Transformar `source_system` em prop abstrata. | Alto | — | **P1** | 5min | ✅ **RESOLVIDO** |
+| **REF-016** | ~~Antes V4~~ | `normalizers/nubank_fatura.py` | EA3-20: Remover `raw_doc_id` do MD5 UUID. | Alto | — | **P1** | 5min | ✅ **RESOLVIDO** |
+| **REF-017** | ~~Antes V4~~ | `pipelines/*.py` | EA3-24: try/except abrangente em `execute()`. | Alto | — | **P1** | 15min | ✅ **RESOLVIDO** |
+| **REF-018** | ~~Antes V4~~ | `tests/unit/` | EA3-27: Testes de robustez p/ parsers (nan/invalid). | Alto | — | **P1** | 30min | ✅ **RESOLVIDO** |
 
 ---
 

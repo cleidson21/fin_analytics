@@ -5,22 +5,34 @@ Catálogo e acompanhamento dos plugins de importação desenvolvidos no FinAnaly
 ---
 
 ### Nubank (Conta Corrente)
-- **Status:** Planejado
+- **Status:** Implementado
 - **Formato:** CSV
 - **Encoding:** UTF-8
 - **Dependências:** `pandas`, `Normalizer (Nubank -> Canonical)`
-- **Testes:** Pendente
+- **Testes:** Concluído
 - **Detalhes:** Arquivo vital (Possui UUID). Raiz de fluxo de caixa.
 
 ---
 
 ### Nubank (Fatura Cartão)
-- **Status:** Planejado
+- **Status:** Implementado
 - **Formato:** CSV
 - **Encoding:** UTF-8
 - **Dependências:** `pandas`, `Normalizer (Credit -> Canonical)`
-- **Testes:** Pendente
+- **Testes:** Concluído
 - **Detalhes:** Não possui UUID. A Reconciliação deverá associar o pagamento na fatura ao débito gigante na Conta Corrente.
+
+---
+
+---
+
+### MyProfit (Proventos)
+- **Status:** Implementado (TSK-5.5-1)
+- **Formato:** CSV
+- **Encoding:** UTF-8 / Latin-1
+- **Dependências:** `pandas`, `Normalizer (Dividend/Yield -> Canonical)`
+- **Testes:** Concluído (80 testes unitários, testes funcionais OK)
+- **Detalhes:** Enriquece metadados de proventos (Data COM, YOC, DY). Arquivo de Ativos descartado por incompatibilidade de formato transacional. Mapeado como EA4-NEW-001.
 
 ---
 
@@ -45,19 +57,12 @@ Catálogo e acompanhamento dos plugins de importação desenvolvidos no FinAnaly
 ---
 
 ### Pierre (Agregador Categoria)
-- **Status:** Planejado
+- **Status:** Implementado
 - **Formato:** TXT Visual
 - **Encoding:** UTF-8
 - **Dependências:** Regex, `OpenAI SDK` (AI Parser Fallback)
-- **Testes:** Pendente
+- **Testes:** Concluído
 - **Detalhes:** Formato instável (Emojis e espaços posicionalmente ruidosos). Função: Injetar `category_id` (Teacher Forcing).
 
 ---
 
-### MyProfit
-- **Status:** Planejado
-- **Formato:** CSV
-- **Encoding:** UTF-8 / Latin-1
-- **Dependências:** `pandas`, `Normalizer (Dividend/Yield -> Canonical)`
-- **Testes:** Pendente
-- **Detalhes:** Enriquece metadados de proventos (Data COM, YOC, DY) não encontrados na B3.

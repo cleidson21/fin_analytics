@@ -27,3 +27,9 @@
 | TD-011 | `normalizers/pierre_txt.py` + `normalizers/nubank_fatura.py` | Uso de `hashlib.md5` para `external_uuid` | MÉDIO — Inconsistente com SHA-256 usado em `BaseCsvReader`. | **P3** | Muito Baixa (30min por arquivo) | Padronizar tudo para SHA-256 (truncado se necessário). |
 | TD-012 | `tests/unit/domains/imports/test_pierre_pipeline.py` | Ausência de testes para categoria composta e valor negativo explícito | BAIXO — Cobertura incompleta | **P2** | Muito Baixa | ✅ **RESOLVIDO** — 67 testes na suíte completa Pierre. |
 | TD-013 | `readers/pierre_txt.py` | Duplicação de hashing/`RawDocument` em relação ao `BaseCsvReader` sem herança comum | BAIXO — Violação DRY entre TXT e CSV readers | **P3** | Baixa (2h) | Criar `BaseReader` genérica com `_build_document()` helper. |
+| TD-014 | `parsers/nubank_conta.py` | (EA3-12) Parser sem try/except p/ NaN Pandas | CRÍTICO | **P1** | Baixa | ✅ **RESOLVIDO** — TSK-5.H1 |
+| TD-015 | `readers/base.py` | (EA3-05) Propriedade concreta em abstração | ALTO | **P1** | Baixa | ✅ **RESOLVIDO** — TSK-5.H1 |
+| TD-016 | `normalizers/nubank_fatura.py` | (EA3-20) Lógica frágil de UUID via raw_doc_id | ALTO | **P1** | Baixa | ✅ **RESOLVIDO** — TSK-5.H1 |
+| TD-017 | `pipelines/*.py` | (EA3-24) Falta de isolamento de exceção em runtime | ALTO | **P1** | Baixa | ✅ **RESOLVIDO** — TSK-5.H1 |
+| TD-018 | `tests/unit/` | (EA3-27) Falta de testes de robustez nos parsers | ALTO | **P1** | Média | ✅ **RESOLVIDO** — TSK-5.H1 |
+| TD-019 | `CanonicalFinancialEvent` | (EA4-NEW-001) Incompatibilidade com leitura de Posições Estáticas (Snapshots) do CSV de Ativos MyProfit. | ALTO — Trava ingestão de balanços estruturais se forçado | **P2** | Alta | Suspender leitura de "Ativos". Necessita nova abstração (`PositionSnapshot`) no Core. |

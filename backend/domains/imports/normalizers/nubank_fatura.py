@@ -9,8 +9,8 @@ class NubankFaturaNormalizer:
     def normalize(self, rows: List[NubankFaturaRowDTO], raw_doc_id: str) -> List[CanonicalFinancialEvent]:
         events = []
         for row in rows:
-            # Hash para uuid (faturas não trazem id único)
-            unique_string = f"{row.data.isoformat()}-{row.titulo}-{row.valor}-{raw_doc_id}"
+            # Hash para uuid (faturas não trazem id único). Depende apenas dos dados do evento.
+            unique_string = f"{row.data.isoformat()}-{row.titulo}-{row.valor}"
             ext_uuid = hashlib.md5(unique_string.encode('utf-8')).hexdigest()
             
             norm_desc = row.titulo

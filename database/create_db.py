@@ -49,6 +49,8 @@ MIGRATION_ORDER = [
     "010_ledger_events.sql",
     "011_ai_prompt_versioning.sql",
     "012_freeze_fixes.sql",
+    # --- Plataforma de Investimentos (Sprint 2) ---
+    "013_position_snapshots.sql",
 ]
 
 
