@@ -129,18 +129,54 @@ class TradeRepository:
             count += 1
         return count
 
+    def save_idempotent(self, session: Session, trade: TradeDTO) -> bool:
+        """
+        Insere a transação apenas se o hash não existir (Idempotência).
+        
+        Args:
+            session (Session): Sessão ativa do SQLAlchemy.
+            trade (TradeDTO): Objeto financeiro da transação.
+            
+        Returns:
+            bool: True se inseriu, False se foi ignorado por duplicidade.
+        """
+        asset_id = self._resolve_asset_id(session, trade.ticker)
+        account_id = self._resolve_account_id(session, trade.broker)
+        
+        query = text("""
+            INSERT INTO trades (
+                id, asset_id, account_id, type, trade_date, 
+                quantity, unit_price, gross_value, source
+            ) VALUES (
+                :id, :asset_id, :account_id, :type, :trade_date, 
+                :quantity, :unit_price, :gross_value, :source
+            ) ON CONFLICT(id) DO NOTHING
+        """)
+        
+        # Calculate gross_value if it's 0 (unit_price * quantity)
+        gross_value = trade.total_value if trade.total_value > 0 else (trade.unit_price * trade.quantity)
+        
+        params = {
+            "id": trade.idempotency_hash,
+            "asset_id": asset_id,
+            "account_id": account_id,
+            "type": trade.operation_type.value,
+            "trade_date": trade.trade_date.isoformat(),
+            "quantity": float(trade.quantity),
+            "unit_price": int(round(float(trade.unit_price) * 100)),
+            "gross_value": int(round(float(gross_value) * 100)),
+            "source": trade.source
+        }
+        
+        result = session.execute(query, params)
+        return result.rowcount > 0
+
     def exists_hash(self, session: Session, idempotency_hash: str) -> bool:
         """
         Verifica fisicamente se o hash já foi processado e salvo na tabela.
-        
-        Args:
-            session (Session): Sessão ativa.
-            idempotency_hash (str): Hash gerado via MD5.
-            
-        Returns:
-            bool: True se já existir, False se for novo.
         """
-        raise NotImplementedError("Implementação lógica a ser definida.")
+        query = text("SELECT 1 FROM trades WHERE id = :id")
+        return session.execute(query, {"id": idempotency_hash}).fetchone() is not None
 
     def find_by_hash(self, session: Session, idempotency_hash: str) -> Optional[dict]:
         """

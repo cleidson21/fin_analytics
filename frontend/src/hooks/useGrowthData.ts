@@ -56,11 +56,12 @@ export function useGrowthData(period: string) {
       setIsLoading(true);
       setIsError(false);
       try {
+        const historyRes = await fetchFromAPI<{points: PortfolioEvolutionPoint[], summary: any}>("/investments/performance/history");
         const perfRes = await fetchPerformanceDataShared();
 
         if (!mounted) return;
 
-        if (perfRes) {
+        if (perfRes && historyRes) {
           setSummary({
             patrimonio_atual: String(perfRes.market_value),
             patrimonio_atual_value: Number(perfRes.market_value || 0),
@@ -73,7 +74,7 @@ export function useGrowthData(period: string) {
             alpha_vs_ibov: Number(perfRes.metrics?.cagr || 0),
             alpha_vs_cdi: Number(perfRes.metrics?.cagr || 0)
           });
-          setHistory([]); // History will be implemented when backend supports series
+          setHistory(historyRes.points || []); 
         } else {
           setIsError(true);
         }

@@ -16,11 +16,14 @@ export function useAlphaData(period: string) {
       setIsLoading(true);
       setIsError(false);
       try {
+        // Fetch real history
+        const historyRes = await fetchFromAPI<{points: PortfolioEvolutionPoint[], summary: any}>("/investments/performance/history");
+        
         const perfRes = await fetchFromAPI<PerformanceSummary>("/investments/performance");
 
         if (!mounted) return;
-        if (perfRes) {
-          setHistory([]);
+        if (perfRes && historyRes) {
+          setHistory(historyRes.points || []);
           setSummary({
             patrimonio_atual: String(perfRes.market_value),
             patrimonio_atual_value: Number(perfRes.market_value || 0),
@@ -33,8 +36,9 @@ export function useAlphaData(period: string) {
             alpha_vs_ibov: Number(perfRes.metrics?.cagr || 0),
             alpha_vs_cdi: Number(perfRes.metrics?.cagr || 0)
           });
+        } else {
+          setIsError(true);
         }
-        if (!perfRes) setIsError(true);
       } catch {
         if (mounted) setIsError(true);
       } finally {

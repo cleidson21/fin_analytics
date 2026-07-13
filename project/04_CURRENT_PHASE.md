@@ -50,9 +50,15 @@ Estruturar e unificar a ingestão de custódia, negociação e proventos (Renda 
 - [x] TSK-INV-6.3: [Sprint 6] Dashboard Analítico - Gate 9.3 (Integração de Banco) Concluído.
 - [x] TSK-INV-6.4: [Sprint 6] Dashboard Analítico - Gate 9.4 (Nova Tela de Posições MTM) Concluído.
 - [x] TSK-INV-6.5: [Sprint 6] Dashboard Analítico - Gate 9.5 (Nova Tela de Performance) Concluído.
-- [ ] TSK-INV-6.6: [Sprint 6] Dashboard Analítico - Gate 9.6 (Tela de Ingestão e Conciliação).
+- [x] TSK-INV-6.6: [Sprint 6] Dashboard Analítico - Gate 9.6 (Tela de Ingestão e Conciliação) Concluído.
+- [x] TSK-INV-6.7: [Sprint 6] Dashboard Analítico - Gate 9.7 (Conciliação) Concluído.
 
 ---
+
+## 3. Próxima Sprint (Sprint 7)
+Foco primário: Governança, Testes de Integração e Dívidas Técnicas remanescentes, refinamento do Core do Motor de Performance em séries temporais.
+- [x] TSK-INV-7.1: [Sprint 7] Gate 10.1 - Pipeline Real de Importação (CSV, OFX, JSON) Concluído.
+- [x] TSK-INV-7.2: [Sprint 7] Gate 10.2 - Ledger de Importações e Auditoria Permanente Concluído.
 
 > Consulte o `project/09_IMPLEMENTATION_QUEUE.md` para o status detalhado da microetapa atual.
 

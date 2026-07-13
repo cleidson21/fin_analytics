@@ -42,14 +42,18 @@
 *Gate 9.3 (Integração DB) Concluído*
 *Gate 9.4 (Tela de Posições) Concluído*
 *Gate 9.5 (Tela de Performance) Concluído*
+*Gate 9.6 (Tela de Ingestão) Concluído*
+*Gate 9.7 (Conciliação) Concluído*
 - [x] Gate 9.0: Auditoria de Adaptação do Frontend.
 - [x] Gate 9.1: Investments Router (FastAPI).
 - [x] Gate 9.2: Hooks de Integração (Frontend).
 - [x] Gate 9.3: Integração Real do Router com o Banco de Dados.
 - [x] Gate 9.4: Tela de Posições (Nova).
 - [x] Gate 9.5: Performance (Nova Tela + Evolution).
-- [ ] Gate 9.6: Importação (Tela de Ingestão).
-- [ ] Gate 9.7: Conciliação (Opcional).
+- [x] Gate 9.6: Importação (Tela de Ingestão).
+- [x] Gate 9.7: Conciliação Inteligente.
+- [x] Gate 10.1: Pipeline Real de Importação (CSV, OFX, JSON).
+- [x] Gate 10.2: Ledger de Importações e Auditoria Permanente (Histórico Persistido).
 
 ### Tarefas Concluídas
 - [x] Sprint 1: Parser Posicional da B3 (Snapshot).
@@ -126,6 +130,8 @@
 | 2026-07-03 | Agente AI | Sprint 2 (TSK-INV-2) | PERSISTÊNCIA CONCLUÍDA |
 | 2026-07-03 | Agente AI | Sprint 3A (TSK-INV-3A) | CEI ARQUITETURA DEFINIDA |
 | 2026-07-04 | Agente AI | Sprint 3B (TSK-INV-3B) | CEI HOMOLOGAÇÃO DO ARQUIVO |
+| 2026-07-13 | Agente AI | Sprint 7 (Gate 10.1) | PIPELINE REAL CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 (Gate 10.2) | LEDGER DE IMPORTAÇÕES E AUDITORIA PERMANENTE CONCLUÍDO |
 
 ---
 
@@ -144,3 +150,5 @@
 **Próximos passos:**
 1. Iniciar Sprint 3C — CEI (Implementação).
 2. Aguardar aprovação do usuário.
+
+- [x] Gate 10.4 - Market Data Engine

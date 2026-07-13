@@ -27,9 +27,9 @@
 | **2** | Identity & Autenticação | ✅ Aprovado | 2026-06-24 | 2026-06-25 | 1 |
 | **3** | Ledger Core (Banking + Dashboard) | ✅ Aprovado | 2026-06-25 | 2026-06-25 | 1 |
 | **4** | Credit & Installments | ✅ Aprovado | 2026-06-25 | 2026-06-25 | 1 |
-| **5** | Importadores & Governança | 🔄 Em andamento | 2026-06-25 | — | — |
-| **6** | Investments & Market Data | ⬜ Não iniciada | — | — | — |
-| **7** | Engines Analíticas | ⬜ Não iniciada | — | — | — |
+| **5** | Importadores & Governança | ✅ Aprovado | 2026-06-25 | 2026-07-10 | — |
+| **6** | Investments & Market Data | ✅ Aprovado | 2026-07-10 | 2026-07-13 | — |
+| **7** | Engines Analíticas & Pipelines | 🔄 Em andamento | 2026-07-13 | — | — |
 | **8** | AI & Learning | ⬜ Não iniciada | — | — | — |
 | **9** | Validação E2E & Hardening | ⬜ Não iniciada | — | — | — |
 
@@ -95,23 +95,23 @@
 ---
 
 ### FASE 5 — Importadores & Governança
-- **Status:** ⬜ Não iniciada
+- **Status:** ✅ Aprovada
 - **Bloqueada por:** Gate da Fase 4
 - **Gate:** Upload → staging → confirm → rollback funcionando ponta-a-ponta
 
 ---
 
-### FASE 6 — Investments & Market Data
-- **Status:** ⬜ Não iniciada
+### FASE 6 — Investments & Market Data (Sprint 6)
+- **Status:** ✅ Aprovada
 - **Bloqueada por:** Gate da Fase 5
-- **Gate:** `GET /investments/positions` retorna carteira real
+- **Gate:** Dashboard V3 com Position, Valuation, Performance e Wealth concluidos, inclusive mock import e conciliação (Gates 9.1 a 9.7).
 
 ---
 
-### FASE 7 — Engines Analíticas
-- **Status:** ⬜ Não iniciada
+### FASE 7 — Engines Analíticas & Pipelines Reais (Sprint 7)
+- **Status:** 🔄 Em andamento
 - **Bloqueada por:** Gate da Fase 6
-- **Gate:** PositionEngine (WAC), WealthEngine (TWR), DividendEngine, CashflowEngine calculam resultados determinísticos corretos
+- **Gate:** Pipeline real de ingestão de dados (OFX, CSV, Open Finance) com persistência definitiva.
 
 ---
 
@@ -126,3 +126,6 @@
 - **Status:** ⬜ Não iniciada
 - **Bloqueada por:** Gate da Fase 8
 - **Gate:** Todas as 18 telas respondem com dados reais. Zero Network Error no console.
+
+- Phase 10: Gate 10.3 (Séries Temporais e Performance Histórica) - Completed
+- Phase 10: Gate 10.4 (Market Data Engine) - Completed

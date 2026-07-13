@@ -147,6 +147,9 @@ Impacto: Segurança e clareza para a execução das Fases subsequentes.
 - Router FastAPI integrado com o banco de dados SQL (via Repositories), injetando dados reais nas Engines (Gate 9.3).
 - Criação da tela de Posições MTM (`/wealth/positions`) utilizando o hook `usePositionsData` com memoização de cálculos e componentes do Design System legado (Gate 9.4).
 - Criação da tela de Performance (`/wealth/performance`), expondo métricas avançadas (TWR, MWR, CAGR, Rentabilidade Mensal/Diária) e otimizando o fetch no hook `usePerformanceData` com singleton de Promise para evitar duplicação com `useGrowthData` (Gate 9.5).
+- Criação da tela de Ingestão (`/wealth/import`) e dos endpoints de upload de CEI e Open Finance (`/api/v1/investments/import/*`), garantindo as abstrações para idempotência de hash. (Gate 9.6).
+- Criação da tela de Conciliação Inteligente (`/wealth/reconciliation`), comparando o Ledger Core de Transações com Snapshots consolidados da B3/Open Finance, destacando divergências automaticamente com Recomendações e Status (Gate 9.7 - Fim da Sprint 6).
+- [Sprint 7] Eliminação de stubs e substituição por Pipeline Real de Importação (Gate 10.1). Criados `CSVTradeParser`, `OFXParser` e `OpenFinanceParser`. Implementada Idempotência via `ON CONFLICT DO NOTHING` em SQLite nos `TradeRepository` e `SnapshotRepository`. Tela conectada com FormData real.
 Abertura formal da Fase 3 (Ledger Core). Criados `backend/domains/banking`, `dto.py` (`TransactionDTO`) e `repository.py` (`TransactionRepository`). Mapeamento exato de raw SQL unindo a tabela `transactions` com `categories` (parentalidade) para suprir o contrato visual do Frontend. 
 Motivo: Lançar as fundações de acesso a dados da tela principal de Transações.
 Impacto: Domínio `banking` iniciado e compatível com as regras de raw SQL do V3. Banco inalterado.
@@ -551,3 +554,13 @@ Atividade realizada: Criação do motor de desempenho financeiro (`PerformanceEn
 Motivo: Complementar a Wealth Engine com a dimensão temporal da performance patrimonial — fundamental para exibição de rentabilidade no Dashboard e para integração futura com APIs de comparação de benchmarks (CDI, IBOV).
 Resultado: ✅ SUCESSO. Engine implementada com `Decimal` exclusivo. TWR exato por produto encadeado. CAGR por exponenciação. Proteção integral a divisões por zero, Overflows e cenarios de falência.
 Impacto: Encerra a Sprint 5. O backend agora possui infraestrutura analítica completa: Posição -> MTM -> Patrimônio -> Performance.
+
+## [2026-07-13] Gate 10.2 — Ledger de Importações
+- Criada tabela import_logs para registro permanente de importações.
+- Atualizado ImportService para gravar log de forma imutável (sucesso ou falha).
+- Criados endpoints /import/history e /import/{id}.
+- Atualizado Dashboard de Importação no Frontend para exibir o histórico e detalhamento em Modal.
+- Criado 	est_import_logs.py e 	est_import_history.ts para garantir cobertura funcional.
+
+- 2026-07-13: Gate 10.3 - Séries Temporais e Performance Histórica (Backend real e integração com hooks do Frontend).
+- 2026-07-13: Gate 10.4 - Market Data Engine (Substituição de benchmarks mockados por reais e adição do MarketDataRepository).

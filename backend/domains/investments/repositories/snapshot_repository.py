@@ -122,19 +122,55 @@ class SnapshotRepository:
     def save_many(self, session: Session, snapshots: List[PositionSnapshot]) -> int:
         """
         Realiza o upsert massivo de snapshots.
-        
-        Args:
-            session (Session): Sessão ativa do SQLAlchemy.
-            snapshots (List[PositionSnapshot]): Lista com os DTOs processados.
-            
-        Returns:
-            int: Quantidade de registros afetados.
         """
         count = 0
         for snapshot in snapshots:
             self.save(session, snapshot)
             count += 1
         return count
+
+    def save_idempotent(self, session: Session, snapshot: PositionSnapshot) -> bool:
+        """
+        Insere a transação apenas se o hash não existir (Idempotência).
+        """
+        asset_id = self._resolve_asset_id(session, snapshot.ticker)
+        account_id = self._resolve_account_id(session, snapshot.institution)
+        
+        query = text("""
+            INSERT INTO position_snapshots (
+                id, account_id, asset_id, reference_date, quantity, 
+                unit_price, total_value, source_system, metadata
+            ) VALUES (
+                :id, :account_id, :asset_id, :reference_date, :quantity, 
+                :unit_price, :total_value, :source_system, :metadata
+            ) ON CONFLICT(id) DO NOTHING
+        """)
+        
+        unit_price = int(round(float(snapshot.unit_price) * 100)) if snapshot.unit_price is not None else None
+        total_value = int(round(float(snapshot.total_value) * 100)) if snapshot.total_value is not None else None
+        metadata_json = json.dumps(snapshot.metadata) if snapshot.metadata else None
+
+        params = {
+            "id": snapshot.snapshot_hash,
+            "account_id": account_id,
+            "asset_id": asset_id,
+            "reference_date": snapshot.reference_date.isoformat(),
+            "quantity": float(snapshot.quantity),
+            "unit_price": unit_price,
+            "total_value": total_value,
+            "source_system": snapshot.source_system,
+            "metadata": metadata_json
+        }
+        
+        result = session.execute(query, params)
+        return result.rowcount > 0
+
+    def exists_hash(self, session: Session, idempotency_hash: str) -> bool:
+        """
+        Verifica fisicamente se o hash já foi processado e salvo na tabela.
+        """
+        query = text("SELECT 1 FROM position_snapshots WHERE id = :id")
+        return session.execute(query, {"id": idempotency_hash}).fetchone() is not None
 
     def _row_to_dto(self, row) -> PositionSnapshot:
         created_at = row.created_at

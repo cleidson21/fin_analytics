@@ -72,3 +72,90 @@ class TradeDTO(BaseModel):
     idempotency_hash: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ReconciliationStatus(str, Enum):
+    OK = "OK"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+
+class ReconciliationRecommendation(str, Enum):
+    NO_ACTION = "Sem ação"
+    REVIEW_IMPORT = "Revisar importação"
+    UPDATE_SNAPSHOT = "Atualizar snapshot"
+    CHECK_CUSTODY = "Conferir custódia"
+
+class ReconciliationResult(BaseModel):
+    ticker: str
+    broker: str
+    ledger_quantity: Decimal
+    snapshot_quantity: Decimal
+    difference: Decimal
+    difference_percent: Decimal
+    status: ReconciliationStatus
+    recommendation: ReconciliationRecommendation
+
+class ImportLogDTO(BaseModel):
+    """
+    Representa o registro histórico permanente e auditável de uma importação (Gate 10.2).
+    """
+    id: str
+    user_id: str
+    created_at: datetime
+    filename: str
+    file_type: str
+    file_size: int
+    checksum: str
+    parser: str
+    rows_read: int
+    rows_imported: int
+    rows_duplicated: int
+    rows_failed: int
+    processing_time_ms: int
+    status: str
+    error_message: Optional[str] = None
+    metadata_json: Optional[str] = None
+
+
+class PerformanceHistoryPoint(BaseModel):
+    date: str
+    month: str
+    patrimonio: str
+    patrimonio_value: Decimal
+    compras: str
+    compras_value: Decimal
+    vendas: str
+    vendas_value: Decimal
+    proventos: str
+    proventos_value: Decimal
+    rentabilidade_mensal_pct: Decimal
+    rentabilidade_acumulada_pct: Decimal
+    ibov_mensal_pct: Decimal
+    ibov_acumulado_pct: Decimal
+    cdi_mensal_pct: Decimal
+    cdi_acumulado_pct: Decimal
+    ipca_mensal_pct: Decimal
+    ipca_acumulado_pct: Decimal
+    ifix_mensal_pct: Decimal
+    ifix_acumulado_pct: Decimal
+    sp500_mensal_pct: Decimal
+    sp500_acumulado_pct: Decimal
+    idiv_mensal_pct: Decimal
+    idiv_acumulado_pct: Decimal
+
+class PerformanceHistory(BaseModel):
+    points: list[PerformanceHistoryPoint]
+    summary: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+
+class MarketDataPoint(BaseModel):
+    date: date
+    ibov: Decimal
+    cdi: Decimal
+    ifix: Decimal
+    ipca: Decimal
+    sp500: Decimal
+    idiv: Decimal
+
+class MarketSeries(BaseModel):
+    points: list[MarketDataPoint]
