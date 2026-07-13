@@ -9,8 +9,8 @@ class MarketDataService:
     Isola a PerformanceEngine do acesso direto aos dados ou CSV.
     """
     
-    def __init__(self):
-        self.repo = MarketDataRepository()
+    def __init__(self, market_data_repo: MarketDataRepository):
+        self.repo = market_data_repo
 
     def get_market_data(self, target_date: date) -> MarketDataPoint:
         """

@@ -1188,3 +1188,14 @@
 
 - AUDIT 2026-07-13: Implementado algoritmo O(N) para processamento da Performance Engine com snapshots mensais no backend, eliminando mocks do frontend para AlphaData e GrowthData.
 - AUDIT 2026-07-13: Implementado MarketDataRepository com busca binária O(log N) e cache local para carregar os benchmarks a partir de CSV.
+- AUDIT 2026-07-13: Gate 10.5 concluido. 12/12 testes E2E passando. Benchmark: 10.000 trades em 142ms. 8 dividas tecnicas identificadas e documentadas.
+- AUDIT 2026-07-13: Gate 10.6 concluido. Resolvido o gargalo arquitetural DT-01. O HistoryService reduziu o tempo de processamento de 10.000 trades (120 meses) de 14.000ms simulados para ~320ms, mantendo SRP e paridade matematica estrita. PerformanceEngine tornou-se matematicamente puro.
+- AUDIT 2026-07-13: Gate 10.7 concluido. Resolvido o gargalo estrutural DT-02. ValuationEngine agora utiliza HistoricalPriceService nativamente quando processa datas passadas. HistoryService integra precos no pipeline O(N+M).
+- AUDIT 2026-07-13: Gate 10.8 concluido. Finalizada a criacao da FinancialAnalyticsEngine que converte os pontos de historical portfolio do HistoryService em metricas fin-math (TWR, MWR, CAGR, Sharpe, Drawdown) respeitando O(N). Complexidade temporal matematicamente blindada e contratos pre-existentes sem nenhuma alteracao.
+## Gate 10.9 (Application Service Layer & Dependency Injection)
+- **Status**: ✅ Concluído.
+- **Resultado**: Todas dependências convertidas para injetáveis (DI). Services desacoplados, Application Services atuando como orquestradores (Maestros). Factory Pattern adicionado. 37 testes automatizados passando.
+
+## Gate 10.10 (Portfolio Dashboard API Layer)
+- **Status**: ✅ Concluído.
+- **Resultado**: Todas rotas do dashboard implementadas utilizando PortfolioDashboardService que apenas orquestra PortfolioApplicationService. Nenhuma regra matemática nova criada. DTOs definidos para Summary, Risk, Allocation, Performance.

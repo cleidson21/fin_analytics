@@ -2,6 +2,8 @@ from decimal import Decimal
 from typing import List, Dict, Optional
 from pydantic import BaseModel
 from backend.domains.investments.engines.position_engine import PositionResult
+from backend.domains.investments.services.historical_price_service import HistoricalPriceService
+from datetime import date
 
 class ValuationResult(BaseModel):
     ticker: str
@@ -21,12 +23,18 @@ class ValuationEngine:
     de preços de mercado atualizados para calcular rentabilidade e
     patrimônio marcado a mercado.
     """
+    def __init__(self, historical_price_service: Optional[HistoricalPriceService] = None):
+        self.hist_service = historical_price_service
+
     def calculate_valuation(
         self,
         positions: List[PositionResult],
-        market_prices: Dict[str, Decimal]
+        market_prices: Dict[str, Decimal],
+        reference_date: Optional[date] = None
     ) -> List[ValuationResult]:
         
+        is_historical = reference_date is not None and reference_date < date.today()
+            
         results = []
         for pos in positions:
             # Se a quantidade for <= 0, o ativo foi zerado. O Valuation a mercado é zero.
@@ -45,10 +53,11 @@ class ValuationEngine:
                 continue
                 
             # Determina o preço de mercado.
-            # Se o ativo não possuir cotação fornecida, marcamos a mercado pelo próprio custo 
-            # de aquisição, evitando que o patrimônio despenque artificialmente para zero.
-            # O ganho/perda neste caso será 0.
-            current_price = market_prices.get(pos.ticker)
+            current_price = None
+            if is_historical and self.hist_service is not None:
+                current_price = self.hist_service.get_price_for_date(pos.ticker, reference_date)
+            else:
+                current_price = market_prices.get(pos.ticker)
             
             # Se o dict explicitamente fornecer o valor 0 (ex: empresa faliu), 
             # nós aceitamos a perda de 100%. Se ele fornecer None ou a chave não existir, 

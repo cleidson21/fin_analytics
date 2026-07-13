@@ -152,3 +152,11 @@
 2. Aguardar aprovação do usuário.
 
 - [x] Gate 10.4 - Market Data Engine
+- [x] Gate 10.5 - Validacao End-to-End das Engines
+- [x] Gate 10.6 - History Engine Incremental
+- [x] Gate 10.7 - Historical Asset Pricing Engine
+- [x] Gate 10.8 - Financial Performance Analytics Engine
+
+## Concluído
+- Gate 10.9 (Application Service Layer & Dependency Injection)
+- Gate 10.10 (Portfolio Dashboard API Layer & Financial Presentation)

@@ -1,0 +1,5 @@
+source_system,reference_date,ticker,asset_type,institution,quantity,unit_price,total_value
+B3,2025-12-31,PETR4,STOCK,XP,200,34.50,6900.00
+B3,2025-12-31,VALE3,STOCK,XP,66,86.50,5709.00
+B3,2025-12-31,MXRF11,FII,XP,450,11.30,5085.00
+B3,2025-12-31,KNRI11,FII,XP,50,143.00,7150.00

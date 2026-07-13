@@ -7,15 +7,14 @@ from backend.domains.investments.engines.position_engine import PositionEngine
 from sqlalchemy.orm import Session
 
 class ReconciliationService:
-    def __init__(self, db: Session):
-        self.db = db
-        self.trade_repo = TradeRepository()
-        self.snapshot_repo = SnapshotRepository()
-        self.position_engine = PositionEngine()
+    def __init__(self, trade_repo, snapshot_repo, position_engine):
+        self.trade_repo = trade_repo
+        self.snapshot_repo = snapshot_repo
+        self.position_engine = position_engine
         
-    def reconcile(self) -> List[ReconciliationResult]:
-        trades = self.trade_repo.list_all(self.db)
-        snapshots = self.snapshot_repo.list_all(self.db)
+    def reconcile(self, db: Session, target_date=None) -> List[ReconciliationResult]:
+        trades = self.trade_repo.list_all(db)
+        snapshots = self.snapshot_repo.list_all(db)
         
         # Calculates ledger position
         positions = self.position_engine.calculate_position(trades, snapshots)

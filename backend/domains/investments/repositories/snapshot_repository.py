@@ -197,10 +197,8 @@ class SnapshotRepository:
     def list_all(self, session: Session) -> List[PositionSnapshot]:
         query = text("""
             SELECT p.id, p.reference_date, p.quantity, p.unit_price, p.total_value, 
-                   p.source_system, p.metadata, p.created_at, a.ticker, a.asset_class, c.name as broker
+                   p.source_system, p.metadata_json as metadata, p.created_at, p.ticker, p.asset_type as asset_class, p.institution as broker
             FROM position_snapshots p
-            JOIN assets a ON p.asset_id = a.id
-            JOIN accounts c ON p.account_id = c.id
             ORDER BY p.reference_date ASC
         """)
         results = session.execute(query).fetchall()
@@ -209,10 +207,8 @@ class SnapshotRepository:
     def latest_by_asset(self, session: Session, ticker: str) -> List[PositionSnapshot]:
         query = text("""
             SELECT p.id, p.reference_date, p.quantity, p.unit_price, p.total_value, 
-                   p.source_system, p.metadata, p.created_at, a.ticker, a.asset_class, c.name as broker
+                   p.source_system, p.metadata_json as metadata, p.created_at, p.ticker, p.asset_type as asset_class, p.institution as broker
             FROM position_snapshots p
-            JOIN assets a ON p.asset_id = a.id
-            JOIN accounts c ON p.account_id = c.id
             WHERE a.ticker = :ticker
             AND p.reference_date = (
                 SELECT MAX(reference_date) 
@@ -227,10 +223,8 @@ class SnapshotRepository:
         canonical_broker = self._broker_resolver.resolve(account_name)
         query = text("""
             SELECT p.id, p.reference_date, p.quantity, p.unit_price, p.total_value, 
-                   p.source_system, p.metadata, p.created_at, a.ticker, a.asset_class, c.name as broker
+                   p.source_system, p.metadata_json as metadata, p.created_at, p.ticker, p.asset_type as asset_class, p.institution as broker
             FROM position_snapshots p
-            JOIN assets a ON p.asset_id = a.id
-            JOIN accounts c ON p.account_id = c.id
             WHERE c.name LIKE :broker
             AND p.reference_date = (
                 SELECT MAX(reference_date) 

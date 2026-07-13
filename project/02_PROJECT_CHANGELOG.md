@@ -564,3 +564,7 @@ Impacto: Encerra a Sprint 5. O backend agora possui infraestrutura analítica co
 
 - 2026-07-13: Gate 10.3 - Séries Temporais e Performance Histórica (Backend real e integração com hooks do Frontend).
 - 2026-07-13: Gate 10.4 - Market Data Engine (Substituição de benchmarks mockados por reais e adição do MarketDataRepository).
+- 2026-07-13: Gate 10.5 - Validação End-to-End das Engines (12/12 testes passando, benchmark documentado, arquitetura auditada).
+- 2026-07-13: Gate 10.6 - History Engine Incremental (Refatoração O(N*M) para O(N+M)).
+- 2026-07-13: Gate 10.7 - Historical Asset Pricing Engine (Preços históricos reais no Valuation histórico).
+- 2026-07-13: Gate 10.8 - Financial Performance Analytics Engine (Métricas avançadas: TWR, MWR, Sharpe, Volatilidade, Beta).

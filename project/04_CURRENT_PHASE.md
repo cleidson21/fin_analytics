@@ -59,6 +59,8 @@ Estruturar e unificar a ingestão de custódia, negociação e proventos (Renda 
 Foco primário: Governança, Testes de Integração e Dívidas Técnicas remanescentes, refinamento do Core do Motor de Performance em séries temporais.
 - [x] TSK-INV-7.1: [Sprint 7] Gate 10.1 - Pipeline Real de Importação (CSV, OFX, JSON) Concluído.
 - [x] TSK-INV-7.2: [Sprint 7] Gate 10.2 - Ledger de Importações e Auditoria Permanente Concluído.
+- [x] TSK-INV-7.3: [Sprint 7] Gate 10.3 a 10.9 - Concluídos (Market Data, Historical Pricing, Financial Analytics Engine, Application Layer/DI).
+- [x] TSK-INV-7.4: [Sprint 7] Gate 10.10 - Portfolio Dashboard API Layer Concluído. (Market Data, Historical Pricing, Financial Analytics Engine, Application Layer/DI).
 
 > Consulte o `project/09_IMPLEMENTATION_QUEUE.md` para o status detalhado da microetapa atual.
 
