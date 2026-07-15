@@ -39,33 +39,33 @@ export function useAllocationData() {
       setIsLoading(true);
       setIsError(false);
       try {
-        const wealth = await fetchFromAPI<WealthSummary>("/investments/portfolio");
+        const wealth = await fetchFromAPI<any>("/investments/dashboard/allocation");
 
         if (!mounted) return;
 
         if (wealth) {
-          const allocMapped: AssetAllocation[] = (wealth.by_class || []).map(cls => ({
-            asset_class: cls.asset_type || "N/A",
-            current_total: String(cls.total_market_value || 0),
-            current_total_value: Number(cls.total_market_value || 0)
+          const allocMapped: AssetAllocation[] = (wealth.by_class || []).map((cls: any) => ({
+            asset_class: cls.name || "N/A",
+            current_total: String(cls.market_value || 0),
+            current_total_value: Number(cls.market_value || 0)
           }));
 
-          const posMapped: PositionDetail[] = (wealth.by_asset || []).map(asset => ({
-            ticker: asset.ticker || "N/A",
-            asset_class: asset.asset_type || "N/A",
+          const posMapped: PositionDetail[] = (wealth.by_asset || []).map((asset: any) => ({
+            ticker: asset.name || "N/A",
+            asset_class: asset.name || "N/A",
             asset_subclass: "N/A",
-            quantidade: String(asset.quantity || 0),
-            preco_medio: String(asset.average_cost || 0),
-            valor_investido: String(asset.cost_basis || 0),
+            quantidade: "0",
+            preco_medio: "0",
+            valor_investido: "0",
             valor_atual: String(asset.market_value || 0),
-            ganho: String(asset.unrealized_gain || 0),
-            peso_percentual: String(asset.percent_of_portfolio || 0),
-            quantidade_value: Number(asset.quantity || 0),
-            preco_medio_value: Number(asset.average_cost || 0),
-            valor_investido_value: Number(asset.cost_basis || 0),
+            ganho: "0",
+            peso_percentual: String(asset.allocation_percent || 0),
+            quantidade_value: 0,
+            preco_medio_value: 0,
+            valor_investido_value: 0,
             valor_atual_value: Number(asset.market_value || 0),
-            ganho_value: Number(asset.unrealized_gain || 0),
-            peso_percentual_value: Number(asset.percent_of_portfolio || 0)
+            ganho_value: 0,
+            peso_percentual_value: Number(asset.allocation_percent || 0)
           }));
 
           setAllocation(allocMapped);

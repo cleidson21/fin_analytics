@@ -1,6 +1,6 @@
 # 32 — TECHNICAL DEBT
-## Fase 5 — Catálogo de Dívidas Técnicas (Edição 2 — Deep Audit)
-**Última atualização:** 2026-06-26 | **Revisão:** Enterprise Review 2
+## Fase 5, 6 e 7 — Catálogo de Dívidas Técnicas (Edição 3 — Sprint 7 / Gate 10.13)
+**Última atualização:** 2026-07-14 | **Revisão:** Edição 3 (Reconciliação Documental R0)
 
 ---
 
@@ -33,3 +33,6 @@
 | TD-017 | `pipelines/*.py` | (EA3-24) Falta de isolamento de exceção em runtime | ALTO | **P1** | Baixa | ✅ **RESOLVIDO** — TSK-5.H1 |
 | TD-018 | `tests/unit/` | (EA3-27) Falta de testes de robustez nos parsers | ALTO | **P1** | Média | ✅ **RESOLVIDO** — TSK-5.H1 |
 | TD-019 | `CanonicalFinancialEvent` | (EA4-NEW-001) Incompatibilidade com leitura de Posições Estáticas (Snapshots) do CSV de Ativos MyProfit. | ALTO — Trava ingestão de balanços estruturais se forçado | **P2** | Alta | Suspender leitura de "Ativos". Necessita nova abstração (`PositionSnapshot`) no Core. |
+| TD-020 | `domains/investments/engines/*` | (Gate 10.13) Engines financeiras (Position, Valuation, Wealth, Performance, History) rodando In-Memory, ignorando tabelas físicas do V3. Gargalo de memória e perda de histórico imutável. | CRÍTICO — Insustentável em produção | **P1 — Antes Fase 8** | Alta | ✅ **RESOLVIDO** — `ValuationRepository`, `WealthRepository`, `DividendRepository` criados. Persistência 100% no V3. (TSK-7.R1) |
+| TD-021 | `domains/investments/router.py` | (Gate 10.13) 9+ endpoints requeridos pelo Frontend ausentes. | ALTO — Frontend com 404 em telas críticas | **P2 — Antes Fase 8** | Média | ✅ **RESOLVIDO** — Construídos endpoints de evolução, dividendos, e dashboard. (TSK-7.R3) |
+| TD-022 | Integrações Externas | (Gate 10.13) yfinance, Banco Central (CDI/IPCA), Gemini AI, APScheduler e python-dotenv ausentes. | ALTO — Dados financeiros incorretos/mockados | **P2** | Alta | Implementar integrações conforme TSK-7.INT. |

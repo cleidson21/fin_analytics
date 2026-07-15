@@ -1,72 +1,87 @@
 # FINANALYTICS V3 — CURRENT PHASE
 > Documento pequeno e sempre atual. Atualizado ao início e fim de cada fase.
 > **Leia este arquivo primeiro ao retomar o projeto em uma nova conversa.**
+> Última atualização: 2026-07-14 — Fase R0 (Reconciliação Documental)
 
 ---
 
-## ⚡ FASE ATUAL: 3 — Ledger Core (Banking + Dashboard)
+## ⚡ FASE ATUAL: 7 — Engines Analíticas & Pipelines
 
 **Status:** 🔄 Em andamento
-**Iniciada em:** 2026-06-25
-**Objetivo:** Implementar o domínio de Banking, provendo repositórios, rotas e engines de DTOs para Transações e Dashboard Financeiro base.
-## ⚡ MACROFASE ATUAL: Plataforma de Investimentos
-
-A Plataforma de Ingestão (Fase 5 base) encontra-se **✅ CERTIFICADA E CONSOLIDADA**. O ciclo contínuo de auditorias da fundação foi encerrado na EA6.
-
-### Objetivo Principal da Plataforma de Investimentos
-Estruturar e unificar a ingestão de custódia, negociação e proventos (Renda Variável e Fixa) mantendo total compatibilidade com a infraestrutura e governança (Event Sourcing) criadas na fase anterior.
-
-### Domínios da Arquitetura de Investimentos
-- **Custódia**: Posição estática (ex: Área do Investidor B3, Snapshots). Requer abstração não-transacional.
-- **Movimentações**: Trades, Compras/Vendas via Notas de Corretagem (Event Sourcing integral).
-- **Proventos**: Rendimentos já tratados parcialmente, com necessidade de consolidação de calendários.
-- **Carteiras**: Agrupamento lógico para cálculo de rentabilidade (MyProfit, CEI).
-- **Reconciliação**: Cruzamento do financeiro da conta com a liquidação na B3.
-
-### Roadmap Oficial (Sprints de Investimento)
-- [x] TSK-INV-1A: [Sprint 1A] Arquitetura B3 (Zero parser, apenas DTOs e Domínio Isolado).
-- [x] TSK-INV-1A.5: [Sprint 1A.5] Levantamento Técnico da B3 (Especificação Oficial).
-- [x] TSK-INV-1B: [Sprint 1B] Reader B3 Custódia.
-- [x] TSK-INV-1C: [Sprint 1C] Parser B3 Custódia.
-- [x] TSK-INV-1D: [Sprint 1D] Normalizer B3 Custódia.
-- [x] TSK-INV-1E: [Sprint 1E] Pipeline B3 Custódia.
-- [x] TSK-INV-2: [Sprint 2] Persistência B3 e Valuation.
-- [x] TSK-INV-3A: [Sprint 3A] CEI (Levantamento e Arquitetura).
-- [x] TSK-INV-3B: [Sprint 3B] CEI (Homologação).
-- [x] TSK-INV-3C.1: [Sprint 3C.1] CEI (Homologação Funcional).
-- [x] TSK-INV-3C.2: [Sprint 3C.2] CEI (Implementação) - Gate 6.5 (Idempotência Financeira TD-02) Concluído.
-- [x] TSK-INV-4.0: [Sprint 4] Open Finance Investimentos - Gate 7.0 (Auditoria de Entrada) Concluído.
-- [x] TSK-INV-4.1: [Sprint 4] Open Finance Investimentos - Gate 7.1 (Migration 005) Concluído.
-- [x] TSK-INV-4.2: [Sprint 4] Open Finance Investimentos - Gate 7.2 (SnapshotRepository) Concluído.
-- [x] TSK-INV-4.3: [Sprint 4] Open Finance Investimentos - Gate 7.3 (Adapters) Concluído.
-- [x] TSK-INV-4.4: [Sprint 4] Open Finance Investimentos - Gate 7.4 (Orquestração CLI/API) Concluído.
-- [x] TSK-INV-5.0: [Sprint 5] Position Engine - Gate 8.1 (Motor de Consolidação Patrimonial) Concluído.
-- [x] TSK-INV-5.1: [Sprint 5] Position Engine - Gate 8.2 (Valuation Engine MTM) Concluído.
-- [x] TSK-INV-5.2: [Sprint 5] Position Engine - Gate 8.3 (Wealth Engine Global) Concluído.
-- [x] TSK-INV-5.3: [Sprint 5] Performance Engine - Gate 8.4 (MWR, TWR, CAGR, YoC) Concluído.
-- [x] TSK-INV-6.0: [Sprint 6] Dashboard Analítico - Gate 9.0 (Auditoria de Adaptação do Frontend) Concluído.
-- [x] TSK-INV-6.1: [Sprint 6] Dashboard Analítico - Gate 9.1 (Investments Router) Concluído.
-- [x] TSK-INV-6.2: [Sprint 6] Dashboard Analítico - Gate 9.2 (Hooks de Integração) Concluído.
-- [x] TSK-INV-6.3: [Sprint 6] Dashboard Analítico - Gate 9.3 (Integração de Banco) Concluído.
-- [x] TSK-INV-6.4: [Sprint 6] Dashboard Analítico - Gate 9.4 (Nova Tela de Posições MTM) Concluído.
-- [x] TSK-INV-6.5: [Sprint 6] Dashboard Analítico - Gate 9.5 (Nova Tela de Performance) Concluído.
-- [x] TSK-INV-6.6: [Sprint 6] Dashboard Analítico - Gate 9.6 (Tela de Ingestão e Conciliação) Concluído.
-- [x] TSK-INV-6.7: [Sprint 6] Dashboard Analítico - Gate 9.7 (Conciliação) Concluído.
+**Iniciada em:** 2026-07-13
+**Objetivo:** Conectar as Engines analíticas (Position, Valuation, Wealth, Performance, History, FinancialAnalytics) ao Banco de Dados oficial V3, construir os endpoints faltantes e certificar o Frontend end-to-end sem mocks.
 
 ---
 
-## 3. Próxima Sprint (Sprint 7)
-Foco primário: Governança, Testes de Integração e Dívidas Técnicas remanescentes, refinamento do Core do Motor de Performance em séries temporais.
-- [x] TSK-INV-7.1: [Sprint 7] Gate 10.1 - Pipeline Real de Importação (CSV, OFX, JSON) Concluído.
-- [x] TSK-INV-7.2: [Sprint 7] Gate 10.2 - Ledger de Importações e Auditoria Permanente Concluído.
-- [x] TSK-INV-7.3: [Sprint 7] Gate 10.3 a 10.9 - Concluídos (Market Data, Historical Pricing, Financial Analytics Engine, Application Layer/DI).
-- [x] TSK-INV-7.4: [Sprint 7] Gate 10.10 - Portfolio Dashboard API Layer Concluído. (Market Data, Historical Pricing, Financial Analytics Engine, Application Layer/DI).
+## Gates Concluídos (Sprint 7)
 
-> Consulte o `project/09_IMPLEMENTATION_QUEUE.md` para o status detalhado da microetapa atual.
+Todos os Gates abaixo foram concluídos durante a Sprint 7 e pertencem à Fase 7 do Master Plan.
+Os Gates foram originalmente identificados com prefixo "10.x" — nomenclatura interna da Sprint, não uma fase separada.
+
+| Gate | Descrição | Status |
+|---|---|---|
+| 10.1 | Pipeline Real de Importação (CSV, OFX, JSON) | ✅ Concluído |
+| 10.2 | Ledger de Importações e Auditoria Permanente | ✅ Concluído |
+| 10.3 | Séries Temporais e Performance Histórica | ✅ Concluído |
+| 10.4 | Market Data Engine | ✅ Concluído |
+| 10.5 | Validação End-to-End das Engines | ✅ Concluído |
+| 10.6 | History Engine Incremental (O(N+M)) | ✅ Concluído |
+| 10.7 | Historical Asset Pricing Engine | ✅ Concluído |
+| 10.8 | Financial Analytics Engine (TWR, MWR, Sharpe, Beta) | ✅ Concluído |
+| 10.9 | Application Service Layer & Dependency Injection | ✅ Concluído |
+| 10.10 | Portfolio Dashboard API Layer | ✅ Concluído |
+| 10.11 | API Contract & Backend Stabilization | ✅ Concluído |
+| 10.12 | Frontend Readiness | ✅ Concluído |
+| 10.13 | Auditoria Arquitetural de Reconciliação | ✅ Concluído (auditoria e planejamento) |
 
 ---
 
-## O que vem após esta fase
+## Situação pós-Gate 10.13 — O que falta na Fase 7
 
-### FASE 3 — Ledger Core (Banking + Dashboard)
-Com a ingestão estruturada e as carteiras importadas, será iniciada a construção das APIs do Ledger.
+O Gate 10.13 identificou as seguintes pendências críticas que **DEVEM** ser resolvidas antes do Gate final da Fase 7:
+
+### Problema 1 — Engines In-Memory (🔴 CRÍTICO)
+As Engines financeiras (Position, Valuation, Wealth, Performance) rodam em SQLite In-Memory, ignorando as tabelas físicas do V3 (`asset_valuations`, `portfolio_snapshots`, etc.).
+- **Solução:** Criar `ValuationRepository`, `WealthRepository`, `DividendRepository` e conectar as Engines ao V3.
+
+### Problema 2 — Endpoints Faltantes (🟠 ALTO)
+9+ endpoints requeridos pelo Frontend estão ausentes:
+- `GET /dashboard/summary-v2`, `pacing-v2`, `heatmap`, `categories`
+- `GET /investments/evolution/summary`, `evolution/history`
+- `GET /investments/dividends/history`, `dividends/breakdown`
+- `GET /investments/asset/{ticker}`
+- Rotas de `/governance/` (staging, confirm, rollback, learning)
+
+### Problema 3 — Integrações Externas (🟠 ALTO)
+Ausentes: yfinance (preços reais), Banco Central (CDI), Gemini AI.
+
+---
+
+## Próximas Tarefas da Fase 7
+
+> Estas são tarefas da Fase 7, não fases independentes.
+> Consulte `09_IMPLEMENTATION_QUEUE.md` para o detalhamento completo.
+
+| Tarefa | Descrição | Prioridade |
+|---|---|---|
+| R1 | Reconectar Repositories de Valuation, Wealth e Dividends ao Banco Oficial V3 | 🔴 P1 |
+| R2 | Otimizar leitura do Dashboard (desacoplar Engines da leitura em realtime) | ✅ Concluída |
+| R3 | Construir endpoints de Evolução e Dividendos faltantes | ✅ Concluída |
+| R4 | Certificação Frontend E2E sem mock | ✅ Concluída |
+| R5 | Gate de Fechamento e Certificação da Fase 7 | ✅ Concluída |
+| INT | Implementar yfinance, Banco Central, Gemini, APScheduler | 🟡 P2-P3 |
+
+---
+
+## O que vem após a Fase 7
+
+### FASE 8 — AI & Learning
+Com as Engines conectadas ao V3 e os endpoints construídos, será iniciada a implementação do motor de IA para classificação e aprendizado.
+- Gate: `GET /governance/learning/rules` retorna regras com métricas
+
+### FASE 9 — Validação E2E & Hardening
+Gate final: todas as 18 telas respondem com dados reais, zero Network Error no console.
+
+---
+
+> Para contexto histórico sobre os desvios de nomenclatura corrigidos na Fase R0, consulte `34_ARCHITECTURE_RECONCILIATION.md`.

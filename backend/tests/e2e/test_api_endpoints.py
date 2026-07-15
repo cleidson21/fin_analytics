@@ -108,4 +108,5 @@ def test_get_import_history():
     assert resp.status_code in (200, 500)
     if resp.status_code == 200:
         data = resp.json()
-        assert isinstance(data, list)
+        assert "items" in data
+        assert isinstance(data["items"], list)

@@ -99,14 +99,15 @@ FinAnalytics V3 é um sistema pessoal de gestão financeira e patrimonial Single
 
 | Fase | Nome | Contexto Sonnet | Status |
 |---|---|---|---|
-| 0.9 | Governança do Projeto | 1 conversa | ✅ Em andamento |
-| 1 | Fundação & Infraestrutura | 1 conversa | ⬜ Não iniciada |
-| 2 | Identity & Autenticação | 1 conversa | ⬜ Não iniciada |
-| 3 | Ledger Core (Banking + Dashboard) | 2 conversas | ⬜ Não iniciada |
-| 4 | Credit & Installments | 1 conversa | ⬜ Não iniciada |
-| 5 | Data Ingestion Platform (Ver Detalhamento) | 3 conversas | ⬜ Não iniciada |
-| 6 | Investments & Market Data | 3 conversas | ⬜ Não iniciada |
-| 7 | Engines Analíticas | 3 conversas | ⬜ Não iniciada |
+| R0 | Reconciliação Documental | 1 conversa | ✅ Concluída |
+| 0.9 | Governança do Projeto | 1 conversa | ✅ Aprovada |
+| 1 | Fundação & Infraestrutura | 1 conversa | ✅ Aprovada |
+| 2 | Identity & Autenticação | 1 conversa | ✅ Aprovada |
+| 3 | Ledger Core (Banking + Dashboard) | 2 conversas | ✅ Aprovada |
+| 4 | Credit & Installments | 1 conversa | ✅ Aprovada |
+| 5 | Data Ingestion Platform (Ver Detalhamento) | 3 conversas | ✅ Aprovada |
+| 6 | Investments & Market Data | 3 conversas | ✅ Aprovada (parcial — ver Fase 7) |
+| 7 | Engines Analíticas | 3 conversas | 🔄 Em andamento |
 | 8 | AI & Learning | 2 conversas | ⬜ Não iniciada |
 | 9 | Validação E2E & Hardening | 1 conversa | ⬜ Não iniciada |
 
@@ -187,3 +188,55 @@ Cada fase deve apresentar, de forma explícita:
   4. Fluxograma Rastreável (`pipeline.txt` demonstrando aprovação/bloqueio no Governance)
 
 **Sem evidências apresentadas ao usuário, o Gate NÃO PODE ser aprovado e a fase permanece em Auditoria.**
+
+---
+
+## 10. HIERARQUIA DE GOVERNANÇA DOCUMENTAL
+
+> **Regra permanente.** Estabelecida na Fase R0 (2026-07-14) para evitar desvios de nomenclatura e roadmaps paralelos.
+
+Toda alteração documental deverá obedecer OBRIGATORIAMENTE a seguinte ordem de atualização:
+
+```
+01_PROJECT_MASTER_PLAN.md   ← Atualizar primeiro (somente Status)
+        ↓
+03_PHASE_STATUS.md
+        ↓
+04_CURRENT_PHASE.md
+        ↓
+09_IMPLEMENTATION_QUEUE.md
+        ↓
+02_PROJECT_CHANGELOG.md
+        ↓
+06_AUDIT_LOG.md
+```
+
+**Nenhum documento poderá ser alterado antes que o imediatamente superior na hierarquia tenha sido atualizado.**
+
+### Proibições absolutas
+- Nunca criar novas Fases fora deste Master Plan sem aprovação explícita do usuário
+- Nunca criar novo Roadmap paralelo
+- Nunca alterar arquitetura sem aprovação explícita
+- Nunca nomear Gates como se fossem Fases independentes
+
+---
+
+## 11. REGRAS PARA IA E AGENTES
+
+> **Leitura obrigatória para qualquer agente ou sessão nova.**
+
+Todo agente de IA **DEVE**, obrigatoriamente, **antes de executar qualquer alteração**:
+
+1. Ler `01_PROJECT_MASTER_PLAN.md` (este arquivo)
+2. Ler `03_PHASE_STATUS.md`
+3. Ler `04_CURRENT_PHASE.md`
+4. Ler `09_IMPLEMENTATION_QUEUE.md`
+5. Ler `06_AUDIT_LOG.md`
+
+Caso encontre **qualquer divergência** entre esses documentos:
+- **Interromper imediatamente** a implementação
+- **Abrir uma Auditoria de Governança** antes de prosseguir
+- **Nunca criar Fases, Gates ou Roadmaps novos** sem aprovação explícita
+- **Consultar `34_ARCHITECTURE_RECONCILIATION.md`** para entender a história dos desvios anteriores e como foram corrigidos
+
+**Violação desta regra é considerada desvio arquitetural de Nível Crítico.**

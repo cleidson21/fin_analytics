@@ -159,3 +159,35 @@ class MarketDataPoint(BaseModel):
 
 class MarketSeries(BaseModel):
     points: list[MarketDataPoint]
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+from typing import Generic, TypeVar, List
+T = TypeVar('T')
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    page: int
+    page_size: int
+
+class PortfolioEvolutionSummary(BaseModel):
+    current_wealth: Decimal
+    total_invested: Decimal
+    total_dividends: Decimal
+    accumulated_return_pct: Decimal
+
+class DividendHistoryDTO(BaseModel):
+    id_economico: str
+    ticker: str
+    tipo_evento: Optional[str] = None
+    observacao: Optional[str] = None
+    valor: Optional[Decimal] = None
+    data_pagamento: Optional[str] = None
+
+class DividendBreakdownDTO(BaseModel):
+    ticker: str
+    total_received: Decimal
+

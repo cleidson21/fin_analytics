@@ -35,23 +35,62 @@ export function useDividendsData() {
       setIsLoading(true);
       setIsError(false);
       try {
-        const perfRes = await fetchFromAPI<PerformanceSummary>("/investments/performance");
+        const summaryRes = await fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary");
+        const historyRes = await fetchFromAPI<any[]>("/investments/dividends/history");
+        const breakdownRes = await fetchFromAPI<any[]>("/investments/dividends/breakdown");
 
         if (!mounted) return;
-        if (perfRes) {
-          setHistory([]);
-          setBreakdown([]);
+        if (summaryRes) {
+          
+          const aggregated: Record<string, DividendHistory> = {};
+          if (historyRes) {
+            historyRes.forEach(d => {
+              if (!d.data_pagamento) return;
+              const month = d.data_pagamento.substring(0, 7); // YYYY-MM
+              if (!aggregated[month]) {
+                aggregated[month] = {
+                  month,
+                  amount_received: "0",
+                  amount_received_value: 0,
+                  amount_dividend_value: 0,
+                  amount_jcp_value: 0,
+                  amount_rendimento_value: 0
+                };
+              }
+              const val = Number(d.valor || 0);
+              aggregated[month].amount_received_value += val;
+              
+              if (d.tipo_evento === "DIVIDENDO") aggregated[month].amount_dividend_value! += val;
+              else if (d.tipo_evento === "JCP") aggregated[month].amount_jcp_value! += val;
+              else aggregated[month].amount_rendimento_value! += val;
+              
+              aggregated[month].amount_received = String(aggregated[month].amount_received_value);
+            });
+          }
+
+          const sortedHistory = Object.values(aggregated).sort((a, b) => a.month.localeCompare(b.month));
+          setHistory(sortedHistory);
+          
+          setBreakdown((breakdownRes || []).map(b => ({
+            ticker: b.ticker,
+            total_recebido: String(b.total_received),
+            total_recebido_value: Number(b.total_received || 0),
+            quantidade_eventos: 1,
+            primeiro_recebimento: "",
+            ultimo_recebimento: ""
+          })));
+
           setSummary({
-            patrimonio_atual: String(perfRes.market_value),
-            patrimonio_atual_value: Number(perfRes.market_value || 0),
-            rentabilidade_acumulada: Number(perfRes.metrics?.cagr || 0),
-            proventos_totais: Number(perfRes.dividends_received || 0),
-            compras_totais: Number(perfRes.cost_basis || 0),
+            patrimonio_atual: String(summaryRes.current_wealth || 0),
+            patrimonio_atual_value: Number(summaryRes.current_wealth || 0),
+            rentabilidade_acumulada: Number(summaryRes.accumulated_return_pct || 0),
+            proventos_totais: Number(summaryRes.total_dividends || 0),
+            compras_totais: Number(summaryRes.total_invested || 0),
             vendas_totais: 0,
             ibov_acumulado_pct: 0,
             cdi_acumulado_pct: 0,
-            alpha_vs_ibov: Number(perfRes.metrics?.cagr || 0),
-            alpha_vs_cdi: Number(perfRes.metrics?.cagr || 0)
+            alpha_vs_ibov: 0,
+            alpha_vs_cdi: 0
           });
         } else {
           setIsError(true);

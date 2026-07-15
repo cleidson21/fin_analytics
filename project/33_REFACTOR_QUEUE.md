@@ -1,6 +1,6 @@
 # 33 — REFACTOR QUEUE
-## Fase 5 — Fila Oficial de Refatorações (Edição 2 — Deep Audit)
-**Última atualização:** 2026-06-26 | **Revisão:** Enterprise Review 2
+## Fase 5, 6 e 7 — Fila Oficial de Refatorações (Edição 3 — Sprint 7 / Gate 10.13)
+**Última atualização:** 2026-07-14 | **Revisão:** Edição 3 (Reconciliação Documental R0)
 
 Prioridade: P1 = Obrigatório antes da próxima Sprint | P2 = Obrigatório antes do sprint indicado | P3 = Oportunístico
 
@@ -20,16 +20,19 @@ Prioridade: P1 = Obrigatório antes da próxima Sprint | P2 = Obrigatório antes
 | **REF-010** | ~~Antes V4~~ | `parsers/pierre_txt.py` | Reescrita completa com abordagem estrutural (`_is_emoji_only_line` via `unicodedata.category`). | Alto — risco latente eliminado | REF-009 | **P2** | 1h | ✅ **RESOLVIDO** |
 | **REF-011** | ~~Antes V4~~ | `tests/.../test_pierre_pipeline.py` | 67 testes: validator, emoji filter, parser (happy path, edge cases, encoding), normalizer. | Cobertura completa | REF-009 | **P2** | 2h | ✅ **RESOLVIDO** |
 | **REF-012** | Oportunístico | `normalizers/pierre_txt.py` + `nubank_fatura.py` | Migrar `md5` → `sha256` para `external_uuid`. | Baixo — inconsistência de padrão | — | **P3** | 30min | **PENDENTE** |
-| **REF-013** | Oportunístico | `readers/pierre_txt.py` | Criar `BaseReader` genérica ou extrair `_build_document()` helper. | Baixo — DRY | REF-009 | **P3** | 2h | **PENDENTE** |
+| REF-013 | Oportunístico | `readers/pierre_txt.py` | Criar `BaseReader` genérica ou extrair `_build_document()` helper. | Baixo — DRY | REF-009 | **P3** | 2h | **PENDENTE** |
 | **REF-014** | ~~Antes V4~~ | `parsers/nubank_conta.py` | EA3-12: Adicionar try/except defensivo p/ Pandas NaN. | CRÍTICO | — | **P1** | 10min | ✅ **RESOLVIDO** |
 | **REF-015** | ~~Antes V4~~ | `readers/base.py` | EA3-05: Transformar `source_system` em prop abstrata. | Alto | — | **P1** | 5min | ✅ **RESOLVIDO** |
 | **REF-016** | ~~Antes V4~~ | `normalizers/nubank_fatura.py` | EA3-20: Remover `raw_doc_id` do MD5 UUID. | Alto | — | **P1** | 5min | ✅ **RESOLVIDO** |
 | **REF-017** | ~~Antes V4~~ | `pipelines/*.py` | EA3-24: try/except abrangente em `execute()`. | Alto | — | **P1** | 15min | ✅ **RESOLVIDO** |
 | **REF-018** | ~~Antes V4~~ | `tests/unit/` | EA3-27: Testes de robustez p/ parsers (nan/invalid). | Alto | — | **P1** | 30min | ✅ **RESOLVIDO** |
+| REF-019 | Antes Fase 8 | `domains/investments/engines/*` | Reconectar Engines (Position, Valuation, Wealth, Performance) ao Banco V3. Criar `ValuationRepository`, `WealthRepository`, `DividendRepository`. | CRÍTICO — Gargalo de memória em produção | — | **P1** | Alta (2 sessões) | ✅ **RESOLVIDO** |
+| REF-020 | Antes Fase 8 | `domains/investments/services/portfolio_dashboard_service.py` | Desacoplar Dashboard das Engines em realtime. Ler de tabelas analíticas do V3. | Alto — Latência > 200ms | REF-019 | **P2** | Média (1 sessão) | ✅ **RESOLVIDO** |
+| REF-021 | Antes Fase 8 | `domains/investments/router.py` | Construir 9+ endpoints faltantes (Evolução, Dividendos, Asset Drill-Down, Governance). | Alto — Frontend com 404 | REF-020 | **P2** | Alta (2 sessões) | ✅ **RESOLVIDO** |
 
 ---
 
-## Itens P2/P3 Pendentes (Antes da Sprint V5/V6)
+## Itens P1/P2 Pendentes da Sprint 7 (Antes da Fase 8)
 
 | ID | Ação | Arquivo | Esforço |
 |---|---|---|---|

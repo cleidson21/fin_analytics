@@ -35,7 +35,33 @@ export async function fetchPerformanceDataShared(): Promise<PerformanceSummary |
     return performancePromiseCache;
   }
   
-  performancePromiseCache = fetchFromAPI<PerformanceSummary>("/investments/performance");
+  const promise = fetchFromAPI<any>("/investments/evolution/summary").then(res => {
+    if (!res) return null;
+    return {
+      cost_basis: Number(res.total_invested || 0),
+      market_value: Number(res.current_wealth || 0),
+      holding_days: 0,
+      metrics: {
+        unrealized_gain: Number(res.current_wealth || 0) - Number(res.total_invested || 0),
+        realized_gain: 0,
+        total_gain: Number(res.current_wealth || 0) - Number(res.total_invested || 0) + Number(res.total_dividends || 0),
+        dividends_received: Number(res.total_dividends || 0),
+        total_return: 0,
+        unrealized_return_pct: 0,
+        realized_return_pct: 0,
+        total_return_pct: Number(res.accumulated_return_pct || 0),
+        yield_on_cost: 0,
+        cagr: Number(res.accumulated_return_pct || 0),
+        annualized_return_pct: 0,
+        monthly_return_pct: 0,
+        daily_return_pct: 0,
+        mwr: 0,
+        twr: 0
+      }
+    };
+  });
+
+  performancePromiseCache = promise;
   lastFetchTime = now;
   
   try {

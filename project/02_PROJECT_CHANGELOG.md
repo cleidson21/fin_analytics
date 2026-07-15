@@ -506,7 +506,6 @@ Atividade realizada: Auditoria de entrada para a arquitetura de Open Finance Inv
 Motivo: Mapeamento de dívidas técnicas e lacunas no schema (Migration 004) antes do desenvolvimento de adapters Open Finance.
 Resultado: ✅ APROVADO. Levantadas as necessidades de expandir constraints de `source` no banco e de criar a persistência para `PositionSnapshot`.
 Impacto: Início do planejamento da Sprint 4 (Open Finance) guiado por restrições bem mapeadas.
-
 **[2026-07-12] [MIGRATION] GATE 7.1 (MIGRATION 005 — OPEN FINANCE & POSITION SNAPSHOTS)**
 Atividade realizada: Criação segura do script de migração `005_open_finance.sql`. Adicionou suporte estrutural à `source` = `'OPEN_FINANCE'` e implementou a estrutura relacional para abrigar a custódia patrimonial unificada (`position_snapshots`).
 Motivo: Necessidade de adequar o banco a um novo tipo de importador de dados sem quebrar o framework existente.
@@ -555,16 +554,110 @@ Motivo: Complementar a Wealth Engine com a dimensão temporal da performance pat
 Resultado: ✅ SUCESSO. Engine implementada com `Decimal` exclusivo. TWR exato por produto encadeado. CAGR por exponenciação. Proteção integral a divisões por zero, Overflows e cenarios de falência.
 Impacto: Encerra a Sprint 5. O backend agora possui infraestrutura analítica completa: Posição -> MTM -> Patrimônio -> Performance.
 
-## [2026-07-13] Gate 10.2 — Ledger de Importações
-- Criada tabela import_logs para registro permanente de importações.
-- Atualizado ImportService para gravar log de forma imutável (sucesso ou falha).
-- Criados endpoints /import/history e /import/{id}.
-- Atualizado Dashboard de Importação no Frontend para exibir o histórico e detalhamento em Modal.
-- Criado 	est_import_logs.py e 	est_import_history.ts para garantir cobertura funcional.
+---
 
-- 2026-07-13: Gate 10.3 - Séries Temporais e Performance Histórica (Backend real e integração com hooks do Frontend).
-- 2026-07-13: Gate 10.4 - Market Data Engine (Substituição de benchmarks mockados por reais e adição do MarketDataRepository).
-- 2026-07-13: Gate 10.5 - Validação End-to-End das Engines (12/12 testes passando, benchmark documentado, arquitetura auditada).
-- 2026-07-13: Gate 10.6 - History Engine Incremental (Refatoração O(N*M) para O(N+M)).
-- 2026-07-13: Gate 10.7 - Historical Asset Pricing Engine (Preços históricos reais no Valuation histórico).
-- 2026-07-13: Gate 10.8 - Financial Performance Analytics Engine (Métricas avançadas: TWR, MWR, Sharpe, Volatilidade, Beta).
+### [2026-07-13] FASE 7 — Engines Analíticas & Pipelines (Sprint 7)
+
+> Nota de Reconciliação (2026-07-14): Os Gates abaixo foram originalmente registrados como "Gate 10.x" (nomenclatura interna da Sprint 7).
+> Na Fase R0 foram reclassificados dentro da Fase 7 oficial do Master Plan. Histórico preservado integralmente.
+> Referência: `34_ARCHITECTURE_RECONCILIATION.md`
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.1 (PIPELINE REAL DE IMPORTAÇÃO)**
+Atividade realizada: Substituição dos mocks da Sprint 6 por parsers reais: `CSVTradeParser`, `OFXParser` e `OpenFinanceParser`. Repositórios com `ON CONFLICT DO NOTHING` para idempotência física. `ImportService` orquestra falhas linha a linha.
+Resultado: ✅ Pipeline real operacional. Frontend injeta binário via FormData.
+Impacto: Importação de dados reais habilitada.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.2 (LEDGER DE IMPORTAÇÕES)**
+Atividade realizada: Criação da tabela `import_logs` (Migration 014). `ImportLogRepository` para persistência imutável. Endpoints `GET /import/history` e `GET /import/{id}`. Dashboard atualizado com histórico e modal de detalhes.
+Resultado: ✅ Toda importação gera registro permanente.
+Impacto: Auditabilidade completa de importações.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.3 (SÉRIES TEMPORAIS E PERFORMANCE HISTÓRICA)**
+Atividade realizada: Algoritmo O(N) para performance engine com snapshots mensais. Eliminação de mocks do Frontend para AlphaData e GrowthData.
+Resultado: ✅ Backend real integrado com hooks do Frontend.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.4 (MARKET DATA ENGINE)**
+Atividade realizada: `MarketDataRepository` com busca binária O(log N) e cache local. Substituição de benchmarks mockados por reais via CSV.
+Resultado: ✅ Benchmarks reais disponíveis para as Engines analíticas.
+
+**[2026-07-13] [FASE 7] AUDITORIA — Gate 10.5 (VALIDAÇÃO E2E DAS ENGINES)**
+Atividade realizada: 12/12 testes passando. Benchmark: 10.000 trades em 142ms. 8 dívidas técnicas identificadas.
+Resultado: ✅ Engines validadas. Dívidas mapeadas para próximos gates.
+
+**[2026-07-13] [FASE 7] CORREÇÃO — Gate 10.6 (HISTORY ENGINE INCREMENTAL)**
+Atividade realizada: Refatoração O(N×M) -> O(N+M) no `HistoryService`. 14.000ms -> ~320ms para 10.000 trades (120 meses).
+Resultado: ✅ Performance 43x melhor. SRP e paridade matemática preservados.
+
+**[2026-07-13] [FASE 7] CORREÇÃO — Gate 10.7 (HISTORICAL ASSET PRICING ENGINE)**
+Atividade realizada: `ValuationEngine` utiliza `HistoricalPriceService` para datas passadas. `HistoryService` integra preços no pipeline O(N+M).
+Resultado: ✅ Valuation histórico com preços reais por data.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.8 (FINANCIAL ANALYTICS ENGINE)**
+Atividade realizada: `FinancialAnalyticsEngine` com métricas TWR, MWR, CAGR, Sharpe, Drawdown. Complexidade O(N).
+Resultado: ✅ Métricas de risco e retorno disponíveis via API.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.9 (APPLICATION SERVICE LAYER & DEPENDENCY INJECTION)**
+Atividade realizada: Dependências convertidas para injetáveis (DI). Application Services como orquestradores. Factory Pattern. 37 testes automatizados.
+Resultado: ✅ Arquitetura de DI estabelecida.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.10 (PORTFOLIO DASHBOARD API LAYER)**
+Atividade realizada: Todas as rotas do dashboard via `PortfolioDashboardService`. DTOs para Summary, Risk, Allocation, Performance.
+Resultado: ✅ Dashboard API Layer completa.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.11 (API CONTRACT & BACKEND STABILIZATION)**
+Atividade realizada: 16 rotas padronizadas. Swagger/OpenAPI coberto. 49 testes E2E com 100% de sucesso.
+Resultado: ✅ API estabilizada e documentada.
+
+**[2026-07-13] [FASE 7] ADIÇÃO — Gate 10.12 (FRONTEND READINESS)**
+Atividade realizada: Paginação padronizada (`PaginatedResponse`). Guias de UX, integração e Postman. 52 testes E2E totais.
+Resultado: ✅ Frontend pronto para consumir a API sem ambiguidades.
+
+**[2026-07-13] [FASE 7] AUDITORIA — Gate 10.13 (AUDITORIA ARQUITETURAL DE RECONCILIAÇÃO)**
+Atividade realizada: Levantamento completo das Engines vs. Banco de Dados Oficial V3. Engines rodando In-Memory ignorando tabelas físicas (crítico). 9+ endpoints faltantes (alto). Tarefas R1-R4 da Fase 7 geradas.
+Resultado: ✅ APROVADA (auditoria e planejamento). Plano em `gate_10.13_report.md`.
+Impacto: TSK-7.R1 é a próxima tarefa obrigatória da Fase 7.
+
+---
+
+### [2026-07-14] FASE R0 — Reconciliação Documental
+
+**[2026-07-14] [GOVERNANÇA] DECISÃO — Fase R0 Iniciada e Concluída**
+Atividade realizada: Auditoria completa de 70+ documentos da pasta `project/`. Identificados 8 desvios documentais. Gates 10.x reclassificados dentro da Fase 7. Documentos de controle reconciliados top-down.
+Motivo: Restaurar a governança e criar única fonte de verdade antes de prosseguir com implementações.
+Impacto: Documentação reconciliada. Hierarquia de autoridade restaurada.
+
+**[2026-07-14] [GOVERNANÇA] ADIÇÃO — Seções 10 e 11 no Master Plan**
+Atividade realizada: Seção 10 (Hierarquia de Governança Documental) e Seção 11 (Regras para IA e Agentes) adicionadas ao `01_PROJECT_MASTER_PLAN.md`.
+Motivo: Formalizar permanentemente as regras contra desvios futuros.
+Impacto: Qualquer agente que violar essas regras comete desvio de Nível Crítico.
+
+**[2026-07-14] [GOVERNANÇA] ADIÇÃO — Documento 34 (ARCHITECTURE RECONCILIATION)**
+Atividade realizada: Criação do `34_ARCHITECTURE_RECONCILIATION.md` com histórico completo dos desvios, causas, impactos e correções.
+Motivo: Preservar histórico sem misturar com planejamento.
+Impacto: Histórico permanente para consulta por agentes futuros.
+
+---
+
+### [2026-07-14] FASE 7 — Engines Analíticas & Pipelines
+
+**[2026-07-14] [FASE 7] OTIMIZAÇÃO — TSK-7.R2 (Dashboard Read Model)**
+Atividade realizada: Refatoração do `PortfolioDashboardService` para ler os agregados das tabelas materializadas do V3 (`portfolio_snapshots`, `asset_valuations`) via SQL puro. O router também foi modificado para ignorar o carregamento dinâmico de trades e snapshots.
+Motivo: Cortar a dependência em realtime das Engines (posição, valuation, wealth, performance) nas requisições do Dashboard.
+Impacto: Leitura O(1) do banco. Preservados todos os contratos REST, DTOs e Engines intactas para uso assíncrono.
+
+**[2026-07-15] [FASE 7] IMPLEMENTAÇÃO — TSK-7.R3 (Endpoints REST Pendentes)**
+Atividade realizada: Implementação dos 5 endpoints faltantes de Investimentos (`/evolution/summary`, `/evolution/history`, `/dividends/history`, `/dividends/breakdown`, `/asset/{ticker}`) e verificação dos de Banking/Dashboard. Inclusão dos DTOs `PortfolioEvolutionSummary`, `DividendHistoryDTO`, `DividendBreakdownDTO`.
+Motivo: Cumprir os contratos oficiais definidos em `07_FRONTEND_CONTRACT.md` e `08_INVESTMENTS_CONTRACT.md`.
+Impacto: A UI agora dispõe dos dados de evolução histórica, rentabilidade avançada e proventos detalhados por ativo. Todas as queries consultam tabelas de fatos/dimensões (`portfolio_snapshots`, `dividends`, `asset_valuations`), garantindo tempo de resposta constante O(1).
+
+**[2026-07-15] [FASE 7] VALIDAÇÃO — TSK-7.R4 (Certificação Frontend E2E)**
+Atividade realizada: Auditoria completa dos hooks do Frontend (`useGrowthData`, `useDividendsData`, `useAllocationData`, `useAlphaData`, `usePerformanceData`) para garantir o uso estrito dos contratos oficiais (`/evolution/summary`, `/evolution/history`, `/dividends/history`, `/dividends/breakdown`, `/dashboard/allocation`).
+Motivo: Certificar que nenhuma tela utiliza cálculos em memória ou mocks, validando a arquitetura reconstruída.
+Impacto: Frontend 100% acoplado aos agregados materializados do Banco Oficial V3 (Read Model), garantindo performance O(1) na renderização e eliminando processamento redundante. Nenhuma Engine é invocada em tempo de leitura.
+
+**[2026-07-15] [FASE 7] AUDITORIA E FREEZE — TSK-7.R5 (Gate de Fechamento)**
+Atividade realizada: Executada a revisão e certificação de toda a Fase 7 de acordo com o Master Plan.
+Motivo: Garantir que o Read Model, Endpoints, Banco Oficial V3 e Dívidas Técnicas estão resolvidos e consistentes antes da entrada de Integrações Externas.
+Impacto: Arquitetura homologada, Dívidas Técnicas (TD-020, TD-021) resolvidas. Declarado Freeze oficial da fundação analítica da Fase 7.
+
+

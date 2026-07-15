@@ -4,6 +4,9 @@ from backend.domains.investments.repositories.historical_price_repository import
 from backend.domains.investments.repositories.trade_repository import TradeRepository
 from backend.domains.investments.repositories.snapshot_repository import SnapshotRepository
 from backend.domains.investments.repositories.import_log_repository import ImportLogRepository
+from backend.domains.investments.repositories.valuation_repository import ValuationRepository
+from backend.domains.investments.repositories.wealth_repository import WealthRepository
+from backend.domains.investments.repositories.dividend_repository import DividendRepository
 
 from backend.domains.investments.engines.position_engine import PositionEngine
 from backend.domains.investments.engines.valuation_engine import ValuationEngine
@@ -57,6 +60,18 @@ class ApplicationFactory:
         return cls._get_or_create('ImportLogRepository', lambda: ImportLogRepository())
 
     @classmethod
+    def get_valuation_repository(cls) -> ValuationRepository:
+        return cls._get_or_create('ValuationRepository', lambda: ValuationRepository())
+
+    @classmethod
+    def get_wealth_repository(cls) -> WealthRepository:
+        return cls._get_or_create('WealthRepository', lambda: WealthRepository())
+
+    @classmethod
+    def get_dividend_repository(cls) -> DividendRepository:
+        return cls._get_or_create('DividendRepository', lambda: DividendRepository())
+
+    @classmethod
     def get_market_data_service(cls) -> MarketDataService:
         return cls._get_or_create('MarketDataService', 
             lambda: MarketDataService(cls.get_market_data_repository()))
@@ -89,7 +104,9 @@ class ApplicationFactory:
             pos_engine=cls.get_position_engine(),
             val_engine=cls.get_valuation_engine(),
             wealth_engine=cls.get_wealth_engine(),
-            market_service=cls.get_market_data_service()
+            market_service=cls.get_market_data_service(),
+            valuation_repo=cls.get_valuation_repository(),
+            wealth_repo=cls.get_wealth_repository()
         ))
 
     @classmethod
@@ -121,7 +138,10 @@ class ApplicationFactory:
             valuation_engine=cls.get_valuation_engine(),
             wealth_engine=cls.get_wealth_engine(),
             financial_engine=cls.get_financial_analytics_engine(),
-            history_service=cls.get_history_service()
+            history_service=cls.get_history_service(),
+            valuation_repo=cls.get_valuation_repository(),
+            wealth_repo=cls.get_wealth_repository(),
+            dividend_repo=cls.get_dividend_repository()
         ))
 
     @classmethod

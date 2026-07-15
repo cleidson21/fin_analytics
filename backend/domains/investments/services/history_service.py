@@ -9,6 +9,9 @@ from backend.domains.investments.engines.valuation_engine import ValuationEngine
 from backend.domains.investments.engines.wealth_engine import WealthEngine
 from backend.domains.investments.services.market_data_service import MarketDataService
 from backend.domains.investments.dto import PerformanceHistory, PerformanceHistoryPoint, TradeDTO, TradeType, PositionSnapshot
+from backend.domains.investments.repositories.valuation_repository import ValuationRepository
+from backend.domains.investments.repositories.wealth_repository import WealthRepository
+from sqlalchemy.orm import Session
 
 class HistoryService:
     """
@@ -21,12 +24,16 @@ class HistoryService:
         pos_engine: PositionEngine,
         val_engine: ValuationEngine,
         wealth_engine: WealthEngine,
-        market_service: MarketDataService
+        market_service: MarketDataService,
+        valuation_repo: Optional[ValuationRepository] = None,
+        wealth_repo: Optional[WealthRepository] = None
     ):
         self.pos_engine = pos_engine
         self.val_engine = val_engine
         self.wealth_engine = wealth_engine
         self.market_service = market_service
+        self.valuation_repo = valuation_repo
+        self.wealth_repo = wealth_repo
 
     def generate_history(
         self,
@@ -35,7 +42,8 @@ class HistoryService:
         market_prices: Dict[str, Decimal],
         start_date: date,
         end_date: date,
-        granularity: str = "month"
+        granularity: str = "month",
+        session: Optional[Session] = None
     ) -> PerformanceHistory:
         
         trades_sorted = sorted(trades, key=lambda t: t.trade_date)
@@ -104,6 +112,13 @@ class HistoryService:
                 reference_date=month_end
             )
             wealth = self.wealth_engine.calculate(valuations)
+            
+            if session and self.valuation_repo and self.wealth_repo:
+                try:
+                    self.valuation_repo.save_valuations(session, valuations, month_end)
+                    self.wealth_repo.save_snapshot(session, month_end, wealth)
+                except Exception:
+                    pass # Evitar falha total caso um ativo falhe no DB
             
             patrimonio = wealth.total_market_value
             cost_basis = wealth.total_cost_basis

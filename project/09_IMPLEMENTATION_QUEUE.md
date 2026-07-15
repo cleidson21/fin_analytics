@@ -1,123 +1,136 @@
 # FINANALYTICS V3 — IMPLEMENTATION QUEUE
 > Mecanismo principal de continuidade operacional do projeto.
 > Este documento deve ser atualizado rigorosamente ao iniciar e finalizar qualquer tarefa, subtarefa ou mudança de status.
+> Última atualização: 2026-07-14 — Fase R0 (Reconciliação Documental)
 
 ---
 
 ## 1. Estado Atual do Projeto
 
-## Phase 2: Ingestão de Ativos B3 e Valuation (Fase Atual)
-
-### Sprint 3C.2: Reader/Parser e Repository CEI (CONCLUÍDO)
-*Gate 6.4 (Homologação Final) Concluído*
-- [x] Implementar `B3MovementsReader` usando `openpyxl`.
-- [x] Implementar `B3MovementsParser` mapeando as 9 colunas e dropando hifens/nulos.
-- [x] Implementar `B3MovementsNormalizer` tratando tickers (remover `F`) e instanciando o DTO.
-- [x] Implementar `TradeRepository` com Upsert idempotente via Hash MD5.
-- [x] Adicionar suporte ao pipeline CEI na CLI local `investments/cli.py`.
-- [x] Adicionar camada de resolução de Aliases de Corretoras (`BrokerAliasResolver`).
-- [x] Adicionar emissão de Relatório Canônico de Importação (`ImportReport`).
-- [x] Homologação Final da Ingestão de Investimentos E2E.
-- [x] Correção TD-02: Hash gerado com broker canônico (Gate 6.5).
-
-### Sprint 4: Open Finance Investimentos (CONCLUÍDO)
-*Gate 7.4 (Orquestração) Concluído*
-- [x] Auditoria de entrada para adequação de Schema (Migration 004).
-- [x] Ajustar banco (Migration 005) para `OPEN_FINANCE` source e tabela `position_snapshots`.
-- [x] Criar `SnapshotRepository` (Gate 7.2).
-- [x] Implementar OpenFinance Adapters (Gate 7.3).
-- [x] Integrar fluxo de OpenFinance na orquestração CLI/API (Gate 7.4).
-
-### Sprint 5: Position Engine (CONCLUÍDA)
-*Gate 8.4 (Performance Engine) Concluído*
-- [x] Implementar motor de cálculo patrimonial e reconciliador estático (Snapshot vs Trade Ledger).
-- [x] Implementar Valuation Engine para Mark-to-Market.
-- [x] Implementar Wealth Engine (Agregador de Portfólio).
-- [x] Implementar Performance Engine (TWRR/MWRR) (Gate 8.4).
-
-### Sprint 6: Dashboard Analítico (EM ANDAMENTO)
-*Gate 9.0 (Auditoria de Adaptação) Concluído*
-*Gate 9.1 (Investments Router) Concluído*
-*Gate 9.2 (Hooks de Integração) Concluído*
-*Gate 9.3 (Integração DB) Concluído*
-*Gate 9.4 (Tela de Posições) Concluído*
-*Gate 9.5 (Tela de Performance) Concluído*
-*Gate 9.6 (Tela de Ingestão) Concluído*
-*Gate 9.7 (Conciliação) Concluído*
-- [x] Gate 9.0: Auditoria de Adaptação do Frontend.
-- [x] Gate 9.1: Investments Router (FastAPI).
-- [x] Gate 9.2: Hooks de Integração (Frontend).
-- [x] Gate 9.3: Integração Real do Router com o Banco de Dados.
-- [x] Gate 9.4: Tela de Posições (Nova).
-- [x] Gate 9.5: Performance (Nova Tela + Evolution).
-- [x] Gate 9.6: Importação (Tela de Ingestão).
-- [x] Gate 9.7: Conciliação Inteligente.
-- [x] Gate 10.1: Pipeline Real de Importação (CSV, OFX, JSON).
-- [x] Gate 10.2: Ledger de Importações e Auditoria Permanente (Histórico Persistido).
-
-### Tarefas Concluídas
-- [x] Sprint 1: Parser Posicional da B3 (Snapshot).
-- [x] Sprint 2: Persistência do Snapshot de Custódia.
-- [x] Sprint 3A: Levantamento e Arquitetura do CEI.
-- [x] Sprint 3B: Homologação estrutural do CEI (`Exemplo_Negociacao_B3.xlsx`).
-- [x] Sprint 3C.1: Homologação Funcional Completa do Pipeline (Zero Code, Etapas 0-9).recebida:** Auditoria da Sprint 3B
-- **Próxima ação permitida:** Concluir Sprint 3C.2 (Validações Adicionais ou Avançar Sprint 4)
+**Fase Atual:** 7 — Engines Analíticas & Pipelines
+**Sprint:** Sprint 7 (em andamento)
+**Status pós-Gate 10.13:** Aguardando execução das tarefas R1–R4 (pendências identificadas na auditoria arquitetural)
 
 ---
 
-## 2. Tarefa Atual
+## 2. Fase R0 — Reconciliação Documental
 
-- **ID:** TSK-INV-3B
-- **Nome:** Sprint 6 — Dashboard Analítico
-- **Fase:** Plataforma de Investimentos
-- **Responsável:** Agente AI
-- **Status:** IN PROGRESS (Gate 9.0 Concluído)
+> Fase puramente documental. Concluída em 2026-07-14.
+> Nenhum código Python, SQL, TypeScript ou de configuração foi alterado.
+
+- [x] Auditoria completa de 70+ documentos da pasta `project/`
+- [x] `01_PROJECT_MASTER_PLAN.md` — Status + Seções 10 e 11 (Governança Documental + Regras para AI)
+- [x] `03_PHASE_STATUS.md` — Status corretos para todas as fases + histórico de auditoria
+- [x] `04_CURRENT_PHASE.md` — Fase 7 como fase atual + tarefas pendentes claras
+- [x] `09_IMPLEMENTATION_QUEUE.md` — Reconstruído (este arquivo)
+- [x] `02_PROJECT_CHANGELOG.md` — Gates 10.x reclassificados na Fase 7
+- [x] `06_AUDIT_LOG.md` — Entrada R0 com desvio documentado
+- [x] `31_ENTERPRISE_FINDINGS.md` — Edição 3 com achados do Gate 10.13
+- [x] `32_TECHNICAL_DEBT.md` — Edição 3 com dívidas da Sprint 7
+- [x] `33_REFACTOR_QUEUE.md` — Edição 3 com refatorações pendentes
+- [x] `34_ARCHITECTURE_RECONCILIATION.md` — Novo documento criado
+- [x] Auditoria final de consistência
 
 ---
 
-## 3. Subtarefas
+## 3. Tarefa Atual — Fase 7, Sprint 7
+
+**Ponto de retomada:** pós-Gate 10.13 (Auditoria Arquitetural de Reconciliação)
+
+O Gate 10.13 identificou as seguintes pendências que DEVEM ser executadas na ordem abaixo:
+
+### TAREFA R1 — Reconectar Infraestrutura Base ao V3 (🔴 P1)
+- **ID:** TSK-7.R1
+- **Status:** PENDENTE
+- **Descrição:** Criar `ValuationRepository`, `WealthRepository` e `DividendRepository` com SQLAlchemy Core. Modificar o `PortfolioApplicationService` para persistir os resultados das Engines nas tabelas do V3 antes de retornar ao usuário.
+- **Gate:** Testes E2E de gravação. Auditoria de banco confirma escrita em `asset_valuations`, `portfolio_snapshots`, `dividends`.
+- **Dependências:** Nenhuma.
+
+### TAREFA R2 — Otimização de Leitura do Dashboard (🟠 P2)
+- **ID:** TSK-7.R2
+- **Status:** CONCLUÍDA
+- **Descrição:** Modificar `PortfolioDashboardService` para ler agregados das tabelas do V3 (`portfolio_snapshots`, `asset_valuations`) ao invés de acionar as Engines em realtime.
+- **Gate:** Tempo de resposta < 200ms na leitura. Auditoria arquitetural.
+- **Dependências:** TSK-7.R1 concluída.
+
+### TAREFA R3 — Endpoints Faltantes (🟠 P2)
+- **ID:** TSK-7.R3
+- **Status:** CONCLUÍDA
+- **Descrição:** Construir os 9+ endpoints faltantes identificados no Gate 10.13:
+  - `GET /investments/evolution/summary` e `/history`
+  - `GET /investments/dividends/history` e `/breakdown`
+  - `GET /investments/asset/{ticker}`
+  - `GET /governance/imports`, `/dashboard`, staging/confirm/rollback
+  - Rotas de `/governance/learning/`
+- **Gate:** Validação de contrato OpenAPI vs Frontend Contract.
+- **Dependências:** TSK-7.R2 concluída.
+
+### TAREFA R4 — Certificação Frontend E2E (🟡 P3)
+- **ID:** TSK-7.R4
+- **Status:** CONCLUÍDA
+- **Descrição:** Teste E2E massivo com a UI React/Next.js com massa de dados real. Aprovação visual do usuário.
+- **Gate:** Aprovação visual do usuário. Zero Network Error no console.
+- **Dependências:** TSK-7.R3 concluída.
+
+### TAREFA R5 — Gate de Fechamento e Certificação (🟢 P1)
+- **ID:** TSK-7.R5
+- **Status:** CONCLUÍDA
+- **Descrição:** Auditoria final da arquitetura, frontend, banco e dívida técnica antes das integrações externas.
+- **Gate:** FASE 7 CERTIFICADA PARA FREEZE.
+- **Dependências:** TSK-7.R4.
+
+### TAREFA INT — Integrações Externas (🟡 P2-P3)
+- **ID:** TSK-7.INT
+- **Status:** PENDENTE (pode iniciar em paralelo com R2)
+- **Itens:**
+  - yfinance (preços reais de ativos)
+  - Banco Central / SGS (CDI, IPCA)
+  - Gemini AI API (categorização)
+  - APScheduler (atualização background D-1)
+  - python-dotenv (segurança de chaves)
+- **Dependências:** TSK-7.R1 concluída.
+
+---
+
+## 4. Subtarefas da Tarefa Atual
 
 | ID | Descrição | Status | Responsável | Dependências |
 |---|---|---|---|---|
-| SUB-INV-3B.1 | Identificação do Formato e Layout Específico | [x] COMPLETED | Agente AI | Nenhuma |
-| SUB-INV-3B.2 | Catálogo de Eventos (Trades, Desdobramento, etc) | [x] COMPLETED | Agente AI | SUB-INV-3B.1 |
-| SUB-INV-3B.3 | Definição da Chave Natural de Idempotência | [x] COMPLETED | Agente AI | SUB-INV-3B.2 |
+| TSK-7.R1 | Reconectar Repositories (Valuation, Wealth, Dividend) | PENDENTE | Agente AI | Nenhuma |
+| TSK-7.R2 | Otimizar leitura Dashboard | CONCLUÍDA | Agente AI | R1 |
+| TSK-7.R3 | Construir endpoints faltantes | CONCLUÍDA | Agente AI | R2 |
+| TSK-7.R4 | Certificação Frontend E2E | CONCLUÍDA | Agente AI | R3 |
+| TSK-7.R5 | Gate de Fechamento e Certificação | CONCLUÍDA | Agente AI | R4 |
+| TSK-7.INT | Integrações Externas | PENDENTE | Agente AI | R5 |
 
 ---
 
-## 4. Evidências
+## 5. Próxima Tarefa
 
-- **Código:** ZERO. Frontend e Backend inalterados.
-- **Relatório:** Auditoria `sprint_3b_movements_homologation_audit.md` gerada.
-- **Especificação:** Contrato Técnico `CEI_MOVEMENTS_SPEC.md` atualizado e gerado.
-
----
-
-## 5. Próxima Tarefa: Plataforma de Investimentos
-
-- **ID:** TSK-INV-3C
-- **Nome:** Sprint 3C — CEI (Implementação do Reader e Parser)
-- **Fase:** Plataforma de Investimentos (Domínio Específico)
+- **ID:** TSK-7.INT
+- **Nome:** Integrações Externas
+- **Fase:** 7 — Engines Analíticas & Pipelines
+- **Ação:** Aguardando aprovação do usuário para iniciar
 
 ---
 
-## 6. Histórico Recente
+## 6. Histórico Completo
 
 | Data | Responsável | Tarefa | Status |
 |---|---|---|---|
 | 2026-06-25 | Agente AI | Implementação de Reconciliação (Fase 3) | CERTIFICADA |
 | 2026-06-25 | Agente AI | Refatoração de DTOs e Testes (Fase 4) | CERTIFICADA |
-| 2026-06-26 | Agente AI | Data Ingestion Foundation (TSK-5.1-1) | MICROETAPA CONCLUÍDA |
-| 2026-06-26 | Agente AI | Testing and Audit Pipeline (TSK-5.1-1B) | MICROETAPA CONCLUÍDA |
-| 2026-06-26 | Agente AI | Sprint V1 Nubank Conta (TSK-5.2-1) | MICROETAPA CONCLUÍDA |
-| 2026-06-26 | Agente AI | Sprint V2 Nubank Fatura (TSK-5.3-1) | MICROETAPA CONCLUÍDA |
+| 2026-06-26 | Agente AI | Data Ingestion Foundation (TSK-5.1-1) | CONCLUÍDA |
+| 2026-06-26 | Agente AI | Testing and Audit Pipeline (TSK-5.1-1B) | CONCLUÍDA |
+| 2026-06-26 | Agente AI | Sprint V1 Nubank Conta (TSK-5.2-1) | CONCLUÍDA |
+| 2026-06-26 | Agente AI | Sprint V2 Nubank Fatura (TSK-5.3-1) | CONCLUÍDA |
 | 2026-06-26 | Agente AI | Enterprise Review Fase 5 (TSK-5.ER) | APROVADA COM RESSALVAS |
-| 2026-06-26 | Agente AI | Refatorações P1 (TSK-5.R1) | MICROETAPA CONCLUÍDA |
-| 2026-06-26 | Agente AI | Sprint V3 Pierre TXT (TSK-5.4-1) | MICROETAPA CONCLUÍDA |
+| 2026-06-26 | Agente AI | Refatorações P1 (TSK-5.R1) | CONCLUÍDA |
+| 2026-06-26 | Agente AI | Sprint V3 Pierre TXT (TSK-5.4-1) | CONCLUÍDA |
 | 2026-06-26 | Agente AI | Enterprise Audit 3 (EA3) | APROVADA COM RESSALVAS |
-| 2026-06-27 | Agente AI | Hardening EA3 (TSK-5.H1) | MICROETAPA CONCLUÍDA |
+| 2026-06-27 | Agente AI | Hardening EA3 (TSK-5.H1) | CONCLUÍDA |
 | 2026-06-27 | Agente AI | Enterprise Audit 4 (EA4) | CONSOLIDADA |
-| 2026-06-28 | Agente AI | Sprint V4 MyProfit (TSK-5.5-1) | MICROETAPA CONCLUÍDA |
+| 2026-06-28 | Agente AI | Sprint V4 MyProfit (TSK-5.5-1) | CONCLUÍDA |
 | 2026-06-28 | Agente AI | Enterprise Audit 6 (EA6) | FASE CERTIFICADA |
 | 2026-06-29 | Agente AI | Sprint 0 (TSK-INV-0) | ROADMAP CONCLUÍDO |
 | 2026-06-29 | Agente AI | Sprint 1A (TSK-INV-1A) | ARQUITETURA CONCLUÍDA |
@@ -130,33 +143,43 @@
 | 2026-07-03 | Agente AI | Sprint 2 (TSK-INV-2) | PERSISTÊNCIA CONCLUÍDA |
 | 2026-07-03 | Agente AI | Sprint 3A (TSK-INV-3A) | CEI ARQUITETURA DEFINIDA |
 | 2026-07-04 | Agente AI | Sprint 3B (TSK-INV-3B) | CEI HOMOLOGAÇÃO DO ARQUIVO |
-| 2026-07-13 | Agente AI | Sprint 7 (Gate 10.1) | PIPELINE REAL CONCLUÍDO |
-| 2026-07-13 | Agente AI | Sprint 7 (Gate 10.2) | LEDGER DE IMPORTAÇÕES E AUDITORIA PERMANENTE CONCLUÍDO |
+| 2026-07-05 | Agente AI | Sprint 3C.1 (TSK-INV-3C.1) | CEI HOMOLOGAÇÃO FUNCIONAL |
+| 2026-07-08 | Agente AI | Sprint 3C.2 Gates 2-6.4 (TSK-INV-3C.2) | CEI PIPELINE COMPLETO |
+| 2026-07-12 | Agente AI | Sprint 4 Gates 7.0-7.4 (TSK-INV-4) | OPEN FINANCE CONCLUÍDO |
+| 2026-07-12 | Agente AI | Sprint 5 Gates 8.1-8.4 (TSK-INV-5) | ENGINES CONCLUÍDAS |
+| 2026-07-13 | Agente AI | Sprint 6 Gates 9.0-9.7 (TSK-INV-6) | DASHBOARD ANALÍTICO CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.1 — Pipeline Real | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.2 — Ledger Importações | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.3 — Séries Temporais | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.4 — Market Data Engine | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.5 — Validação E2E Engines | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.6 — History Engine Incremental | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.7 — Historical Asset Pricing | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.8 — Financial Analytics Engine | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.9 — Application Service Layer/DI | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.10 — Portfolio Dashboard API | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.11 — API Contract & Stabilization | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.12 — Frontend Readiness | CONCLUÍDO |
+| 2026-07-13 | Agente AI | Sprint 7 Gate 10.13 — Auditoria Arquitetural | APROVADA (planejamento) |
+| 2026-07-14 | Agente AI | Fase R0 — Reconciliação Documental | CONCLUÍDA |
+| 2026-07-14 | Agente AI | TSK-7.R2 — Otimização de Leitura do Dashboard | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.R3 — Construir endpoints faltantes | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.R4 — Certificação Frontend E2E | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.R5 — Gate de Fechamento e Certificação | CONCLUÍDA |
 
 ---
 
-## 7. INSTRUÇÕES PARA RETOMADA
+## 7. Instruções para Retomada
 
-**Documentos obrigatórios para leitura:**
-1. `project/14_READERS_ENGINE.md`
-2. `project/23_SOURCE_PRIORITY_MATRIX.md`
-3. `project/24_CANONICAL_FINANCIAL_EVENT.md`
-4. `project/04_CURRENT_PHASE.md`
+**Documentos obrigatórios para leitura em nova conversa (nesta ordem):**
+1. `project/01_PROJECT_MASTER_PLAN.md`
+2. `project/03_PHASE_STATUS.md`
+3. `project/04_CURRENT_PHASE.md`
+4. `project/09_IMPLEMENTATION_QUEUE.md` (este arquivo)
+5. `project/06_AUDIT_LOG.md`
 
-**Fase atual:** Plataforma de Investimentos
-**Tarefa atual:** Concluída (Sprint 3B)
-**Subtarefa atual:** Concluída
+**Fase atual:** 7 — Engines Analíticas & Pipelines
+**Próxima ação:** Iniciar TSK-7.INT (Integrações Externas). Aguardar aprovação do usuário.
 
-**Próximos passos:**
-1. Iniciar Sprint 3C — CEI (Implementação).
-2. Aguardar aprovação do usuário.
-
-- [x] Gate 10.4 - Market Data Engine
-- [x] Gate 10.5 - Validacao End-to-End das Engines
-- [x] Gate 10.6 - History Engine Incremental
-- [x] Gate 10.7 - Historical Asset Pricing Engine
-- [x] Gate 10.8 - Financial Performance Analytics Engine
-
-## Concluído
-- Gate 10.9 (Application Service Layer & Dependency Injection)
-- Gate 10.10 (Portfolio Dashboard API Layer & Financial Presentation)
+> REGRA: Nunca criar novas Fases, Gates ou Roadmaps sem aprovação explícita do usuário.
+> Consulte `34_ARCHITECTURE_RECONCILIATION.md` para entender os desvios anteriores.

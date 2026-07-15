@@ -56,25 +56,25 @@ export function useGrowthData(period: string) {
       setIsLoading(true);
       setIsError(false);
       try {
-        const historyRes = await fetchFromAPI<{points: PortfolioEvolutionPoint[], summary: any}>("/investments/performance/history");
-        const perfRes = await fetchPerformanceDataShared();
+        const summaryRes = await fetchFromAPI<any>("/investments/evolution/summary");
+        const historyRes = await fetchFromAPI<PortfolioEvolutionPoint[]>("/investments/evolution/history");
 
         if (!mounted) return;
 
-        if (perfRes && historyRes) {
+        if (summaryRes && historyRes) {
           setSummary({
-            patrimonio_atual: String(perfRes.market_value),
-            patrimonio_atual_value: Number(perfRes.market_value || 0),
-            rentabilidade_acumulada: Number(perfRes.metrics?.cagr || 0),
-            proventos_totais: Number(perfRes.metrics?.dividends_received || 0),
-            compras_totais: Number(perfRes.cost_basis || 0),
+            patrimonio_atual: String(summaryRes.current_wealth),
+            patrimonio_atual_value: Number(summaryRes.current_wealth || 0),
+            rentabilidade_acumulada: Number(summaryRes.accumulated_return_pct || 0),
+            proventos_totais: Number(summaryRes.total_dividends || 0),
+            compras_totais: Number(summaryRes.total_invested || 0),
             vendas_totais: 0,
             ibov_acumulado_pct: 0,
             cdi_acumulado_pct: 0,
-            alpha_vs_ibov: Number(perfRes.metrics?.cagr || 0),
-            alpha_vs_cdi: Number(perfRes.metrics?.cagr || 0)
+            alpha_vs_ibov: 0,
+            alpha_vs_cdi: 0
           });
-          setHistory(historyRes.points || []); 
+          setHistory(historyRes || []); 
         } else {
           setIsError(true);
         }

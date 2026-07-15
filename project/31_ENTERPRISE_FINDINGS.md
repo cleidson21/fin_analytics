@@ -1,6 +1,6 @@
 # 31 — ENTERPRISE FINDINGS
-## Fase 5 — Achados da Revisão Arquitetural (Edição 2 — Deep Audit)
-**Última atualização:** 2026-06-26 | **Revisão:** Enterprise Review 2 (ER2)
+## Fase 5, 6 e 7 — Achados Arquiteturais Acumulados (Edição 3 — Sprint 7 / Gate 10.13)
+**Última atualização:** 2026-07-14 | **Revisão:** Edição 3 (Reconciliação Documental R0)
 
 ---
 
@@ -44,3 +44,6 @@
 | FIND-021 | ✅ | Testes | EA3-27: Testes sem cobertura crítica de parse failures. | Dívida técnica em resiliência. | — | Adicionados testes test_parser_invalid_date_dropped e outros. | **RESOLVIDO** (TSK-5.H1) |
 | FIND-022 | ✅ | Catálogo | EA3-37: Doc 25 desatualizado ("Planejado"). | Informação divergente. | — | Alterado para "Implementado" e "Concluído" no V1, V2 e V3. | **RESOLVIDO** (TSK-5.H1) |
 | FIND-023 | 🟠 ALTO | Escopo V4 / DTO | EA4-NEW-001: CSV de "Ativos" do MyProfit descreve Snapshots de Custódia e não eventos transacionais. | `CanonicalFinancialEvent` obriga `transaction_date` e tipagem (TRADE/DIVIDEND). O processamento forçado corromperia o Event Sourcing. | `Exemplo_Ativos_Myprofit.csv` não tem coluna de data de operação. | Suspender pipeline de Ativos do V4. Aguardar refatoração arquitetural para introduzir domínio de Snapshots/Positions. | **PENDENTE** |
+| FIND-024 | ✅ | Engines / Gate 10.13 | Engines financeiras (Position, Valuation, Wealth, Performance, History) rodando exclusivamente In-Memory, ignorando tabelas físicas do V3 (`asset_valuations`, `portfolio_snapshots`). Recalcular todo o histórico para cada GET é insustentável em produção. | Risco de gargalo de memória e perda de histórico imutável. | `gate_10.13_report.md` Seção 1 e 2. | `ValuationRepository`, `WealthRepository`, `DividendRepository` criados e integrados para persistir resultados. | **RESOLVIDO** (TSK-7.R1) |
+| FIND-025 | ✅ | API / Frontend | 9+ endpoints requeridos pelo Frontend estão ausentes no Backend: `/evolution/summary`, `/evolution/history`, `/dividends/history`, `/dividends/breakdown`, `/asset/{ticker}`, rotas `/governance/`. | Frontend com 404 em telas críticas. | `gate_10.13_report.md` Seção 4. | Endpoints construídos e validados E2E. | **RESOLVIDO** (TSK-7.R3) |
+| FIND-026 | 🟠 ALTO | Integrações Externas | yfinance, Banco Central (CDI/IPCA), Gemini AI, APScheduler e python-dotenv ausentes. Benchmarks e preços são hardcoded ou inexistentes. | TWR/MWR com dados incorretos. Alpha vs CDI não calculado. Chaves de API sem segurança. | `gate_10.13_report.md` Seção 3. | Implementar integrações conforme TSK-7.INT. | **PENDENTE → TSK-7.INT** |
