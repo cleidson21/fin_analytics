@@ -81,7 +81,7 @@ O Gate 10.13 identificou as seguintes pendências que DEVEM ser executadas na or
 
 ### TAREFA INT — Integrações Externas (🟡 P2-P3)
 - **ID:** TSK-7.INT
-- **Status:** PENDENTE (pode iniciar em paralelo com R2)
+- **Status:** CONCLUÍDA (Parcial: apenas yfinance)
 - **Itens:**
   - yfinance (preços reais de ativos)
   - Banco Central / SGS (CDI, IPCA)
@@ -101,16 +101,16 @@ O Gate 10.13 identificou as seguintes pendências que DEVEM ser executadas na or
 | TSK-7.R3 | Construir endpoints faltantes | CONCLUÍDA | Agente AI | R2 |
 | TSK-7.R4 | Certificação Frontend E2E | CONCLUÍDA | Agente AI | R3 |
 | TSK-7.R5 | Gate de Fechamento e Certificação | CONCLUÍDA | Agente AI | R4 |
-| TSK-7.INT | Integrações Externas | PENDENTE | Agente AI | R5 |
+| TSK-7.INT | Integrações Externas (yfinance) | CONCLUÍDA | Agente AI | R5 |
 
 ---
 
 ## 5. Próxima Tarefa
 
-- **ID:** TSK-7.INT
-- **Nome:** Integrações Externas
-- **Fase:** 7 — Engines Analíticas & Pipelines
-- **Ação:** Aguardando aprovação do usuário para iniciar
+- **ID:** TSK-9.1
+- **Nome:** Financial Coach (Memória Financeira, Perfil do Investidor e Personalização Contínua)
+- **Fase:** 9 — Integração Profunda e Personalização (Gemini)
+- **Ação:** Aguardando instrução do usuário
 
 ---
 
@@ -166,6 +166,18 @@ O Gate 10.13 identificou as seguintes pendências que DEVEM ser executadas na or
 | 2026-07-15 | Agente AI | TSK-7.R3 — Construir endpoints faltantes | CONCLUÍDA |
 | 2026-07-15 | Agente AI | TSK-7.R4 — Certificação Frontend E2E | CONCLUÍDA |
 | 2026-07-15 | Agente AI | TSK-7.R5 — Gate de Fechamento e Certificação | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.INT — Integração Yahoo Finance | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.E2E.1 — Validação Completa do Fluxo | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.INT.3 — Automação do Market Data (Scheduler) | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.INT.4 — Integração Banco Central (SGS) | CONCLUÍDA |
+| 2026-07-15 | Agente AI | TSK-7.BETA — Certificação Operacional da Versão Beta | CONCLUÍDA |
+| 2026-07-16 | Agente AI | TSK-8.1 — Arquitetura da Inteligência Artificial (Gemini) | CONCLUÍDA |
+| 2026-07-16 | Agente AI | TSK-8.2 — Implementação do Provider Gemini | CONCLUÍDA |
+| 2026-07-16 | Agente AI | TSK-8.3 — Classificação Inteligente de Lançamentos | CONCLUÍDA |
+| 2026-07-16 | Agente AI | TSK-8.4 — Assistente Financeiro Inteligente (Consultas patrimônio) | CONCLUÍDA |
+| 2026-07-16 | Agente AI | TSK-8.5 — Motor de Insights Financeiros Proativos e Alertas | CONCLUÍDA |
+| 2026-07-16 | Agente AI | TSK-8.6 — Planejamento Financeiro Inteligente (Simulações) | CONCLUÍDA |
+| 2026-07-16 | Agente AI | TSK-8.7 — Executive Brief Engine (Painel Executivo) | CONCLUÍDA |
 
 ---
 

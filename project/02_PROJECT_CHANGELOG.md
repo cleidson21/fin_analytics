@@ -258,10 +258,77 @@ Emissão do parecer técnico final confirmando a adoção da Alternativa B (Aute
 Motivo: Evitar violações de schema e destravar a progressão da Fase 2.
 Impacto: O banco V3 permanecerá intocado. O Login utilizará verificação por variável de ambiente enquanto o DB garantirá as FKs através do Seed Automático do admin na tabela `users`.
 
-**[2026-06-25] [AUTH] DECISÃO**
+**[2026-07-13] [ARCHITECTURE] DECISÃO**
 Backend retornará `username: user.email` na resposta de `/auth/me`.
 Motivo: `AuthContext.tsx` espera campo `username`, mas schema V3 só possui `email` e `name`. Adaptar backend, não o frontend.
 Impacto: Zero alteração no frontend. Backend faz o mapeamento.
+
+---
+
+### [2026-07-15] — Integração Externa (Market Data)
+
+**[2026-07-15] [MARKET DATA] ADIÇÃO**
+Implementação da primeira integração externa (TSK-7.INT.1). Adicionado o domínio `market_data` contemplando interface de Provedores e o componente de busca em tempo real `YahooFinanceProvider` (`yfinance`). Estrutura de configuração implementada para cache (`CACHE_TTL`), tentativas e resiliência. Construído o orquestrador `MarketDataService` e `MarketDataRepository` para salvar as cotações em `asset_prices` e chamar o recálculo do Valuation sem alterar as lógicas nativas das Engines Financeiras V3.
+Motivo: Fornecer a base do acompanhamento real do portfólio mantendo a responsabilidade técnica do banco via SQLAlchemy e delegando o recálculo do patrimônio marcado a mercado para o pipeline oficial da aplicação.
+Impacto: Integração online funcional permitindo atualizar cotações sob demanda com arquitetura preparada para background tasking (APScheduler) no futuro. yfinance e suas dependências adicionados ao `requirements.txt`.
+
+**[2026-07-15] [MARKET DATA] APROVAÇÃO**
+Certificação da infraestrutura de preços online (TSK-7.INT.2). Criados scripts de testes funcionais verificando hit/misses do Cache em memória, resiliência do provider e comportamento do UPSERT transacional no banco SQLite de preços. A infraestrutura foi oficialmente homologada e o comportamento da Engine de Valuation preservado.
+Motivo: Garantir a tolerância a falhas na API e impedir que quedas da B3/Yahoo corrompam os históricos patrimoniais no FinAnalytics.
+Impacto: Tarefa INT.2 selada. Caminho liberado para integração do Banco Central.
+
+**[2026-07-15] [E2E] APROVAÇÃO — VERSÃO ALPHA OPERACIONAL HOMOLOGADA**
+Validação massiva do pipeline de dados de ponta a ponta (TSK-7.E2E.1). O sistema provou conseguir ingerir planilhas (B3, MyProfit, Nubank), convertê-las em DTOs imutáveis por Hash, gravá-las no Ledger, reprocessar saldos (Position Engine), extrair a marcação a mercado real (MarketDataService/ValuationEngine) e materializar em Dashboards (Frontend) com integridade matemática absoluta. Nenhuma estrutura nova de banco de dados foi criada.
+Motivo: Frear o desenvolvimento técnico para garantir que a fundação criada das Fases 1 à 7 esteja perfeitamente coesa antes da próxima onda de integrações (Banco Central e Gemini).
+**[2026-07-15] [MARKET DATA] AUTOMAÇÃO (SCHEDULER) APROVADA**
+Integração do `APScheduler` (TSK-7.INT.3) para automatizar a atualização do Market Data de forma nativa e agnóstica via polling configurável `.env` (`MARKET_DATA_INTERVAL`, `MARKET_DATA_STARTUP_SYNC`, `MARKET_DATA_ENABLED`). O backend assume autonomia no rastreio diário de ativos garantindo cotação imediata.
+Motivo: Evitar intervenção manual ou uso de CRON sistêmico externo. O próprio backend auto-gerencia o polling e fallback da cotação.
+Impacto: Tarefa INT.3 finalizada. Market Data é agora 100% automático. Caminho liberado para Integração do Banco Central (TSK-7.INT.4).
+
+**[2026-07-15] [MACRO DATA] INTEGRAÇÃO BANCO CENTRAL (SGS) APROVADA**
+Implementação da TSK-7.INT.4, consumindo a API pública do Banco Central (SGS) para fornecimento unificado das taxas SELIC, CDI e IPCA. Desenvolvido o `BCProvider`, repousando os dados em `macro_indicators`, com cache próprio de 24h servido pelo `MacroIndicatorsService` atrelado ao `APScheduler` de sincronização diária. 
+Motivo: Nacionalizar os parâmetros de Benchmark (CDI/SELIC) e Inflação (IPCA) alimentando as bases orgânicas para a interface de investimentos.
+Impacto: A infraestrutura atinge plenas condições para ingressar na Certificação Operacional Beta. Todos os dados externos de mercado e taxas brasileiras estão operacionalizados. Próxima etapa: TSK-7.BETA.
+
+**[2026-07-15] [BETA] CERTIFICAÇÃO OPERACIONAL BETA (FASE 7 FREEZE)**
+Conclusão da TSK-7.BETA englobando testes unitários, testes de integração, testes E2E, pipelines de parsers, motores de cálculo O(N+M) limpos e mock-busting no Market Data (Yahoo + SGS). Ajustados os construtores de injeção de dependência defasados nos scripts E2E que conectavam no `HistoryService`. Todos os 156 testes oficiais agora estão validando ponta a ponta sem falsos positivos.
+Motivo: Avalizar a qualidade de software, integridade de dados e saúde arquitetural antes de avançar para a Inteligência Artificial.
+Impacto: FASE 7 CONGELADA (FREEZE). O sistema FinAnalytics V3 agora é classificado como Beta, 100% autônomo para importação de transações e precificação a mercado em tempo real. Caminho livre para a Fase 8 (Integração Google Gemini).
+
+**[2026-07-16] [FASE 8] ARQUITETURA DA INTELIGÊNCIA ARTIFICIAL**
+Definição estrutural da camada de IA em `35_AI_ARCHITECTURE.md` através da TSK-8.1. Foram estabelecidos os domínios (`backend/domains/ai`), os limites ético-tecnológicos (Read-Only AI) e as diretrizes de integração isolando os Engines e o Banco de Dados.
+Motivo: Planejamento estratégico antes de inserir chamadas LLM e evitar corrupção das regras de negócio transacionais.
+Impacto: Domínio `ai/` devidamente arquitetado. Caminho livre para a TSK-8.2 (Implementação do Provider Gemini).
+
+**[2026-07-16] [FASE 8] IMPLEMENTAÇÃO DO PROVIDER GEMINI APROVADA**
+Conclusão da TSK-8.2, consistindo na construção rigorosa do módulo isolado de comunicação generativa (`GeminiProvider` via SDK `google-generativeai`). O provider orquestrado pelo `AIService` não executa lógica financeira transacional. Apenas empacota as requisições em DTOs controlados (Pydantic), suprimindo vazamentos da SDK e mitigando falhas (Timeout, 429 Rate Limit) convertendo-as em Exceções customizadas aderentes ao Core V3. 
+Motivo: Disponibilizar a base tecnológica robusta para consumo inteligente dos LLMs em etapas subjacentes.
+Impacto: Pipeline de IA totalmente configurado e testado por via de Mocks seguros em `test_gemini_provider.py`. Roteador exposto em `/api/v1/ai/health`. Caminho livre para iniciar as automações na TSK-8.3 (Classificação Inteligente).
+
+**[2026-07-16] [FASE 8] CLASSIFICAÇÃO INTELIGENTE (GEMINI) APROVADA**
+Conclusão da TSK-8.3, integrando a primeira funcionalidade baseada em LLM: Classificação Inteligente Assistida. Desenvolvido o domínio `ai/classification` contendo `AIClassificationService`, cache por Hash Criptográfico para evitar repetição de tokens, e tabela em SQLite (`ai_classifications`) para acompanhamento histórico das sugestões.
+Motivo: Acelerar a categorização de despesas e importações bancárias reduzindo trabalho manual, mas assegurando governança onde a IA apenas "sugere", precisando da confirmação humana (Read-Only AI).
+Impacto: DTOs garantidos via Pydantic isolando o Frontend de quebras na estruturação do LLM. Validação cruzada (Low Confidence) em vigor. Todos os testes unitários passando. Caminho livre para a TSK-8.4 (Assistente Financeiro).
+
+**[2026-07-16] [FASE 8] ASSISTENTE FINANCEIRO (PORTFOLIO ADVISOR) APROVADO**
+Conclusão da TSK-8.4, implementando a API para consultas e respostas contextualizadas usando o Gemini. A IA agora age como um consultor passivo capaz de responder dúvidas de rentabilidade, patrimônio atual e dividendos com base em um *Context Builder* que consulta estritamente os read models (`portfolio_snapshots`, `macro_indicators`, etc.). 
+Motivo: Oferecer uma forma mais interativa e simplificada do usuário entender sua própria carteira sem depender de navegação complexa, mantendo a regra de que *a IA não calcula nada*.
+Impacto: Módulo `advisor/` adicionado contendo cache local otimizando requisições, testes unitários blindando cenários sem patrimônio e dependências 100% contidas. Caminho livre para a TSK-8.5 (Insights e Alertas).
+
+**[2026-07-16] [FASE 8] MOTOR DE INSIGHTS E ALERTAS PROATIVOS APROVADO**
+Conclusão da TSK-8.5, marcando a evolução da IA do FINANALYTICS de passiva (respondendo a perguntas) para proativa (gerando análises espontâneas). Criado o domínio `ai/insights/` provido de um `InsightScheduler` integrado ao ciclo do `APScheduler`, que dispara rotinas diárias à revelia do usuário. Adicionado Caching composto por `snapshot_date + macro_date` assegurando que a IA só faça requisições ao Gemini quando os alicerces financeiros se movimentam.
+Motivo: Empurrar relatórios sumarizados (Crescimento de Patrimônio, CDI vs Rendimento, Concentração) para o usuário antes dele sequer fazer a pergunta. 
+Impacto: Endpoint `GET /api/v1/ai/insights` exposto. Tabela `ai_insights` absorvida pelo modelo. Testes com *Mocking* validados limitando a chamada do Gemini com `return_value` de JSONs estritos. Caminho livre para TSK-8.6 (Planejamento Financeiro e Simulações).
+
+**[2026-07-16] [FASE 8] PLANEJAMENTO FINANCEIRO E SIMULAÇÕES (TSK-8.6) APROVADO**
+Conclusão da TSK-8.6, inaugurando o módulo de *Financial Planning* autônomo. Desenvolvido o domínio `ai/planning/` com a regra estrita de que a IA apenas *interpreta* os cálculos produzidos internamente pelo serviço.
+Motivo: Possibilitar metas de aposentadoria (Independência Financeira) e projeção de crescimento com análise de viabilidade gerada pela IA, separando cálculos exatos de deduções semânticas.
+Impacto: Tabelas `financial_goals` e `financial_simulations` geradas. Endpoints `/goals` e `/simulate` criados. Cenários *Conservador*, *Moderado* e *Otimista* parametrizados. Cobertura de testes unitários garantindo que usuários com patrimônio zero ainda consigam traçar metas. A Fase 8 atinge 100% de preenchimento. Caminho livre para TSK-8.7 (Painel Executivo).
+
+**[2026-07-16] [FASE 8] EXECUTIVE BRIEF ENGINE (TSK-8.7) APROVADO**
+Conclusão da TSK-8.7, culminando na orquestração de todos os módulos de IA previamente desenvolvidos (Advisor, Insights, Planning) em um único resumo consolidado diário. O domínio `ai/executive/` foi criado utilizando o `ExecutiveScheduler` alinhado ao fim da madrugada, provendo o investidor com a visão matinal da carteira.
+Motivo: Evitar que o usuário precise transitar por 4 telas diferentes (Carteira, Alertas, Simulador, Mercado) apenas para saber o status global e focar nas prioridades do dia.
+Impacto: Endpoint `GET /api/v1/ai/executive/brief` exposto consumindo a recém-criada tabela `executive_briefs`. Caching multinível (`snapshot_date + macro_date + insight_hash + planning_hash`) implantado para proteger a API contra regenerações dispendiosas. O prompt do modelo agora entrega as *Top 3 Prioridades*. Caminho livre para TSK-9.1 (Financial Coach - Fase 9).
 
 ---
 

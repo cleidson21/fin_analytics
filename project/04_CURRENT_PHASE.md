@@ -69,7 +69,25 @@ Ausentes: yfinance (preços reais), Banco Central (CDI), Gemini AI.
 | R3 | Construir endpoints de Evolução e Dividendos faltantes | ✅ Concluída |
 | R4 | Certificação Frontend E2E sem mock | ✅ Concluída |
 | R5 | Gate de Fechamento e Certificação da Fase 7 | ✅ Concluída |
-| INT | Implementar yfinance, Banco Central, Gemini, APScheduler | 🟡 P2-P3 |
+| INT | Implementar yfinance (Market Data) | ✅ Concluída |
+| E2E | Validação Completa do Fluxo Operacional | ✅ Concluída |
+| INT.3 | Automação do Market Data (APScheduler) | ✅ Concluída |
+| INT.4 | Integração Banco Central (SGS - CDI, SELIC, IPCA) | ✅ Concluída |
+| BETA | Certificação Operacional Beta | ✅ Concluída |
+
+---
+
+## Próxima Fase (Phase 8 - AI & Automation)
+| ID | Tarefa | Status |
+|---|---|---|
+| AI.1 | Arquitetura da Inteligência Artificial (Gemini) | ✅ Concluída |
+| AI.2 | Implementação do Provider Gemini | ✅ Concluída |
+| AI.3 | Implementação da Classificação Inteligente de Lançamentos | ✅ Concluída |
+| AI.4 | Assistente Financeiro Inteligente (Consultas patrimônio) | ✅ Concluída |
+| AI.5 | Insights Financeiros Proativos e Alertas Inteligentes | ✅ Concluída |
+| AI.6 | Planejamento Financeiro Inteligente (Simulações) | ✅ Concluída |
+| AI.7 | Painel Executivo Inteligente | ✅ Concluída |
+| AI.8 | Financial Coach (Personalização) | 🟡 P1 (Ativa) |
 
 ---
 

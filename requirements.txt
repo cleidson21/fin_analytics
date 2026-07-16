@@ -6,3 +6,7 @@ pandas==2.1.1
 python-dateutil==2.8.2
 python-multipart==0.0.6
 pytest==7.4.2
+yfinance==0.2.31
+apscheduler==3.11.3
+requests==2.34.2
+google-generativeai==0.8.6

@@ -174,7 +174,27 @@
   - [x] R3: Construir endpoints faltantes (Evolução, Dividendos, Governance)
   - [x] R4: Certificação Frontend E2E sem mock
   - [x] R5: Gate de Fechamento e Certificação da Fase 7
-- **Gate:** Pipeline real + Engines + API completa sem mocks — **[PENDENTE]**
+  - [x] INT: Integração externa Market Data (yfinance)
+  - [x] E2E: Validação Completa do Fluxo Operacional (Alpha Homologada)
+  - [x] INT.3: Automação do Market Data (APScheduler)
+  - [x] INT.4: Integração Banco Central (SGS - CDI, SELIC, IPCA)
+  - [x] BETA: Certificação Operacional Beta
+- **Gate:** Pipeline real + Engines + API completa sem mocks — **[CONCLUÍDO]**
+
+### **FASE 7 CONGELADA (FREEZE)**
+- Próxima Fase Liberada: FASE 8 — Inteligência Artificial e Automação Assistida (Gemini)
+
+---
+
+## 2. Fase 8 — Inteligência Artificial e Automação Assistida (Gemini)
+### Progresso: `100%`
+### Tarefas
+- [x] TSK-8.1: Arquitetura da Inteligência Artificial (Gemini)
+- [x] TSK-8.2: Implementação do Provider Gemini
+- [x] TSK-8.3: Implementação da Classificação Inteligente de Lançamentos
+- [x] TSK-8.4: Assistente Financeiro Inteligente (Consultas patrimônio)
+- [x] TSK-8.5: Motor de Insights Financeiros Proativos e Alertas Inteligentes
+- [x] TSK-8.6: Planejamento Financeiro Inteligente (Simulações)
 
 ---
 

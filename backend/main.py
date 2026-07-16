@@ -6,13 +6,34 @@ from backend.domains.banking.router import router as banking_router
 
 from backend.domains.credit.router import router as credit_router
 from backend.domains.investments.router import router as investments_router
+from backend.domains.market_data.router import router as market_data_router
+from backend.domains.market_data.router import get_market_data_scheduler
+from backend.domains.ai.router import router as ai_router
 
 app = FastAPI(title="FinAnalytics V3", version="1.0.0")
+
+# Global scheduler instance
+global_scheduler = None
+
+@app.on_event("startup")
+def startup_event():
+    global global_scheduler
+    global_scheduler = get_market_data_scheduler()
+    global_scheduler.start()
+
+@app.on_event("shutdown")
+def shutdown_event():
+    global global_scheduler
+    if global_scheduler:
+        global_scheduler.stop()
+
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(banking_router, prefix="/api/v1")
 app.include_router(credit_router, prefix="/api/v1")
 app.include_router(investments_router, prefix="/api/v1/investments")
+app.include_router(market_data_router, prefix="/api/v1")
+app.include_router(ai_router, prefix="/api/v1")
 
 @app.get("/api/v1/health")
 def health_check(db=Depends(get_db_connection)):

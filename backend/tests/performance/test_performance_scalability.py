@@ -53,7 +53,20 @@ def _run_bench(n: int, months: int):
     tracemalloc.start()
     t0 = time.perf_counter()
 
-    service = HistoryService()
+    from backend.domains.investments.engines.position_engine import PositionEngine
+    from backend.domains.investments.engines.valuation_engine import ValuationEngine
+    from backend.domains.investments.engines.wealth_engine import WealthEngine
+    from backend.domains.investments.services.market_data_service import MarketDataService
+    from backend.domains.investments.repositories.market_data_repository import MarketDataRepository
+    
+    pe = PositionEngine()
+    ve = ValuationEngine()
+    we = WealthEngine()
+    
+    mdr = MarketDataRepository()
+    mds = MarketDataService(mdr)
+    
+    service = HistoryService(pe, ve, we, mds)
     history = service.generate_history(
         trades=trades,
         snapshots=[],
