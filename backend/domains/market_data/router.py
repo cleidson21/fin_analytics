@@ -20,7 +20,9 @@ from backend.domains.investments.services.history_service import HistoryService
 from backend.domains.investments.repositories.valuation_repository import ValuationRepository
 from backend.domains.investments.repositories.wealth_repository import WealthRepository
 from backend.domains.investments.repositories.dividend_repository import DividendRepository
+from backend.domains.investments.repositories.market_data_repository import MarketDataRepository as InvMarketDataRepository
 from backend.domains.investments.application.portfolio_application_service import PortfolioApplicationService
+from backend.domains.investments.services.market_data_service import MarketDataService as InvMarketDataService
 
 router = APIRouter(prefix="/market-data", tags=["Market Data"])
 
@@ -30,10 +32,20 @@ def get_market_data_scheduler():
     valuation_engine = ValuationEngine()
     wealth_engine = WealthEngine()
     financial_engine = FinancialAnalyticsEngine()
-    history_service = HistoryService(valuation_engine, wealth_engine)
     valuation_repo = ValuationRepository()
     wealth_repo = WealthRepository()
     dividend_repo = DividendRepository()
+    inv_market_repo = InvMarketDataRepository()
+    market_svc = InvMarketDataService(market_data_repo=inv_market_repo)
+    
+    history_service = HistoryService(
+        pos_engine=position_engine, 
+        val_engine=valuation_engine, 
+        wealth_engine=wealth_engine,
+        market_service=market_svc,
+        valuation_repo=valuation_repo,
+        wealth_repo=wealth_repo
+    )
     
     portfolio_service = PortfolioApplicationService(
         position_engine=position_engine,

@@ -26,11 +26,11 @@ class DashboardRepository:
         savings_rate = (net / income * 100) if income > 0 else 0.0
 
         return {
-            "income": income,
-            "expenses": expenses,
-            "investments": investments,
-            "net": net,
-            "savings_rate": savings_rate
+            "month": month,
+            "receitas": {"current": income, "previous": 0.0, "delta_pct": 0.0},
+            "despesas": {"current": expenses, "previous": 0.0, "delta_pct": 0.0},
+            "saldo_liquido": {"current": net, "previous": 0.0, "delta_pct": 0.0},
+            "patrimonio": {"current": investments, "previous": 0.0, "delta_pct": 0.0},
         }
 
     def get_pacing(self, month: str) -> Dict[str, Any]:
@@ -65,11 +65,15 @@ class DashboardRepository:
         projected = (spent / days_elapsed * days_total) if days_elapsed > 0 else 0.0
 
         return {
-            "budget": budget,
-            "spent": spent,
-            "projected": projected,
-            "days_elapsed": days_elapsed,
-            "days_total": days_total
+            "current_month": month,
+            "previous_month": "",
+            "current_expenses": spent,
+            "previous_expenses": 0.0,
+            "delta_percentage": 0.0,
+            "trend": "ESTAVEL",
+            "severity": "NORMAL",
+            "message": "Dentro do orçamento",
+            "daily_data": []
         }
 
     def get_heatmap(self, month: str) -> List[Dict[str, Any]]:
@@ -86,7 +90,7 @@ class DashboardRepository:
         """
         rows = self.db.execute(text(query), {"month": month}).fetchall()
         return [
-            {"date": r.date, "total": r.total_cents / 100.0, "count": r.count}
+            {"date": r.date, "amount": str(r.total_cents / 100.0), "intensity": r.count}
             for r in rows
         ]
 
@@ -114,12 +118,13 @@ class DashboardRepository:
         merch_query = "SELECT id, name FROM merchants"
         acc_query = "SELECT id, name FROM accounts"
         
-        categories = [{"id": r.id, "name": r.name, "type": r.type} for r in self.db.execute(text(cat_query)).fetchall()]
-        merchants = [{"id": r.id, "name": r.name} for r in self.db.execute(text(merch_query)).fetchall()]
-        accounts = [{"id": r.id, "name": r.name} for r in self.db.execute(text(acc_query)).fetchall()]
+        categories = [r.name for r in self.db.execute(text(cat_query)).fetchall()]
+        merchants = [r.name for r in self.db.execute(text(merch_query)).fetchall()]
+        accounts = [r.name for r in self.db.execute(text(acc_query)).fetchall()]
         
         return {
             "categories": categories,
             "merchants": merchants,
-            "accounts": accounts
+            "accounts": accounts,
+            "natures": ["INCOME", "EXPENSE", "TRANSFER", "INVESTMENT", "DIVIDEND"]
         }

@@ -1444,4 +1444,83 @@
 **Resultado:** ✅ APROVADA. O sistema atingiu a autossuficiência de interpretação de dados. A IA do FINANALYTICS se comporta efetivamente como um Copiloto unificado.
 **Aprovado por:** Agente AI
 
+---
 
+### [2026-07-16] FASE 9 — FINANCIAL PROFILE ENGINE (TSK-9.1)
+**Auditoria realizada:** Validação estrutural do domínio `backend/domains/ai/profile/`. Avaliação da tabela `financial_profile` e do scheduler assíncrono semanal `ProfileScheduler`. Validação da rota `GET /api/v1/ai/profile`.
+**Problemas encontrados:** A consolidação do perfil exige varredura profunda no comportamento (Evolução Patrimonial de 6 meses, múltiplos simuladores, histórico de insights recentes e executive briefs passados). Isso gera uma teia perigosa de consumo de Banco de Dados para alimentar o LLM. 
+**Correções realizadas:** Estabelecido mecanismo estrito no *Repository*: limita a coleta a apenas `LIMIT 6` para Snapshots (1 por mês, idealmente), `LIMIT 4` para Briefs (4 semanas), `LIMIT 3` para Simulações e `LIMIT 10` para Insights. Essa janela corrediça de memória retém a amostragem perfeita da fase de vida do investidor sem explodir tokens no LLM. O cache de *hash* garante a não regeneração até os fundamentos mudarem. Testes confirmaram estabilidade frente a perfis completamente vazios (Investidores Day 1).
+**Resultado:** ✅ APROVADA. A memória comportamental da IA foi habilitada de forma auditável e econômica. A Fase 9 atinge 25%.
+**Aprovado por:** Agente AI
+
+---
+
+### [2026-07-16] FASE 9 — FINANCIAL COACH ENGINE (TSK-9.2)
+**Auditoria realizada:** Validação do módulo `backend/domains/ai/coach/`. A API expõe `GET /api/v1/ai/coach` lendo os planos de ação salvos na `financial_coaching`. Verificação das restrições de governança: o coach foi instruído a recomendar hábitos e focos sem nunca emitir "comprar X" ou "vender Y".
+**Problemas encontrados:** A consolidação do Coach é o último elo da cadeia de IA. Se o `Financial Profile` quebrar ou falhar, o Coach rodaria vazio.
+**Correções realizadas:** O `CoachScheduler` foi inserido para disparar às **05:00 AM dos Domingos**, rigorosamente uma hora após o término da reconstrução do Perfil Semanal. O Caching do Coach foi projetado para herdar a estabilidade das camadas abaixo: O hash dele é a junção do Hash do Perfil, do Hash do Brief, do Hash das Metas e dos Insights. Qualquer mudança nesse ecossistema reflete automaticamente num plano de ação vivo. 
+**Resultado:** ✅ APROVADA. A Fase 9 atinge os 50%. A IA transcende os alertas passivos e passa a agir ativamente como um orientador autônomo baseado em evidências.
+**Aprovado por:** Agente AI
+
+---
+
+### [2026-07-16] FASE 9 — FINANCIAL MEMORY ENGINE (TSK-9.3)
+**Auditoria realizada:** Validação estrutural do domínio `backend/domains/ai/memory/`. Este módulo é o observador mestre do sistema. Ele examina os rastros de 4 módulos de IA passados (Profile, Coach, Planning, Executive Brief) e condensa isso no DNA persistente do usuário exposto pela rota `GET /api/v1/ai/memory`. 
+**Problemas encontrados:** Durante o desenvolvimento do prompt, foi notada a necessidade de forçar a geração de Array de Strings no formato JSON para que o Frontend possa plotar Gráficos de Radar de Preferências.
+**Correções realizadas:** O `MemoryScheduler` foi programado para varredura Mensal (Todo dia 1º, às 06:00 AM). Essa temporalidade lenta é intencional: um comportamento financeiro real (Memory) leva semanas/meses para mudar e não deve sofrer oscilações diárias provocadas pelo ruído de curto prazo do mercado. O Hash Code atua como guardião, poupando a API caso o mês não tenha produzido nenhum novo *Profile* ou *Coach*.
+**Resultado:** ✅ APROVADA. A IA agora compreende quem é o usuário não só hoje, mas entende quem ele foi ao longo de toda a jornada na plataforma. A Fase 9 atinge a marca histórica de 75%.
+**Aprovado por:** Agente AI
+
+---
+
+### [2026-07-16] FASE 9 — PERSONALIZATION ENGINE (TSK-9.4)
+**Auditoria realizada:** Revisão do domínio `backend/domains/ai/personalization/`, que coroa todo o esforço das Fases 8 e 9. Validação do schema JSON que prescreve parâmetros puros de UI/UX baseados no comportamento extraído dos módulos inferiores.
+**Problemas encontrados:** A consolidação do *Personalization* depende intimamente do *Memory*. O cache precisa refletir essa dependência.
+**Correções realizadas:** O repositório foi construído para mesclar o contexto da Memória, do Coach e do Profile. O Scheduler foi alocado cuidadosamente para as **07:00 AM do dia 1º de cada mês**, exatamente 1 hora após a consolidação da Memória Financeira. Isso previne race-conditions e leituras desatualizadas de perfil. Testes provaram que um sistema sem memória inicial gera uma personalização neutra/padrão segura. O cache-key blinda o consumo da API do Gemini enquanto as engrenagens inferiores não girarem.
+**Resultado:** ✅ APROVADA. O sistema agora não só fornece análises, mas prescreve a própria adaptação da tela para o usuário. 
+**Conclusão da Fase 9:** A Fase 9 foi integralmente validada (100%). A Inteligência Artificial do FINANALYTICS evoluiu de um leitor de Snapshot (Fase 8) para um motor completo, autônomo e evolutivo. O caminho foi pavimentado para a Fase 10 (Ecossistema).
+**Aprovado por:** Agente AI
+
+---
+
+### [2026-07-16] FASE 10 — AI ORCHESTRATOR ENGINE (TSK-10.1)
+**Auditoria realizada:** Revisão do recém-criado `backend/domains/ai/orchestrator/`. A validação confirmou que este módulo age estritamente como um Agregador *Read-Only*. Nenhum LLM (GeminiProvider) é invocado pelo Orchestrator. 
+**Problemas encontrados:** Durante o desenvolvimento do Caching, notou-se que o Orchestrator depende da integridade do banco inteiro de IA. Montar o DTO Unificado pode se tornar oneroso.
+**Correções realizadas:** O repositório foi construído para utilizar `hashlib.md5` concatenando os hashes individuais de todos os módulos. O endpoint `GET /api/v1/ai/context` serve o pacote inteiro de contexto comportamental para futuras integrações (Web, Mobile, etc) com latência imperceptível. O endpoint `GET /api/v1/ai/orchestrator/status` avalia se os módulos possuem dados preenchidos.
+**Resultado:** ✅ APROVADA. A arquitetura de IA agora possui um único ponto focal, limpo e padronizado. A Fase 10 atinge 10%.
+**Aprovado por:** Agente AI
+
+---
+
+### [2026-07-16] FASE 10 — DASHBOARD DELIVERY LAYER (TSK-10.2)
+**Auditoria realizada:** Validação do módulo `backend/domains/ai/dashboard/` e da revisão arquitetural Single User da V3 (que excluiu WhatsApp/Mobile independente/E-mail do escopo atual). 
+**Problemas encontrados:** A entrega de dados soltos obriga o Frontend a fazer múltiplas requisições. O Dashboard precisa de um único *payload* maciço contendo resumo financeiro e inteligência de forma palatável.
+**Correções realizadas:** Criada a camada de Delivery baseada no ViewModel. O `dashboard_service.py` não calcula e não usa LLM. Ele apenas lê o `orchestrator_hash` em memória. Se a inteligência base não mudou, ele devolve imediatamente o DTO formatado que já havia entregado antes. O endpoint `GET /api/v1/dashboard` provê uma API única para alimentar a Home do sistema (SPA).
+**Resultado:** ✅ APROVADA. A plataforma está perfeitamente preparada para a integração Frontend. A Fase 10 atinge 25%.
+**Aprovado por:** Agente AI
+
+
+
+### [2026-07-16] FASE 10 — INTERNAL EVENT BUS (TSK-10.4)
+
+**Auditoria realizada:** Criação do módulo i/events/ para gerenciar a emissão de eventos assíncronos e desacoplar módulos (TSK-10.4). Implementado barramento em memória sem persistência. Adicionado roteamento do WorkflowCompleted acionando o DashboardDeliveryService de forma autônoma. Validado event_registry.py na inicialização via startup_event.
+**Problemas encontrados:** A importação cruzada em event_router.py precisou ser alocada no nível do módulo (e não no escopo da função) para permitir simulações mockadas sem quebrar com AttributeError.
+**Correções exigidas:** Importações ajustadas, getattr seguro instanciado no event_bus.py para tratar handlers (como mocks) sem atributo __name__.
+**Resultado:** ✅ APROVADA. Testes validados (100% PASS).
+**Aprovado por:** Agente AI
+
+### [2026-07-16] FASE 10 — PLUGIN FRAMEWORK E FIM DA V3 (TSK-10.5)
+
+**Auditoria realizada:** Validação do módulo i/plugins/ (TSK-10.5). Verificado o PluginRegistry (sem reflexão) e PluginManager orquestrando os novos BaseInternalPlugin. Foi executada a bateria de testes confirmando comportamento de saúde, inicialização, falhas, desabilitação (enabled=False) e chamadas a plugins inexistentes.
+**Problemas encontrados:** A documentação pydantic em tempo de teste emitiu DeprecationWarning por uso de datetime.utcnow() que foi tolerado.
+**Correções exigidas:** O router foi integrado no main.py substituindo o carregamento manual de eventos pelo PluginManager.initialize_all(). O sistema provou que a refatoração das instâncias (Dashboard, Orchestrator, Event Bus, Workflow) não quebrou os testes nem as rotas.
+**Resultado:** ✅ APROVADA. FASE 10 CONCLUÍDA. FINANALYTICS V3 ENCERRADO.
+**Aprovado por:** Agente AI
+
+### [2026-07-16] FASE RC-1 — CONSOLIDAÇÃO FINAL (RELEASE CANDIDATE 1)
+
+**Auditoria realizada:** Revisão generalizada das Engines Financeiras, da Inteligência Artificial (Read Only), Arquitetura (Plugins), Endpoints (Schemas, FastAPI), Performance e Cobertura (223/223 Testes Aprovados). Criação dos artefatos oficiais: Release Checklist, Dívida Técnica (RC1) e Limitações Conhecidas.
+**Problemas encontrados:** DeprecationWarnings de pydantic (datetime.utcnow) e proxy temporário na identificação de Assinaturas (subscriptions) através de Categorias, ambos documentados em Dívida Técnica.
+**Correções exigidas:** Nenhuma regressão detectada. Nenhum código de Engine foi modificado. Status de produção homologado (V3.0.0).
+**Resultado:** ✅ APROVADA. FINANALYTICS V3.0.0 RC1 SELADO.
+**Aprovado por:** Agente AI

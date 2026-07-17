@@ -330,6 +330,46 @@ Conclusão da TSK-8.7, culminando na orquestração de todos os módulos de IA p
 Motivo: Evitar que o usuário precise transitar por 4 telas diferentes (Carteira, Alertas, Simulador, Mercado) apenas para saber o status global e focar nas prioridades do dia.
 Impacto: Endpoint `GET /api/v1/ai/executive/brief` exposto consumindo a recém-criada tabela `executive_briefs`. Caching multinível (`snapshot_date + macro_date + insight_hash + planning_hash`) implantado para proteger a API contra regenerações dispendiosas. O prompt do modelo agora entrega as *Top 3 Prioridades*. Caminho livre para TSK-9.1 (Financial Coach - Fase 9).
 
+**[2026-07-16] [FASE 9] FINANCIAL PROFILE ENGINE (TSK-9.1) APROVADO**
+Início da Fase 9 com a conclusão da TSK-9.1. O módulo `ai/profile/` foi introduzido para consolidar o perfil semântico e comportamental do investidor a partir do seu histórico, insights, simulações e metas (Executive Briefs).
+Motivo: Dotar a IA de memória comportamental para futuras personalizações de dicas, criando "DNA Financeiro" (Perfil de risco, Tolerância, Comportamento de caixa, Estilo de Investimento).
+Impacto: Endpoint `GET /api/v1/ai/profile` operante, amparado pela tabela `financial_profile`. `ProfileScheduler` foi integrado à malha para rodar semanalmente. O *Cache Hash* protege a API contra custos do Gemini. A Fase 9 atinge 25%. Caminho livre para TSK-9.2 (Financial Coach).
+
+**[2026-07-16] [FASE 9] FINANCIAL COACH ENGINE (TSK-9.2) APROVADO**
+Integração final do assistente proativo via TSK-9.2. O módulo `ai/coach/` foi instanciado para atuar como mentor financeiro, digerindo as informações produzidas pelo *Financial Profile*, *Executive Brief*, *Insights* e *Planning*. 
+Motivo: Evitar respostas passivas e gerar Planos de Ação concretos e estruturados (Foco Semanal/Mensal, Prioridades e Hábitos Financeiros recomendados) baseados puramente no DNA do investidor.
+Impacto: Endpoint `GET /api/v1/ai/coach` ativo. Tabela `financial_coaching` instanciada. Scheduler atrelado aos domingos às 05:00 AM (uma hora após o Profile). O sistema agora emite recomendações comportamentais sem nunca indicar compra ou venda de ativos específicos, aderindo rigidamente à governança. Fase 9 atinge 50% de progresso. Caminho livre para TSK-9.3.
+
+**[2026-07-16] [FASE 9] FINANCIAL MEMORY ENGINE (TSK-9.3) APROVADO**
+Integração profunda da IA dotada de memória de longo prazo via TSK-9.3. O domínio `ai/memory/` absorve os padrões passados para que a máquina consiga detectar evolução comportamental, preferências consistentes (como foco em renda) e força/fraqueza históricas.
+Motivo: Evitar perda de contexto a cada novo Snapshot. A Memória ensina à IA quem é o usuário em essência, impedindo conselhos genéricos e repetitivos.
+Impacto: Endpoint `GET /api/v1/ai/memory` habilitado com retorno JSON parsado para arrays. O Scheduler `MemoryScheduler` entra no ciclo mensal (dia 1, às 06:00 AM). O Repositório faz *Time Travel* restrito buscando até 10 resumos executivos passados para ler a trilha do investidor. Fase 9 avança para 75%. Caminho aberto para TSK-9.4.
+
+**[2026-07-16] [FASE 9] PERSONALIZATION ENGINE (TSK-9.4) CONCLUÍDO (FASE 9 CONCLUÍDA)**
+O Personalization Engine (`ai/personalization/`) fechou o ciclo de Inteligência Artificial do FINANALYTICS V3. Ele absorve a *Memory*, *Profile*, *Coach*, *Executive Briefs* e *Insights*, deduzindo parâmetros de UI e UX (`communication_style`, `priority_topics`, `dashboard_focus`, etc.) para que o frontend, no futuro, se adapte sozinho ao investidor.
+Motivo: Garantir que a plataforma molde a experiência sem exigir configurações manuais do usuário.
+Impacto: A tabela `ai_personalization` e o endpoint `GET /api/v1/ai/personalization` foram ativados. O Scheduler roda mensalmente às 07:00 AM (depois do Memory). A Fase 9 (Integração Profunda e Personalização) foi oficialmente encerrada com sucesso (100% concluída). A Fase 10 (Plataforma Inteligente e Ecossistema FINANALYTICS) passa a ser a fase ativa do projeto.
+
+**[2026-07-16] [FASE 10] AI ORCHESTRATOR ENGINE (TSK-10.1) APROVADO**
+Início oficial da Fase 10. O `ai/orchestrator/` foi criado como a camada centralizadora e coordenadora de toda a Inteligência Artificial.
+Motivo: Impedir que as futuras integrações (Web, Mobile, WhatsApp, E-mail) precisem consultar os 8 módulos de IA individualmente, mitigando gargalos e desorganização arquitetural.
+Impacto: Exposição de `GET /api/v1/ai/orchestrator/status` (Health Check global da IA) e `GET /api/v1/ai/context` (DTO Unificado com Profile, Coach, Memory, Executive, Personalization, Insights e Planning). Implementação estritamente *Read-Only* baseada em Caching unificado. Fase 10 atinge 10%. Caminho livre para TSK-10.2.
+
+**[2026-07-16] [FASE 10] DASHBOARD DELIVERY LAYER (TSK-10.2) APROVADA**
+Criação do módulo `ai/dashboard/` responsável por modelar o payload completo para a interface da Home (Dashboard ViewModel) consumindo diretamente o AI Orchestrator. Houve uma revisão arquitetural oficial decretando que a plataforma será Single User e a integração com WhatsApp/E-mail foi removida do escopo da V3.
+Motivo: Facilitar a vida do Frontend (Single Page Application) e garantir que ele precise dar *fetch* em apenas uma rota (`/api/v1/dashboard`) para ter 100% da visão consolidada de inteligência de investimentos e coaching sem gerar sobrecarga (N+1 queries).
+Impacto: Rota principal `GET /api/v1/dashboard` entregue no `main.py`. Caching perfeitamente atrelado ao `orchestrator_hash`. Fase 10 avança para 25%. Caminho livre para TSK-10.3 (Workflow Engine).
+
+**[2026-07-16] [FASE 10] WORKFLOW ENGINE (TSK-10.3) APROVADA**
+Criação do módulo `ai/workflow/` para orquestração interna e controle de ordem de execução cronológica das Engines. 
+Motivo: Evitar chamadas cruzadas e dependências implícitas. O Workflow Engine define rigorosamente a ordem: Daily (Market Data -> Macro -> Insights -> Executive -> Orchestrator -> Dashboard), Weekly e Monthly. O APScheduler agora roda apenas o WorkflowService em `/main.py`.
+Impacto: Tabela `workflow_runs` criada para auditoria. Nenhuma Engine foi modificada, elas apenas passaram a ser invocadas externamente por um Service agnóstico. Rota `POST /api/v1/workflow/run` e `GET /api/v1/workflow/status` expostas para admins. Fase 10 avança para 50%. Caminho livre para TSK-10.4.
+
+**[2026-07-16] [FASE 10] INTERNAL EVENT BUS (TSK-10.4) APROVADA**
+Criação do módulo `ai/events/` estabelecendo um barramento de comunicação local síncrono.
+Motivo: Evitar acoplamento direto entre as camadas da plataforma e permitir arquitetura reativa sem introduzir brokers externos complexos como Kafka ou Redis (respeitando escopo *Single User*).
+Impacto: WorkflowEngine agora dispara eventos para cada step, o Dashboard Delivery Service reage ao `WorkflowCompleted` sem depender diretamente de importações circulares. Os módulos da Inteligência Artificial agora possuem infraestrutura Event-Driven local 100% testada e operacional. Caminho livre para TSK-10.5.
+
 ---
 
 ### [2026-06-26] ENTERPRISE AUDIT 3 (EA3)
@@ -728,3 +768,13 @@ Motivo: Garantir que o Read Model, Endpoints, Banco Oficial V3 e Dívidas Técni
 Impacto: Arquitetura homologada, Dívidas Técnicas (TD-020, TD-021) resolvidas. Declarado Freeze oficial da fundação analítica da Fase 7.
 
 
+
+**[2026-07-16] [FASE 10] PLUGIN FRAMEWORK (TSK-10.5) APROVADA**
+Criação do módulo i/plugins/ provendo extensibilidade interna controlada.
+Motivo: Evitar acoplamento hardcoded de módulos da IA. Preparar o terreno para a V4 (Próxima Geração) permitindo acoplar e desacoplar features mantendo o core inalterado.
+Impacto: Criados PluginRegistry e PluginManager. Os 4 subsistemas (Workflow, Dashboard, Orchestrator, Event Bus) foram encapsulados como plugins internos que se auto-registram no startup (PluginManager.initialize_all()). A Fase 10 está 100% concluída. O FINANALYTICS V3 foi formalmente consolidado e a fila de implementação liberada para expansões futuras (V4).
+
+**[2026-07-16] [RC-1] CONSOLIDAÇÃO FINAL (RELEASE CANDIDATE 1) APROVADA**
+Auditoria global executada com sucesso. Nenhuma nova feature foi inserida. Todas as rotas (APIs) continuam respeitando os contratos, Engines Financeiras preservadas e a infraestrutura IA opera rigorosamente sob escopo Read-Only.
+Motivo: Formalizar o fechamento da versão 3.0.0 (V3) conforme os protocolos de governança do Master Plan.
+Impacto: Criados 10_RELEASE_CHECKLIST.md, 11_KNOWN_LIMITATIONS.md e 12_TECHNICAL_DEBT.md. FINANALYTICS atinge o grau de maturidade RC1 para produção.
