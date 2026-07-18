@@ -1,5 +1,0 @@
-Data;Descrição;Categoria;Conta;Valor
-10/06/2026;Transferência enviada|Cleidson Ramos de Carvalho;Entre contas;Nubank;R$ 14,00
-09/06/2026;Transferência enviada|Suelen dos Santos Cerqueira;Transferências;Nubank;R$ 180,00
-09/06/2026;Resgate RDB;Investimentos;Nubank;+R$ 180,00
-09/06/2026;Transferência enviada|Joedson De Carvalho Amorim Junior;Transferências;Nubank;R$ 5,00

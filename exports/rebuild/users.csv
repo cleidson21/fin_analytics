@@ -1,2 +1,0 @@
-﻿id,username,email,password_hash,role,active,created_at
-b400aced901144208364d2fc13f8e44b,admin,admin@finanalytics.local,$2b$12$shcUAjKx/prz20TBlDd.nO/Y6CT/EF2OL5LzFDXTLjwQThYmpzamK,ADMIN,1,2026-06-06 17:16:22

@@ -1,3 +1,0 @@
-# Governance Service\n\n**Responsabilidade:** Orquestrar o ciclo de regras, auditoria e métricas de aprendizado (Learning).\n\n**Dependências:** GovernanceRepository.\n\n**Fluxos Principais:**\n- Cadastro e aplicação de regras de classificação.\n- Exportação de dataset de treinamento.\n- Métricas e Heath Check de acertos de IA.\n\n**Pontos de Extensão:** Feedback Loops automáticos baseados no comportamento do usuário (Approval Tracking).
-
-**Observability (FASE 8):** Registros de rollback e promoções de staging são injetados em um `MetricsRegistry` thread-safe.

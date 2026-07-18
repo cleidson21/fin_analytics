@@ -1,5 +1,0 @@
-﻿id,name,version,content,active,created_at,notes
-1f76bef1e3214cf5981cec6e672d313b,prompt_pix,1,Você é um assistente... Extraia os dados do PIX...,1,2026-06-06 16:41:37,Seed inicial
-533712b03e55496c81b1116a8e29e59f,prompt_cartao,1,Você é um assistente... Extraia os dados da compra no cartão...,1,2026-06-06 16:41:37,Seed inicial
-0905ac35669f45ed8fd396845c66ea91,prompt_fatura,1,Você é um assistente... Extraia os dados da fatura...,1,2026-06-06 16:41:37,Seed inicial
-ea3be4631d9f486daf16ba8afead04aa,prompt_extrato,1,Você é um assistente... Extraia os dados do extrato geral...,1,2026-06-06 16:41:37,Seed inicial

@@ -1,3 +1,0 @@
-# Governance Repository\n\n**Responsabilidade:** Acesso exclusivo ao governance.db. Controla regras, AI runs, e staging.\n\n**Dependências:** Nenhuma (Core). Conecta-se via sqlite3.\n\n**Fluxos Principais:**\n- Pipeline de ETL (Staging Imports, Positions, Transactions).\n- Gerenciamento de Rules (Categorização Smart).\n- Prompts de IA e Audit Logs.\n\n**Pontos de Extensão:** Integração com novos classificadores cross-source via event_links.
-
-**Transaction Safety (FASE 8):** A promoção de Staging e Rollbacks de Import operam com segurança atômica (`BEGIN TRANSACTION`) sob observabilidade de performance.
