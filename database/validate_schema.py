@@ -1,5 +1,5 @@
 import sqlite3
-db = sqlite3.connect('database/fin_analytics_v3.db')
+db = sqlite3.connect('database/fin_analytics.db')
 db.execute('PRAGMA foreign_keys=OFF')  # off to test CHECK constraints independently
 
 results = []

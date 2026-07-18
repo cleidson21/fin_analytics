@@ -34,7 +34,7 @@ def main(args_list=None):
 
     # Note: Em produção ou testes end-to-end reais a variável de ambiente DB_URL poderia ser usada, 
     # mas mantemos o padrão hardcoded estrito para respeitar a arquitetura do projeto.
-    db_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "database", "fin_analytics_v3.db")
+    db_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "database", "fin_analytics.db")
     db_url = os.environ.get("TEST_DB_URL", f"sqlite:///{os.path.abspath(db_path)}")
     
     start_time_perf = time.perf_counter()

@@ -37,7 +37,7 @@ def main():
         logger.error(f"Arquivo não encontrado: {file_path}")
         sys.exit(1)
 
-    db_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "database", "fin_analytics_v3.db")
+    db_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "database", "fin_analytics.db")
     db_url = f"sqlite:///{os.path.abspath(db_path)}"
     
     logger.info("Iniciando importação do CEI...")

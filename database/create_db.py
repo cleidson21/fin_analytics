@@ -1,5 +1,5 @@
 """
-FinAnalytics V3 — Database Bootstrap
+FinAnalytics — Database Bootstrap
 =====================================
 Executes all migrations in order to build the SQLite database from scratch.
 Replaces any prior SQLAlchemy ORM setup. The database IS the source of truth.
@@ -22,7 +22,7 @@ Migration history:
 Usage:
     python database/create_db.py [--db-path PATH]
 
-Default DB path: database/fin_analytics_v3.db
+Default DB path: database/fin_analytics.db
 """
 
 import sqlite3
@@ -32,7 +32,7 @@ import argparse
 from pathlib import Path
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-DEFAULT_DB_PATH = Path(__file__).parent / "fin_analytics_v3.db"
+DEFAULT_DB_PATH = Path(__file__).parent / "fin_analytics.db"
 
 MIGRATION_ORDER = [
     # --- Core domain ---
@@ -116,7 +116,7 @@ def verify_schema(db_path: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FinAnalytics V3 — Database Bootstrap")
+    parser = argparse.ArgumentParser(description="FinAnalytics — Database Bootstrap")
     parser.add_argument("--db-path", default=str(DEFAULT_DB_PATH), help="Path to SQLite database file")
     parser.add_argument("--verify", action="store_true", help="Show table counts after migration")
     args = parser.parse_args()

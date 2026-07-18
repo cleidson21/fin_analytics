@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from typing import Generator
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'fin_analytics_v2.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'fin_analytics.db')
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 # For SQLite, we must enforce foreign keys for CASCADE to work

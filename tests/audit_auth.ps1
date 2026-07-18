@@ -16,13 +16,21 @@ try {
 }
 
 Write-Host "`n--- 4. Seed Automático (verificação banco) ---"
-python -c "import sqlite3; conn=sqlite3.connect('database/fin_analytics_v3.db'); print(conn.execute('select * from users').fetchall())"
+$Result = python -c "import sqlite3; conn=sqlite3.connect('database/fin_analytics.db'); print(conn.execute('select * from users').fetchall())"
+if ($Result -like "*admin*") {
+    Write-Host "✅ Usuário criado no banco de dados." -ForegroundColor Green
+} else {
+    Write-Host "❌ Usuário NÃO FOI criado no banco." -ForegroundColor Red
+}
+
+Write-Host "Quantidade de usuários cadastrados:"
+python -c "import sqlite3; conn=sqlite3.connect('database/fin_analytics.db'); print(conn.execute('select count(*) from users').fetchone())"
 
 Write-Host "`n--- 5. Duplicação de Seed ---"
 curl -Method POST "http://localhost:8000/api/v1/auth/login" -Body "username=admin@finanalytics.local&password=admin" -ContentType "application/x-www-form-urlencoded" | Out-Null
 curl -Method POST "http://localhost:8000/api/v1/auth/login" -Body "username=admin@finanalytics.local&password=admin" -ContentType "application/x-www-form-urlencoded" | Out-Null
 curl -Method POST "http://localhost:8000/api/v1/auth/login" -Body "username=admin@finanalytics.local&password=admin" -ContentType "application/x-www-form-urlencoded" | Out-Null
-python -c "import sqlite3; conn=sqlite3.connect('database/fin_analytics_v3.db'); print(conn.execute('select count(*) from users').fetchone())"
+python -c "import sqlite3; conn=sqlite3.connect('database/fin_analytics.db'); print(conn.execute('select count(*) from users').fetchone())"
 
 Write-Host "`n--- 6. Token JWT ---"
 $token = $loginResp.access_token
