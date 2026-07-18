@@ -16,10 +16,13 @@ class TransactionRepository:
                 '' as parcelamento,
                 t.original_description as observacao,
                 t.date as data_transacao,
-                t.amount as valor_cents
+                t.amount as valor_cents,
+                t.type as natureza,
+                a.name as account
             FROM transactions t
             LEFT JOIN categories c ON t.category_id = c.id
             LEFT JOIN categories p ON c.parent_id = p.id
+            LEFT JOIN accounts a ON t.account_id = a.id
             WHERE t.is_ignored = 0
         '''
         params = {}
@@ -57,7 +60,12 @@ class TransactionRepository:
                 "observacao": row.observacao,
                 "data_transacao": row.data_transacao,
                 "valor_cents": row.valor_cents,
-                "valor": row.valor_cents / 100.0 if row.valor_cents is not None else None
+                "valor": row.valor_cents / 100.0 if row.valor_cents is not None else None,
+                "date": row.data_transacao,
+                "description": row.descricao,
+                "category": row.categoria,
+                "natureza": row.natureza,
+                "account": row.account
             })
             
         return {

@@ -191,3 +191,23 @@ class DividendBreakdownDTO(BaseModel):
     ticker: str
     total_received: Decimal
 
+
+class PositionUIRepresentationDTO(BaseModel):
+    ticker: str
+    classe_ativo: Optional[str] = None
+    observacao: Optional[str] = None
+    data_snapshot: Optional[str] = None
+    quantidade: Decimal
+    valor_investido: Decimal
+    valor_atual: Decimal
+    ganho: Decimal
+    peso: Decimal
+
+class DividendUIRepresentationDTO(BaseModel):
+    id_economico: str
+    ticker: str
+    tipo_evento: Optional[str] = None
+    observacao: Optional[str] = None
+    valor: Optional[Decimal] = None
+    data_pagamento: Optional[str] = None
+

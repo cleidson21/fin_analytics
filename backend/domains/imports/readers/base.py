@@ -3,7 +3,7 @@ import hashlib
 import logging
 from typing import Dict, Any
 from datetime import datetime, timezone
-from backend.domains.imports.dto import RawDocument
+from backend.domains.imports.dto import RawDocument, ImportSource
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ class BaseCsvReader:
     """Classe base abstrata para leitura de arquivos CSV."""
     
     @property
-    def source_system(self) -> str:
+    def source_system(self) -> ImportSource:
         raise NotImplementedError("As subclasses devem definir a propriedade 'source_system'")
     
     def read(self, filepath: str) -> RawDocument:
@@ -35,6 +35,29 @@ class BaseCsvReader:
             filename=filename,
             mime_type="text/csv",
             encoding=encoding,
+            parser_version="1.0.0",
+            metadata={"total_lines": len(df)},
+            content=content_dict,
+            document_hash=doc_hash,
+            created_at=datetime.now(timezone.utc)
+        )
+
+    def read_string(self, raw_text: str, filename: str) -> RawDocument:
+        import io
+        try:
+            df = pd.read_csv(io.StringIO(raw_text))
+        except Exception as e:
+            logger.error(f"Erro ao ler CSV da string para {filename}: {e}")
+            raise
+            
+        content_dict = df.to_dict(orient='records')
+        doc_hash = hashlib.sha256(raw_text.encode('utf-8')).hexdigest()
+        
+        return RawDocument(
+            source=self.source_system,
+            filename=filename,
+            mime_type="text/csv",
+            encoding="utf-8",
             parser_version="1.0.0",
             metadata={"total_lines": len(df)},
             content=content_dict,

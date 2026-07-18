@@ -1524,3 +1524,39 @@
 **CorreÃ§Ãµes exigidas:** Nenhuma regressÃ£o detectada. Nenhum cÃ³digo de Engine foi modificado. Status de produÃ§Ã£o homologado (V3.0.0).
 **Resultado:** âœ… APROVADA. FINANALYTICS V3.0.0 RC1 SELADO.
 **Aprovado por:** Agente AI
+
+### 2026-07-17 — Integração Real 03: Processamento da Importação (Staging ? Engines)
+- **Status:** Concluído
+- **O que foi feito:**
+  - O fluxo paralelo de Staging (StagingImport, StagingPosition, etc.) foi **definitivamente eliminado**.
+  - Refatoração do ackend/domains/governance/import_service.py (GovernanceImportService.confirm_and_process) para plugar diretamente os dados brutos (import_artifacts) nas Engines e Repositórios Oficiais do Finanalytics.
+  - O ApprovalService antigo em pp/services/governance/approval.py foi depreciado e desativado.
+  - A API POST /api/v1/governance/imports/{run_id}/confirm agora executa todo o pipeline funcional sem mocks, chamando: Validation Engine -> Normalization Engine -> Classification Engine (ClassificationEngineService) -> Deduplication Engine -> Financial Engines (TransactionRepository, PositionSnapshot, PortfolioSnapshot, DividendService).
+- **Arquivos Alterados:** ackend/domains/governance/import_service.py, ackend/domains/governance/router.py, pp/services/governance/approval.py.
+
+## [2026-07-17] Auditoria de GovernanÃ§a ConcluÃ­da
+**AÃ§Ã£o:** Auditoria tÃ©cnica dos contratos de GovernanÃ§a para preparaÃ§Ã£o de integraÃ§Ã£o final (Banco de Dados -> API -> Frontend).
+**Documentos Gerados:** `_GOVERNANCE_CONTRACT_AUDIT.md`, `_FRONT_BACK_DATABASE_MATRIX.md`, `_GOVERNANCE_REFACTOR_PLAN.md`.
+
+## [2026-07-17] ExecuÃ§Ã£o TSK-GOV-01
+**AÃ§Ã£o:** IntegraÃ§Ã£o do Dashboard e Upload com banco de dados SQLite real. RefatoraÃ§Ã£o de Frontend para consolidaÃ§Ã£o de UX.
+**EvidÃªncias:** E2E Script executado, rotas FastAPI validadas.
+
+## [2026-07-17] ExecuÃ§Ã£o TSK-GOV-02 & TSK-GOV-05
+**AÃ§Ã£o:** RemoÃ§Ã£o de mocks e forÃ§amento de SUCCESS no staging. IntegraÃ§Ã£o das APIs de listagem de tabelas.
+**EvidÃªncias:** TSK-GOV-02_REPORT.md gerado e Script E2E avanÃ§ou passando pela pÃ¡gina de ConfirmaÃ§Ã£o.
+
+## [2026-07-17] Auditoria Sprint H1 - Contratos de Domínio
+**Auditado por:** Agente
+**Módulo:** Governança (Dashboard, Importações, Transações, Posições, Dividendos)
+**Resultado:** Quebras arquiteturais graves encontradas.
+
+**Descobertas:**
+1. **Modelos DTO Inexistentes:** Rotas como /positions e /dividends retornam dicionários gerados no próprio Router, sem passar por DTOs formais (ex: PositionSnapshot e Dividend).
+2. **SQL Raw no Router:** As consultas para buscar posições e dividendos estão feitas com conn.execute(text('...')) diretamente dentro de governance/router.py, ferindo o princípio de Repository.
+3. **Maturidade dos Importadores:** Nenhum importador (Nubank, Pierre, B3, MyProfit) respeita completamente a arquitetura de Gateways e Pipelines (Reader -> Parser -> Validator -> Normalizer). Todos estão concentrados em lógica _hardcoded_ no confirm_and_process.
+4. **Acoplamento Front-Back:** O Front (ex: PositionsTab.tsx) espera propriedades (ex: classe_ativo) que a API não devolve, resultando em colunas vazias, apontando falta de contrato explícito.
+
+**Ação Exigida:**
+Criar o documento permanente de contratos (_ARCHITECTURE_CONTRACT.md) e bloquear o desenvolvimento de novas features até que o pipeline H1 seja devidamente refatorado e testado através de 	ests/ reais.
+

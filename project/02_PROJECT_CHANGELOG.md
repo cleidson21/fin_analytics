@@ -778,3 +778,31 @@ Impacto: Criados PluginRegistry e PluginManager. Os 4 subsistemas (Workflow, Das
 Auditoria global executada com sucesso. Nenhuma nova feature foi inserida. Todas as rotas (APIs) continuam respeitando os contratos, Engines Financeiras preservadas e a infraestrutura IA opera rigorosamente sob escopo Read-Only.
 Motivo: Formalizar o fechamento da vers√£o 3.0.0 (V3) conforme os protocolos de governan√ßa do Master Plan.
 Impacto: Criados 10_RELEASE_CHECKLIST.md, 11_KNOWN_LIMITATIONS.md e 12_TECHNICAL_DEBT.md. FINANALYTICS atinge o grau de maturidade RC1 para produ√ß√£o.
+
+### 2026-07-17 ó IntegraÁ„o Real 03: Processamento da ImportaÁ„o (Staging ? Engines)
+- **Status:** ConcluÌdo
+- **O que foi feito:**
+  - O fluxo paralelo de Staging (StagingImport, StagingPosition, etc.) foi **definitivamente eliminado**.
+  - RefatoraÁ„o do ackend/domains/governance/import_service.py (GovernanceImportService.confirm_and_process) para plugar diretamente os dados brutos (import_artifacts) nas Engines e RepositÛrios Oficiais do Finanalytics.
+  - O ApprovalService antigo em pp/services/governance/approval.py foi depreciado e desativado.
+  - A API POST /api/v1/governance/imports/{run_id}/confirm agora executa todo o pipeline funcional sem mocks, chamando: Validation Engine -> Normalization Engine -> Classification Engine (ClassificationEngineService) -> Deduplication Engine -> Financial Engines (TransactionRepository, PositionSnapshot, PortfolioSnapshot, DividendService).
+- **Arquivos Alterados:** ackend/domains/governance/import_service.py, ackend/domains/governance/router.py, pp/services/governance/approval.py.
+
+## [2026-07-17] Auditoria Geral de Governan√ßa
+- Produzida auditoria completa do contrato Front <-> Back <-> Banco para a Governan√ßa.
+- Criados: `_GOVERNANCE_CONTRACT_AUDIT.md`, `_FRONT_BACK_DATABASE_MATRIX.md`, `_GOVERNANCE_REFACTOR_PLAN.md`.
+
+## [2026-07-17] TSK-GOV-01 Conclu√≠da
+- Integra√ß√£o real do Dashboard e da Listagem de Importa√ß√µes conclu√≠da.
+- Refatora√ß√£o do fluxo de UX da tela de Upload para Origem √önica.
+
+## [2026-07-17] TSK-GOV-02 e TSK-GOV-05 Conclu√≠das
+- Corre√ß√£o de Staging: Status de Importa√ß√£o agora √© PENDING para permitir Revis√£o Real.
+- Mocking removido da Confirma√ß√£o (Processamento real em transactions, dividends e position_snapshots com fallbacks inteligentes).
+- Rotas de Tabelas de Dados (TSK-GOV-05) integradas e servindo dados reais (GET /positions, /dividends, /transactions).
+
+**[2026-07-17] [GOV] DECIS√O**
+Conclus„o do Levantamento Arquitetural preliminar da Sprint H1.
+Motivo: Evitar progress„o sem mapeamento claro de contratos.
+Impacto: Oficializada a transiÁ„o do foco de 'Novas Funcionalidades' para 'HomologaÁ„o e Contratos de DomÌnio'.
+

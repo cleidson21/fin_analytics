@@ -22,6 +22,16 @@ class ImportStatusEnum(str, Enum):
     ROLLBACKED = "ROLLBACKED"
 
 
+class ImportSource(str, Enum):
+    """Fontes de importação de arquivos."""
+    NUBANK_CONTA = "NUBANK_CONTA"
+    NUBANK_FATURA = "NUBANK_FATURA"
+    MYPROFIT_PROVENTOS = "MYPROFIT_PROVENTOS"
+    MYPROFIT_EVOLUCAO = "MYPROFIT_EVOLUCAO"
+    PIERRE = "PIERRE"
+    B3 = "B3"
+
+
 class RawDocument(BaseModel):
     """
     Representa qualquer documento bruto lido pelos Readers.

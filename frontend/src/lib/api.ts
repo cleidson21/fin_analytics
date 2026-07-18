@@ -22,13 +22,27 @@ export async function fetchFromAPI<T>(
       authHeaders["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
+    const isFormData = options.body instanceof FormData;
+    
+    const defaultHeaders: Record<string, string> = {};
+    if (!isFormData) {
+        defaultHeaders["Content-Type"] = "application/json";
+    }
+    
+    const finalHeaders = {
+        ...defaultHeaders,
         ...authHeaders,
         ...options.headers,
-      },
+    };
+    
+    // Some libraries might explicitly pass {"Content-Type": undefined} to bypass default behavior
+    if (finalHeaders["Content-Type"] === undefined) {
+        delete finalHeaders["Content-Type"];
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: finalHeaders,
       cache: "no-store", // Vital para dashboards em tempo real
     });
 
