@@ -1,1 +1,0 @@
-"""Shared configurations and utilities."""
