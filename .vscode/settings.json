@@ -7,7 +7,7 @@
                 "mcp-remote",
                 "https://pierre.finance/mcp",
                 "--header",
-                "Authorization:Bearer ${env:PIERRE_API_KEY}"
+                "Authorization: Bearer ${env:PIERRE_API_KEY}"
             ]
         }
     }
