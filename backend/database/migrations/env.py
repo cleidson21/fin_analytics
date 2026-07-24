@@ -22,8 +22,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from backend.core.config import settings
 from backend.database.base import Base
+import backend.infrastructure.persistence.models  # For metadata registration
 
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+sync_url = settings.DATABASE_URL.replace("+aiosqlite", "")
+config.set_main_option("sqlalchemy.url", sync_url)
 
 target_metadata = Base.metadata
 

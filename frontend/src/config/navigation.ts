@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Building2,
   CreditCard,
   LayoutDashboard,
   LineChart,
@@ -29,7 +30,6 @@ export const SIDEBAR_NAV = [
   { name: "Investimentos", href: "/wealth", icon: LineChart },
   { name: "Metas", href: "/goals", icon: Target },
   { name: "Governança", href: "/governance", icon: Receipt },
-  { name: "Perfil", href: "/profile", icon: Settings },
 ] as const;
 
 export const SECONDARY_NAV = [{ name: "Configurações", href: "/settings", icon: Settings }] as const;
@@ -72,6 +72,11 @@ export const SECTION_TABS = {
       icon: Receipt,
     },
   ],
+  settings: [
+    { name: "Geral", href: "/settings", icon: Settings },
+    { name: "Perfil", href: "/profile", icon: Settings },
+    { name: "Contas", href: "/accounts", icon: Building2 },
+  ],
   goals: [],
 } as const;
 
@@ -79,6 +84,7 @@ export function getTabsForPath(pathname: string) {
   if (pathname.startsWith("/wealth")) return SECTION_TABS.wealth;
   if (pathname.startsWith("/governance")) return SECTION_TABS.governance;
   if (pathname.startsWith("/goals")) return SECTION_TABS.goals;
+  if (pathname.startsWith("/settings") || pathname.startsWith("/accounts") || pathname.startsWith("/profile")) return SECTION_TABS.settings;
 
   return SECTION_TABS.dashboard;
 }

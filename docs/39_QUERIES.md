@@ -5,30 +5,39 @@
 
 Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam estado.
 
+Cada Query possui obrigatoriamente: Use Case Handler correspondente e Endpoint REST.
+
 ---
 
-## GetDashboardQuery
+## GetAccountsQuery → UC-11A / GET /accounts
 
-**Descrição:** Dados consolidados para a tela principal.
+**Descrição:** Lista contas financeiras ativas do usuário.
 
 | Filtro | Tipo | Default | Descrição |
 |---|---|---|---|
 | `user_id` | UUID | obrigatório | |
-| `period` | DateRange | últimos 30 dias | |
-| `currency` | CurrencyCode | `BRL` | Moeda de consolidação |
+| `type` | AccountType | — | BANK, CREDIT_CARD, INVESTMENT, LOAN, WALLET |
+| `is_active` | boolean | true | |
+| `provider` | ProviderType | — | |
 
-**Retorno:** `DashboardDTO`
-- saldo total por conta
-- despesas do período
-- receitas do período
-- top 5 categorias de gasto
-- variação do portfólio (%)
-- dividendos do período
-- alertas ativos
+**Retorno:** `list[AccountResponseDTO]`
 
 ---
 
-## GetTransactionsQuery
+## GetCategoriesSummaryQuery → UC-11B / GET /dashboard/categories
+
+**Descrição:** Lista hierárquica/soma de despesas por categoria no mês (Projeção a partir de transações).
+
+| Filtro | Tipo | Default |
+|---|---|---|
+| `user_id` | UUID | obrigatório |
+| `month` | string | mês atual (YYYY-MM) |
+
+**Retorno:** `list[CategoryBreakdownDTO]`
+
+---
+
+## GetTransactionsQuery → UC-11 / GET /transactions
 
 **Descrição:** Lista paginada de transações com filtros compostos.
 
@@ -40,7 +49,6 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 | `account_ids` | list[UUID] | — | Filtrar por contas |
 | `category_ids` | list[UUID] | — | |
 | `provider` | ProviderType | — | |
-| `type` | TransactionType | — | |
 | `direction` | MovementType | — | CREDIT/DEBIT |
 | `min_amount` | Decimal | — | |
 | `max_amount` | Decimal | — | |
@@ -56,7 +64,7 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 
 ---
 
-## GetPortfolioQuery
+## GetPortfolioQuery → UC-12 / GET /portfolio
 
 **Descrição:** Visão atual da carteira de investimentos.
 
@@ -68,15 +76,10 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 | `include_zeroed` | boolean | false | Incluir posições zeradas |
 
 **Retorno:** `PortfolioResponseDTO`
-- total investido
-- valor atual
-- ganho/perda absoluto e percentual
-- lista de posições por ativo
-- alocação por tipo (%)
 
 ---
 
-## GetDividendsQuery
+## GetDividendsQuery → UC-18 / GET /dividends
 
 | Filtro | Tipo | Default |
 |---|---|---|
@@ -93,7 +96,21 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 
 ---
 
-## GetCashFlowQuery
+## GetDashboardQuery → UC-10 / GET /dashboard
+
+**Descrição:** Dados consolidados para a tela principal.
+
+| Filtro | Tipo | Default | Descrição |
+|---|---|---|---|
+| `user_id` | UUID | obrigatório | |
+| `period` | DateRange | últimos 30 dias | |
+| `currency` | CurrencyCode | `BRL` | Moeda de consolidação |
+
+**Retorno:** `DashboardDTO`
+
+---
+
+## GetCashFlowQuery → UC-13 / GET /cashflow
 
 **Descrição:** Fluxo de caixa (receitas vs despesas) por período e agrupamento.
 
@@ -110,20 +127,7 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 
 ---
 
-## GetAccountsQuery
-
-| Filtro | Tipo | Default |
-|---|---|---|
-| `user_id` | UUID | obrigatório |
-| `type` | AccountType | — |
-| `is_active` | boolean | true |
-| `provider` | ProviderType | — |
-
-**Retorno:** `list[AccountResponseDTO]`
-
----
-
-## GetAlertsQuery
+## GetAlertsQuery → UC-15 / GET /alerts
 
 | Filtro | Tipo | Default |
 |---|---|---|
@@ -135,7 +139,7 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 
 ---
 
-## GetProvidersQuery
+## GetProvidersQuery → GET /providers
 
 | Filtro | Tipo | Default |
 |---|---|---|
@@ -146,7 +150,7 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 
 ---
 
-## GetInsightsQuery
+## GetInsightsQuery → UC-14 / GET /insights
 
 | Filtro | Tipo | Default |
 |---|---|---|
@@ -158,7 +162,7 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 
 ---
 
-## GetAssetHistoryQuery
+## GetAssetHistoryQuery → (Fase futura)
 
 **Descrição:** Histórico de preços de um ativo.
 
@@ -173,15 +177,20 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 
 ---
 
-## GetCategoriesQuery
+## Matriz Query → Handler → Endpoint → Fase
 
-| Filtro | Tipo | Default |
-|---|---|---|
-| `user_id` | UUID | obrigatório |
-| `include_system` | boolean | true |
-| `include_user` | boolean | true |
-
-**Retorno:** `list[CategoryResponseDTO]` (hierárquico)
+| Query | UC Handler | Endpoint | Fase |
+|---|---|---|---|
+| GetAccountsQuery | UC-11A | GET /accounts | 2 |
+| GetCategoriesSummaryQuery | UC-11B | GET /dashboard/categories | 3 |
+| GetTransactionsQuery | UC-11 | GET /transactions | 3 |
+| GetPortfolioQuery | UC-12 | GET /portfolio | 6 |
+| GetDividendsQuery | UC-18 | GET /dividends | 6 |
+| GetDashboardQuery | UC-10 | GET /dashboard | 10 |
+| GetCashFlowQuery | UC-13 | GET /cashflow | 10 |
+| GetAlertsQuery | UC-15 | GET /alerts | 10 |
+| GetProvidersQuery | — | GET /providers | 5 |
+| GetInsightsQuery | UC-14 | GET /insights | 9 |
 
 ---
 
@@ -192,3 +201,4 @@ Queries representam intenções de leitura. Sempre somente-leitura. Nunca mutam 
 3. Toda query retorna DTO — nunca entidade de domínio diretamente.
 4. Paginação padrão: `page + page_size`. Retornar sempre `total`, `page`, `page_size`, `has_next`.
 5. `order_by` aceita apenas campos declarados nos DTOs — nunca SQL bruto.
+6. Toda Query possui um UC Handler correspondente documentado em `37_USE_CASES.md`.

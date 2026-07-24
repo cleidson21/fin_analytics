@@ -7,26 +7,29 @@
 
 ## Use Case × Repository Ports
 
-| Use Case | Transaction | Account | Portfolio | Position | Dividend | Asset | Category | User | Institution | Provider |
-|---|---|---|---|---|---|---|---|---|---|---|
-| AuthenticateUser | | | | | | | | ✅ | | |
-| RefreshToken | | | | | | | | ✅ | | |
-| SyncPierreAccounts | | ✅ | | | | | | | ✅ | ✅ |
-| SyncPierreTransactions | ✅ | ✅ | | | | | ✅ | | | ✅ |
-| SyncMyProfitPortfolio | | | ✅ | ✅ | ✅ | ✅ | | | | ✅ |
-| SyncYFinanceQuotes | | | | ✅ | | ✅ | | | | |
-| ImportCSV | ✅ | ✅ | | | ✅ | | ✅ | | | |
-| ClassifyTransaction | ✅ | | | | | | ✅ | | | |
-| GetDashboard | ✅ | ✅ | | ✅ | ✅ | | | | | |
-| GetTransactions | ✅ | | | | | | ✅ | | | |
-| GetPortfolio | | | ✅ | ✅ | ✅ | ✅ | | | | |
-| GetCashFlow | ✅ | ✅ | | | | | | | | |
-| GenerateInsights | ✅ | | | ✅ | ✅ | | | | | |
-| GetAlerts | ✅ | | | | | | | | | |
-| ConnectProvider | | | | | | | | | | ✅ |
-| DisconnectProvider | ✅ | ✅ | | ✅ | ✅ | | | | | ✅ |
-| UpdateCategory | ✅ | | | | | | ✅ | | | |
-| BackupDatabase | — | — | — | — | — | — | — | — | — | — |
+| Use Case | Fase | Transaction | Account | Portfolio | Position | Dividend | Asset | Category | User | Institution | Provider |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| AuthenticateUser | 1 | | | | | | | | ✅ | | |
+| RefreshToken | 1 | | | | | | | | ✅ | | |
+| GetAccounts (UC-11A) | 2 | | ✅ | | | | | | | ✅ | |
+| GetCategoriesSummary (UC-11B) | 3 | ✅ | | | | | | ✅ | | | |
+| GetTransactions | 3 | ✅ | | | | | | ✅ | | | |
+| UpdateCategory | 3 | ✅ | | | | | | ✅ | | | |
+| ConnectProvider | 5 | | | | | | | | | | ✅ |
+| DisconnectProvider | 5 | ✅ | ✅ | | ✅ | ✅ | | | | | ✅ |
+| SyncPierreAccounts | 5 | | ✅ | | | | | | | ✅ | ✅ |
+| SyncPierreTransactions | 5 | ✅ | ✅ | | | | | ✅ | | | ✅ |
+| GetPortfolio | 6 | | | ✅ | ✅ | ✅ | ✅ | | | | |
+| GetDividends | 6 | | | ✅ | | ✅ | ✅ | | | | |
+| SyncMyProfitPortfolio | 7 | | | ✅ | ✅ | ✅ | ✅ | | | | ✅ |
+| SyncYFinanceQuotes | 7 | | | | ✅ | | ✅ | | | | |
+| ImportCSV | 8 | ✅ | ✅ | | | ✅ | | ✅ | | | |
+| ClassifyTransaction | 9 | ✅ | | | | | | ✅ | | | |
+| GenerateInsights | 9 | ✅ | | | ✅ | ✅ | | | | | |
+| GetDashboard | 10 | ✅ | ✅ | | ✅ | ✅ | | | | | |
+| GetCashFlow | 10 | ✅ | ✅ | | | | | | | | |
+| GetAlerts | 10 | ✅ | | | | | | | | | |
+| BackupDatabase | 11 | — | — | — | — | — | — | — | — | — | — |
 
 ---
 

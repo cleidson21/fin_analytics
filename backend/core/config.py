@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     
     # Database
-    DATABASE_URL: str = "sqlite:///./database/fin_analytics.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./database/fin_analytics.db"
     
     # Security
     JWT_SECRET: str

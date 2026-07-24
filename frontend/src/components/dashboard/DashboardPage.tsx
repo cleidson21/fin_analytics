@@ -168,7 +168,7 @@ export function DashboardPage() {
     let active = true;
 
     async function loadDashboardData() {
-      const [summaryData, pacingData, heatmapData, categoriesCurrent, categoriesPrev, recentTransactions] = await Promise.all([
+      const [summaryData, pacingData, heatmapData, categoriesCurrent, categoriesPrev, recentTransactions] = await Promise.allSettled([
         fetchFromAPI<DashboardSummaryV2>(`/dashboard/summary-v2?month=${currentMonth}`),
         fetchFromAPI<PacingV2>(`/dashboard/pacing-v2?month=${currentMonth}`),
         fetchFromAPI<HeatmapDay[]>(`/dashboard/heatmap?month=${currentMonth}`),
@@ -181,12 +181,15 @@ export function DashboardPage() {
         return;
       }
 
-      setSummary(summaryData);
-      setPacing(pacingData);
-      setHeatmap(heatmapData ?? []);
-      setCatsCurrent(categoriesCurrent ?? []);
-      setCatsPrev(categoriesPrev ?? []);
-      setRecentTxs(recentTransactions?.items ?? []);
+      const getValue = <T,>(result: PromiseSettledResult<T | null>): T | null =>
+        result.status === "fulfilled" ? result.value : null;
+
+      setSummary(getValue(summaryData));
+      setPacing(getValue(pacingData));
+      setHeatmap(getValue(heatmapData) ?? []);
+      setCatsCurrent(getValue(categoriesCurrent) ?? []);
+      setCatsPrev(getValue(categoriesPrev) ?? []);
+      setRecentTxs(getValue(recentTransactions)?.items ?? []);
 
       setLoading({
         summary: false,

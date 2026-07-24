@@ -9,7 +9,7 @@ export function PageLayout({
   breadcrumb,
   children,
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   hideTitle?: boolean;
   breadcrumb?: ReactNode;

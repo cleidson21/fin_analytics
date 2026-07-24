@@ -198,6 +198,12 @@ total: Decimal
 percentage: Decimal
 ```
 
+## CategoryBreakdownDTO (Response)
+```
+category: str
+total: Decimal
+```
+
 ## PortfolioSummaryDTO (Internal)
 ```
 total_invested: Decimal

@@ -5,7 +5,7 @@ from backend.database.engine import engine
 from backend.database.base import Base
 from backend.database.session import SessionLocal
 from backend.core.container import get_bootstrap_admin
-from backend.api.routers import dev
+from backend.api.routers import dev, auth, accounts, transactions, dashboard, categories
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,14 +21,26 @@ async def lifespan(app: FastAPI):
     yield
     # Cleanup
 
-app = FastAPI(title="FIN Analytics", lifespan=lifespan)
+app = FastAPI(
+    title="FIN Analytics V2",
+    description="API para gestão financeira pessoal com integração Pierre",
+    version="2.0.0",
+    lifespan=lifespan,
+)
 
+# Configuração de CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Registrando routers
+app.include_router(auth.router)
 app.include_router(dev.router)
+app.include_router(accounts.router)
+app.include_router(transactions.router)
+app.include_router(dashboard.router)
+app.include_router(categories.router)

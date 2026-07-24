@@ -3,193 +3,316 @@
 
 # Sequência de Implementação — FIN Analytics
 
-Esta é a ordem oficial e obrigatória de implementação. Nenhuma fase pode ser iniciada sem que a anterior esteja concluída e com todos os critérios da Definition of Done atendidos.
+Esta é a ordem oficial e obrigatória de implementação por **Vertical Slices**.
+
+Cada fase entrega uma funcionalidade completamente utilizável e validável pelo usuário antes de iniciar a próxima.
+
+**Regra permanente:** Uma fase somente pode ser considerada CONCLUÍDA após validação manual explícita do usuário no frontend-dev.
 
 ---
 
-## Fase 2 — Autenticação e Usuários
-
+## ✅ Fase 0 — Infraestrutura Base (CONCLUÍDA)
 ```
-[2.1] Domain
+[0.1] Projeto base (estrutura de pastas, pyproject.toml, .env)
+[0.2] Database async (create_async_engine, async_sessionmaker, aiosqlite)
+[0.3] Base declarativa SQLAlchemy
+[0.4] Settings (pydantic-settings, DATABASE_URL, JWT_SECRET)
+[0.5] DI Container (core/container.py)
+[0.6] main.py (FastAPI + Lifespan + CORS + Swagger)
+[0.7] GET /dev/status (verificação E2E do ambiente)
+[0.8] frontend-dev (React + Vite — playground de validação)
+[0.9] scripts/start_dev.ps1 e start_dev.sh
+```
+
+---
+
+## ✅ Fase 1 — Vertical Slice: Autenticação (CONCLUÍDA)
+```
+Slice: Login Funcional End-to-End
+
+[1.1] Domain
       └── User entity (domain/entities/user.py)
       └── UserRole enum
-      └── RefreshToken entity
 
-[2.2] Infrastructure — ORM Models
+[1.2] Infrastructure
       └── UserModel (infrastructure/persistence/models/user.py)
-      └── RefreshTokenModel
-
-[2.3] Infrastructure — Migrations
-      └── alembic revision: create_users_table
-      └── alembic revision: create_refresh_tokens_table
-
-[2.4] Infrastructure — Repositories
       └── SQLAlchemyUserRepository implements IUserRepository
 
-[2.5] Infrastructure — Security
-      └── core/security.py: hash_password, verify_password, create_token, decode_token
+[1.3] Infrastructure — Security
+      └── PasswordHasher (bcrypt)
+      └── JWTService (access_token + refresh_token)
 
-[2.6] Application — Use Cases
+[1.4] Infrastructure — Bootstrap
+      └── BootstrapAdmin (cria usuário admin na startup)
+
+[1.5] Application
       └── AuthenticateUserUseCase (UC-01)
-      └── RefreshTokenUseCase (UC-03)
+      └── AuthenticateUserCommand
 
-[2.7] API — Routers
-      └── api/routers/auth.py: POST /login, POST /refresh, POST /logout
-      └── api/routers/users.py: GET /users/me
+[1.6] API
+      └── POST /auth/login → UC-01
 
-[2.8] Testes
-      └── unit: security functions, use cases mockados
-      └── integration: UserRepository, AuthUseCase + banco real
-      └── api: login, refresh, me
+[1.7] frontend-dev
+      └── Formulário de login (email + senha)
+      └── Exibição de AuthTokenDTO (access_token, refresh_token, user, expires_in)
+      └── Exibição de erros reais da API (sem alert(), sem mock)
+
+DoD: ✅ VALIDADO PELO USUÁRIO
 ```
 
 ---
 
-## Fase 3 — Modelos SQLAlchemy do Domínio
+## 🔲 Fase 2 — Vertical Slice: Contas Financeiras
 
 ```
-[3.1] ORM Models (infrastructure/persistence/models/)
-      └── AccountModel
-      └── InstitutionModel
-      └── TransactionModel
-      └── CategoryModel
-      └── TagModel
+Slice: Listar Contas do Usuário
 
-[3.2] Migrations
-      └── create_accounts_table
-      └── create_institutions_table
-      └── create_transactions_table
-      └── create_categories_table
-      └── create_tags_table
+Pré-requisito: Fase 1 concluída.
 
-[3.3] Seed de Categorias Padrão
-      └── scripts/seed_categories.py
-```
+[2.1] Domain
+      └── Account entity (domain/entities/account.py)
+      └── Institution entity (domain/entities/institution.py)
+      └── AccountType enum (se ausente)
 
----
+[2.2] Infrastructure
+      └── AccountModel (infrastructure/persistence/models/account.py)
+      └── InstitutionModel (infrastructure/persistence/models/institution.py)
+      └── SQLAlchemyAccountRepository implements IAccountRepository
+      └── SQLAlchemyInstitutionRepository implements IInstitutionRepository
+      └── Tabelas criadas via Base.metadata.create_all (Lifespan)
 
-## Fase 4 — Repositórios Base
+[2.3] Application
+      └── GetAccountsUseCase (UC-11A) → GetAccountsQuery
+      └── GetAccountsQuery (user_id, type, is_active, provider)
 
-```
-[4.1] Unit of Work
-      └── infrastructure/persistence/unit_of_work.py
+[2.4] API
+      └── GET /accounts → UC-11A (requer autenticação JWT)
 
-[4.2] Repositories concretos (um por Model)
-      └── SQLAlchemyAccountRepository
-      └── SQLAlchemyTransactionRepository
-      └── SQLAlchemyCategoryRepository
+[2.5] DI Container
+      └── Registrar AccountRepository e InstitutionRepository
 
-[4.3] Testes de integração de todos os repositórios
-```
+[2.6] Seed de Dados
+      └── Criar contas manuais via endpoint (ou seed script para validação)
 
----
+[2.7] frontend-dev
+      └── Após login: botão "Listar Contas"
+      └── Exibição da lista real de contas (nome, tipo, saldo, provider)
+      └── Exibição de erro real se não autenticado (401)
 
-## Fase 5 — Pierre Connector (Banking)
-
-```
-[5.1] ORM Models restantes
-      └── ProviderModel
-
-[5.2] PierreRestAdapter implements IPierreProvider
-      └── integrations/pierre/adapter.py
-
-[5.3] PierreMapper
-      └── integrations/pierre/mapper.py
-      └── to_canonical(Account, Transaction, Bill)
-
-[5.4] Use Cases
-      └── SyncPierreAccountsUseCase (UC-04)
-      └── SyncPierreTransactionsUseCase (UC-05)
-      └── ConnectProviderUseCase (UC-16)
-
-[5.5] API Routers
-      └── api/routers/sync.py: POST /sync/pierre
-      └── api/routers/accounts.py: GET /accounts
-      └── api/routers/transactions.py: GET /transactions
-
-[5.6] Testes
-      └── Mapper: fixtures JSON Pierre
-      └── Use Cases: Providers mockados
-      └── API: banco in-memory
+DoD: EM VALIDAÇÃO PELO USUÁRIO
 ```
 
 ---
 
-## Fase 6 — Domain de Investimentos + ORM
+## 🔲 Fase 3 — Vertical Slice: Transações e Classificação (Substitui antigas VS-03 e VS-04)
 
 ```
-[6.1] ORM Models
-      └── AssetModel
-      └── PortfolioModel
-      └── PositionModel
-      └── DividendModel
+Slice: Sincronização local, Classificação, Filtros e Projeções Analíticas
 
-[6.2] Migrations
+Pré-requisito: Fase 2 concluída.
 
-[6.3] Repositories
-      └── SQLAlchemyAssetRepository
-      └── SQLAlchemyPortfolioRepository
-      └── SQLAlchemyPositionRepository
-      └── SQLAlchemyDividendRepository
+[3.1] Domain
+      └── Transaction entity (domain/entities/transaction.py)
+      └── Category entity (domain/entities/category.py)
+      └── Tag entity (domain/entities/tag.py)
+
+[3.2] Infrastructure
+      └── TransactionModel (infrastructure/persistence/models/transaction.py)
+      └── CategoryModel (infrastructure/persistence/models/category.py)
+      └── TagModel (infrastructure/persistence/models/tag.py)
+      └── SQLAlchemyTransactionRepository implements ITransactionRepository
+      └── SQLAlchemyCategoryRepository implements ICategoryRepository
+      └── Seed para validação temporária (transações baseadas nas contas da Fase 2)
+
+[3.3] Application
+      └── GetTransactionsUseCase → GetTransactionsQuery
+      └── GetTransactionDetailsUseCase → GetTransactionDetailsQuery
+      └── GetCategoriesSummaryUseCase → GetCategoriesSummaryQuery (Projeção Analítica)
+      └── GetCategoryTransactionsUseCase → GetCategoryTransactionsQuery
+      └── UpdateCategoryUseCase → UpdateCategoryCommand
+
+[3.4] API
+      └── GET /transactions (requer JWT)
+      └── GET /transactions/{id} (requer JWT)
+      └── GET /categories (requer JWT)
+      └── GET /dashboard/categories (Projeção Analítica - requer JWT)
+      └── PATCH /transactions/{id}/category (requer JWT)
+
+[3.5] frontend-dev
+      └── Suporte à tela "Transações" (listagem, filtros, paginação)
+      └── Suporte à tela "Categorias" (agrupamento analítico, Pie Chart)
+      └── Reutilização integral do layout, adaptando apenas hooks e chamadas REST.
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
 ```
 
 ---
 
-## Fase 7 — MyProfit + YFinance Connectors
+## 🔲 Fase 4 — Vertical Slice: Assinaturas e Parcelamentos (VS-04)
 
 ```
+Slice: Gerenciamento de despesas recorrentes e compras parceladas
+
+Pré-requisito: Fase 3 concluída.
+
+[4.1] Domain
+      └── Adicionar campos em Transaction (is_recurring, current_installment, total_installments)
+
+[4.2] Application
+      └── GetSubscriptionsSummaryUseCase (UC-20) → GetSubscriptionsSummaryQuery
+      └── GetInstallmentsSummaryUseCase (UC-21) → GetInstallmentsSummaryQuery
+
+[4.3] API
+      └── GET /dashboard/subscriptions → UC-20 (requer JWT)
+      └── GET /dashboard/installments → UC-21 (requer JWT)
+
+[4.4] frontend-dev
+      └── Validação integral das telas /subscriptions e /installments.
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
+```
+
+---
+
+## 🔲 Fase 5 — Vertical Slice: Integração Pierre (Banking)
+
+```
+Slice: Sincronizar Contas e Transações via Pierre
+
+Pré-requisito: Fase 4 concluída.
+
+[5.1] Infrastructure
+      └── ProviderModel (infrastructure/persistence/models/provider.py)
+      └── SQLAlchemyProviderRepository implements IProviderRepository
+
+[5.2] Integrations
+      └── PierreRestAdapter implements IPierreProvider
+      └── PierreMapper: to_canonical(Account, Transaction)
+
+[5.3] Application
+      └── ConnectProviderUseCase (UC-16) → ConnectProviderCommand
+      └── SyncPierreAccountsUseCase (UC-04) → SyncPierreCommand
+      └── SyncPierreTransactionsUseCase (UC-05) → SyncPierreCommand
+
+[5.4] API
+      └── POST /providers/connect → UC-16
+      └── POST /sync/pierre → UC-04 + UC-05
+      └── GET /providers → listar providers ativos
+
+[5.5] frontend-dev
+      └── Botão "Sincronizar Pierre"
+      └── Exibição de SyncResultDTO (created, updated, skipped, errors)
+      └── Contas e transações aparecem após sync
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
+```
+
+---
+
+## 🔲 Fase 6 — Vertical Slice: Investimentos
+
+```
+Slice: Carteira de Investimentos
+
+Pré-requisito: Fase 4 concluída.
+
+[6.1] Domain
+      └── Asset, Portfolio, Position, Dividend entities
+
+[6.2] Infrastructure
+      └── AssetModel, PortfolioModel, PositionModel, DividendModel
+      └── Repositories correspondentes
+
+[6.3] Application
+      └── GetPortfolioUseCase (UC-12) → GetPortfolioQuery
+      └── GetDividendsUseCase (UC-18) → GetDividendsQuery
+
+[6.4] API
+      └── GET /portfolio → UC-12
+      └── GET /dividends → UC-18
+
+[6.5] frontend-dev
+      └── Tabela de posições com gain/loss
+      └── Lista de dividendos recebidos
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
+```
+
+---
+
+## 🔲 Fase 7 — Vertical Slice: Integração MyProfit + YFinance
+
+```
+Pré-requisito: Fase 6 concluída.
+
 [7.1] MyProfitSessionAdapter implements IMyProfitProvider
 [7.2] MyProfitMapper (Position, Dividend)
 [7.3] YFinanceAdapter implements IYFinanceProvider
-[7.4] Use Cases: SyncMyProfitPortfolioUseCase, SyncYFinanceQuotesUseCase
-[7.5] API: GET /portfolio, GET /dividends
-[7.6] Testes
+[7.4] SyncMyProfitPortfolioUseCase (UC-06)
+[7.5] SyncYFinanceQuotesUseCase (UC-07)
+[7.6] API: POST /sync/myprofit, POST /sync/quotes
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
 ```
 
 ---
 
-## Fase 8 — Import CSV
+## 🔲 Fase 8 — Vertical Slice: Importação CSV
 
 ```
+Pré-requisito: Fase 4 concluída.
+
 [8.1] CsvParser (detect encoding, delimiter, headers)
 [8.2] CsvMapper (Transaction, Dividend)
-[8.3] ImportCsvUseCase (UC-08)
+[8.3] ImportCsvUseCase (UC-08) → ImportCsvCommand
 [8.4] API: POST /import/csv (preview + confirm)
-[8.5] Testes: múltiplos formatos CSV
+[8.5] frontend-dev: upload de arquivo + preview + confirmação
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
 ```
 
 ---
 
-## Fase 9 — IA (Gemini)
+## 🔲 Fase 9 — Vertical Slice: Classificação por IA
 
 ```
+Pré-requisito: Fase 4 concluída.
+
 [9.1] GeminiAdapter implements IGeminiProvider
-[9.2] ClassifyTransactionUseCase (UC-09)
-[9.3] GenerateInsightsUseCase (UC-14)
+[9.2] ClassifyTransactionUseCase (UC-09) → ClassifyTransactionCommand
+[9.3] GenerateInsightsUseCase (UC-14) → GenerateInsightsCommand
 [9.4] API: POST /classify, GET /insights
-[9.5] Testes: Gemini mockado
+[9.5] frontend-dev: botão "Classificar automaticamente"
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
 ```
 
 ---
 
-## Fase 10 — Dashboard e Analytics
+## 🔲 Fase 10 — Vertical Slice: Dashboard
 
 ```
-[10.1] GetDashboardUseCase (UC-10)
-[10.2] GetCashFlowUseCase (UC-13)
-[10.3] GetAlertsUseCase (UC-15)
+Pré-requisito: TODAS as fases anteriores concluídas.
+
+[10.1] GetDashboardUseCase (UC-10) → GetDashboardQuery
+[10.2] GetCashFlowUseCase (UC-13) → GetCashFlowQuery
+[10.3] GetAlertsUseCase (UC-15) → GetAlertsQuery
 [10.4] API: GET /dashboard, GET /cashflow, GET /alerts
-[10.5] Cache para dashboard (ICache)
-[10.6] Testes E2E dos fluxos críticos
+[10.5] Cache (ICache) para dashboard
+[10.6] frontend-dev: visão consolidada com saldo, fluxo de caixa, top categorias, alertas
+
+DoD: EM VALIDAÇÃO PELO USUÁRIO
 ```
 
 ---
 
-## Fase 11 — Frontend
+## 🔲 Fase 11 — Frontend Definitivo
 
 ```
-[11.1] Setup (React/Next.js)
-[11.2] Autenticação
+Pré-requisito: Todas as fases anteriores concluídas e validadas.
+
+[11.1] Setup React/Next.js (projeto frontend/)
+[11.2] Autenticação (login, refresh token, logout)
 [11.3] Dashboard
 [11.4] Transações
 [11.5] Portfólio
@@ -197,3 +320,53 @@ Esta é a ordem oficial e obrigatória de implementação. Nenhuma fase pode ser
 [11.7] Import CSV
 [11.8] Configurações de Provider
 ```
+
+## 🔲 Fase 12 — Vertical Slice: Governança e Auditoria
+
+```
+Pré-requisito: TODAS as fases anteriores concluídas.
+
+[12.1] Setup Audit Entities (AuditRun, AuditRollback) e Repository
+[12.2] GetAuditSummaryUseCase (UC-22)
+[12.3] GetDatabaseHealthUseCase (UC-23)
+[12.4] API: GET /governance/audit, GET /governance/database/*
+[12.5] frontend-dev: painel completo de saúde de banco e auditoria de syncs.
+```
+
+---
+
+## 🔲 Fase 13 — Vertical Slice: Metas e Orçamentos
+
+```
+Pré-requisito: Fase 3 concluída.
+
+[13.1] Setup Goal Entity e Repository
+[13.2] GetGoalsUseCase (UC-24)
+[13.3] API: GET /goals
+[13.4] frontend-dev: tela /goals
+```
+
+---
+
+## 🔲 Fase 14 — Vertical Slice: Configurações e Perfil
+
+```
+Pré-requisito: Fase 1 concluída.
+
+[14.1] Setup Profile Preferences
+[14.2] GetProfileUseCase (UC-25), UpdateProfileUseCase (UC-26)
+[14.3] API: GET /profile, PATCH /profile
+[14.4] frontend-dev: telas /settings e /profile
+```
+
+---
+
+## Regra de Ouro
+
+> Uma fase somente avança para a próxima quando:
+> 1. Backend compilando sem erros
+> 2. Swagger funcionando e endpoint respondendo
+> 3. frontend-dev consumindo API real (zero mocks)
+> 4. Usuário executou o fluxo manualmente e aprovou explicitamente
+>
+> **Status válidos:** 🔲 Não Iniciado | 🔄 Em Andamento | 🧪 EM VALIDAÇÃO PELO USUÁRIO | ✅ Concluída

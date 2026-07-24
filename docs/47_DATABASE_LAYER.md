@@ -17,6 +17,15 @@
 
 ---
 
+## Seed de Dados (Diretriz Oficial)
+
+1. Durante as primeiras Vertical Slices, poderão existir scripts de seed (ex: `seed_categories.py`, `seed_transactions.py`) **apenas para validação técnica** da infraestrutura.
+2. Após a implementação da **Sincronização Pierre (VS-05)**, todos os scripts de seed serão removidos.
+3. O banco será populado **exclusivamente através da sincronização oficial**.
+4. O banco SQLite passa a ser a única fonte consultada diretamente pela aplicação, atuando como espelho sincronizado das fontes externas (Pierre, MyProfit, etc).
+
+---
+
 ## Responsabilidades
 
 | Componente | Quem cria | Quem fecha | Quem faz commit | Quem faz rollback |

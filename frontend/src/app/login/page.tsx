@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL!;
+
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const router = useRouter();
 
@@ -19,39 +21,25 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const formData = new URLSearchParams();
-      formData.append("username", username);
-      formData.append("password", password);
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/token`, {
+      // POST /auth/login com JSON body (novo contrato Clean Architecture)
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: formData.toString(),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
       if (!res.ok) {
-        throw new Error("Credenciais inválidas");
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.detail ?? "Credenciais inválidas");
       }
 
+      // AuthTokenDTO: { access_token, refresh_token, token_type, expires_in, user }
       const data = await res.json();
-      
-      // Fetch user data
-      const meRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`
-        }
-      });
-      
-      if (!meRes.ok) throw new Error("Falha ao buscar perfil");
-      
-      const userData = await meRes.json();
-      login(data.access_token, userData);
-      router.push("/governance/database");
-      
-    } catch {
-      setError("Erro de autenticação");
+
+      login(data.access_token, data.user);
+      router.push("/");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro de autenticação");
     } finally {
       setIsLoading(false);
     }
@@ -61,8 +49,13 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-[80vh]">
       <div className="w-full max-w-md p-8 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-zinc-50">Área Administrativa</h1>
-          <p className="text-sm text-zinc-400 mt-2">Faça login para acessar a Governança</p>
+          <div className="flex justify-center mb-4">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-400/15 text-2xl font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
+              F
+            </span>
+          </div>
+          <h1 className="text-2xl font-semibold text-zinc-50">FinAnalytics</h1>
+          <p className="text-sm text-zinc-400 mt-2">Acesse sua conta</p>
         </div>
 
         {error && (
@@ -74,13 +67,14 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1">
-              Usuário
+              E-mail
             </label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
               required
             />
           </div>
@@ -92,14 +86,15 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="••••••••"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
               required
             />
           </div>
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded transition-colors disabled:opacity-50"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 px-4 rounded transition-colors disabled:opacity-50"
           >
             {isLoading ? "Entrando..." : "Entrar"}
           </button>

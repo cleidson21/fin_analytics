@@ -11,6 +11,37 @@
 
 ---
 
+## Fonte Única da Verdade (Regra Oficial da Arquitetura)
+
+A integração com a Pierre (e outros providers) obedecerá obrigatoriamente ao fluxo:
+```
+Pierre Finance
+        │
+        ▼
+Sync Service
+        │
+        ▼
+SQLite
+        │
+        ▼
+Read Models
+        │
+        ▼
+REST API
+        │
+        ▼
+Frontend
+```
+
+**É terminantemente proibido:**
+- consumir Pierre diretamente pelo frontend;
+- realizar consultas em tempo real para renderização das páginas;
+- depender da disponibilidade da Pierre para funcionamento da interface.
+
+Toda consulta da interface deve passar pela nossa REST API e consumir prioritariamente o banco SQLite.
+
+---
+
 ## Matriz de Source of Truth
 
 | Dado | Source of Truth | Complementar | Observações |
@@ -55,6 +86,18 @@ Quando dois Providers retornam dados conflitantes para a mesma entidade:
 7. Update Provider.last_sync_at + sync_status
 8. Emit domain events (opcional)
 ```
+
+## Modos de Sincronização
+
+O sistema utilizará **sincronização híbrida**, que deverá alimentar exclusivamente o banco SQLite.
+
+### 1. Manual
+- **Botão:** "Atualizar Dados" na interface.
+- **Ação:** Executará o `manualUpdate` da Pierre e forçará a atualização do banco SQLite.
+
+### 2. Automática
+- **Mecanismo:** Scheduler configurável.
+- **Exemplos de gatilhos:** na inicialização do sistema, diariamente em horários predefinidos, ou sob demanda do sistema (heurísticas).
 
 ---
 

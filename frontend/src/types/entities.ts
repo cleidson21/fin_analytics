@@ -1,87 +1,159 @@
+/**
+ * Tipos alinhados ao Domínio Canônico — FIN Analytics
+ * Fonte: docs/29_DOMAIN_ENTITIES.md + docs/40_DTOS.md
+ * 
+ * REGRA: Estes tipos devem espelhar exatamente os DTOs do backend.
+ * Nunca referenciar campos do Provider diretamente aqui.
+ * 
+ * COMPAT: Os aliases no final do arquivo existem apenas para não quebrar
+ * componentes de governance ainda não migrados (serão removidos por VS).
+ */
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+export type ProviderType = "PIERRE" | "MYPROFIT" | "CSV" | "YFINANCE" | "MANUAL";
+export type AccountType = "BANK" | "CREDIT_CARD" | "INVESTMENT" | "LOAN" | "WALLET";
+export type CurrencyCode = "BRL" | "USD" | "EUR";
+export type UserRole = "ADMIN" | "VIEWER";
+export type MovementType = "CREDIT" | "DEBIT";
+export type TransactionType = "PURCHASE" | "TRANSFER" | "INCOME" | "REFUND" | "OTHER";
+export type TransactionStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
+export type AssetType = "STOCK" | "FII" | "ETF" | "BOND" | "CRYPTO" | "FUND" | "OTHER";
+export type IncomeType = "DIVIDEND" | "JCP" | "RENT" | "INTEREST";
+
+// ─── Entidades de Response (alinhadas aos DTOs do backend) ────────────────────
+
+export interface UserDTO {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  last_login_at: string | null;
+}
+
+export interface InstitutionSummaryDTO {
+  id: string;
+  name: string;
+  code: string;
+  logo_url: string | null;
+}
+
+export interface AccountDTO {
+  id: string;
+  external_id: string | null;
+  provider: ProviderType;
+  name: string;
+  type: AccountType;
+  subtype: string | null;
+  currency_code: CurrencyCode;
+  balance: number | null;
+  balance_updated_at: string | null;
+  institution: InstitutionSummaryDTO | null;
+  is_active: boolean;
+}
+
+export interface CategorySummaryDTO {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string | null;
+  color: string | null;
+}
+
+export interface CategoryDTO {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+  icon: string | null;
+  color: string | null;
+  is_system: boolean;
+  children: CategoryDTO[];
+}
+
+export interface TagDTO {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+export interface TransactionDTO {
+  id: string;
+  external_id: string | null;
+  provider: ProviderType;
+  account_id: string;
+  account_name: string;
+  amount: number;
+  direction: MovementType;
+  currency_code: CurrencyCode;
+  description: string;
+  category: CategorySummaryDTO | null;
+  type: TransactionType;
+  status: TransactionStatus;
+  transaction_date: string;
+  posted_date: string | null;
+  is_recurring: boolean;
+  installment_count: number | null;
+  installment_current: number | null;
+  tags: TagDTO[];
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface AuthTokenDTO {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user: UserDTO;
+}
+
+// ─── Paginação ────────────────────────────────────────────────────────────────
+
+export interface PaginatedDTO<T> {
+  data: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
+// ─── Aliases de compatibilidade (remover conforme cada VS migrar) ─────────────
+// @deprecated — use TransactionDTO
 export interface Transaction {
   id: string;
-  descricao?: string;
-  categoria?: string;
-  category?: string; // Fallback used in some places
-  macro_categoria: string;
-  parcelamento: string;
-  observacao?: string;
-  data_transacao?: string;
-  valor?: number;
-  valor_cents?: number;
+  description?: string;
+  category?: string;
+  amount?: number;
+  transaction_date?: string;
+  [key: string]: unknown;
 }
 
-export interface Position {
-  ticker: string;
-  classe_ativo?: string;
-  asset_class?: string; // Fallback
-  observacao?: string;
-  data_snapshot?: string;
-  snapshot_date?: string; // Fallback
-  quantidade: number;
-  valor_investido: number;
-  valor_atual: number;
-  ganho: number;
-  peso: number;
-}
-
-export interface Dividend {
-  id_economico: string;
-  ticker: string;
-  tipo_evento?: string;
-  tipo?: string; // Fallback
-  observacao?: string;
-  valor?: number;
-  data_pagamento?: string;
-  data?: string; // Fallback
-}
-
+// @deprecated — use CategoryDTO
 export interface Category {
-  categoria: string;
-  macro_categoria?: string;
-  quantidade_transacoes?: number;
+  id: string;
+  name: string;
+  slug: string;
+  [key: string]: unknown;
 }
 
-export interface Installment {
-  purchase_id: string;
-  current_installment: number;
-  total_installments: number;
-  amount: number;
-}
-
-export interface AuditRun {
+// @deprecated — Use PositionResponseDTO when implemented
+export interface Position {
   id?: string;
-  run_id?: string;
-  file_name?: string;
-  started_at: string;
-  created_by?: string;
-  source_type?: string;
-  rows_read?: number;
-  rows_inserted?: number;
-  rows_updated?: number;
-  rows_failed?: number;
-  status: string;
+  ticker?: string;
+  quantity?: number;
+  [key: string]: unknown;
 }
 
-export interface PortfolioEvolution {
-  patrimonio_atual_value: number;
-  rentabilidade_acumulada: number;
-  compras_totais: number;
-  cdi_acumulado_pct: number;
-  history?: PortfolioEvolutionPoint[];
+// @deprecated — Use DividendResponseDTO when implemented
+export interface Dividend {
+  id?: string;
+  ticker?: string;
+  amount?: number;
+  [key: string]: unknown;
 }
 
-export interface PortfolioEvolutionPoint {
-  month: string;
-  patrimonio_value: number;
-  compras_value: number;
-  proventos_value: number;
-  rentabilidade_mensal_pct: number;
-}
-
-export interface DatabaseSummary {
-  total_tables: number;
-  total_size: string;
-  total_records: number;
-  last_vacuum?: string;
-}

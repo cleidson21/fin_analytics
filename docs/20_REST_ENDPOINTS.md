@@ -1,311 +1,274 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 
-# Endpoints REST (Pierre Finance) [EXTRAÍDOS DO OPENAPI]
+# Endpoints REST — FIN Analytics
 
-## GET /tools/api/get-bills
-- **Summary:** [PENDENTE]
-- **Description:** Retorna faturas de cartão de crédito vencidas (apenas faturas já fechadas e com vencimento passado) do usuário autenticado. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getBills
-- **Parameters:**
-  - `accountId` (query): Opcional - ID da conta de cartão de crédito para filtrar as faturas (opcional)
-- **Responses:**
-  - `200`: Lista de faturas de cartão de crédito vencidas
-  - `401`: 
-  - `500`: 
+Padrão único adotado: **REST convencional** (`/recurso` no plural, sem prefixo `/tools/api/`).
 
-## GET /tools/api/get-bill-summary
-- **Summary:** [PENDENTE]
-- **Description:** Retorna o resumo da fatura atual do(s) cartão(ões) de crédito do usuário: limite total, limite disponível, período considerado e o valor aproximado da fatura. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getBillSummary
-- **Parameters:**
-  - `accountId` (query): Opcional - ID da conta de cartão de crédito para filtrar o cálculo (opcional)
-  - `closingDay` (query): Opcional - Dia de fechamento manual (1–31). Se informado junto com accountId, será usado no cálculo deste cartão.
-  - `startDate` (query): Opcional - Data de início do período para cálculo da fatura (formato ISO 8601). Sobrescreve o cálculo automático baseado no closing day.
-  - `endDate` (query): Opcional - Data de fim do período para cálculo da fatura (formato ISO 8601). Sobrescreve o cálculo automático baseado no closing day.
-- **Responses:**
-  - `200`: Resumo da fatura corrente
-  - `401`: 
-  - `500`: 
+Todos os endpoints abaixo pertencem à API do FIN Analytics. Endpoints legados do Pierre MCP (`/tools/api/get-*`) são referências de integração externa — não endpoints da nossa API.
 
-## POST /tools/api/manage-closing-date
-- **Summary:** [PENDENTE]
-- **Description:** Gerencia datas de fechamento de cartões de crédito. Permite listar contas, criar, atualizar, deletar e consultar datas de fechamento. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** manageClosingDate
-- **Parameters:** Nenhum
-- **Body:** [CONFIRMADO] Requer payload.
-- **Responses:**
-  - `200`: Operação realizada com sucesso
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Acesso negado
-  - `404`: Recurso não encontrado
-  - `500`: 
+---
 
-## GET /tools/api/get-api-key-info
-- **Summary:** [PENDENTE]
-- **Description:** Get information about how to generate and use API keys for Pierre Finance
-- **Operation ID:** getApiKeyInfo
-- **Parameters:** Nenhum
-- **Responses:**
-  - `200`: API key information and available tools
-  - `500`: Internal server error
+## Autenticação
 
-## GET /tools/api/get-accounts
-- **Summary:** [PENDENTE]
-- **Description:** Retorna todas as contas financeiras do usuário. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getAccounts
-- **Parameters:** Nenhum
-- **Responses:**
-  - `200`: Lista de contas financeiras
-  - `401`: Authentication or subscription error
-  - `500`: Internal server error
+### POST /auth/login ✅ IMPLEMENTADO
+- **Use Case:** UC-01: AuthenticateUser
+- **Auth:** Pública
+- **Body:** `{ "email": "str", "password": "str" }`
+- **Response 200:** `AuthTokenDTO`
+- **Response 401:** Credenciais inválidas
+- **Response 403:** Usuário inativo
 
-## GET /tools/api/get-balance
-- **Summary:** [PENDENTE]
-- **Description:** Retorna o saldo total e detalhes de todas as contas bancárias. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getBalance
-- **Parameters:** Nenhum
-- **Responses:**
-  - `200`: Dados de saldo consolidado
-  - `401`: Authentication or subscription error
-  - `500`: Internal server error
+### POST /auth/refresh 🔲 Não Iniciado
+- **Use Case:** UC-03: RefreshToken
+- **Auth:** Pública (refresh token no body)
+- **Body:** `{ "refresh_token": "str" }`
+- **Response 200:** `AuthTokenDTO`
+- **Response 401:** Token inválido ou expirado
 
-## GET /tools/api/get-balance-by-account
-- **Summary:** [PENDENTE]
-- **Description:** Retorna o saldo e detalhes de uma conta bancária específica. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getBalanceByAccount
-- **Parameters:**
-  - `accountId` (query): Obrigatório - Identificador único da conta bancária
-- **Responses:**
-  - `200`: Dados de saldo da conta
-  - `400`: Parâmetros inválidos
-  - `401`: Authentication or subscription error
-  - `404`: Conta não encontrada
-  - `500`: Erro interno do servidor
+---
 
-## GET /tools/api/get-installments
-- **Summary:** [PENDENTE]
-- **Description:** Retrieve all installments transactions of the period. Fetches ALL installments (past, current, and future) for purchases made within the specified period. Requires API key for authentication and active subscription.
-- **Operation ID:** getInstallments
-- **Parameters:**
-  - `startDate` (query): Opcional - Start date for filtering. Defaults to first day 3 months ago if not provided.
-  - `endDate` (query): Opcional - End date for filtering. Defaults to last day of current month if not provided.
-- **Responses:**
-  - `200`: Installments data and statistics
-  - `401`: Authentication or subscription error
-  - `500`: Internal server error
+## Desenvolvimento
 
-## GET /tools/api/get-transactions
-- **Summary:** [PENDENTE]
-- **Description:** Retrieves the user's financial transaction history within a specific period with intelligent filtering and automatic categorization. Supports filtering by account type, transaction type, category, amount ranges, and natural language queries via clientMessage parameter. Applies two processing stages: 1) LLM-powered intelligent filtering (when clientMessage is provided), 2) Automatic transaction categorization (always applied). Supports two response formats: 'raw' (default) for unprocessed data, and 'structured' for organized data with groupings and summaries. Requires API key for authentication and active subscription.
-- **Operation ID:** getTransactions
-- **Parameters:**
-  - `startDate` (query): Opcional - Start date for filtering
-  - `endDate` (query): Opcional - End date for filtering
-  - `categories` (query): Opcional - Categories to filter by (comma-separated)
-  - `minAmount` (query): Opcional - Minimum amount to filter by
-  - `maxAmount` (query): Opcional - Maximum amount to filter by
-  - `accountType` (query): Opcional - Account type to filter by
-  - `accountSubtype` (query): Opcional - Account subtype to filter by
-  - `includeStatus` (query): Opcional - Transaction statuses to include (comma-separated)
-  - `format` (query): Opcional - Response format type (default: raw)
-  - `clientMessage` (query): Opcional - Intelligent filter message for LLM-powered transaction filtering
-- **Responses:**
-  - `200`: List of transactions (format depends on 'format' parameter)
-  - `400`: Invalid parameters
-  - `401`: 
-  - `500`: 
+### GET /dev/status ✅ IMPLEMENTADO
+- **Use Case:** — (verificação direta de infra)
+- **Auth:** Pública
+- **Response 200:** `{ "database": "ok", "bootstrap": "ok", "admin_exists": true, "jwt": "ok" }`
 
-## POST /tools/api/manual-update
-- **Summary:** [PENDENTE]
-- **Description:** Synchronizes all connected financial accounts and transactions with the latest data from banks and credit card providers. Requires API key for authentication and active subscription.
-- **Operation ID:** manualUpdate
-- **Parameters:** Nenhum
-- **Responses:**
-  - `200`: Manual sync initiated
-  - `400`: Sem contas conectadas encontradas
-  - `401`: 
-  - `500`: 
+---
 
-## POST /tools/api/create-spending-limit
-- **Summary:** [PENDENTE]
-- **Description:** Cria um novo limite de gastos personalizado para uma categoria específica. Requer API key para autenticação e assinatura ativa. O usuário deve ter cota disponível baseada no seu plano (Basic: 0 limites, Pro: 2 limites, Premium: 5 limites).
-- **Operation ID:** createSpendingLimit
-- **Parameters:** Nenhum
-- **Body:** [CONFIRMADO] Requer payload.
-- **Responses:**
-  - `200`: Limite de gastos criado com sucesso
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Cota de limites excedida
-  - `500`: 
+## Contas Financeiras
 
-## POST /tools/api/confirm-spending-limit
-- **Summary:** [PENDENTE]
-- **Description:** Confirma a criação de um limite de gastos após receber aviso sobre gastos atuais. Permite agendar o limite para o próximo período se necessário. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** confirmSpendingLimit
-- **Parameters:** Nenhum
-- **Body:** [CONFIRMADO] Requer payload.
-- **Responses:**
-  - `200`: Limite de gastos confirmado e criado
-  - `400`: 
-  - `401`: 
-  - `403`: Cota de limites excedida
-  - `500`: 
+### GET /accounts 🔲 Não Iniciado (Fase 2)
+- **Use Case:** UC-11A: GetAccounts
+- **Auth:** JWT obrigatório
+- **Query params:** `type?`, `is_active?`, `provider?`
+- **Response 200:** `list[AccountResponseDTO]`
+- **Response 401:** Não autenticado
 
-## GET /tools/api/list-spending-limits
-- **Summary:** [PENDENTE]
-- **Description:** Lista todos os limites de gastos do usuário com informações detalhadas de uso atual e validação automática de quota. Para cada limite, calcula automaticamente o valor gasto no período atual, porcentagem de uso, valor restante e status visual. Por padrão retorna apenas limites ativos, mas pode incluir inativos com o parâmetro includeInactive. SEMPRE verifica e retorna informações detalhadas sobre cota do plano (Basic: 0 alertas, Pro: 2 alertas, Premium: 5 alertas) incluindo mensagens formatadas de status e upgrade quando necessário. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** listSpendingLimits
-- **Parameters:**
-  - `includeInactive` (query): Opcional - Se deve incluir limites inativos na resposta
-- **Responses:**
-  - `200`: Lista de limites de gastos
-  - `401`: 
-  - `500`: 
+---
 
-## GET /tools/api/get-spending-limit-transactions
-- **Summary:** [PENDENTE]
-- **Description:** Retorna o status detalhado de um limite de gastos específico, incluindo valor gasto atual, porcentagem do limite, próximos alertas e histórico de transações. Calcula automaticamente o período baseado na configuração do limite. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getSpendingLimitTransactions
-- **Parameters:**
-  - `limitId` (query): Obrigatório - ID do limite de gastos para consultar o status
-- **Responses:**
-  - `200`: Status detalhado do limite de gastos
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Acesso negado
-  - `404`: Limite não encontrado
-  - `500`: 
+## Categorias
 
-## PUT /tools/api/update-spending-limit
-- **Summary:** [PENDENTE]
-- **Description:** Atualiza um limite de gastos existente. Permite modificar categoria, valor, período e status ativo. O usuário só pode atualizar seus próprios limites. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** updateSpendingLimit
-- **Parameters:** Nenhum
-- **Body:** [CONFIRMADO] Requer payload.
-- **Responses:**
-  - `200`: Limite de gastos atualizado com sucesso
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Acesso negado
-  - `404`: Limite não encontrado
-  - `500`: 
+### GET /categories 🔲 Não Iniciado (Fase 3)
+- **Use Case:** UC-11B: GetCategories
+- **Auth:** JWT obrigatório
+- **Query params:** `include_system?`, `include_user?`
+- **Response 200:** `list[CategoryResponseDTO]`
 
-## DELETE /tools/api/delete-spending-limit
-- **Summary:** [PENDENTE]
-- **Description:** Exclui permanentemente um limite de gastos. O usuário só pode excluir seus próprios limites. Esta operação não pode ser desfeita. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** deleteSpendingLimit
-- **Parameters:** Nenhum
-- **Body:** [CONFIRMADO] Requer payload.
-- **Responses:**
-  - `200`: Limite de gastos excluído com sucesso
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Acesso negado
-  - `404`: Limite não encontrado
-  - `500`: 
+---
 
-## POST /tools/api/create-payment-reminder
-- **Summary:** [PENDENTE]
-- **Description:** Cria um novo lembrete de pagamento. Permite criar lembretes únicos ou recorrentes com notificações via WhatsApp e Email. Requer API key para autenticação e assinatura ativa. O usuário deve ter cota disponível baseada no seu plano.
-- **Operation ID:** createPaymentReminder
-- **Parameters:** Nenhum
-- **Body:** [CONFIRMADO] Requer payload.
-- **Responses:**
-  - `200`: Lembrete de pagamento criado com sucesso
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Cota de lembretes excedida
-  - `500`: 
+## Transações
 
-## GET /tools/api/list-payment-reminders
-- **Summary:** [PENDENTE]
-- **Description:** Lista todos os lembretes de pagamento do usuário com informações de cota. Permite filtrar por status (active, all, upcoming, overdue). Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** listPaymentReminders
-- **Parameters:**
-  - `filter` (query): Opcional - Filtro de lembretes: active (padrão), all, upcoming, overdue
-  - `days` (query): Opcional - Número de dias para filtrar lembretes próximos (usado com filter=upcoming)
-- **Responses:**
-  - `200`: Lista de lembretes de pagamento
-  - `401`: 
-  - `500`: 
+### GET /transactions 🔲 Não Iniciado (Fase 4)
+- **Use Case:** UC-11: GetTransactions
+- **Auth:** JWT obrigatório
+- **Query params:** `start_date?`, `end_date?`, `account_ids?`, `category_ids?`, `provider?`, `direction?`, `min_amount?`, `max_amount?`, `search?`, `page`, `page_size`
+- **Response 200:** `PaginatedResponseDTO<TransactionResponseDTO>`
 
-## PUT /tools/api/update-payment-reminder
-- **Summary:** [PENDENTE]
-- **Description:** Atualiza um lembrete de pagamento existente. Permite modificar título, valor, datas, padrão de recorrência e status. O usuário só pode atualizar seus próprios lembretes. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** updatePaymentReminder
-- **Parameters:** Nenhum
-- **Body:** [CONFIRMADO] Requer payload.
-- **Responses:**
-  - `200`: Lembrete de pagamento atualizado com sucesso
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Acesso negado
-  - `404`: Lembrete não encontrado
-  - `500`: 
+### PATCH /transactions/{id}/category 🔲 Não Iniciado (Fase 4)
+- **Use Case:** UC-19: UpdateCategory
+- **Auth:** JWT obrigatório
+- **Body:** `{ "category_id": "UUID" }`
+- **Response 200:** `TransactionResponseDTO`
+- **Response 404:** Transação não encontrada
 
-## DELETE /tools/api/delete-payment-reminder
-- **Summary:** [PENDENTE]
-- **Description:** Exclui ou cancela um lembrete de pagamento. Por padrão realiza exclusão lógica (marca como inactive), mas pode fazer exclusão permanente com hardDelete=true. O usuário só pode excluir seus próprios lembretes. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** deletePaymentReminder
-- **Parameters:**
-  - `reminderId` (query): Obrigatório - ID do lembrete de pagamento a ser excluído
-  - `hardDelete` (query): Opcional - Se deve fazer exclusão permanente (true) ou apenas cancelar (false, padrão)
-- **Responses:**
-  - `200`: Lembrete de pagamento excluído/cancelado com sucesso
-  - `400`: Parâmetros inválidos
-  - `401`: 
-  - `403`: Acesso negado
-  - `404`: Lembrete não encontrado
-  - `500`: 
+---
 
-## GET /tools/api/get-expensive-categories
-- **Summary:** [PENDENTE]
-- **Description:** Retorna as 3 categorias mais caras no período especificado. Por padrão, analisa os últimos 7 dias. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getExpensiveCategories
-- **Parameters:**
-  - `startDate` (query): Opcional - Data inicial para análise (formato YYYY-MM-DD). Padrão: 7 dias atrás.
-  - `endDate` (query): Opcional - Data final para análise (formato YYYY-MM-DD). Padrão: hoje.
-- **Responses:**
-  - `200`: Top 3 categorias mais caras
-  - `401`: 
-  - `500`: 
+## Providers (Integrações)
 
-## GET /tools/api/get-book
-- **Summary:** [PENDENTE]
-- **Description:** Obtém contexto financeiro e análises do usuário. Retorna informações consolidadas sobre contas, transações, saldos e categorias. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getBook
-- **Parameters:**
-  - `includeAllPeriods` (query): Opcional - Se deve incluir dados de todos os períodos
-  - `includeCreditCard` (query): Opcional - Se deve incluir informações de cartão de crédito
-  - `includeCategories` (query): Opcional - Se deve incluir análise por categorias
-- **Responses:**
-  - `200`: Contexto financeiro do usuário
-  - `401`: 
-  - `500`: 
+### POST /providers/connect 🔲 Não Iniciado (Fase 5)
+- **Use Case:** UC-16: ConnectProvider
+- **Auth:** JWT obrigatório
+- **Body:** `{ "provider_type": "PIERRE|MYPROFIT|CSV|YFINANCE", "config": {} }`
+- **Response 200:** `ProviderResponseDTO`
 
-## GET /tools/api/get-memories
-- **Summary:** [PENDENTE]
-- **Description:** Adiciona uma mensagem do usuário (se fornecida) e recupera memórias formatadas para uso em prompts. Requer API key para autenticação e assinatura ativa. Requer configuração do Mem0.
-- **Operation ID:** getMemories
-- **Parameters:**
-  - `message` (query): Opcional - Mensagem do usuário para adicionar à memória (opcional)
-- **Responses:**
-  - `200`: Memórias formatadas para prompts
-  - `401`: 
-  - `503`: Mem0 não configurado
-  - `500`: 
+### GET /providers 🔲 Não Iniciado (Fase 5)
+- **Use Case:** listagem simples
+- **Auth:** JWT obrigatório
+- **Response 200:** `list[ProviderResponseDTO]`
 
-## GET /tools/api/get-open-finance-connection-flow
-- **Summary:** [PENDENTE]
-- **Description:** Inicia o fluxo de conexão Open Finance via WhatsApp. Para usuários Premium, envia um fluxo interativo com lista de bancos. Para usuários Basic/Pro, envia notificação de acesso limitado. Requer API key para autenticação e assinatura ativa.
-- **Operation ID:** getOpenFinanceConnectionFlow
-- **Parameters:** Nenhum
-- **Responses:**
-  - `200`: Fluxo iniciado com sucesso
-  - `400`: Dados do usuário incompletos
-  - `401`: 
-  - `500`: 
+### DELETE /providers/{id} 🔲 Não Iniciado (Fase 5)
+- **Use Case:** UC-17: DisconnectProvider
+- **Auth:** JWT obrigatório
+- **Query params:** `delete_data?` (boolean, default false)
+- **Response 200:** `OperationResultDTO`
 
+---
+
+## Sincronização
+
+### POST /sync/pierre 🔲 Não Iniciado (Fase 5)
+- **Use Cases:** UC-04 (accounts) + UC-05 (transactions)
+- **Auth:** JWT obrigatório
+- **Body:** `SyncPierreCommand`
+- **Response 200:** `SyncResultDTO`
+
+### POST /sync/myprofit 🔲 Não Iniciado (Fase 7)
+- **Use Case:** UC-06: SyncMyProfitPortfolio
+- **Auth:** JWT obrigatório
+- **Body:** `SyncMyProfitCommand`
+- **Response 200:** `SyncResultDTO`
+
+### POST /sync/quotes 🔲 Não Iniciado (Fase 7)
+- **Use Case:** UC-07: SyncYFinanceQuotes
+- **Auth:** JWT obrigatório
+- **Body:** `RefreshQuotesCommand`
+- **Response 200:** `SyncResultDTO`
+
+---
+
+## Importação CSV
+
+### POST /import/csv 🔲 Não Iniciado (Fase 8)
+- **Use Case:** UC-08: ImportCSV
+- **Auth:** JWT obrigatório
+- **Body:** `multipart/form-data` (file + csv_type + account_id? + confirm)
+- **Response 200:** `ImportResultDTO`
+
+---
+
+## Portfólio e Dividendos
+
+### GET /portfolio 🔲 Não Iniciado (Fase 6)
+- **Use Case:** UC-12: GetPortfolio
+- **Auth:** JWT obrigatório
+- **Query params:** `portfolio_id?`, `asset_type?`, `include_zeroed?`
+- **Response 200:** `PortfolioResponseDTO`
+
+### GET /dividends 🔲 Não Iniciado (Fase 6)
+- **Use Case:** UC-18: GetDividends
+- **Auth:** JWT obrigatório
+- **Query params:** `asset_id?`, `year?`, `type?`, `page`, `page_size`
+- **Response 200:** `PaginatedResponseDTO<DividendResponseDTO>`
+
+---
+
+## IA
+
+### POST /classify 🔲 Não Iniciado (Fase 9)
+- **Use Case:** UC-09: ClassifyTransaction
+- **Auth:** JWT obrigatório
+- **Body:** `ClassifyTransactionCommand`
+- **Response 200:** `ClassificationResultDTO`
+
+### GET /insights 🔲 Não Iniciado (Fase 9)
+- **Use Case:** UC-14: GenerateInsights
+- **Auth:** JWT obrigatório
+- **Query params:** `period?`, `limit?`
+- **Response 200:** `list[InsightDTO]`
+
+---
+
+## Dashboard e Analytics
+
+### GET /dashboard 🔲 Não Iniciado (Fase 10)
+- **Use Case:** UC-10: GetDashboard
+- **Auth:** JWT obrigatório
+- **Query params:** `period?`, `currency?`
+- **Response 200:** `DashboardDTO`
+
+### GET /dashboard/summary-v2 🔲 Não Iniciado (Fase 10)
+- **Use Case:** UC-10B: GetDashboardSummaryV2
+- **Auth:** JWT obrigatório
+- **Query params:** `month`
+- **Response 200:** `DashboardSummaryV2DTO`
+
+### GET /dashboard/pacing-v2 🔲 Não Iniciado (Fase 10)
+- **Use Case:** UC-10C: GetDashboardPacing
+- **Auth:** JWT obrigatório
+- **Query params:** `month`
+- **Response 200:** `PacingV2DTO`
+
+### GET /dashboard/heatmap 🔲 Não Iniciado (Fase 10)
+- **Use Case:** UC-10D: GetDashboardHeatmap
+- **Auth:** JWT obrigatório
+- **Query params:** `month`
+- **Response 200:** `list[HeatmapDayDTO]`
+
+### GET /dashboard/subscriptions 🔲 Não Iniciado (Fase 4)
+- **Use Case:** UC-20: GetSubscriptionsSummary
+- **Auth:** JWT obrigatório
+- **Query params:** `month?`
+- **Response 200:** `SubscriptionsSummaryDTO`
+
+### GET /dashboard/installments 🔲 Não Iniciado (Fase 4)
+- **Use Case:** UC-21: GetInstallmentsSummary
+- **Auth:** JWT obrigatório
+- **Query params:** `month?`
+- **Response 200:** `InstallmentsSummaryDTO`
+
+### GET /cashflow 🔲 Não Iniciado (Fase 10)
+- **Use Case:** UC-13: GetCashFlow
+- **Auth:** JWT obrigatório
+- **Query params:** `start_date?`, `end_date?`, `group_by?`, `account_ids?`
+- **Response 200:** `CashFlowDTO`
+
+### GET /alerts 🔲 Não Iniciado (Fase 10)
+- **Use Case:** UC-15: GetAlerts
+- **Auth:** JWT obrigatório
+- **Query params:** `type?`, `active_only?`
+- **Response 200:** `list[AlertDTO]`
+
+---
+
+## Governança e Metas
+
+### GET /governance/audit 🔲 Não Iniciado (Fase 12)
+- **Use Case:** UC-22: GetAuditSummary
+- **Auth:** JWT obrigatório
+- **Response 200:** `list[AuditRunDTO]`
+
+### GET /governance/database/health 🔲 Não Iniciado (Fase 12)
+- **Use Case:** UC-23: GetDatabaseHealth
+- **Auth:** JWT obrigatório
+- **Response 200:** `DatabaseHealthDTO`
+
+### GET /goals 🔲 Não Iniciado (Fase 13)
+- **Use Case:** UC-24: GetGoals
+- **Auth:** JWT obrigatório
+- **Response 200:** `list[GoalDTO]`
+
+### GET /profile 🔲 Não Iniciado (Fase 14)
+- **Use Case:** UC-25: GetProfile
+- **Auth:** JWT obrigatório
+- **Response 200:** `ProfileDTO`
+
+---
+
+## Admin
+
+### POST /admin/backup 🔲 Não Iniciado (Fase 11)
+- **Use Case:** UC-20: BackupDatabase
+- **Auth:** JWT obrigatório (role=ADMIN)
+- **Body:** `BackupDatabaseCommand`
+- **Response 200:** `BackupResultDTO`
+
+---
+
+## Matriz UC ↔ Endpoint
+
+| Endpoint | Use Case | Fase | Status |
+|---|---|---|---|
+| POST /auth/login | UC-01 | 1 | ✅ |
+| POST /auth/refresh | UC-03 | 1 | 🔲 |
+| GET /dev/status | — | 0 | ✅ |
+| GET /accounts | UC-11A | 2 | 🔲 |
+| GET /categories | UC-11B | 3 | 🔲 |
+| GET /transactions | UC-11 | 4 | 🔲 |
+| PATCH /transactions/{id}/category | UC-19 | 4 | 🔲 |
+| POST /providers/connect | UC-16 | 5 | 🔲 |
+| GET /providers | — | 5 | 🔲 |
+| DELETE /providers/{id} | UC-17 | 5 | 🔲 |
+| POST /sync/pierre | UC-04 + UC-05 | 5 | 🔲 |
+| POST /sync/myprofit | UC-06 | 7 | 🔲 |
+| POST /sync/quotes | UC-07 | 7 | 🔲 |
+| POST /import/csv | UC-08 | 8 | 🔲 |
+| GET /portfolio | UC-12 | 6 | 🔲 |
+| GET /dividends | UC-18 | 6 | 🔲 |
+| POST /classify | UC-09 | 9 | 🔲 |
+| GET /insights | UC-14 | 9 | 🔲 |
+| GET /dashboard | UC-10 | 10 | 🔲 |
+| GET /cashflow | UC-13 | 10 | 🔲 |
+| GET /alerts | UC-15 | 10 | 🔲 |
+| POST /admin/backup | UC-20 | 11 | 🔲 |

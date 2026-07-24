@@ -9,12 +9,17 @@ import { SECONDARY_NAV, SIDEBAR_NAV } from "@/config/navigation";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const isLoginPage = pathname === "/login";
   const isFinancialDomain =
     pathname === "/" ||
     pathname.startsWith("/transactions") ||
     pathname.startsWith("/categories") ||
     pathname.startsWith("/subscriptions") ||
     pathname.startsWith("/installments");
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -62,7 +67,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="mb-3 text-xs uppercase tracking-[0.24em] text-zinc-500">Acesso rápido</p>
               <div className="space-y-1">
                 {SECONDARY_NAV.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive = 
+                    item.href === "/settings" 
+                      ? pathname.startsWith("/settings") || pathname.startsWith("/accounts") || pathname.startsWith("/profile")
+                      : pathname === item.href;
 
                   return (
                     <Link
