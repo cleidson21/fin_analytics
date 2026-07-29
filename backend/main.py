@@ -5,7 +5,7 @@ from backend.database.engine import engine
 from backend.database.base import Base
 from backend.database.session import SessionLocal
 from backend.core.container import get_bootstrap_admin
-from backend.api.routers import dev, auth, accounts, transactions, dashboard, categories
+from backend.api.routers import dev, auth, accounts, transactions, dashboard, categories, governance
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,3 +44,4 @@ app.include_router(accounts.router)
 app.include_router(transactions.router)
 app.include_router(dashboard.router)
 app.include_router(categories.router)
+app.include_router(governance.router)

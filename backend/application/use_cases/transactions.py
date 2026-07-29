@@ -9,8 +9,9 @@ from backend.application.dtos.transaction import (
     KpiItemDTO,
     DashboardSummaryV2DTO,
 )
-from backend.infrastructure.persistence.repositories.transaction_repository import SQLAlchemyTransactionRepository
-from backend.infrastructure.persistence.repositories.category_repository import SQLAlchemyCategoryRepository
+from backend.application.ports.transaction_repository import ITransactionRepository
+from backend.application.ports.category_repository import ICategoryRepository
+from backend.application.ports.account_repository import IAccountRepository
 
 def _add_months(month: str, delta: int) -> str:
     """Returns YYYY-MM shifted by delta months."""
@@ -26,7 +27,7 @@ def _kpi(current: float, previous: float) -> KpiItemDTO:
     return KpiItemDTO(current=current, previous=previous, delta_pct=delta_pct)
 
 class GetDashboardSummaryV2UseCase:
-    def __init__(self, transaction_repo: SQLAlchemyTransactionRepository):
+    def __init__(self, transaction_repo: ITransactionRepository):
         self.transaction_repo = transaction_repo
 
     async def execute(self, month: str) -> DashboardSummaryV2DTO:
@@ -51,10 +52,8 @@ class GetDashboardSummaryV2UseCase:
         )
 
 
-from backend.application.ports.account_repository import IAccountRepository
-
 class GetTransactionsUseCase:
-    def __init__(self, transaction_repo: SQLAlchemyTransactionRepository, category_repo: SQLAlchemyCategoryRepository, account_repo: IAccountRepository):
+    def __init__(self, transaction_repo: ITransactionRepository, category_repo: ICategoryRepository, account_repo: IAccountRepository):
         self.transaction_repo = transaction_repo
         self.category_repo = category_repo
         self.account_repo = account_repo
@@ -108,7 +107,7 @@ class GetTransactionsUseCase:
 
 
 class GetTransactionDetailsUseCase:
-    def __init__(self, transaction_repo: SQLAlchemyTransactionRepository, category_repo: SQLAlchemyCategoryRepository, account_repo: IAccountRepository):
+    def __init__(self, transaction_repo: ITransactionRepository, category_repo: ICategoryRepository, account_repo: IAccountRepository):
         self.transaction_repo = transaction_repo
         self.category_repo = category_repo
         self.account_repo = account_repo
@@ -158,7 +157,7 @@ class GetTransactionDetailsUseCase:
         )
 
 class GetCategoriesSummaryUseCase:
-    def __init__(self, transaction_repo: SQLAlchemyTransactionRepository):
+    def __init__(self, transaction_repo: ITransactionRepository):
         self.transaction_repo = transaction_repo
 
     async def execute(self, user_id: UUID, month: str) -> List[CategoryBreakdownDTO]:
@@ -172,7 +171,7 @@ class GetCategoriesSummaryUseCase:
         ]
 
 class UpdateTransactionCategoryUseCase:
-    def __init__(self, transaction_repo: SQLAlchemyTransactionRepository, category_repo: SQLAlchemyCategoryRepository):
+    def __init__(self, transaction_repo: ITransactionRepository, category_repo: ICategoryRepository):
         self.transaction_repo = transaction_repo
         self.category_repo = category_repo
 

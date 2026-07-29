@@ -353,6 +353,56 @@ details: dict | None
 
 ---
 
+## SubscriptionsSummaryDTO (Response)
+```
+month: str
+active_count: int
+monthly_total: Decimal
+annual_projection: Decimal
+average_per_service: Decimal
+items: list[SubscriptionItemDTO]
+```
+
+## SubscriptionItemDTO (Internal)
+```
+original_name: str
+date: str
+amount: Decimal
+```
+
+---
+
+## InstallmentsSummaryDTO (Response)
+```
+month: str
+active_installments: int
+finished_installments: int
+global_estimated: Decimal
+global_paid: Decimal
+global_remaining: Decimal
+last_installment_date: str | None
+items: list[InstallmentItemDTO]
+```
+
+## InstallmentItemDTO (Internal)
+```
+purchase_id: UUID | str
+base_name: str
+original_name: str
+date: str
+installment_amount: Decimal
+current_installment: int
+first_installment_found: int
+total_installments: int      # Frontend alias para installment_count
+total_estimated: Decimal
+already_paid: Decimal
+remaining: Decimal
+projected_end_date: str | None
+is_active: bool
+```
+
+---
+
 ## Regras Gerais de DTOs
 
 1. DTOs nunca importam entidades do Provider.

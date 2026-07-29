@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple, Dict, Any
 from uuid import UUID
-from datetime import date
-from sqlalchemy import select, and_, or_, func, desc
+from datetime import date, datetime
+from sqlalchemy import select, and_, or_, func, desc, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -139,6 +139,7 @@ class SQLAlchemyTransactionRepository:
     async def save(self, transaction: Transaction) -> Transaction:
         model = TransactionModel(
             id=transaction.id,
+            user_id=transaction.user_id,
             provider=transaction.provider,
             account_id=transaction.account_id,
             amount=transaction.amount,
@@ -156,10 +157,11 @@ class SQLAlchemyTransactionRepository:
             posted_date=transaction.posted_date,
             installment_count=transaction.installment_count,
             installment_current=transaction.installment_current,
+            purchase_id=transaction.purchase_id,
             provider_metadata=transaction.provider_metadata,
             created_at=transaction.created_at,
             updated_at=transaction.updated_at,
-            deleted_at=transaction.deleted_at
+            deleted_at=transaction.deleted_at,
         )
         self.session.add(model)
         await self.session.flush()
@@ -179,6 +181,7 @@ class SQLAlchemyTransactionRepository:
     def _to_entity(self, model: TransactionModel) -> Transaction:
         return Transaction(
             id=model.id,
+            user_id=model.user_id,
             provider=model.provider,
             account_id=model.account_id,
             amount=model.amount,
@@ -196,8 +199,111 @@ class SQLAlchemyTransactionRepository:
             posted_date=model.posted_date,
             installment_count=model.installment_count,
             installment_current=model.installment_current,
+            purchase_id=model.purchase_id,
             provider_metadata=model.provider_metadata,
             created_at=model.created_at,
             updated_at=model.updated_at,
-            deleted_at=model.deleted_at
+            deleted_at=model.deleted_at,
         )
+
+    # ================================================================= #
+    #  Bulk / Batch methods (VS-04 – Pierre import)
+    # ================================================================= #
+
+    async def bulk_upsert(self, transactions: List[Transaction]) -> Dict[str, int]:
+        """Insere ou atualiza transações usando hash como chave de idempotência.
+
+        Idempotente: transações já existentes (mesmo hash) são ignoradas.
+        SQLite-compatible: realiza SELECT + INSERT individual (sem ON CONFLICT).
+
+        Returns:
+            {'inserted': int, 'skipped': int}
+        """
+        if not transactions:
+            return {"inserted": 0, "skipped": 0}
+
+        inserted = skipped = 0
+
+        # Collect all hashes to check existence in one query
+        hashes = [t.hash for t in transactions]
+        existing_stmt = select(TransactionModel.hash).where(
+            TransactionModel.hash.in_(hashes)
+        )
+        result = await self.session.execute(existing_stmt)
+        existing_hashes = {row[0] for row in result.fetchall()}
+
+        for txn in transactions:
+            if txn.hash in existing_hashes:
+                skipped += 1
+                continue
+            model = TransactionModel(
+                id=txn.id,
+                user_id=txn.user_id,
+                provider=txn.provider,
+                account_id=txn.account_id,
+                amount=txn.amount,
+                direction=txn.direction,
+                currency_code=txn.currency_code,
+                description=txn.description,
+                type=txn.type,
+                status=txn.status,
+                transaction_date=txn.transaction_date,
+                is_recurring=txn.is_recurring,
+                hash=txn.hash,
+                external_id=txn.external_id,
+                original_description=txn.original_description,
+                category_id=txn.category_id,
+                posted_date=txn.posted_date,
+                installment_count=txn.installment_count,
+                installment_current=txn.installment_current,
+                purchase_id=txn.purchase_id,
+                provider_metadata=txn.provider_metadata,
+                created_at=txn.created_at or datetime.utcnow(),
+                updated_at=txn.updated_at or datetime.utcnow(),
+                deleted_at=txn.deleted_at,
+            )
+            self.session.add(model)
+            inserted += 1
+
+        await self.session.flush()
+        return {"inserted": inserted, "skipped": skipped}
+
+    async def save_batch(self, transactions: List[Transaction]) -> List[Transaction]:
+        """Insere um lote de transações sem verificação de duplicata.
+
+        Use bulk_upsert para importações idempotentes.
+        """
+        for txn in transactions:
+            await self.save(txn)
+        return transactions
+
+    async def update_existing(
+        self, transaction_id: UUID, fields: Dict[str, Any]
+    ) -> Optional[Transaction]:
+        """Atualiza campos específicos de uma transação existente.
+
+        Args:
+            transaction_id: UUID da transação
+            fields: Dicionário com os campos a atualizar (coluna → valor)
+
+        Returns:
+            Transaction atualizada ou None se não encontrada.
+        """
+        stmt = select(TransactionModel).where(TransactionModel.id == transaction_id)
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            return None
+
+        allowed_fields = {
+            "description", "status", "category_id", "is_recurring",
+            "installment_count", "installment_current", "purchase_id",
+            "provider_metadata", "posted_date",
+        }
+        for field, value in fields.items():
+            if field in allowed_fields:
+                setattr(model, field, value)
+
+        model.updated_at = datetime.utcnow()
+        await self.session.flush()
+        return self._to_entity(model)

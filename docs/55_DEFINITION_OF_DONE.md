@@ -166,3 +166,14 @@ Validação pelo usuário
 
 Status: ✅ CONCLUÍDA
 ```
+
+---
+
+## Critérios Específicos Adicionais por VS
+
+### VS-04: Assinaturas e Parcelamentos
+- [ ] Migration de `purchase_id` gerada e aplicada com sucesso sem corromper transações antigas.
+- [ ] Testes Unitários de Matemática Inferencial (motor retroativo de parcelas) validados com mínimo de 90% de cobertura no Use Case.
+- [ ] DTOs expondo exatamente as chaves snake_case esperadas pelo Frontend (atenção ao alias `total_installments`).
+- [ ] Nenhum erro 422 na API ao omitir o `month` (validação Pydantic opcional tratada corretamente).
+- [ ] A tela Frontend Oficial do projeto exibe os dados consumidos sem skeletons e sem interações simuladas (Mocks).

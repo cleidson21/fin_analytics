@@ -1,0 +1,545 @@
+Transactions
+Get Transactions
+Retrieves the user’s financial transaction history within a specific period with intelligent filtering and automatic categorization. Supports filtering by account type, transaction type, category, amount ranges, and natural language queries via clientMessage parameter. Applies two processing stages: 1) LLM-powered intelligent filtering (when clientMessage is provided), 2) Automatic transaction categorization (always applied). Supports two response formats: ‘raw’ (default) for unprocessed data, and ‘structured’ for organized data with groupings and summaries. Requires API key for authentication and active subscription.
+
+GET
+/
+tools
+/
+api
+/
+get-transactions
+
+Try it
+Este endpoint retorna transações financeiras do usuário autenticado com filtros opcionais.
+​
+Descrição
+O endpoint GET /tools/api/get-transactions retorna o histórico de transações financeiras do usuário autenticado com filtragem inteligente e categorização automática. Possui duas funcionalidades avançadas:
+Filtragem Inteligente via LLM: Use o parâmetro clientMessage para filtrar transações com linguagem natural
+Categorização Automática: Todas as transações são categorizadas automaticamente por IA
+Suporta dois formatos de resposta: ‘raw’ (padrão) para dados não processados, e ‘structured’ para dados organizados com agrupamentos e resumos.
+​
+Autenticação
+Este endpoint requer autenticação via Bearer token e assinatura ativa.
+​
+Authorization
+stringrequired
+Bearer token com a API key do usuário. Formato: Bearer sk-your-api-key-here
+​
+Parâmetros de Query
+​
+startDate
+stringrequired
+Data inicial para filtrar transações (formato YYYY-MM-DD). Se não fornecido, usa 3 meses atrás como padrão.
+​
+endDate
+stringrequired
+Data final para filtrar transações (formato YYYY-MM-DD). Se não fornecido, usa hoje como padrão.
+​
+categories
+stringrequired
+Lista de categorias separadas por vírgula para filtrar transações.
+​
+minAmount
+numberrequired
+Valor mínimo das transações para filtrar.
+​
+maxAmount
+numberrequired
+Valor máximo das transações para filtrar.
+​
+accountType
+stringrequired
+Tipo de conta para filtrar. Valores válidos: BANK, CREDIT, INVESTMENT, LOAN
+​
+accountSubtype
+stringrequired
+Subtipo de conta para filtrar. Valores válidos: CHECKING_ACCOUNT, SAVINGS_ACCOUNT, CREDIT_CARD, PAYMENT_ACCOUNT
+​
+includeStatus
+stringrequired
+Status de transação. Valores válidos: POSTED, PENDING
+​
+format
+stringrequired
+Formato da resposta. Valores válidos: ‘raw’ (padrão) retorna dados não processados, ‘structured’ retorna dados organizados com agrupamentos, resumos e breakdown por categorias.
+​
+clientMessage
+stringrequired
+Mensagem em linguagem natural para filtragem inteligente usando LLM. Permite filtrar transações baseado na intenção expressa na mensagem (ex: “mostre gastos com alimentação”, “transações acima de 100 reais”, “pagamentos para supermercados”).
+​
+Resposta
+​
+Sucesso (200) - Formato Raw (Padrão)
+​
+Sucesso (200) - Formato Structured
+​
+Erro de Parâmetros Inválidos (400)
+​
+Erro de Autenticação (401)
+​
+Campos da Resposta
+​
+success
+booleanrequired
+Indica se a requisição foi bem-sucedida
+​
+data
+array|objectrequired
+Dados das transações. Formato varia conforme parâmetro format:
+format=raw (padrão): Array com transações financeiras brutas
+format=structured: Objeto com transações organizadas, agrupamentos e resumos
+Hide Transaction Object
+
+​
+id
+stringrequired
+Identificador único da transação
+​
+description
+stringrequired
+Descrição da transação
+​
+category
+string
+Categoria da transação (pode ser null)
+​
+currency_code
+stringrequired
+Código da moeda da transação (ex: BRL, USD)
+​
+amount
+numberrequired
+Valor da transação (negativo para débitos, positivo para créditos)
+​
+balance
+number
+Saldo da conta após a transação (pode ser null)
+​
+date
+stringrequired
+Data da transação no formato YYYY-MM-DD
+​
+type
+stringrequired
+Tipo da transação (DEBIT, CREDIT)
+​
+status
+stringrequired
+Status da transação (POSTED, PENDING)
+​
+account_name
+stringrequired
+Nome da conta onde ocorreu a transação
+​
+account_type
+stringrequired
+Tipo da conta (BANK, CREDIT)
+​
+account_subtype
+stringrequired
+Subtipo da conta (SAVINGS_ACCOUNT, CHECKING_ACCOUNT, CREDIT_CARD)
+​
+account_marketing_name
+stringrequired
+Nome de marketing da conta
+​
+count
+numberrequired
+Número total de transações retornadas
+​
+filters
+objectrequired
+Objeto com os filtros aplicados na requisição
+Hide Filters Object
+
+​
+startDate
+string
+Data inicial do filtro
+​
+endDate
+string
+Data final do filtro
+​
+categories
+array
+Array de categorias filtradas
+​
+minAmount
+number
+Valor mínimo filtrado
+​
+maxAmount
+number
+Valor máximo filtrado
+​
+accountType
+string
+Tipo de conta filtrado
+​
+accountSubtype
+string
+Subtipo de conta filtrado
+​
+format
+string
+Formato usado na resposta (raw ou structured)
+​
+timestamp
+stringrequired
+Timestamp da requisição em formato ISO 8601
+​
+Formato Structured
+Quando format=structured, o campo data contém um objeto com:
+​
+transactions
+objectrequired
+Transações agrupadas por conta e tipo
+Hide Transactions Structure
+
+​
+accounts
+object
+Mapa de nomes de contas para seus grupos de transação
+Hide Account Structure
+
+​
+credit_cards
+object
+Transações de cartão de crédito agrupadas por cartão
+​
+bank_transfer
+array
+Transações de transferência bancária
+​
+received
+array
+Transações de dinheiro recebido
+​
+total_credit_card_payments
+number
+Total de pagamentos de cartão para esta conta
+​
+total_credit_card_purchases
+number
+Total de compras de cartão para esta conta
+​
+total_bank_transfer
+number
+Total de transferências bancárias
+​
+total_received
+number
+Total recebido
+​
+summary
+objectrequired
+Estatísticas resumidas das transações
+Hide Summary Structure
+
+​
+total_spent
+number
+Total gasto (compras + transferências, excluindo pagamentos de fatura)
+​
+total_received
+number
+Total recebido
+​
+total_bank_transfer
+number
+Total de transferências bancárias
+​
+period
+string
+Descrição do período coberto
+​
+by_category
+object
+Top 10 categorias por valor gasto
+​
+top_transactions
+array
+Top 10 transações por valor
+​
+Exemplos de Uso
+​
+cURL
+# Obter todas as transações
+curl -X GET 'https://www.pierre.finance/tools/api/get-transactions' \
+  -H 'Authorization: Bearer sk-your-api-key-here'
+
+# Obter transações de um período específico
+curl -X GET 'https://www.pierre.finance/tools/api/get-transactions?startDate=2024-01-01&endDate=2024-01-31' \
+  -H 'Authorization: Bearer sk-your-api-key-here'
+
+# Obter transações por categoria
+curl -X GET 'https://www.pierre.finance/tools/api/get-transactions?categories=Contas,Alimentação' \
+  -H 'Authorization: Bearer sk-your-api-key-here'
+
+# Obter transações por valor
+curl -X GET 'https://www.pierre.finance/tools/api/get-transactions?minAmount=100&maxAmount=1000' \
+  -H 'Authorization: Bearer sk-your-api-key-here'
+
+# Obter transações em formato estruturado
+curl -X GET 'https://www.pierre.finance/tools/api/get-transactions?format=structured' \
+  -H 'Authorization: Bearer sk-your-api-key-here'
+
+# Filtragem inteligente com linguagem natural
+curl -X GET 'https://www.pierre.finance/tools/api/get-transactions?clientMessage=mostre%20gastos%20com%20alimentação%20acima%20de%2050%20reais' \
+  -H 'Authorization: Bearer sk-your-api-key-here'
+​
+JavaScript
+const API_KEY = 'sk-your-api-key-here';
+const BASE_URL = 'https://www.pierre.finance/tools/api';
+
+async function getTransactions(filters = {}) {
+  const params = new URLSearchParams(filters);
+  const response = await fetch(`${BASE_URL}/get-transactions?${params}`, {
+    headers: {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return await response.json();
+}
+
+// Exemplos de uso
+getTransactions({ startDate: '2024-01-01', endDate: '2024-01-31' });
+getTransactions({ categories: 'Contas,Alimentação' });
+getTransactions({ minAmount: 100, maxAmount: 1000 });
+getTransactions({ format: 'structured' }); // Dados organizados com resumos
+getTransactions({ clientMessage: 'mostre gastos com supermercados' }); // Filtragem inteligente
+​
+Python
+import requests
+
+API_KEY = 'sk-your-api-key-here'
+BASE_URL = 'https://www.pierre.finance/tools/api'
+
+headers = {
+    'Authorization': f'Bearer {API_KEY}',
+    'Content-Type': 'application/json'
+}
+
+def get_transactions(filters=None):
+    if filters is None:
+        filters = {}
+    
+    response = requests.get(f'{BASE_URL}/get-transactions', 
+                          headers=headers, params=filters)
+    return response.json()
+
+# Exemplos de uso
+transactions = get_transactions({
+    'startDate': '2024-01-01',
+    'endDate': '2024-01-31'
+})
+
+transactions = get_transactions({
+    'categories': 'Contas,Alimentação'
+})
+
+transactions = get_transactions({
+    'minAmount': 100,
+    'maxAmount': 1000
+})
+
+# Obter dados estruturados com resumos
+structured_data = get_transactions({
+    'format': 'structured',
+    'startDate': '2024-01-01'
+})
+
+# Filtragem inteligente com linguagem natural
+smart_filtered = get_transactions({
+    'clientMessage': 'gastos com alimentação dos últimos 30 dias',
+    'format': 'structured'
+})
+​
+Códigos de Status
+200: Sucesso - Transações retornadas
+400: Parâmetros inválidos
+401: Erro de autenticação ou assinatura
+500: Erro interno do servidor
+​
+Funcionalidades Avançadas
+​
+Filtragem Inteligente (clientMessage)
+Use linguagem natural para filtrar transações. Exemplos:
+"gastos com alimentação" - Encontra transações de restaurantes, supermercados, etc.
+"transações acima de 100 reais" - Filtra por valor automaticamente
+"pagamentos do mês passado" - Combina período e tipo de transação
+​
+Formato de Resposta
+format=raw (padrão): Retorna array de transações brutas, ideal para processamento personalizado
+format=structured: Retorna dados organizados com:
+Agrupamento por conta e tipo de transação
+Separação inteligente entre pagamentos e compras
+Resumos e estatísticas automáticas
+Top transações e breakdown por categoria
+Ideal para análises, relatórios e dashboards
+Este endpoint retorna dados em tempo real das transações conectadas. Para dados mais recentes, use o endpoint de sincronização manual. Use format=structured para análises financeiras avançadas.
+Authorizations
+​
+Authorization
+stringheaderrequired
+API key in Bearer token format. Example: Bearer sk-your-api-key-here
+
+Query Parameters
+​
+startDate
+string<date>
+Start date for filtering
+Start date for filtering (YYYY-MM-DD format)
+
+​
+endDate
+string<date>
+End date for filtering
+End date for filtering (YYYY-MM-DD format)
+
+​
+categories
+string
+Categories to filter by (comma-separated)
+Comma-separated list of category names to filter by
+
+​
+minAmount
+number
+Minimum amount to filter by
+
+​
+maxAmount
+number
+Maximum amount to filter by
+
+​
+accountType
+enum<string>
+Account type to filter by
+
+Available options: BANK, CREDIT, INVESTMENT, LOAN 
+​
+accountSubtype
+enum<string>
+Account subtype to filter by
+
+Available options: CHECKING_ACCOUNT, SAVINGS_ACCOUNT, CREDIT_CARD, PAYMENT_ACCOUNT 
+​
+includeStatus
+string
+Transaction statuses to include (comma-separated)
+Comma-separated list of transaction statuses to include (POSTED, PENDING)
+
+​
+format
+enum<string>default:raw
+Response format type (default: raw)
+Response format: 'raw' returns unprocessed transaction data (default), 'structured' returns organized data with groupings, summaries, and category breakdowns.
+
+Available options: raw, structured 
+​
+clientMessage
+string
+Intelligent filter message for LLM-powered transaction filtering
+Natural language message to apply intelligent filtering using LLM. When provided, filters transactions based on the intent expressed in the message (e.g., 'show me food expenses', 'transactions over 100 reais', 'payments to supermarkets').
+
+Response
+
+200
+
+application/json
+List of transactions (format depends on 'format' parameter)
+
+​
+success
+boolean
+Example:
+true
+
+​
+data
+
+any[]
+any[]
+Raw transaction data (when format=raw or not specified)
+
+​
+count
+number
+Total number of raw transactions
+
+Example:
+150
+
+​
+totalBeforeFilter
+number | null
+Total number of transactions before intelligent filtering (only present when clientMessage is used)
+
+Example:
+250
+
+​
+clientMessageUsed
+string | null
+The client message used for intelligent filtering (only present when clientMessage is provided)
+
+Example:
+"show me food expenses over 50 reais"
+
+​
+message
+string
+Descriptive message about the filtering results and processing applied
+
+Example:
+"Encontradas 150 transações (de 250 totais após aplicar filtro inteligente baseado na sua mensagem). Os dados foram estruturados para facilitar a análise."
+
+​
+filters
+object
+Hide child attributes
+
+​
+filters.startDate
+string
+​
+filters.endDate
+string
+​
+filters.categories
+string[]
+​
+filters.minAmount
+number
+​
+filters.maxAmount
+number
+​
+filters.accountType
+string
+​
+filters.accountSubtype
+string
+​
+filters.format
+enum<string>
+Indicates the format used for the response data
+
+Available options: raw, structured 
+​
+filters.clientMessage
+string | null
+The client message used for intelligent filtering (null if not provided)
+
+Example:
+"show me food expenses over 50 reais"
+
+​
+timestamp
+string<date-time>

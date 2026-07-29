@@ -46,10 +46,11 @@ Toda consulta da interface deve passar pela nossa REST API e consumir prioritari
 
 | Dado | Source of Truth | Complementar | Observações |
 |---|---|---|---|
-| **Saldo bancário** | Pierre | — | Via `/tools/api/get-balance` |
+| **Saldos bancários** | Pierre | — | Via `/tools/api/get-balance` |
 | **Transações bancárias** | Pierre | CSV (manual) | Pierre é autoridade para dados Open Finance |
 | **Faturas de cartão** | Pierre | — | Via `/tools/api/get-bills` |
-| **Parcelamentos** | Pierre | — | Via `/tools/api/get-installments` |
+| **Assinaturas (Subscriptions)** | Backend (Inferência) | Pierre | Pierre fornece as transações originais; o Backend infere a periodicidade baseada na repetição mensal e flag `is_recurring`. |
+| **Parcelamentos (Installments)**| Backend (Inferência) | Pierre | Pierre envia parcelas isoladas; Backend agrupa via `purchase_id` e calcula dívida restante. Frontend APENAS exibe. |
 | **Carteiras de investimentos** | MyProfit | — | B3 via scraping |
 | **Posições atuais** | MyProfit | YFinance (preços) | MyProfit é posição, YFinance é preço atual |
 | **Dividendos** | MyProfit | CSV | CSV para dividendos não cobertos |
@@ -57,6 +58,16 @@ Toda consulta da interface deve passar pela nossa REST API e consumir prioritari
 | **Categorias** | Sistema (padrão) + IA | Usuário | Usuário pode sobrescrever |
 | **Usuários** | Sistema | — | Autenticação interna |
 | **Credenciais** | `.env` / Secrets | — | Nunca no banco |
+
+---
+
+## Responsabilidades de Cálculo (Inferência vs Exibição)
+
+Para fins de governança de arquitetura, aplicam-se as seguintes regras sobre inteligência de dados (particularmente em **Assinaturas e Parcelamentos**):
+
+1. **Responsabilidade do Backend:** O backend é o ÚNICO autorizado a realizar matemática de datas, projeções anuais de gastos (Assinaturas), agrupamento de histórico fantasma e inferência de parcelas passadas/restantes (Installments).
+2. **Responsabilidade do Frontend:** O frontend é passivo. Ele APENAS renderiza os DTOs pré-calculados. É **terminantemente proibido** realizar loops no frontend para somar parcelas ou projetar encerramento de dívidas.
+3. **Origem dos Dados Físicos:** O provedor externo (ex: Pierre) é a origem do dado físico (uma transação isolada de cartão de crédito no extrato). O backend os transforma no modelo canônico (InstallmentItemDTO).
 
 ---
 

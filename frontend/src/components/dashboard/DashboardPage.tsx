@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Line, LineChart } from "recharts";
 
@@ -146,6 +146,45 @@ export function DashboardPage() {
     transactions: true,
   });
 
+  // ------------------------------------------------------------------ //
+  //  Pierre import state
+  // ------------------------------------------------------------------ //
+  type ImportStatus = "idle" | "loading" | "success" | "error";
+  interface ImportResult {
+    status: string;
+    imported: number;
+    skipped: number;
+    errors: number;
+    duration_seconds?: number;
+    error_message?: string;
+  }
+
+  const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(
+    typeof window !== "undefined" ? localStorage.getItem("pierre_last_sync") : null
+  );
+
+  const handleImportPierre = useCallback(async () => {
+    if (importStatus === "loading") return;
+    setImportStatus("loading");
+    setImportResult(null);
+    try {
+      const result = await fetchFromAPI<ImportResult>("/dashboard/import-pierre", {
+        method: "POST",
+      });
+      if (!result) throw new Error("Sem resposta do servidor");
+      setImportResult(result);
+      setImportStatus(result.status === "failed" ? "error" : "success");
+      const now = new Date().toLocaleString("pt-BR");
+      setLastSyncAt(now);
+      if (typeof window !== "undefined") localStorage.setItem("pierre_last_sync", now);
+    } catch (err) {
+      setImportResult({ status: "failed", imported: 0, skipped: 0, errors: 1, error_message: String(err) });
+      setImportStatus("error");
+    }
+  }, [importStatus]);
+
   useEffect(() => {
     const resize = () => {
       if (!chartWrapRef.current) {
@@ -282,6 +321,55 @@ export function DashboardPage() {
   return (
     <PageLayout title="Visão Geral" subtitle={`Dados do mês: ${currentMonth}`} hideTitle={true}>
       <div className="space-y-6 text-white">
+
+        {/* Pierre import bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-[#111] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4ecf98]/10">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-[#4ecf98]">
+                <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+                <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-neutral-300">Sincronizar Pierre Finance</p>
+              {lastSyncAt && (
+                <p className="text-[10px] text-neutral-500">Última sync: {lastSyncAt}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {importStatus === "success" && importResult && (
+              <span className="text-xs text-[#4ecf98]">
+                ✓ {importResult.imported} importadas, {importResult.skipped} ignoradas
+              </span>
+            )}
+            {importStatus === "error" && importResult && (
+              <span className="text-xs text-[#e97070]">
+                ✗ {importResult.error_message ?? "Erro na importação"}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleImportPierre}
+              disabled={importStatus === "loading"}
+              className="flex items-center gap-2 rounded-lg bg-[#4ecf98]/10 px-3 py-1.5 text-xs font-medium text-[#4ecf98] transition hover:bg-[#4ecf98]/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {importStatus === "loading" ? (
+                <>
+                  <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Importando…
+                </>
+              ) : (
+                "Importar Dados"
+              )}
+            </button>
+          </div>
+        </div>
+
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {loading.summary || !summary ? (
             Array.from({ length: 4 }).map((_, index) => (

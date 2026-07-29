@@ -5,11 +5,10 @@ from jose import JWTError, jwt
 from uuid import UUID
 
 from backend.application.use_cases.authenticate_user import AuthenticateUserUseCase
-from backend.core.container import get_authenticate_user_use_case
+from backend.core.container import get_authenticate_user_use_case, get_user_repository
 from backend.core.config import settings
 from backend.database.session import SessionLocal
 from backend.api.dependencies.database import get_db_session
-from backend.infrastructure.persistence.repositories.user_repository import SQLAlchemyUserRepository
 from backend.application.dtos.user_response_dto import UserResponseDTO
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -37,7 +36,7 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
         
-    user_repo = SQLAlchemyUserRepository(session)
+    user_repo = get_user_repository(session)
     user = await user_repo.get_by_id(user_id)
     
     if user is None:

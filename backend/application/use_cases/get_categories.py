@@ -1,9 +1,9 @@
 from typing import List
 from backend.application.dtos.category_response_dto import CategoryResponseDTO
-from backend.infrastructure.persistence.repositories.category_repository import SQLAlchemyCategoryRepository
+from backend.application.ports.category_repository import ICategoryRepository
 
 class GetCategoriesUseCase:
-    def __init__(self, category_repository: SQLAlchemyCategoryRepository):
+    def __init__(self, category_repository: ICategoryRepository):
         self.category_repository = category_repository
 
     async def execute(self, include_system: bool = True) -> List[CategoryResponseDTO]:

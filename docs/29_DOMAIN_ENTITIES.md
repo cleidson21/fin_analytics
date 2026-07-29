@@ -44,6 +44,7 @@ Todos corrigidos nesta Sprint. `11_INTEGRATIONS.md` atualizado via `ADR-009`.
 | `transaction_date` | date | ✅ | ❌ | Data real da transação | `2024-07-01` |
 | `posted_date` | date | ❌ | ✅ | Data em que apareceu no extrato | |
 | `is_recurring` | boolean | ✅ | ❌ | Indica assinatura ou débito fixo | `false` |
+| `purchase_id` | UUID | ❌ | ✅ | ID para agrupamento de parcelas (Installments) | `b2c3d4e5-...` |
 | `installment_count` | integer | ❌ | ✅ | Total de parcelas (se parcelado) | `12` |
 | `installment_current` | integer | ❌ | ✅ | Parcela atual | `3` |
 | `tags` | list[Tag] | ❌ | ✅ | Etiquetas do usuário | |
@@ -58,6 +59,8 @@ Todos corrigidos nesta Sprint. `11_INTEGRATIONS.md` atualizado via `ADR-009`.
 - `hash` é calculado a partir de `external_id + provider + transaction_date + amount`. Usado para deduplicação.
 - Transações **nunca são apagadas fisicamente** — apenas `deleted_at` é preenchido.
 - `amount` sempre positivo. `direction` define o sentido.
+- `purchase_id` deve ser gerado pelo sistema para agrupar todas as parcelas (transaction_date diferentes) de uma mesma compra parcelada.
+- **Invariantes:** Se `installment_count` > 0, então `installment_current` é obrigatório e `installment_current <= installment_count`. Se `is_recurring == True`, normalmente a transação não possui `installment_count`.
 
 ---
 

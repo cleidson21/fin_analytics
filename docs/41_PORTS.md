@@ -20,6 +20,8 @@ async def list(user_id: UUID, filters: TransactionFilters) -> PaginatedResult[Tr
 async def update_category(id: UUID, category_id: UUID) -> Transaction
 async def soft_delete(id: UUID) -> None
 async def count_unclassified(user_id: UUID) -> int
+async def get_active_subscriptions(user_id: UUID, start_date: date, end_date: date) -> list[Transaction]
+async def get_active_installments(user_id: UUID) -> list[Transaction]
 ```
 
 ### IAccountRepository
