@@ -20,11 +20,10 @@ import sys
 # Ensure the project root is in the path for module resolution
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from backend.core.config import settings
-from backend.database.base import Base
-import backend.infrastructure.persistence.models  # For metadata registration
+from backend.domains.shared.db import Base, DATABASE_URL
+import backend.domains.pierre.models  # noqa: F401 — registra Account, Transaction, Category, SyncState, SyncHistory no metadata
 
-sync_url = settings.DATABASE_URL.replace("+aiosqlite", "")
+sync_url = DATABASE_URL.replace("+aiosqlite", "")
 config.set_main_option("sqlalchemy.url", sync_url)
 
 target_metadata = Base.metadata
