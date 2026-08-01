@@ -1,7 +1,14 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 
-# Sequência de Implementação — FIN Analytics
+> [!WARNING]
+> **DOCUMENTO SUBSTITUÍDO — V3.1**
+> Este documento reflete a sequência de implementação anterior (Fases 0–14).
+> As Fases 0 e 1 permanecem válidas e concluídas.
+> A partir da Fase 2, a sequência oficial foi **substituída** pelas Sprints 4.4–4.7 definidas em `60_ARCHITECTURE_REVISION_V31.md` e `09_ROADMAP.md`.
+> Este arquivo é mantido apenas como referência histórica.
+
+# Sequência de Implementação — FIN Analytics (HISTÓRICO)
 
 Esta é a ordem oficial e obrigatória de implementação por **Vertical Slices**.
 

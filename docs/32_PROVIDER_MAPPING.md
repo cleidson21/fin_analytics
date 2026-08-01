@@ -1,7 +1,14 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 
-# Mapeamento de Providers para o Domínio Canônico
+> [!CAUTION]
+> **DOCUMENTO OBSOLETO — V3.1**
+> O mapeamento de providers para um domínio canônico central foi eliminado na V3.1.
+> Cada domínio agora é responsável pelo seu próprio mapeamento em `repository.py`.
+> O mapeamento oficial Pierre → banco está em `16_PIERRE_REFERENCE.md`.
+> Este arquivo é mantido apenas como referência histórica. Não implementar.
+
+# Mapeamento de Providers — FIN Analytics (OBSOLETO)
 
 **Regra Fundamental:** Nenhum campo do domínio canônico pode referenciar campos do Provider diretamente. O Connector converte. O Domínio recebe apenas o Canônico.
 

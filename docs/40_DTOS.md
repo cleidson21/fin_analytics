@@ -1,7 +1,13 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 
-# DTOs — FIN Analytics
+> [!CAUTION]
+> **DOCUMENTO OBSOLETO — V3.1**
+> Os DTOs definidos aqui foram projetados para um pipeline complexo que não existe mais na V3.1.
+> Os contratos (schemas) agora vivem em `backend/domains/<domínio>/schemas.py` por domínio.
+> Este arquivo é mantido apenas como referência histórica. Não implementar.
+
+# DTOs — FIN Analytics (OBSOLETO)
 
 DTOs (Data Transfer Objects) trafegam entre camadas. Nunca contêm lógica. Nunca referenciam entidades do Provider.
 

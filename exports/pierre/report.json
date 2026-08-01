@@ -1,0 +1,80 @@
+{
+  "period": "12m",
+  "start_date": "2025-07-29",
+  "end_date": "2026-07-29",
+  "export_date": "2026-07-29T20:51:18.036379",
+  "execution_time_seconds": 4.68,
+  "json_size_bytes": 3184593,
+  "json_size_mb": 3.04,
+  "metrics": {
+    "total_transactions": 1105,
+    "distinct_accounts_count": 1,
+    "distinct_accounts": [
+      "Nubank"
+    ],
+    "distinct_categories_count": 46,
+    "distinct_categories": [
+      "Postos de gasolina",
+      "Empréstimos e financiamento",
+      "Telecomunicação",
+      "Impostos sobre operações financeiras",
+      "Serviços automotivos",
+      "Streaming de música",
+      "Investimentos",
+      "Compras",
+      "Moradia",
+      "Papelaria",
+      "Hospedagem",
+      "Apostas",
+      "Utensílios para casa",
+      "Transporte",
+      "Serviços",
+      "Aluguel de veículos",
+      "Vestuário",
+      "Serviços digitais",
+      "Ótica",
+      "Transferências",
+      "Hospitais, clínicas e laboratórios",
+      "Eletrônicos",
+      "Compras online",
+      "Seguros",
+      "Supermercado",
+      "Saúde",
+      "Transferência - PIX",
+      "Táxi e transporte privado urbano",
+      "Delivery de alimentos",
+      "Eletricidade",
+      "Celular",
+      "None",
+      "Transferências para terceiros",
+      "Manutenção de veículos",
+      "Pagamento de cartão de crédito",
+      "Farmácia",
+      "Estorno",
+      "Restaurantes, bares e lanchonetes",
+      "Dentista",
+      "Renda fixa",
+      "Livraria",
+      "Transferência mesma titularidade",
+      "Transferência - Mesma instituição",
+      "Escola",
+      "Alimentos e bebidas",
+      "Lazer"
+    ],
+    "distinct_types_count": 2,
+    "distinct_types": [
+      "DEBIT",
+      "CREDIT"
+    ],
+    "distinct_statuses_count": 2,
+    "distinct_statuses": [
+      "POSTED",
+      "PENDING"
+    ],
+    "distinct_currencies_count": 2,
+    "distinct_currencies": [
+      "BRL",
+      "USD"
+    ]
+  }
+}
