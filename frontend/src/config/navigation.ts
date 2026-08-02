@@ -56,21 +56,6 @@ export const SECTION_TABS = {
       href: "/governance/imports",
       icon: Upload,
     },
-    {
-      name: "Administração do Banco",
-      href: "/governance/database",
-      icon: Database,
-    },
-    {
-      name: "Auditoria",
-      href: "/governance/audit",
-      icon: FileSearch,
-    },
-    {
-      name: "Dados",
-      href: "/governance/data",
-      icon: Receipt,
-    },
   ],
   goals: [],
 } as const;

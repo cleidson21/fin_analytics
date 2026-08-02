@@ -147,10 +147,6 @@ export default function GovernanceUploadPage() {
             >
               <option value="MYPROFIT_PROVENTOS">MyProfit - Proventos (CSV)</option>
               <option value="MYPROFIT_EVOLUCAO">MyProfit - Evolução (CSV)</option>
-              <option value="NUBANK_CONTA">Nubank - Conta Corrente (CSV)</option>
-              <option value="NUBANK_FATURA">Nubank - Fatura do Cartão (CSV)</option>
-              <option value="B3">B3 - Extrato Área do Investidor (XLSX/CSV)</option>
-              <option value="PIERRE">Pierre - Extrato Processado (Texto)</option>
             </select>
           </div>
 
