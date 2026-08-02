@@ -1,0 +1,119 @@
+{
+  "source": "NUBANK_FATURA_CSV",
+  "filename": "Exemplo_Extrato_Fatura_Nubank.csv",
+  "mime_type": "text/csv",
+  "encoding": "utf-8",
+  "parser_version": "1.0.0",
+  "metadata": {
+    "total_lines": 21
+  },
+  "content": [
+    {
+      "date": "2025-05-05",
+      "title": "Google Whiteout Survi",
+      "amount": "30,90"
+    },
+    {
+      "date": "2025-04-30",
+      "title": "Mp *Kauanjesus",
+      "amount": "270,00"
+    },
+    {
+      "date": "2025-04-26",
+      "title": "Posto Sao Luiz",
+      "amount": "84,18"
+    },
+    {
+      "date": "2025-04-24",
+      "title": "Servicos Cla*759812273",
+      "amount": "20,00"
+    },
+    {
+      "date": "2025-04-16",
+      "title": "Natura *Natura Pay",
+      "amount": "83,45"
+    },
+    {
+      "date": "2025-04-11",
+      "title": "Petlove*Order - Parcela 1/2",
+      "amount": "218,32"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Pagamento recebido",
+      "amount": "- 3.077,10"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mercadolivre*Grupomvx - Parcela 6/6",
+      "amount": "106,78"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Otica da Fabrica - Parcela 6/7",
+      "amount": "126,42"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mp *77faturas - Parcela 2/3",
+      "amount": "233,33"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mp *77faturas - Parcela 3/3",
+      "amount": "300,00"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mercadolivre*Dhrmarke - Parcela 2/2",
+      "amount": "83,17"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mercadolivre*Vitor - Parcela 6/6",
+      "amount": "13,30"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mercadolivre*9produto - Parcela 6/6",
+      "amount": "76,03"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mercadolivre*Bpo - Parcela 2/2",
+      "amount": "109,50"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Udsoncerqueira - Parcela 3/3",
+      "amount": "106,66"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mp *77faturas - Parcela 2/4",
+      "amount": "137,50"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mp *Cestao - Parcela 2/2",
+      "amount": "410,00"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Zip Nautica - Parcela 3/6",
+      "amount": "139,95"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Mercadolivre*9produto - Parcela 6/6",
+      "amount": "15,06"
+    },
+    {
+      "date": "2025-04-06",
+      "title": "Udsoncerqueira - Parcela 3/12",
+      "amount": "380,19"
+    }
+  ],
+  "document_hash": "8d0387af4ea3f0f5392a3e2cba8b9f383a1ee99cdc2bb066362942cbe11c2590",
+  "created_at": "2026-07-16T23:20:29.703479+00:00"
+}

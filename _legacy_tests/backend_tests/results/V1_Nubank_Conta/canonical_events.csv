@@ -1,0 +1,77 @@
+Date,Description,Normalized Description,Amount,Event Type,Source System
+02/05/2025,Transferência Recebida - CLEIDSON RAMOS DE CARVALHO                                                       - •••.309.605-•• - CAIXA ECONOMICA FEDERAL (0104) Agência: 4767 Conta: 928808722-8,Transferência Recebida - CLEIDSON RAMOS DE CARVALHO                                                       - •••.309.605-•• - CAIXA ECONOMICA FEDERAL (0104) Agência: 4767 Conta: 928808722-8,5364.77,CASH_FLOW,NUBANK
+02/05/2025,Dinheiro guardado com resgate planejado,Dinheiro guardado com resgate planejado,-100.0,CASH_FLOW,NUBANK
+02/05/2025,Aplicação RDB,Aplicação RDB,-5100.0,CASH_FLOW,NUBANK
+02/05/2025,Resgate RDB,Resgate RDB,500.0,CASH_FLOW,NUBANK
+02/05/2025,Transferência enviada pelo Pix - NORBERTHO DOS SANTOS SOUZA - •••.406.775-•• - BCO DO BRASIL S.A. (0001) Agência: 4494 Conta: 21525-2,Pix Enviado,-500.0,CASH_FLOW,NUBANK
+04/05/2025,Transferência Recebida - Leandro da Silva de Santana - •••.485.155-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 754308103-1,Transferência Recebida - Leandro da Silva de Santana - •••.485.155-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 754308103-1,250.0,CASH_FLOW,NUBANK
+04/05/2025,Transferência enviada pelo Pix - KAIZEN GAMING BRASIL LTDA. - 46.786.961/0001-74 - OKTO IP (0546) Agência: 1 Conta: 523645178-7,Pix Enviado,-250.0,CASH_FLOW,NUBANK
+04/05/2025,Transferência enviada pelo Pix - Maria Lucia de Jesus Nunes - •••.624.755-•• - MERCADO PAGO IP LTDA. (0323) Agência: 1 Conta: 1283206405-3,Pix Enviado,-12.5,CASH_FLOW,NUBANK
+05/05/2025,Transferência enviada pelo Pix - Juracy Almeida Junior - •••.639.045-•• - BCO DO BRASIL S.A. (0001) Agência: 593 Conta: 6436-0,Pix Enviado,-23.0,CASH_FLOW,NUBANK
+05/05/2025,Transferência Recebida - Suelen dos Santos Cerqueira - •••.180.635-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 78667853-4,Transferência Recebida - Suelen dos Santos Cerqueira - •••.180.635-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 78667853-4,180.0,CASH_FLOW,NUBANK
+06/05/2025,Resgate RDB,Resgate RDB,2900.0,CASH_FLOW,NUBANK
+06/05/2025,Pagamento de fatura,Pagamento de fatura,-2944.74,CASH_FLOW,NUBANK
+08/05/2025,Transferência enviada pelo Pix - Suelen dos Santos Cerqueira - •••.180.635-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 78667853-4,Pix Enviado,-190.0,CASH_FLOW,NUBANK
+08/05/2025,Transferência recebida pelo Pix - CLEIDSON RAMOS CARVALHO - •••.309.605-•• - BCO DO BRASIL S.A. (0001) Agência: 1017 Conta: 510036552-4,Pix Recebido,1708.0,CASH_FLOW,NUBANK
+08/05/2025,Dinheiro guardado com resgate planejado,Dinheiro guardado com resgate planejado,-1000.0,CASH_FLOW,NUBANK
+08/05/2025,Aplicação RDB,Aplicação RDB,-600.0,CASH_FLOW,NUBANK
+08/05/2025,Transferência enviada pelo Pix - ALICE PEREIRA DE SOUZA GOIS - •••.239.495-•• - PICPAY (0380) Agência: 1 Conta: 93987390-7,Pix Enviado,-5.29,CASH_FLOW,NUBANK
+08/05/2025,Transferência enviada pelo Pix - JOICE LEDA FERREIRA PEREIRA RAMOS - •••.209.695-•• - BCO DO BRASIL S.A. (0001) Agência: 1017 Conta: 10874-0,Pix Enviado,-115.0,CASH_FLOW,NUBANK
+09/05/2025,Transferência enviada pelo Pix - David Neves Dias - •••.182.315-•• - BCO DO BRASIL S.A. (0001) Agência: 4171 Conta: 13512-7,Pix Enviado,-2.0,CASH_FLOW,NUBANK
+10/05/2025,Transferência enviada pelo Pix - PADARIA E DELICATESSEN ALMEIDA E - 10.234.506/0001-19 - CIELO IP S.A. (0362) Agência: 1 Conta: 263800003-6,Pix Enviado,-21.24,CASH_FLOW,NUBANK
+10/05/2025,Transferência enviada pelo Pix - Suelen dos Santos Cerqueira - •••.180.635-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 78667853-4,Pix Enviado,-24.0,CASH_FLOW,NUBANK
+10/05/2025,Resgate RDB,Resgate RDB,50.0,CASH_FLOW,NUBANK
+10/05/2025,Transferência enviada pelo Pix - Leonardo Teles (Transferência enviada),Pix Enviado,-45.0,CASH_FLOW,NUBANK
+12/05/2025,Transferência enviada pelo Pix - Manuela Lima da Silva - •••.186.385-•• - SUMUP SOCIEDADE DE CREDITO DIRETO S.A. (0404) Agência: 1 Conta: 779295368-4,Pix Enviado,-5.0,CASH_FLOW,NUBANK
+12/05/2025,Transferência enviada pelo Pix - Manuela Lima da Silva - •••.186.385-•• - SUMUP SOCIEDADE DE CREDITO DIRETO S.A. (0404) Agência: 1 Conta: 779295368-4,Pix Enviado,-2.5,CASH_FLOW,NUBANK
+12/05/2025,Transferência enviada pelo Pix - Cleidson Ramos de Carvalho - •••.309.605-•• - BCO DO BRASIL S.A. (0001) Agência: 1017 Conta: 36552-1,Pix Enviado,-20.0,CASH_FLOW,NUBANK
+12/05/2025,Transferência recebida pelo Pix - KAIZEN GAMING BRASIL LTDA - 46.786.961/0001-74 - DELCRED SCD S.A. (0435) Agência: 1 Conta: 5840-8,Pix Recebido,650.0,CASH_FLOW,NUBANK
+12/05/2025,Transferência enviada pelo Pix - Mayckon de Oliveira Pereira - •••.428.455-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 23123487-7,Pix Enviado,-630.0,CASH_FLOW,NUBANK
+13/05/2025,Resgate RDB,Resgate RDB,600.0,CASH_FLOW,NUBANK
+13/05/2025,Transferência enviada pelo Pix - NORBERTHO DOS SANTOS SOUZA - •••.406.775-•• - BCO DO BRASIL S.A. (0001) Agência: 4494 Conta: 21525-2,Pix Enviado,-600.0,CASH_FLOW,NUBANK
+14/05/2025,Resgate RDB,Resgate RDB,112.0,CASH_FLOW,NUBANK
+14/05/2025,Transferência enviada pelo Pix - Suelen dos Santos Cerqueira - •••.180.635-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 78667853-4,Pix Enviado,-112.0,CASH_FLOW,NUBANK
+14/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,51.04,CASH_FLOW,NUBANK
+15/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,25.85,CASH_FLOW,NUBANK
+15/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,44.5,CASH_FLOW,NUBANK
+15/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,9.12,CASH_FLOW,NUBANK
+15/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,39.06,CASH_FLOW,NUBANK
+15/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,9.9,CASH_FLOW,NUBANK
+15/05/2025,IRRF sobre resgate - Tesouro Direto,IRRF sobre resgate - Tesouro Direto,-19.45,CASH_FLOW,NUBANK
+15/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,94.39,CASH_FLOW,NUBANK
+15/05/2025,Transferência enviada pelo Pix - BYTEBRAIN SOLUCOES EM TECNOLOGIA LTDA - 50.763.544/0001-83 - MERCADO PAGO IP LTDA. (0323) Agência: 1 Conta: 1422493986-2,Pix Enviado,-73.15,CASH_FLOW,NUBANK
+15/05/2025,Transferência Recebida - Vinícius Santos Freire Costa - •••.770.302-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 32606465-0,Transferência Recebida - Vinícius Santos Freire Costa - •••.770.302-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 32606465-0,400.0,CASH_FLOW,NUBANK
+19/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,0.96,CASH_FLOW,NUBANK
+19/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,49.5,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - PIX Marketplace - 10.573.521/0001-91 - MERCADO PAGO IP LTDA. (0323) Agência: 1 Conta: 2918333524-0,Pix Enviado,-185.81,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - Suelen dos Santos Cerqueira - •••.180.635-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 78667853-4,Pix Enviado,-11.0,CASH_FLOW,NUBANK
+19/05/2025,Transferência recebida pelo Pix - CLEIDE RAMOS - •••.603.955-•• - BCO BRADESCO S.A. (0237) Agência: 3558 Conta: 173050-9,Pix Recebido,1000.0,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA  - 35.524.559/0001-03 - ITAÚ UNIBANCO S.A. (0341) Agência: 910 Conta: 14071-4,Pix Enviado,-204.86,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA  - 35.524.559/0001-03 - ITAÚ UNIBANCO S.A. (0341) Agência: 910 Conta: 14071-4,Pix Enviado,-202.14,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA  - 35.524.559/0001-03 - ITAÚ UNIBANCO S.A. (0341) Agência: 910 Conta: 14071-4,Pix Enviado,-184.84,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA  - 35.524.559/0001-03 - ITAÚ UNIBANCO S.A. (0341) Agência: 910 Conta: 14071-4,Pix Enviado,-127.47,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA  - 35.524.559/0001-03 - ITAÚ UNIBANCO S.A. (0341) Agência: 910 Conta: 14071-4,Pix Enviado,-88.88,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA  - 35.524.559/0001-03 - ITAÚ UNIBANCO S.A. (0341) Agência: 910 Conta: 14071-4,Pix Enviado,-65.25,CASH_FLOW,NUBANK
+19/05/2025,Transferência enviada pelo Pix - NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA  - 35.524.559/0001-03 - ITAÚ UNIBANCO S.A. (0341) Agência: 910 Conta: 14071-4,Pix Enviado,-123.18,CASH_FLOW,NUBANK
+20/05/2025,Resgate RDB,Resgate RDB,1700.0,CASH_FLOW,NUBANK
+20/05/2025,Transferência enviada pelo Pix - Marlene Alves Dos Santos - •••.972.555-•• - PICPAY (0380) Agência: 1 Conta: 65705589-1,Pix Enviado,-10.5,CASH_FLOW,NUBANK
+22/05/2025,Aplicação RDB,Aplicação RDB,-2000.0,CASH_FLOW,NUBANK
+22/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,54.6,CASH_FLOW,NUBANK
+22/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,2.6,CASH_FLOW,NUBANK
+23/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,11.96,CASH_FLOW,NUBANK
+23/05/2025,Transferência enviada pelo Pix - Paulo Gabriel da Rocha Costa Silva - •••.252.654-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 40072521-0,Pix Enviado,-2.25,CASH_FLOW,NUBANK
+23/05/2025,Transferência enviada pelo Pix - João Marcelo Nascimento Fernandes - •••.242.595-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 48092546-5,Pix Enviado,-1.0,CASH_FLOW,NUBANK
+24/05/2025,Transferência recebida pelo Pix - TATIANA SILVA DOS SANTOS - •••.505.235-•• - CAIXA ECONOMICA FEDERAL (0104) Agência: 4764 Conta: 854061367-9,Pix Recebido,105.0,CASH_FLOW,NUBANK
+25/05/2025,Transferência enviada pelo Pix - Suelen dos Santos Cerqueira - •••.180.635-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 78667853-4,Pix Enviado,-10.0,CASH_FLOW,NUBANK
+28/05/2025,Aplicação RDB,Aplicação RDB,-100.0,CASH_FLOW,NUBANK
+28/05/2025,Transferência de saldo NuInvest,Transferência NuInvest,3.31,CASH_FLOW,NUBANK
+28/05/2025,Transferência enviada pelo Pix - Cleidson Ramos de Carvalho - •••.309.605-•• - BCO DO BRASIL S.A. (0001) Agência: 1017 Conta: 36552-1,Pix Enviado,-20.0,CASH_FLOW,NUBANK
+28/05/2025,Estorno - Transferência enviada pelo Pix - Cleidson Ramos de Carvalho - •••.309.605-•• - BCO DO BRASIL S.A. (0001) Agência: 1017 Conta: 36552-1,Pix Enviado,20.0,CASH_FLOW,NUBANK
+28/05/2025,Transferência enviada pelo Pix - Cleidson Ramos de Carvalho - •••.309.605-•• - BCO DO BRASIL S.A. (0001) Agência: 1017 Conta: 36552-1,Pix Enviado,-20.0,CASH_FLOW,NUBANK
+28/05/2025,Estorno - Transferência enviada pelo Pix - Cleidson Ramos de Carvalho - •••.309.605-•• - BCO DO BRASIL S.A. (0001) Agência: 1017 Conta: 36552-1,Pix Enviado,20.0,CASH_FLOW,NUBANK
+30/05/2025,Transferência recebida pelo Pix - SECR. DA RECEITA FEDERAL -  LOTE 2025/01 - RMS 0135 - 00.394.460/0058-87 - BCO DO BRASIL S.A. (0001) Agência: 1903 Conta: 332516002-8,Pix Recebido,2812.32,CASH_FLOW,NUBANK
+30/05/2025,Aplicação - Tesouro Selic 2031,Aplicação - Tesouro Selic 2031,-2507.08,CASH_FLOW,NUBANK
+30/05/2025,Aplicação - Tesouro Selic 2031,Aplicação - Tesouro Selic 2031,23.46,CASH_FLOW,NUBANK
+30/05/2025,Transferência Recebida - CLEIDSON RAMOS DE CARVALHO                                                       - •••.309.605-•• - CAIXA ECONOMICA FEDERAL (0104) Agência: 4767 Conta: 928808722-8,Transferência Recebida - CLEIDSON RAMOS DE CARVALHO                                                       - •••.309.605-•• - CAIXA ECONOMICA FEDERAL (0104) Agência: 4767 Conta: 928808722-8,5621.37,CASH_FLOW,NUBANK
+30/05/2025,Aplicação RDB,Aplicação RDB,-6000.0,CASH_FLOW,NUBANK
+30/05/2025,Transferência enviada pelo Pix - Leonardo Oliveira Almeida da Cruz - •••.372.685-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 36795246-6,Pix Enviado,-1.0,CASH_FLOW,NUBANK
