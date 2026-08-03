@@ -53,11 +53,8 @@ class PierreMapper:
             "payment_data", "manual_transaction", "account_name", 
             "account_type", "account_subtype", "connector_name", 
             "item_bank_name", "account_credit_data",
-            # Additional Pierre payload fields
-            "tr_confidence", "tr_reasoning", "amount_in_account_currency",
-            "installment_due_date", "account_item_id", "connector_image_url",
-            "bill_id", "bill_due_date", "official_bill_amount", "bill_period_start",
-            "bill_period_end"
+            # Additional Pierre payload fields (only keep those explicitly mapped to prevent duplication in extra_json)
+            "bill_id"
         }
         extra_fields = {k: v for k, v in raw_tx.items() if k not in mapped_keys}
         

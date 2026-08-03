@@ -19,16 +19,12 @@ class PierreImportPipeline:
         """
         Executes the import pipeline: Fetch -> Map -> Persist
         """
-        try:
-            payload = await self.connector.get_transactions(start_date=start_date, end_date=end_date)
-            
-            if not payload or not payload.get("success"):
-                raise ValueError("Payload indicates failure or is empty")
+        payload = await self.connector.get_transactions(start_date=start_date, end_date=end_date)
+        
+        if not payload or not payload.get("success"):
+            raise ValueError("Payload indicates failure or is empty")
 
-            transactions_raw = payload.get("data", [])
-            
-        except Exception as e:
-            raise RuntimeError(f"Erro de comunicacao do Connector: {e}") from e
+        transactions_raw = payload.get("data", [])
 
         count_acc = 0
         count_cat = 0
