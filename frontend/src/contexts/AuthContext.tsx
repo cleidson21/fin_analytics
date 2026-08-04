@@ -1,12 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { fetchFromAPI } from "@/lib/api";
 
+// ─── Tipos alinhados ao Domínio Canônico (UserResponseDTO) ───────────────────
 type User = {
-  username: string;
+  id: string;
+  name: string;
+  email: string;
   role: string;
-  email?: string;
+  is_active: boolean;
+  is_verified: boolean;
 };
 
 type AuthContextType = {
@@ -25,40 +28,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
-      // Validate token and fetch user
-      fetchFromAPI<User>("/auth/me", {
-        headers: { Authorization: `Bearer ${storedToken}` }
-      })
-        .then((userData) => {
-          if (userData) {
-            setUser(userData);
-          } else {
-            // Invalid token
-            localStorage.removeItem("token");
-            setToken(null);
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem("token");
-          setToken(null);
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
+    // Recupera sessão do localStorage
+    const storedToken = localStorage.getItem("fin_token");
+    const storedUser = localStorage.getItem("fin_user");
+
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem("fin_token");
+        localStorage.removeItem("fin_user");
+      }
     }
+    setIsLoading(false);
   }, []);
 
   const login = (newToken: string, newUser: User) => {
-    localStorage.setItem("token", newToken);
+    localStorage.setItem("fin_token", newToken);
+    localStorage.setItem("fin_user", JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("fin_token");
+    localStorage.removeItem("fin_user");
     setToken(null);
     setUser(null);
   };

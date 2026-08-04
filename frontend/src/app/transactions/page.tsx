@@ -37,14 +37,6 @@ interface Transaction {
 interface TransactionListResponse {
   items: Transaction[];
   total: number;
-  limit: number;
-  offset: number;
-  totalPages: number;
-  summary: {
-    income: number;
-    expense: number;
-    balance: number;
-  };
 }
 
 interface ReclassificationPayload {
@@ -173,14 +165,31 @@ function TransactionsPageBody() {
     let active = true;
 
     async function loadCatalog() {
-      const data = await fetchFromAPI<CatalogResponse>("/catalog");
+      try {
+        const [categoriesResponse, accountsResponse] = await Promise.allSettled([
+          fetchFromAPI<{ name: string }[]>("/categories"),
+          fetchFromAPI<{ name: string }[]>("/accounts")
+        ]);
 
-      if (!active) {
-        return;
-      }
+        if (!active) {
+          return;
+        }
 
-      if (data) {
-        setCatalog(data);
+        const cats = categoriesResponse.status === "fulfilled" && categoriesResponse.value 
+          ? categoriesResponse.value.map(c => c.name) 
+          : [];
+          
+        const accs = accountsResponse.status === "fulfilled" && accountsResponse.value 
+          ? accountsResponse.value.map(a => a.name) 
+          : [];
+
+        setCatalog({
+          categories: cats,
+          accounts: accs,
+          natures: ["INCOME", "EXPENSE", "TRANSFER", "INVESTMENT", "DIVIDEND"]
+        });
+      } catch (err) {
+        console.warn("[catalog fallback] Failed to load catalog data.", err);
       }
     }
 
@@ -232,13 +241,35 @@ function TransactionsPageBody() {
           return;
         }
 
-        setTransactions(data?.items || []);
-        setTotal(data?.total ?? 0);
-        setTotalPages(data?.totalPages ?? 0);
+        const items = Array.isArray(data) ? data : data?.items || [];
+        
+        const mappedItems = items.map((t: any) => ({
+           id: t.id,
+           date: t.transaction_date,
+           description: t.description,
+           category: t.category?.name || "Sem categoria",
+           natureza: t.direction === "CREDIT" ? "Receita" : "Despesa",
+           subnatureza: t.type,
+           account: t.account_name || "Conta",
+           amount: t.amount,
+           original_direction: t.direction
+        }));
+        
+        setTransactions(mappedItems);
+        setTotal(mappedItems.length);
+        setTotalPages(1);
+        
+        let income = 0;
+        let expense = 0;
+        mappedItems.forEach((item: any) => {
+          const val = Number(item.amount);
+          if (item.original_direction === "CREDIT") income += val;
+          if (item.original_direction === "DEBIT") expense += val;
+        });
         setSummary({
-          income: data?.summary?.income ?? 0,
-          expense: data?.summary?.expense ?? 0,
-          balance: data?.summary?.balance ?? 0,
+          income,
+          expense,
+          balance: income - expense,
         });
 
         if (!data) {

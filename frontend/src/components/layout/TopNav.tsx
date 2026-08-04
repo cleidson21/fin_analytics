@@ -23,6 +23,9 @@ const TAB_COLORS: Record<string, string> = {
   "/wealth/allocation":        "#f5a623",  // Alocação — âmbar
   "/wealth/dividends":         "#f687b3",  // Dividendos — rosa
   "/wealth/evolution":         "#7EB8F7",  // Evolução — azul
+  "/profile":                  "#f687b3",  // Perfil — rosa
+  "/settings":                 "#94a3b8",  // Geral — slate
+  "/accounts":                 "#4ecf98",  // Contas — verde
 };
 
 export function TopNav() {
@@ -85,7 +88,8 @@ export function TopNav() {
       {user && (
         <div className="absolute right-8 top-8 flex items-center gap-4 text-sm z-20">
           <div className="text-zinc-400">
-            <span className="font-medium text-zinc-300">{user.role}</span> {user.username}
+            <span className="font-medium text-zinc-300">{user.role}</span>{" "}
+            {user.name ?? user.email}
           </div>
           <button
             onClick={() => logout()}

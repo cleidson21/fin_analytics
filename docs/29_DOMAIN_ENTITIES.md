@@ -1,6 +1,7 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto. É proibido criar documentação fora dela.
 
+<<<<<<< HEAD
 > [!CAUTION]
 > **DOCUMENTO OBSOLETO — V3.1**
 > As entidades de domínio definidas aqui foram construídas sob premissas inválidas (UUIDs artificiais, hashes, purchase_id calculado, category_id como FK).
@@ -8,6 +9,9 @@
 > Este arquivo é mantido apenas como referência histórica. Não implementar.
 
 # Domínio Canônico — FIN Analytics (OBSOLETO)
+=======
+# Domínio Canônico — FIN Analytics
+>>>>>>> 021d439dcbb06040c0005dbd27456a26c9f1d7e9
 
 ## Propósito
 Este documento define o **Domínio Canônico completo** do FIN Analytics. É o único contrato que o sistema conhece internamente. Pierre, MyProfit, CSV, YFinance e Manual são apenas adaptadores externos — todos devem converter seus dados para este domínio antes de entrar no sistema.

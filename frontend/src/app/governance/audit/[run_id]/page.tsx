@@ -59,7 +59,6 @@ export default function AuditRunPage({ params }: { params: Promise<{ run_id: str
 
   return (
     <div className="min-h-screen bg-slate-950 pb-20">
-      <TopNav />
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         

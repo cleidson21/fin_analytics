@@ -14,6 +14,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+<<<<<<< HEAD
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
@@ -24,6 +25,20 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from backend.database.base import Base
 import backend.domains.pierre.models
+=======
+import os
+import sys
+
+# Ensure the project root is in the path for module resolution
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+
+from backend.core.config import settings
+from backend.database.base import Base
+import backend.infrastructure.persistence.models  # For metadata registration
+
+sync_url = settings.DATABASE_URL.replace("+aiosqlite", "")
+config.set_main_option("sqlalchemy.url", sync_url)
+>>>>>>> 021d439dcbb06040c0005dbd27456a26c9f1d7e9
 
 target_metadata = Base.metadata
 
@@ -72,7 +87,12 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
+<<<<<<< HEAD
             connection=connection, target_metadata=target_metadata
+=======
+            connection=connection, target_metadata=target_metadata,
+            render_as_batch=True
+>>>>>>> 021d439dcbb06040c0005dbd27456a26c9f1d7e9
         )
 
         with context.begin_transaction():

@@ -1,6 +1,7 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 
+<<<<<<< HEAD
 > [!WARNING]
 > **DOCUMENTO SUBSTITUÍDO — V3.1**
 > Este documento reflete a sequência de implementação anterior (Fases 0–14).
@@ -9,6 +10,9 @@
 > Este arquivo é mantido apenas como referência histórica.
 
 # Sequência de Implementação — FIN Analytics (HISTÓRICO)
+=======
+# Sequência de Implementação — FIN Analytics
+>>>>>>> 021d439dcbb06040c0005dbd27456a26c9f1d7e9
 
 Esta é a ordem oficial e obrigatória de implementação por **Vertical Slices**.
 

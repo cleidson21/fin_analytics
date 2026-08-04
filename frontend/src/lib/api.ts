@@ -16,7 +16,7 @@ export async function fetchFromAPI<T>(
   options: RequestInit = {}
 ): Promise<T | null> {
   try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("fin_token") : null;
     const authHeaders: Record<string, string> = {};
     if (token) {
       authHeaders["Authorization"] = `Bearer ${token}`;
@@ -29,15 +29,16 @@ export async function fetchFromAPI<T>(
         defaultHeaders["Content-Type"] = "application/json";
     }
     
-    const finalHeaders = {
+    const finalHeaders: Record<string, string> = {
         ...defaultHeaders,
         ...authHeaders,
-        ...options.headers,
     };
-    
-    // Some libraries might explicitly pass {"Content-Type": undefined} to bypass default behavior
-    if (finalHeaders["Content-Type"] === undefined) {
-        delete finalHeaders["Content-Type"];
+    // Merge options.headers cuidadosamente
+    if (options.headers) {
+      const extraHeaders = options.headers as Record<string, string>;
+      for (const [k, v] of Object.entries(extraHeaders)) {
+        if (v !== undefined) finalHeaders[k] = v;
+      }
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

@@ -1,6 +1,7 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 
+<<<<<<< HEAD
 > [!CAUTION]
 > **DOCUMENTO OBSOLETO — V3.1**
 > O mapeamento de providers para um domínio canônico central foi eliminado na V3.1.
@@ -9,6 +10,9 @@
 > Este arquivo é mantido apenas como referência histórica. Não implementar.
 
 # Mapeamento de Providers — FIN Analytics (OBSOLETO)
+=======
+# Mapeamento de Providers para o Domínio Canônico
+>>>>>>> 021d439dcbb06040c0005dbd27456a26c9f1d7e9
 
 **Regra Fundamental:** Nenhum campo do domínio canônico pode referenciar campos do Provider diretamente. O Connector converte. O Domínio recebe apenas o Canônico.
 

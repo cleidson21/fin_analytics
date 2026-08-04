@@ -32,9 +32,9 @@ export default function LearningDashboard() {
         const all = allRes;
 
         setMetrics(met);
-        setTopRules(top);
-        setProbRules(prob);
-        setAllRules(all);
+        setTopRules((top as any[]) ?? []);
+        setProbRules((prob as any[]) ?? []);
+        setAllRules((all as any[]) ?? []);
       } catch (e: any) {
         if (e.message?.includes("401") || e.message?.includes("403")) {
           setIsUnauthorized(true);

@@ -389,18 +389,18 @@ export default function AssetDetailPage() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {dividends!.items.map((item: Dividend, i: number) => {
-                    const parts = (item.data || "").split("-");
-                    const dtFormat = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : item.data;
+                    const parts = ((item as any).data || "").split("-");
+                    const dtFormat = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : (item as any).data;
                     return (
                       <tr key={i} className="hover:bg-white/5 transition-colors">
                         <td className="py-3 text-neutral-300 font-mono text-[13px]">{dtFormat}</td>
                         <td className="py-3">
                            <span className="bg-[#f5a623]/10 border border-[#f5a623]/20 text-[#f5a623] px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
-                             {item.tipo}
+                             {(item as any).tipo}
                            </span>
                         </td>
                         <td className="py-3 text-neutral-500">—</td>
-                          <td className="px-4 py-3 text-[#4ecf98] font-medium text-right">{formatCurrency(item.valor || 0)}</td>
+                          <td className="px-4 py-3 text-[#4ecf98] font-medium text-right">{formatCurrency((item as any).valor || 0)}</td>
                       </tr>
                     );
                   })}

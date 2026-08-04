@@ -1,6 +1,7 @@
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 
+<<<<<<< HEAD
 > [!CAUTION]
 > **DOCUMENTO OBSOLETO — V3.1**
 > Os DTOs definidos aqui foram projetados para um pipeline complexo que não existe mais na V3.1.
@@ -8,6 +9,9 @@
 > Este arquivo é mantido apenas como referência histórica. Não implementar.
 
 # DTOs — FIN Analytics (OBSOLETO)
+=======
+# DTOs — FIN Analytics
+>>>>>>> 021d439dcbb06040c0005dbd27456a26c9f1d7e9
 
 DTOs (Data Transfer Objects) trafegam entre camadas. Nunca contêm lógica. Nunca referenciam entidades do Provider.
 

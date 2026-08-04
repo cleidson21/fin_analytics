@@ -85,7 +85,6 @@ export default function GovernanceUploadPage() {
       const response = await fetchFromAPI<ImportResponse>("/governance/imports/upload", {
         method: "POST",
         body: formData,
-        headers: { "Content-Type": undefined }
       });
 
       if (!response) {

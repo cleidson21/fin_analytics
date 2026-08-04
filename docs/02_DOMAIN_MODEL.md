@@ -1,6 +1,14 @@
+<<<<<<< HEAD
 > [!IMPORTANT]
 > A pasta `docs/` é a única fonte oficial de documentação do projeto.
 > Em caso de conflito entre documentos, `60_ARCHITECTURE_REVISION_V31.md` prevalece.
+=======
+
+> [!IMPORTANT]
+> A pasta docs/ é a única fonte oficial de documentação do projeto. É proibido criar documentação fora dela. Toda nova implementação deve ler os documentos existentes em docs/, atualizá-los quando necessário e registrar decisões arquiteturais por meio de ADRs antes de prosseguir.
+
+# Domain Model
+>>>>>>> 021d439dcbb06040c0005dbd27456a26c9f1d7e9
 
 # 02 — Modelo de Domínios V3
 
