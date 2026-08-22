@@ -7,6 +7,8 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
+*.db-shm
+*.db-wal
 .env
 .streamlit/
 .pytest_cache/
