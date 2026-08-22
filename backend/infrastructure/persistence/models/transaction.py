@@ -7,6 +7,7 @@ class TransactionModel(Base):
     __tablename__ = "transactions"
     __table_args__ = (
         UniqueConstraint("external_id", "provider", name="uq_transaction_external_id_provider"),
+        {'keep_existing': True}
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True)

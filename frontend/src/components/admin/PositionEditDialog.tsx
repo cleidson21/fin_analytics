@@ -41,7 +41,8 @@ export function PositionEditDialog({
     if (!position) return;
 
     try {
-      await updatePosition(position.ticker, position.data_snapshot || position.snapshot_date || "", formData);
+      await updatePosition(position.ticker ?? "", position.data_snapshot || position.snapshot_date || "", formData);
+
       alert("Posição atualizada com sucesso.\nRegistro enviado para Audit Log.");
       onSuccess();
       onClose();

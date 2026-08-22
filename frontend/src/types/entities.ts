@@ -130,14 +130,26 @@ export interface Transaction {
   category?: string;
   amount?: number;
   transaction_date?: string;
+  // campos usados pelos componentes admin
+  descricao?: string;
+  valor?: string | number;
+  data?: string;
+  categoria?: string;
+  macro_categoria?: string;
+  parcelamento?: string;
+  observacao?: string;
   [key: string]: unknown;
 }
 
 // @deprecated — use CategoryDTO
+// Nota: campos reais retornados pela API de governança de categorias
 export interface Category {
   id: string;
   name: string;
   slug: string;
+  // campos reais da API /governance/categories
+  categoria: string;
+  quantidade_transacoes: number;
   [key: string]: unknown;
 }
 
@@ -146,6 +158,14 @@ export interface Position {
   id?: string;
   ticker?: string;
   quantity?: number;
+  // campos usados pelos componentes admin (API /governance/positions)
+  classe_ativo?: string;
+  nome?: string;
+  quantidade?: string | number;
+  preco_medio?: string | number;
+  snapshot_date?: string;
+  data_snapshot?: string;  // alias usado pelo PositionEditDialog
+  observacao?: string;
   [key: string]: unknown;
 }
 
@@ -154,6 +174,12 @@ export interface Dividend {
   id?: string;
   ticker?: string;
   amount?: number;
+  // campos usados pelos componentes admin (API /governance/dividends)
+  id_economico?: string;  // usado pelo DividendEditDialog
+  tipo_evento?: string;
+  observacao?: string;
+  valor?: string | number;
+  data_pagamento?: string;
   [key: string]: unknown;
 }
 

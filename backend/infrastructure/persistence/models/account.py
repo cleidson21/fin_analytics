@@ -6,6 +6,7 @@ from backend.infrastructure.persistence.models.institution import InstitutionMod
 
 class AccountModel(Base):
     __tablename__ = "accounts"
+    __table_args__ = {'keep_existing': True}
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     external_id = Column(String, nullable=True)

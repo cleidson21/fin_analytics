@@ -1,10 +1,10 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.database.session import SessionLocal
+from backend.database.session import AsyncSessionLocal
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Fornece uma sessão de banco de dados por requisição, gerenciando commit e rollback."""
-    async with SessionLocal() as session:
+    async with AsyncSessionLocal() as session:
         try:
             yield session
             await session.commit()

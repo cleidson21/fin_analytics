@@ -1,47 +1,132 @@
-from typing import List, Optional, Any
 from datetime import date
-from fastapi import APIRouter, Depends, Query, BackgroundTasks
+from typing import List, Optional, Any, Dict
+
+from fastapi import APIRouter, Depends, Query
 
 from backend.api.dependencies.auth import get_current_user
 from backend.core.container import (
     get_categories_summary_use_case,
-    get_dashboard_summary_v2_use_case,
     get_pierre_import_service,
     get_installments_use_case,
-    get_subscriptions_use_case,
 )
 from backend.application.dtos.user_response_dto import UserResponseDTO
-from backend.application.dtos.transaction import CategoryBreakdownDTO, DashboardSummaryV2DTO
-from backend.application.use_cases.transactions import GetCategoriesSummaryUseCase, GetDashboardSummaryV2UseCase
+from backend.application.dtos.transaction import CategoryBreakdownDTO
+from backend.application.use_cases.transactions import GetCategoriesSummaryUseCase
 from backend.application.use_cases.get_installments import GetInstallmentsUseCase
-from backend.application.use_cases.get_subscriptions import GetSubscriptionsUseCase
 from backend.application.services.pierre_import_service import PierreImportService
 from backend.application.dtos.sync_result_dto import SyncResultDTO
 
+# GovernedFinancialQuery e SessionLocal importados de forma lazy
+# (dentro de cada endpoint) para evitar conflito de MetaData no reload do uvicorn.
+
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
-@router.get("/summary-v2", response_model=DashboardSummaryV2DTO)
-async def get_dashboard_summary_v2(
+
+def _current_month() -> str:
+    today = date.today()
+    return f"{today.year}-{today.month:02d}"
+
+
+@router.get("/summary-v2")
+def get_dashboard_summary_v2(
     month: str = Query(None, description="YYYY-MM"),
     current_user: UserResponseDTO = Depends(get_current_user),
-    use_case: GetDashboardSummaryV2UseCase = Depends(get_dashboard_summary_v2_use_case)
 ):
+    """
+    KPIs do Dashboard: receitas, despesas, saldo_líquido, patrimônio.
+
+    Usa somente transações CLASSIFIED da camada Pierre/governança.
+    Retorna variação percentual vs mês anterior.
+    """
     if not month:
-        today = date.today()
-        month = f"{today.year}-{today.month:02d}"
-    return await use_case.execute(month=month)
+        month = _current_month()
+
+    from backend.domains.pierre.repository import GovernedFinancialQuery
+    from backend.database.session import SessionLocal
+    q = GovernedFinancialQuery()
+    db = SessionLocal()
+    try:
+        result = q.get_monthly_kpis(db, month=month)
+        db.expunge_all()
+    finally:
+        db.close()
+    return result
+
+
+@router.get("/pacing-v2")
+def get_dashboard_pacing_v2(
+    month: str = Query(None, description="YYYY-MM"),
+    current_user: UserResponseDTO = Depends(get_current_user),
+):
+    """
+    Ritmo de Gastos diário — gráfico de linha mês atual vs mês anterior.
+
+    Retorna gastos (SAIDA CLASSIFIED) dia a dia e totais para comparação.
+    """
+    if not month:
+        month = _current_month()
+
+    from backend.domains.pierre.repository import GovernedFinancialQuery
+    from backend.database.session import SessionLocal
+    q = GovernedFinancialQuery()
+    db = SessionLocal()
+    try:
+        result = q.get_pacing_data(db, month=month)
+        db.expunge_all()
+    finally:
+        db.close()
+    return result
+
+
+@router.get("/heatmap")
+def get_dashboard_heatmap(
+    month: str = Query(None, description="YYYY-MM"),
+    current_user: UserResponseDTO = Depends(get_current_user),
+):
+    """
+    Mapa de Calor de gastos diários.
+
+    Retorna todos os dias do mês com valor total (SAIDA CLASSIFIED)
+    e intensidade normalizada 0–1 para coloração do grid.
+    """
+    if not month:
+        month = _current_month()
+
+    from backend.domains.pierre.repository import GovernedFinancialQuery
+    from backend.database.session import SessionLocal
+    q = GovernedFinancialQuery()
+    db = SessionLocal()
+    try:
+        result = q.get_heatmap_data(db, month=month)
+        db.expunge_all()
+    finally:
+        db.close()
+    return result
+
 
 @router.get("/categories", response_model=List[CategoryBreakdownDTO])
-async def get_categories_summary(
+def get_categories_summary(
     month: str = Query(None, description="YYYY-MM"),
     current_user: UserResponseDTO = Depends(get_current_user),
-    use_case: GetCategoriesSummaryUseCase = Depends(get_categories_summary_use_case)
 ):
+    """
+    Retorna o breakdown de gastos por categoria para o Dashboard e Página de Categorias.
+    """
     if not month:
-        today = date.today()
-        month = f"{today.year}-{today.month:02d}"
+        month = _current_month()
+
+    from backend.domains.pierre.repository import GovernedFinancialQuery
+    from backend.database.session import SessionLocal
+    
+    q = GovernedFinancialQuery()
+    db = SessionLocal()
+    try:
+        result = q.get_categories_breakdown(db, month=month)
+        db.expunge_all()
+    finally:
+        db.close()
         
-    return await use_case.execute(user_id=current_user.id, month=month)
+    return result
 
 
 @router.post("/import-pierre", response_model=SyncResultDTO)
@@ -57,12 +142,7 @@ async def import_pierre_data(
     current_user: UserResponseDTO = Depends(get_current_user),
     service: PierreImportService = Depends(get_pierre_import_service),
 ):
-    """Importa transações do Pierre Finance para o banco de dados local.
-
-    - Requer autenticação JWT válida.
-    - Operação idempotente: executar novamente não gera duplicatas.
-    - `start_date` e `end_date` são opcionais; se omitidos, os últimos 90 dias serão importados.
-    """
+    """Importa transações do Pierre Finance para o banco de dados local."""
     result = await service.import_transactions(
         user_id=current_user.id,
         start_date=start_date,
@@ -75,11 +155,7 @@ async def import_pierre_data(
 async def get_import_status(
     current_user: UserResponseDTO = Depends(get_current_user),
 ):
-    """Retorna informações básicas sobre o estado atual da importação Pierre.
-
-    Não há estado persistênte nesta versão; o endpoint serve para
-    verificação de saúde da integração.
-    """
+    """Retorna informações básicas sobre o estado atual da importação Pierre."""
     from backend.core.config import settings
     has_key = bool(settings.PIERRE_API_KEY)
     return {
@@ -87,20 +163,5 @@ async def get_import_status(
         "message": "Pierre API key configurada" if has_key else "PIERRE_API_KEY não definida",
     }
 
-@router.get("/installments", response_model=List[Any])
-async def get_installments(
-    current_user: UserResponseDTO = Depends(get_current_user),
-    use_case: GetInstallmentsUseCase = Depends(get_installments_use_case)
-):
-    """Retorna os parcelamentos do usuário corrente."""
-    return await use_case.execute(user_id=current_user.id)
 
-
-@router.get("/subscriptions", response_model=List[Any])
-async def get_subscriptions(
-    current_user: UserResponseDTO = Depends(get_current_user),
-    use_case: GetSubscriptionsUseCase = Depends(get_subscriptions_use_case)
-):
-    """Retorna as assinaturas do usuário corrente."""
-    return await use_case.execute(user_id=current_user.id)
 

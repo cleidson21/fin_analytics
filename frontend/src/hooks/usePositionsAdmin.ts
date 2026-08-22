@@ -35,7 +35,7 @@ export function usePositionsAdmin(filters: PositionFilters) {
       );
 
       if (response) {
-        setData(response.items || []);
+        setData(response.data || []);
         setTotal(response.total || 0);
       }
     } catch (err: unknown) {

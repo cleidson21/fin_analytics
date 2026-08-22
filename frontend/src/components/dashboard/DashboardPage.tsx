@@ -106,16 +106,21 @@ function formatTxDate(value: string) {
 }
 
 function getTxVisual(tx: TransactionItem) {
-  const natureza = tx.natureza?.toUpperCase();
-  if (natureza === "INCOME") {
+  const ec = tx.natureza?.toUpperCase();
+  if (ec === "ENTRADA") {
     return { icon: "↗", box: "bg-green-500/15 text-green-300", value: "text-green-400" };
   }
 
-  if (natureza === "EXPENSE") {
+  if (ec === "SAIDA") {
     return { icon: "↘", box: "bg-red-500/15 text-red-300", value: "text-red-400" };
   }
 
-  return { icon: "↔", box: "bg-white/[0.08] text-neutral-300", value: "text-neutral-300" };
+  if (ec === "IGNORAR") {
+    return { icon: "→", box: "bg-white/[0.06] text-neutral-400", value: "text-neutral-400" };
+  }
+
+  // PENDING ou desconhecido
+  return { icon: "↔", box: "bg-amber-500/10 text-amber-300", value: "text-amber-300" };
 }
 
 function LoadingBar({ width = "w-32" }: { width?: string }) {
@@ -161,24 +166,42 @@ export function DashboardPage() {
 
   const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [lastSyncAt, setLastSyncAt] = useState<string | null>(
-    typeof window !== "undefined" ? localStorage.getItem("pierre_last_sync") : null
-  );
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLastSyncAt(localStorage.getItem("pierre_last_sync"));
+  }, []);
 
   const handleImportPierre = useCallback(async () => {
     if (importStatus === "loading") return;
     setImportStatus("loading");
     setImportResult(null);
     try {
-      const result = await fetchFromAPI<ImportResult>("/dashboard/import-pierre", {
+      const result = await fetchFromAPI<any>("/pierre/import", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ start_date: null, end_date: null }),
       });
       if (!result) throw new Error("Sem resposta do servidor");
-      setImportResult(result);
-      setImportStatus(result.status === "failed" ? "error" : "success");
-      const now = new Date().toLocaleString("pt-BR");
-      setLastSyncAt(now);
-      if (typeof window !== "undefined") localStorage.setItem("pierre_last_sync", now);
+      
+      const success = result.success === true;
+      const mappedResult: ImportResult = {
+        status: success ? "success" : "failed",
+        imported: result.transactions || 0,
+        skipped: 0,
+        errors: success ? 0 : 1,
+        error_message: result.error_message || undefined
+      };
+      
+      setImportResult(mappedResult);
+      setImportStatus(success ? "success" : "error");
+      if (success) {
+        const now = new Date().toLocaleString("pt-BR");
+        setLastSyncAt(now);
+        if (typeof window !== "undefined") localStorage.setItem("pierre_last_sync", now);
+      }
     } catch (err) {
       setImportResult({ status: "failed", imported: 0, skipped: 0, errors: 1, error_message: String(err) });
       setImportStatus("error");
@@ -213,7 +236,8 @@ export function DashboardPage() {
         fetchFromAPI<HeatmapDay[]>(`/dashboard/heatmap?month=${currentMonth}`),
         fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${currentMonth}`),
         fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${prevMonth}`),
-        fetchFromAPI<TransactionListResponse>("/transactions?limit=5&sortBy=date&sortOrder=desc"),
+        // Usa governance/transactions para ter dados reais com nome de conta e data correta
+        fetchFromAPI<{ items: Array<any>; total: number }>("/governance/transactions?page_size=5"),
       ]);
 
       if (!active) {
@@ -228,7 +252,20 @@ export function DashboardPage() {
       setHeatmap(getValue(heatmapData) ?? []);
       setCatsCurrent(getValue(categoriesCurrent) ?? []);
       setCatsPrev(getValue(categoriesPrev) ?? []);
-      setRecentTxs(getValue(recentTransactions)?.items ?? []);
+
+      // Mapeia do formato governance {raw, governance} para TransactionItem
+      const rawTxs = getValue(recentTransactions)?.items ?? [];
+      const mappedTxs: TransactionItem[] = rawTxs.map((t: any) => ({
+        id: `${t.raw?.provider}::${t.raw?.external_id}`,
+        date: (t.raw?.date ?? "").slice(0, 10),
+        description: t.raw?.description ?? "",
+        category: t.raw?.category ?? "",
+        natureza: t.governance?.economic_classification ?? "",
+        subnatureza: t.raw?.type ?? "",
+        account: t.raw?.account_name || t.raw?.account_external_id || "",
+        amount: t.raw?.amount ?? 0,
+      }));
+      setRecentTxs(mappedTxs);
 
       setLoading({
         summary: false,

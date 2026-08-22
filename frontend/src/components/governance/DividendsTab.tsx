@@ -155,7 +155,8 @@ export function DividendsTab() {
         columns={columns}
         data={data}
         isLoading={isLoading}
-        keyExtractor={(row) => row.id_economico}
+        keyExtractor={(row) => row.id_economico ?? row.ticker ?? String(Math.random())}
+
       />
 
       <AdminPagination

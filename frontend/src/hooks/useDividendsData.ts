@@ -35,7 +35,8 @@ export function useDividendsData() {
       setIsLoading(true);
       setIsError(false);
       try {
-        const summaryRes = await fetchFromAPI<PortfolioEvolutionSummary>("/investments/evolution/summary");
+        const summaryRes = await fetchFromAPI<any>("/investments/evolution/summary");
+
         const historyRes = await fetchFromAPI<any[]>("/investments/dividends/history");
         const breakdownRes = await fetchFromAPI<any[]>("/investments/dividends/breakdown");
 

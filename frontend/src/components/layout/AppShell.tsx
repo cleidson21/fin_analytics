@@ -14,7 +14,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     pathname === "/" ||
     pathname.startsWith("/transactions") ||
     pathname.startsWith("/categories") ||
-    pathname.startsWith("/subscriptions") ||
     pathname.startsWith("/installments");
 
   if (isLoginPage) {

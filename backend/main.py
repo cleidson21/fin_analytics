@@ -5,8 +5,13 @@ from backend.database.base import Base
 from backend.database.engine import engine
 from backend.domains.pierre.router import router as pierre_router
 from backend.domains.pierre.read_router import router as read_router
+from backend.domains.pierre.governance_router import router as governance_router
+from backend.api.routers.dashboard import router as dashboard_router
+from backend.api.routers.auth import router as auth_router
+from backend.domains.pierre.installments_router import router as installments_router
 
-# Ensure all V3 tables exist on startup
+# Ensure all V3 tables exist on startup (including GovernanceAuditLog from Sprint 2.8)
+# Structural migrations (ALTER TABLE) are managed via versioned SQL scripts in database/migrations/
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Fin Analytics V3", version="3.0")
@@ -19,8 +24,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router, prefix="/api/v1")
+
 # Sprint 1 — Importação Pierre
 app.include_router(pierre_router, prefix="/api/v1")
 
 # Sprint 2 — Leitura (Read Models)
 app.include_router(read_router, prefix="/api/v1")
+
+# Sprint 3 — Parcelamentos (Proxy)
+app.include_router(installments_router, prefix="/api/v1/pierre")
+
+# Sprint 2.8 — Governança Financeira Manual
+app.include_router(governance_router, prefix="/api/v1")
+
+# Dashboard — KPIs, Pacing, Heatmap, Categorias
+app.include_router(dashboard_router, prefix="/api/v1")

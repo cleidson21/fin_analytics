@@ -1,167 +1,223 @@
 "use client";
 
-import { useAuditRuns, useAuditRollbacks } from "@/hooks/useAudit";
-import { PageLayout } from "@/components/layout/PageLayout";
-import { Clock, History, AlertCircle, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AuthRequiredCard } from "@/components/ui/AuthRequiredCard";
+import { Clock, History, ShieldCheck, RefreshCcw, Loader2, ArrowUpRight } from "lucide-react";
+import { PageLayout } from "@/components/layout/PageLayout";
+import { fetchFromAPI } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
-type FilterType = "ALL" | "CONFIRMED" | "PENDING" | "ROLLBACK" | "ERROR";
+// ==========================================================================
+// TYPES — baseados em AuditEventOut do backend governance_router.py
+// ==========================================================================
+
+interface AuditEvent {
+  id: number;
+  provider: string;
+  external_id: string;
+  action: string;
+  changed_at: string;
+  reason: string | null;
+  before_json: Record<string, unknown> | null;
+  after_json: Record<string, unknown> | null;
+}
+
+// ==========================================================================
+// HELPERS
+// ==========================================================================
+
+type ActionFilter = "ALL" | "CREATE_CLASSIFICATION" | "UPDATE_CLASSIFICATION" | "ROLLBACK";
+
+const ACTION_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  CREATE_CLASSIFICATION: { label: "Classificado", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+  UPDATE_CLASSIFICATION: { label: "Atualizado",   color: "#818cf8", bg: "rgba(99,102,241,0.12)" },
+  ROLLBACK:              { label: "Rollback",      color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
+};
+
+function ActionBadge({ action }: { action: string }) {
+  const cfg = ACTION_LABELS[action] || { label: action, color: "#64748b", bg: "rgba(100,116,139,0.12)" };
+  return (
+    <span style={{
+      display: "inline-block", padding: "2px 10px", borderRadius: "99px",
+      fontSize: "10px", fontWeight: 700, letterSpacing: "0.05em",
+      color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.color}30`,
+    }}>
+      {cfg.label}
+    </span>
+  );
+}
+
+function fmt(iso: string) {
+  try { return new Date(iso).toLocaleString("pt-BR"); }
+  catch { return iso; }
+}
+
+function ClassificationValue({ json }: { json: Record<string, unknown> | null }) {
+  if (!json) return <span style={{ color: "#64748b" }}>—</span>;
+  const cls = json.economic_classification as string | undefined;
+  const status = json.governance_status as string | undefined;
+  if (!cls && !status) return <span style={{ color: "#64748b" }}>—</span>;
+  const colors: Record<string, string> = { ENTRADA: "#22c55e", SAIDA: "#ef4444", IGNORAR: "#f59e0b" };
+  return (
+    <span style={{ color: colors[cls ?? ""] || "#94a3b8", fontSize: "12px", fontWeight: 600 }}>
+      {cls || status}
+    </span>
+  );
+}
+
+// ==========================================================================
+// PAGE
+// ==========================================================================
 
 export default function AuditPage() {
-  const [filter, setFilter] = useState<FilterType>("ALL");
-  const { data: runs, isLoading: loadingRuns, isUnauthorized: runsUnauthorized } = useAuditRuns(filter);
-  const { data: rollbacks, isLoading: loadingRollbacks, isUnauthorized: rollbacksUnauthorized } = useAuditRollbacks();
-  const router = useRouter();
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<ActionFilter>("ALL");
 
-  if (runsUnauthorized || rollbacksUnauthorized) {
-    return <AuthRequiredCard title="Auditoria" />;
+  async function load(f: ActionFilter = filter) {
+    setLoading(true);
+    const params = new URLSearchParams({ limit: "200" });
+    if (f !== "ALL") params.set("action", f);
+    const data = await fetchFromAPI<AuditEvent[]>(`/governance/audit-log?${params.toString()}`);
+    if (data) setEvents(data);
+    setLoading(false);
   }
 
-  if (loadingRuns || loadingRollbacks) return <div className="flex h-screen items-center justify-center text-slate-400">Carregando...</div>;
+  useEffect(() => { load(); }, []);
+
+  function handleFilter(f: ActionFilter) {
+    setFilter(f);
+    load(f);
+  }
+
+  const FILTERS: { id: ActionFilter; label: string }[] = [
+    { id: "ALL", label: "Todos" },
+    { id: "CREATE_CLASSIFICATION", label: "Classificados" },
+    { id: "UPDATE_CLASSIFICATION", label: "Atualizados" },
+    { id: "ROLLBACK", label: "Rollbacks" },
+  ];
 
   return (
-    <PageLayout 
-      title="Auditoria" 
-      hideTitle={true}
-      breadcrumb={
-        <div className="text-sm font-medium text-zinc-500 flex items-center gap-2">
-          <Link href="/governance" className="hover:text-white transition-colors">Governança</Link>
-          <span>/</span>
-          <span className="text-zinc-300">Auditoria</span>
-        </div>
-      }
-    >
-      {/* Bloco 1: Timeline / Filtros */}
-      <section>
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <Link 
-            href="/governance"
-            className="inline-flex items-center text-sm font-medium text-zinc-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="mr-2 w-4 h-4" />
-            Voltar para Dashboard
-          </Link>
-          <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1">
-              {(["ALL", "CONFIRMED", "PENDING", "ROLLBACK", "ERROR"] as FilterType[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    filter === f 
-                      ? 'bg-slate-800 text-slate-100 shadow-sm' 
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {f === "ALL" ? "Todos" : f}
-                </button>
-              ))}
-            </div>
-          </div>
+    <PageLayout title="Auditoria" hideTitle={true}>
 
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-800/50 text-slate-400">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Data / Hora</th>
-                  <th className="px-4 py-3 font-medium">Arquivo</th>
-                  <th className="px-4 py-3 font-medium">Tipo</th>
-                  <th className="px-4 py-3 font-medium">Usuário</th>
-                  <th className="px-4 py-3 font-medium text-center">Status</th>
-                  <th className="px-4 py-3 font-medium text-right">Lidas</th>
-                  <th className="px-4 py-3 font-medium text-right">Inseridas</th>
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-zinc-500 text-sm">
+            Historico imutavel de decisoes de governanca. Cada classificacao, atualizacao e rollback fica registrado.
+          </p>
+        </div>
+        <Button variant="admin-outline" size="sm" onClick={() => load(filter)} disabled={loading}
+          className="text-zinc-300 border-white/10 hover:bg-white/5">
+          <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Atualizar
+        </Button>
+      </div>
+
+      {/* Filter tabs */}
+      <div style={{
+        display: "flex", gap: "4px", marginBottom: "20px",
+        background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "4px",
+        width: "fit-content", border: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        {FILTERS.map(f => (
+          <button key={f.id} onClick={() => handleFilter(f.id)} style={{
+            padding: "7px 16px", borderRadius: "7px", fontSize: "12px",
+            background: filter === f.id ? "rgba(99,102,241,0.2)" : "transparent",
+            border: filter === f.id ? "1px solid rgba(99,102,241,0.3)" : "1px solid transparent",
+            color: filter === f.id ? "#818cf8" : "#64748b",
+            fontWeight: filter === f.id ? 600 : 400, cursor: "pointer", transition: "all 0.15s",
+          }}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="text-center py-16 text-zinc-500">
+          <Loader2 className="inline animate-spin mr-2" size={16} /> Carregando...
+        </div>
+      ) : events.length === 0 ? (
+        <div className="text-center py-16 text-zinc-500">
+          <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-zinc-600" />
+          <p className="text-sm">Nenhum evento de governança encontrado.</p>
+          <p className="text-xs mt-1">Classifique transações em <Link href="/governance/classify" className="text-indigo-400 hover:text-indigo-300">Governança / Pierre Finance</Link></p>
+        </div>
+      ) : (
+        <div style={{
+          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: "12px", overflow: "hidden",
+        }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.2)" }}>
+                  {["Data/Hora", "Acao", "Descricao da transacao", "Antes", "Depois", "Motivo", ""].map(h => (
+                    <th key={h} style={{
+                      padding: "10px 14px", textAlign: "left", color: "#64748b",
+                      fontWeight: 600, fontSize: "11px", letterSpacing: "0.05em", whiteSpace: "nowrap",
+                    }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {runs?.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
-                      Nenhum registro encontrado para este filtro.
-                    </td>
-                  </tr>
-                )}
-                {runs?.map((run) => (
-                  <tr 
-                    key={run.id} 
-                    className="hover:bg-slate-800/40 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/governance/audit/${run.id}`)}
-                  >
-                    <td className="px-4 py-3 text-slate-300">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-slate-500" />
-                        {new Date(run.started_at).toLocaleString('pt-BR')}
+              <tbody>
+                {events.map((ev, i) => (
+                  <tr key={ev.id} style={{
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
+                  }}>
+                    <td style={{ padding: "10px 14px", color: "#94a3b8", whiteSpace: "nowrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Clock size={12} color="#64748b" />
+                        {fmt(ev.changed_at)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-200">{run.file_name}</td>
-                    <td className="px-4 py-3 text-slate-400">{run.source_type}</td>
-                    <td className="px-4 py-3 text-slate-400">{run.created_by}</td>
-                    <td className="px-4 py-3 flex justify-center">
-                      <StatusBadge status={run.status} />
+                    <td style={{ padding: "10px 14px" }}>
+                      <ActionBadge action={ev.action} />
                     </td>
-                    <td className="px-4 py-3 text-slate-300 text-right">{run.rows_read}</td>
-                    <td className="px-4 py-3 text-emerald-400 text-right font-medium">{run.rows_inserted}</td>
+                    <td style={{ padding: "10px 14px", maxWidth: "180px" }}>
+                      <div style={{ color: "#e2e8f0", fontSize: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {(ev.after_json?.description as string) || (ev.before_json?.description as string) || ev.external_id}
+                      </div>
+                      <div style={{ color: "#475569", fontSize: "10px" }}>{ev.provider}</div>
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <ClassificationValue json={ev.before_json} />
+                    </td>
+                    <td style={{ padding: "10px 14px" }}>
+                      <ClassificationValue json={ev.after_json} />
+                    </td>
+                    <td style={{ padding: "10px 14px", color: "#64748b", fontSize: "11px", maxWidth: "140px" }}>
+                      <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {ev.reason || "—"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "10px 14px", textAlign: "right" }}>
+                      <Link
+                        href={`/governance/classify`}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: "4px",
+                          fontSize: "11px", color: "#64748b",
+                        }}
+                        title="Ver transacao"
+                      >
+                        <ArrowUpRight size={13} />
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
-
-        {/* Bloco 3: Histórico de Rollbacks */}
-        <section>
-          <h2 className="text-xl font-semibold text-slate-100 mb-6 flex items-center gap-2">
-            <History className="w-5 h-5 text-rose-400" />
-            Histórico de Rollbacks
-          </h2>
-          
-          <div className="grid gap-4">
-            {rollbacks?.length === 0 && (
-              <div className="text-slate-500 text-sm p-4 bg-slate-900/30 rounded-lg border border-slate-800/50">
-                Nenhum rollback registrado na base.
-              </div>
-            )}
-            {rollbacks?.map((rb) => (
-              <div key={rb.id} className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex items-start gap-4">
-                <div className="p-2 bg-rose-500/10 rounded-full shrink-0">
-                  <XCircle className="w-6 h-6 text-rose-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-slate-200 font-medium truncate">
-                      Reversão: {rb.file_name}
-                    </h3>
-                    <span className="text-xs text-slate-500 whitespace-nowrap ml-4">
-                      {rb.rollback_timestamp ? new Date(rb.rollback_timestamp).toLocaleString('pt-BR') : 'Desconhecido'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-400 mb-2">
-                    <span className="text-slate-500">Motivo:</span> {rb.rollback_reason || "Sem justificativa"}
-                  </p>
-                  <div className="flex items-center gap-4 text-xs text-slate-500">
-                    <span>Run Original: {new Date(rb.started_at).toLocaleString('pt-BR')}</span>
-                    <span>Usuário: {rb.rollback_user || 'Sistema'}</span>
-                    <span className="font-mono text-slate-600">ID: {rb.id.slice(0, 8)}...</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div style={{
+            padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)",
+            color: "#475569", fontSize: "11px", display: "flex", alignItems: "center", gap: "6px",
+          }}>
+            <History size={12} />
+            {events.length} evento{events.length !== 1 ? "s" : ""} exibido{events.length !== 1 ? "s" : ""} &mdash; limite de 200 mais recentes
           </div>
-        </section>
+        </div>
+      )}
     </PageLayout>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'CONFIRMED' || status === 'SUCCESS') {
-    return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-full"><CheckCircle2 className="w-3.5 h-3.5"/> Confirmado</span>;
-  }
-  if (status === 'PENDING' || status.includes('AWAITING') || status.includes('PROCESSING')) {
-    return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-full"><Clock className="w-3.5 h-3.5"/> Pendente</span>;
-  }
-  if (status === 'CANCELLED') {
-    return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-500/10 text-slate-400 text-xs font-medium rounded-full"><History className="w-3.5 h-3.5"/> Rollback</span>;
-  }
-  return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-400 text-xs font-medium rounded-full"><AlertCircle className="w-3.5 h-3.5"/> Erro</span>;
 }

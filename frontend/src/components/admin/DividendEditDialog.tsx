@@ -43,7 +43,8 @@ export function DividendEditDialog({
     if (!dividend) return;
 
     try {
-      await updateDividend(dividend.id_economico, formData);
+      await updateDividend(dividend.id_economico ?? "", formData);
+
       alert("Dividendo atualizado com sucesso.\\nRegistro enviado para Audit Log.");
       onSuccess();
       onClose();

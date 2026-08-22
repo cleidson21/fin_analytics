@@ -1,12 +1,12 @@
-import os
 import httpx
 from typing import Optional
+from backend.core.config import settings
 
 class PierreHTTPClient:
     def __init__(self, base_url: Optional[str] = None, timeout: float = 30.0):
         self.base_url = base_url or "https://www.pierre.finance/tools/api"
         self.timeout = timeout
-        api_key = os.getenv("PIERRE_API_KEY")
+        api_key = settings.PIERRE_API_KEY
         if not api_key:
             raise ValueError("PIERRE_API_KEY environment variable is not set. Please configure it in .env")
             
@@ -34,3 +34,16 @@ class PierreHTTPClient:
                 
             except httpx.RequestError as e:
                 raise Exception(f"Connection error: Failed to reach Pierre API - {str(e)}") from e
+
+    async def get_installments(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> dict:
+        """
+        Retorna o payload original de parcelamentos da Pierre Finance.
+        Opcionalmente, pode ser filtrado por data.
+        """
+        params = {}
+        if start_date:
+            params["startDate"] = start_date
+        if end_date:
+            params["endDate"] = end_date
+            
+        return await self.get("get-installments", params=params)

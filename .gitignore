@@ -20,3 +20,7 @@ plans
 samples
 test
 backend/tests/results/
+docs/archive/
+scripts/archive/
+tests/archive/
+tests/scripts/

@@ -5,6 +5,7 @@ from backend.database.base import Base
 
 class CategoryModel(Base):
     __tablename__ = "categories"
+    __table_args__ = {'keep_existing': True}
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True)
     name = Column(String, nullable=False)

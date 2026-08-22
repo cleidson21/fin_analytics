@@ -11,10 +11,11 @@ const TAB_COLORS: Record<string, string> = {
   "/":              "#4ecf98",  // Visão geral — verde
   "/transactions":  "#7EB8F7",  // Transações — azul
   "/installments":  "#f5a623",  // Parcelamentos — âmbar
-  "/subscriptions": "#b794f4",  // Assinaturas — violeta
   "/categories":    "#f687b3",  // Categorias — rosa
+  "/cashflow":                "#22c55e",  // Fluxo de Caixa — verde
   "/governance":               "#94a3b8",  // Dashboard de Governança
-  "/governance/data":          "#7EB8F7",  // Dados Consolidados
+  "/governance/classify":      "#b794f4",  // Pierre Finance — violeta
+  "/governance/data":          "#7EB8F7",  // MyProfit — azul
   "/governance/imports":       "#4ecf98",  // Nova Importação — verde
   "/governance/database":      "#94a3b8",  // Saneamento — slate
   "/governance/audit":         "#f687b3",  // Auditoria — rosa

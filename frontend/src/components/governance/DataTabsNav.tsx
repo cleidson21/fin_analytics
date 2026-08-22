@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "transactions", label: "Transações" },
-  { id: "positions", label: "Posições" },
-  { id: "dividends", label: "Dividendos" },
-  { id: "categories", label: "Categorias" },
+  { id: "positions",    label: "Posições" },
+  { id: "dividends",   label: "Dividendos" },
+  { id: "categories",  label: "Categorias" },
 ];
 
 export function DataTabsNav() {

@@ -31,7 +31,9 @@ class PierreMapper:
         }
 
         # 2. Map Category
-        category_name = raw_tx.get("category", "Uncategorized")
+        category_name = raw_tx.get("category")
+        if not category_name:
+            category_name = "Uncategorized"
         category_data = {
             "provider": provider,
             "name": category_name,

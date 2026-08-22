@@ -54,7 +54,7 @@ export default function InstallmentsPage() {
 
     async function load() {
       setLoading(true);
-      const payload = await fetchFromAPI<InstallmentsSummary>("/dashboard/installments");
+      const payload = await fetchFromAPI<InstallmentsSummary>("/pierre/installments");
 
       if (!active) {
         return;

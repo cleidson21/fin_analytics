@@ -11,10 +11,15 @@ import {
   ChevronRight,
   Filter,
   Save,
+  Scale,
   Search,
   SlidersHorizontal,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -54,10 +59,19 @@ interface CatalogResponse {
 const NATURE_LABELS: Record<string, string> = {
   INCOME: "Receita",
   EXPENSE: "Despesa",
-  TRANSFER: "Transferência",
+  TRANSFER: "Transferencia",
   INVESTMENT: "Investimento",
   DIVIDEND: "Dividendo",
 };
+
+interface GovernanceSummary {
+  total_entrada: number;
+  total_saida: number;
+  resultado: number;
+  pending_count: number;
+  classified_count: number;
+  ignored_count: number;
+}
 
 const emptyPayload: ReclassificationPayload = {
   macro_categoria: "",
@@ -105,7 +119,11 @@ function TransactionsPageBody() {
   const [endDate, setEndDate] = useState(() => searchParams.get("endDate") ?? fallbackMonthBounds.endDate);
   const [account, setAccount] = useState(() => searchParams.get("account") ?? "all");
   const [category, setCategory] = useState(() => searchParams.get("category") ?? "all");
-  const [natureza, setNatureza] = useState(() => searchParams.get("natureza") ?? "all");
+  // Sanitiza o valor da URL: aceita apenas ENTRADA | SAIDA (rejeita valores legados como CREDIT/DEBIT)
+  const [natureza, setNatureza] = useState(() => {
+    const v = searchParams.get("natureza") ?? "all";
+    return ["ENTRADA", "SAIDA", "all"].includes(v) ? v : "all";
+  });
   const [limit] = useState(50);
   const [offset, setOffset] = useState(0);
 
@@ -129,6 +147,9 @@ function TransactionsPageBody() {
   const [form, setForm] = useState<ReclassificationPayload>(emptyPayload);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Governance KPIs — atualizados junto com loadData (período-preciso)
+  const [govSummary, setGovSummary] = useState<GovernanceSummary | null>(null);
 
   const currentPage = Math.floor(offset / limit) + 1;
   const hasPreviousPage = offset > 0;
@@ -216,79 +237,86 @@ function TransactionsPageBody() {
           return;
         }
 
+        // Usa /governance/transactions que suporta todos os filtros
         const query = new URLSearchParams({
-          startDate,
-          endDate,
-          limit: String(limit),
-          offset: String(offset),
+          start_date: startDate,
+          end_date: endDate,
+          page: String(Math.floor(offset / limit) + 1),
+          page_size: String(limit),
         });
 
-        if (account !== "all") {
-          query.set("account", account);
-        }
-
+        // Filtro de categoria (nome da categoria RAW)
         if (category !== "all") {
           query.set("category", category);
         }
 
+        // Filtro de tipo: ENTRADA | SAIDA mapeados para economic_classification
         if (natureza !== "all") {
-          query.set("natureza", natureza);
+          query.set("economic_classification", natureza);
         }
 
-        const data = await fetchFromAPI<TransactionListResponse>(`/transactions?${query.toString()}`);
+        const data = await fetchFromAPI<{ items: any[]; total: number }>(
+          `/governance/transactions?${query.toString()}`
+        );
 
-        if (!active) {
-          return;
-        }
+        if (!active) return;
 
-        const items = Array.isArray(data) ? data : data?.items || [];
-        
+        const items: any[] = data?.items || [];
+
+        // Mapeia do formato { raw: {...}, governance: {...} } para Transaction
         const mappedItems = items.map((t: any) => ({
-           id: t.id,
-           date: t.transaction_date,
-           description: t.description,
-           category: t.category?.name || "Sem categoria",
-           natureza: t.direction === "CREDIT" ? "Receita" : "Despesa",
-           subnatureza: t.type,
-           account: t.account_name || "Conta",
-           amount: t.amount,
-           original_direction: t.direction
+          id: `${t.raw?.provider}::${t.raw?.external_id}`,
+          // Trunca para YYYY-MM-DD (descarta componente de hora se vier como DateTime)
+          date: (t.raw?.date ?? "").slice(0, 10),
+          description: t.raw?.description ?? "",
+          category: t.raw?.category ?? "",
+          natureza: t.governance?.economic_classification ?? "",
+          subnatureza: t.raw?.type ?? "",
+          // Preferência: account_name (nome legível), fallback para account_external_id
+          account: t.raw?.account_name || t.raw?.account_external_id || "—",
+          amount: t.raw?.amount ?? 0,
+          // campos extras para cor/filtro
+          economic_classification: t.governance?.economic_classification ?? "",
+          governance_status: t.governance?.governance_status ?? "PENDING",
         }));
-        
+
         setTransactions(mappedItems);
-        setTotal(mappedItems.length);
-        setTotalPages(1);
-        
-        let income = 0;
-        let expense = 0;
-        mappedItems.forEach((item: any) => {
-          const val = Number(item.amount);
-          if (item.original_direction === "CREDIT") income += val;
-          if (item.original_direction === "DEBIT") expense += val;
+        setTotal(data?.total ?? mappedItems.length);
+        setTotalPages(Math.ceil((data?.total ?? mappedItems.length) / limit));
+
+        // KPIs com os mesmos filtros da tabela — refletem exatamente o que está visível
+        const summaryParams = new URLSearchParams({
+          start_date: startDate,
+          end_date: endDate,
         });
-        setSummary({
-          income,
-          expense,
-          balance: income - expense,
-        });
+        if (natureza !== "all") summaryParams.set("economic_classification", natureza);
+        if (category !== "all") summaryParams.set("category", category);
+
+        const summaryData = await fetchFromAPI<GovernanceSummary>(
+          `/governance/summary?${summaryParams.toString()}`
+        );
+        if (active && summaryData) {
+          setGovSummary(summaryData);
+          setSummary({
+            income:  summaryData.total_entrada,
+            expense: summaryData.total_saida,
+            balance: summaryData.resultado,
+          });
+        }
 
         if (!data) {
           setError("Não foi possível carregar o extrato.");
         }
-      } catch {
-        if (!active) {
-          return;
-        }
-
+      } catch (err) {
+        if (!active) return;
+        console.error("[transactions] loadData error:", err);
         setTransactions([]);
         setTotal(0);
         setTotalPages(0);
         setSummary({ income: 0, expense: 0, balance: 0 });
         setError("Não foi possível carregar o extrato.");
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
 
@@ -299,16 +327,22 @@ function TransactionsPageBody() {
     };
   }, [account, category, endDate, limit, natureza, offset, startDate]);
 
-  const accountOptions = catalog.accounts;
-  const categoryOptions = catalog.categories;
-  const natureOptions = catalog.natures.map((nature) => ({
-    value: nature,
-    label: NATURE_LABELS[nature] ?? nature,
-  }));
+  // Deduplica contas
+  const accountOptions = [...new Set(catalog.accounts)];
+  // Categorias dinâmicas das transações carregadas
+  const categoryOptions = useMemo(() => {
+    const cats = transactions.map(t => t.category).filter(Boolean);
+    return [...new Set(cats)].sort();
+  }, [transactions]);
+
+  // Tipos simplificados: ENTRADA / SAIDA (mapeados de economic_classification)
+  const DIRECTION_OPTIONS = [
+    { value: "ENTRADA", label: "Entrada" },
+    { value: "SAIDA",   label: "Saída"  },
+  ];
 
   const filteredTransactions = useMemo(() => {
     const term = normalizeText(searchTerm);
-
     return transactions.filter((tx) => {
       const matchesSearch =
         !term ||
@@ -423,72 +457,75 @@ function TransactionsPageBody() {
   };
 
   return (
-    <PageLayout title="Transações" subtitle="Entrada e saída de capital com paginação real e filtros do backend." hideTitle={true}>
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-50">Base de dados e auditoria</h2>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-              Revise e filtre o extrato com paginação real no servidor.
-            </p>
-          </div>
+    <PageLayout title="Transacoes" subtitle="Extrato classificado com filtros e indicadores de governanca." hideTitle={true}>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300">
-            <ArrowRightLeft className="size-4 text-cyan-300" />
-            <span>{filteredTransactions.length} transações visíveis</span>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total de Receitas</p>
+      {/* KPI strip — valores refletem o filtro ativo */}
+      <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 mb-4">
+          <article className="rounded-3xl border border-emerald-500/20 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Entradas</p>
             <div className="mt-3 flex items-end justify-between gap-3">
-              <p className="text-2xl font-semibold tracking-tight text-emerald-300">{formatCurrency(summary.income)}</p>
-              <ArrowUpRight className="size-5 text-emerald-300" />
+              <p className="text-2xl font-semibold tracking-tight text-emerald-300">
+                {formatCurrency(summary.income)}
+              </p>
+              <TrendingUp className="size-5 text-emerald-300" />
             </div>
           </article>
-
-          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total de Despesas</p>
+          <article className="rounded-3xl border border-rose-500/20 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Saídas</p>
             <div className="mt-3 flex items-end justify-between gap-3">
-              <p className="text-2xl font-semibold tracking-tight text-rose-300">{formatCurrency(summary.expense)}</p>
-              <ArrowDownRight className="size-5 text-rose-300" />
+              <p className="text-2xl font-semibold tracking-tight text-rose-300">
+                {formatCurrency(summary.expense)}
+              </p>
+              <TrendingDown className="size-5 text-rose-300" />
             </div>
           </article>
-
-          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Saldo Líquido</p>
+          <article className={`rounded-3xl border ${summary.balance >= 0 ? "border-cyan-500/20" : "border-rose-500/20"} bg-black/20 p-4`}>
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Resultado</p>
             <div className="mt-3 flex items-end justify-between gap-3">
               <p className={`text-2xl font-semibold tracking-tight ${summary.balance >= 0 ? "text-cyan-300" : "text-rose-300"}`}>
                 {formatCurrency(summary.balance)}
               </p>
-              <SlidersHorizontal className="size-5 text-cyan-300" />
+              <Scale className="size-5 text-cyan-300" />
             </div>
           </article>
-
-          <article className="rounded-3xl border border-white/10 bg-black/20 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Movimentações</p>
+          <article className="rounded-3xl border border-amber-500/20 bg-black/20 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Pendentes</p>
             <div className="mt-3 flex items-end justify-between gap-3">
-              <p className="text-2xl font-semibold tracking-tight text-zinc-50">{filteredTransactions.length}</p>
-              <Building2 className="size-5 text-zinc-400" />
+              <p className="text-2xl font-semibold tracking-tight text-amber-300">
+                {govSummary?.pending_count ?? 0}
+              </p>
+              <AlertTriangle className="size-5 text-amber-300" />
             </div>
           </article>
         </div>
+        {(govSummary?.pending_count ?? 0) > 0 && (
+          <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <span className="text-xs text-amber-300">
+              <strong>{govSummary!.pending_count}</strong> transações aguardam classificação em Governança
+            </span>
+            <Link href="/governance/classify" className="text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors">
+              Classificar agora &rarr;
+            </Link>
+          </div>
+        )}
+      </div>
 
-        <div className="mt-6 grid gap-3 xl:grid-cols-2">
-          <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-zinc-400">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-black/20 backdrop-blur">
+        {/* Linha de contagem + pesquisa */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-5">
+          <label className="flex flex-1 items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-zinc-400">
             <Search className="size-4" />
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Pesquisar por descrição, categoria, natureza ou conta"
+              placeholder="Pesquisar por descrição, categoria, conta..."
               className="w-full bg-transparent text-sm text-zinc-100 outline-none placeholder:text-zinc-500"
             />
           </label>
-
-          <div className="flex items-center gap-3 rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-3 text-sm text-zinc-400">
-            <Filter className="size-4" />
-            Filtros sincronizados com o backend
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300 whitespace-nowrap">
+            <ArrowRightLeft className="size-4 text-cyan-300" />
+            <span>{filteredTransactions.length} movimentações</span>
           </div>
         </div>
 
@@ -543,35 +580,43 @@ function TransactionsPageBody() {
               className="w-full bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
             >
               <option value="all">Todas as categorias</option>
-              {categoryOptions.map((categoryOption) => (
-                <option key={categoryOption} value={categoryOption}>
-                  {categoryOption}
-                </option>
+              {categoryOptions.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
           </label>
         </div>
 
+        {/* Filtro Tipo - simplificado: Entrada / Saida */}
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-400">
-          <label className="flex flex-1 min-w-[220px] items-center gap-3 text-zinc-400">
-            <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Tipo</span>
-            <select
-              value={natureza}
-              onChange={(event) => handleNaturezaChange(event.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-zinc-100 outline-none [&>option]:bg-zinc-950 [&>option]:text-zinc-100"
-            >
-              <option value="all">Todos os tipos</option>
-              {natureOptions.map((nature) => (
-                <option key={nature.value} value={nature.value}>
-                  {nature.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
-            <Filter className="size-4" />
-            {limit} por página
+          <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Tipo</span>
+          <button
+            onClick={() => handleNaturezaChange("all")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              natureza === "all" ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => handleNaturezaChange("ENTRADA")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              natureza === "ENTRADA" ? "bg-emerald-900 text-emerald-300 border border-emerald-700" : "text-zinc-400 hover:text-emerald-400"
+            }`}
+          >
+            Entrada
+          </button>
+          <button
+            onClick={() => handleNaturezaChange("SAIDA")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              natureza === "SAIDA" ? "bg-rose-900 text-rose-300 border border-rose-700" : "text-zinc-400 hover:text-rose-400"
+            }`}
+          >
+            Saída
+          </button>
+          <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
+            <Filter className="size-3" />
+            {filteredTransactions.length} resultado{filteredTransactions.length !== 1 ? "s" : ""}
           </div>
         </div>
 
@@ -641,15 +686,16 @@ function TransactionsPageBody() {
           </div>
         ) : null}
 
-        <div className="mt-6 overflow-hidden rounded-3xl border border-white/10">
+        <div className="mt-4 overflow-hidden rounded-3xl border border-white/10">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-white/10 text-sm">
               <thead className="bg-black/25 text-left text-xs uppercase tracking-[0.18em] text-zinc-500">
                 <tr>
-                  <th className="px-4 py-3 w-[30%]">Descrição</th>
-                  <th className="px-4 py-3 w-[30%]">Classificação</th>
+                  <th className="px-4 py-3 w-[35%]">Descrição</th>
+                  <th className="px-4 py-3 w-[20%]">Categoria</th>
+                  <th className="px-4 py-3 w-[8%]">Tipo</th>
                   <th className="px-4 py-3 w-[15%]">Conta</th>
-                  <th className="px-4 py-3 w-[15%]">Data</th>
+                  <th className="px-4 py-3 w-[12%]">Data</th>
                   <th className="px-4 py-3 w-[10%] text-right">Valor</th>
                 </tr>
               </thead>
@@ -670,67 +716,67 @@ function TransactionsPageBody() {
                   filteredTransactions.map((tx) => {
                     const amountValue = Number(tx.amount) || 0;
                     const amountAbs = Math.abs(amountValue);
-                    const kind = classifyTransaction(tx.natureza);
 
-                    // Badge de tipo (linha superior)
-                    let typeBadgeClasses: string;
-                    let typeBadgeLabel: string;
-                    if (kind === "income") {
-                      typeBadgeClasses = "bg-green-500/10 text-green-400";
-                      typeBadgeLabel = "↑ Receita";
-                    } else if (kind === "expense") {
-                      typeBadgeClasses = "bg-red-500/10 text-red-400";
-                      typeBadgeLabel = "↓ Despesa";
-                    } else if (kind === "transfer") {
-                      typeBadgeClasses = "bg-blue-500/10 text-blue-400";
-                      typeBadgeLabel = "→ Transferência";
-                    } else {
-                      typeBadgeClasses = "bg-blue-500/10 text-blue-400";
-                      typeBadgeLabel = "⇄ Neutro·Aporte";
-                    }
-
-                    // Badge de categoria (linha inferior)
+                    // categoryLabel — formata para display
                     const categoryLabel = (tx.category ?? "")
                       .replace(/_/g, " ")
                       .toLowerCase()
                       .replace(/\b\w/g, (c) => c.toUpperCase());
 
-                    // Formata data DD/MM/YY
-                    const dateParts = tx.date.split("-");
+                    // Formata data DD/MM/YY — guarda contra null/undefined
+                    const rawDate = tx.date ?? "";
+                    const dateParts = rawDate.split("-");
                     const formattedDate =
                       dateParts.length === 3
                         ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0].slice(2)}`
-                        : tx.date;
+                        : rawDate || "—";
 
-                    // Cor do valor
-                    let valueColorClass = "text-[#e97070]"; // default expense
-                    let valuePrefix = "";
-                    if (kind === "income") {
-                      valueColorClass = "text-[#4ecf98]";
-                      valuePrefix = "+";
-                    } else if (kind === "transfer" || kind === "other") {
-                      valueColorClass = "text-blue-400";
-                    }
+                    // Cor/badge pela classification de governança
+                    const ec = (tx as any).economic_classification as string;
+                    const isPending = (tx as any).governance_status === "PENDING";
+                    const isEntrada = ec === "ENTRADA";
+                    const isSaida   = ec === "SAIDA";
+                    const isIgnorar = ec === "IGNORAR";
+
+                    const valueColorClass = isEntrada ? "text-[#4ecf98]"
+                      : isSaida            ? "text-[#e97070]"
+                      : isPending          ? "text-amber-400"
+                      : "text-zinc-400";
+                    const valuePrefix = isEntrada ? "+" : "";
+                    const typeBadgeLabel = isEntrada ? "Entrada"
+                      : isSaida  ? "Saída"
+                      : isIgnorar ? "Ignorar"
+                      : isPending ? "Pendente" : "—";
+                    const typeBadgeCls = isEntrada
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-700/30"
+                      : isSaida
+                      ? "bg-rose-500/10 text-rose-400 border border-rose-700/30"
+                      : isIgnorar
+                      ? "bg-zinc-500/10 text-zinc-400 border border-zinc-700/30"
+                      : "bg-amber-500/10 text-amber-400 border border-amber-700/30";
 
                     return (
                       <tr key={tx.id} className="group transition-colors hover:bg-white/5">
+                        {/* Descrição */}
                         <td className="px-4 py-4">
                           <p className="truncate max-w-xs text-sm text-white">{tx.description}</p>
+                          <p className="text-[11px] text-zinc-600 mt-0.5 truncate">{tx.subnatureza}</p>
                         </td>
+                        {/* Categoria */}
                         <td className="px-4 py-4">
-                          <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md w-fit ${typeBadgeClasses}`}>
-                              {typeBadgeLabel}
-                            </span>
-                            {categoryLabel ? (
-                              <span className="bg-white/[0.05] text-neutral-500 text-[10px] px-1.5 py-0.5 rounded w-fit mt-1">
-                                {categoryLabel}
-                              </span>
-                            ) : null}
-                          </div>
+                          <span className="text-sm text-zinc-300">{categoryLabel || "—"}</span>
                         </td>
+                        {/* Tipo badge compacto */}
+                        <td className="px-4 py-4">
+                          <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeBadgeCls}`}>
+                            {typeBadgeLabel}
+                          </span>
+                        </td>
+                        {/* Conta */}
                         <td className="px-4 py-4 text-sm text-neutral-500">{tx.account}</td>
-                        <td className="px-4 py-4 text-sm text-neutral-500">{formattedDate}</td>
+                        {/* Data */}
+                        <td className="px-4 py-4 text-sm text-neutral-500 whitespace-nowrap">{formattedDate}</td>
+                        {/* Valor */}
                         <td className="px-4 py-4 text-right">
                           <span className={`text-sm font-medium ${valueColorClass}`}>
                             {valuePrefix}{formatCurrency(amountAbs)}

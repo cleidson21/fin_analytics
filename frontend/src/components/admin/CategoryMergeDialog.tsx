@@ -11,6 +11,7 @@ interface CategoryMergeDialogProps {
   onSuccess: () => void;
 }
 
+
 export function CategoryMergeDialog({
   isOpen,
   onClose,

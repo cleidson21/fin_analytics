@@ -37,7 +37,7 @@ export function useDividendsAdmin(filters: DividendFilters) {
       );
 
       if (response) {
-        setData(response.items || []);
+        setData(response.data || []);
         setTotal(response.total || 0);
       }
     } catch (err: unknown) {

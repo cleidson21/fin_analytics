@@ -29,13 +29,13 @@ export function useCategoriesAdmin(filters: CategoryFilters) {
         `/governance/categories?${queryParams.toString()}`
       );
 
-      if (response && response.items) {
-        let filteredItems = response.items;
+      if (response && response.data) {
+        let filteredItems = response.data;
         
         // Fase 5 - Busca Local (Frontend)
         if (filters.search) {
           const searchLower = filters.search.toLowerCase();
-          filteredItems = response.items.filter((item) =>
+          filteredItems = response.data.filter((item: Category) =>
             item.categoria.toLowerCase().includes(searchLower)
           );
         }

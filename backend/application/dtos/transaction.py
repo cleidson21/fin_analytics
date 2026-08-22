@@ -38,7 +38,7 @@ class UpdateTransactionCategoryDTO(BaseModel):
 
 class CategoryBreakdownDTO(BaseModel):
     category: str
-    total: Decimal
+    total: float
 
 class KpiItemDTO(BaseModel):
     current: float

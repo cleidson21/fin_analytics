@@ -101,10 +101,13 @@ def dashboard_summary():
     categories = category_service.list_all()
 
     # Total amount calculated in-process from already-fetched transactions
-    with SessionLocal() as db:
+    db = SessionLocal()
+    try:
         from sqlalchemy import func
         total_tx = db.query(func.count(Transaction.external_id)).scalar() or 0
         total_amount = db.query(func.sum(Transaction.amount)).scalar() or Decimal("0")
+    finally:
+        db.close()
 
     return DashboardOut(
         total_accounts=len(accounts),
@@ -112,3 +115,4 @@ def dashboard_summary():
         total_transactions=total_tx,
         total_amount=Decimal(str(total_amount)),
     )
+
