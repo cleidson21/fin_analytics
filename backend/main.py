@@ -14,7 +14,7 @@ from backend.domains.pierre.installments_router import router as installments_ro
 # Structural migrations (ALTER TABLE) are managed via versioned SQL scripts in database/migrations/
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Fin Analytics V3", version="3.0")
+app = FastAPI(title="Fin Analytics")
 
 app.add_middleware(
     CORSMiddleware,

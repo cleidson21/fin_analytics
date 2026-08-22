@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "fin_analytics_v3.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "database", "fin_analytics.db")
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 ASYNC_DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH}"
 
