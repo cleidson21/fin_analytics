@@ -17,7 +17,7 @@ class SyncLogModel(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), nullable=False)
-    provider = Column(SQLEnum(ProviderType), nullable=False)
+    provider = Column(SQLEnum(ProviderType, length=32, native_enum=False), nullable=False)
     status = Column(SQLEnum(SyncStatus), nullable=False)
     
     start_time = Column(DateTime, nullable=False, default=datetime.utcnow)

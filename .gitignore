@@ -9,6 +9,7 @@ __pycache__/
 *.sqlite3
 *.db-shm
 *.db-wal
+*Myprofit.csv
 .env
 .streamlit/
 .pytest_cache/

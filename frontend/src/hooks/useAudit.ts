@@ -104,7 +104,7 @@ export function useAuditRunDetail(runId: string) {
       setIsLoading(true);
       setIsUnauthorized(false);
       try {
-        const result = await fetchFromAPI<AuditRun>(`/governance/audit/${runId}`);
+        const result = await fetchFromAPI<AuditRun>(`/governance/imports/${runId}`);
         if (mounted) {
           setData(result);
           setIsLoading(false);

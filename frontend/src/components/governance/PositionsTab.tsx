@@ -45,7 +45,16 @@ export function PositionsTab() {
       header: "Classe de Ativo",
       renderCell: (row) => <span>{row.classe_ativo || "-"}</span> 
     },
-    { key: "data_snapshot", header: "Data Snapshot" },
+    { 
+      key: "data_snapshot", 
+      header: "Data Snapshot",
+      renderCell: (row) => {
+        if (!row.data_snapshot) return <span>-</span>;
+        const parts = String(row.data_snapshot).split("-");
+        if (parts.length === 3) return <span>{`${parts[2]}/${parts[1]}/${parts[0]}`}</span>;
+        return <span>{row.data_snapshot}</span>;
+      }
+    },
     {
       key: "quantidade",
       header: "Quantidade",
@@ -58,15 +67,28 @@ export function PositionsTab() {
       key: "preco_medio",
       header: "Preço Médio",
       renderCell: (row) => {
-        const valInvestido = typeof row.valor_investido === 'number' ? row.valor_investido : parseFloat(String(row.valor_investido || "0"));
-        const valQtd = typeof row.quantidade === 'number' ? row.quantidade : parseFloat(String(row.quantidade || "0"));
-        const val = valQtd > 0 ? valInvestido / valQtd : 0;
+        const val = typeof row.preco_medio === 'number' ? row.preco_medio : parseFloat(String(row.preco_medio || "0"));
         return (
           <span>
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",
               currency: "BRL",
             }).format(val)}
+          </span>
+        );
+      },
+    },
+    {
+      key: "valor_investido",
+      header: "Total Investido",
+      renderCell: (row) => {
+        const val = typeof row.valor_investido === 'number' ? row.valor_investido : parseFloat(String(row.valor_investido || "0"));
+        return (
+          <span>
+            {val > 0 ? new Intl.NumberFormat("pt-BR", {
+              style: "currency",
+              currency: "BRL",
+            }).format(val) : "-"}
           </span>
         );
       },

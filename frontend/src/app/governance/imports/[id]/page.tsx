@@ -25,9 +25,9 @@ function StatusBadge({ status }: { status: string }) {
 
 import { AuthRequiredCard } from "@/components/ui/AuthRequiredCard";
 
-export default function AuditRunPage({ params }: { params: Promise<{ run_id: string }> }) {
+export default function AuditRunPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const { data: run, isLoading, isUnauthorized } = useAuditRunDetail(resolvedParams.run_id);
+  const { data: run, isLoading, isUnauthorized } = useAuditRunDetail(resolvedParams.id);
   const router = useRouter();
 
   const [isReprocessing, setIsReprocessing] = useState(false);
@@ -38,20 +38,9 @@ export default function AuditRunPage({ params }: { params: Promise<{ run_id: str
   }
 
   const handleReprocess = async () => {
-    setIsReprocessing(true);
-    setReprocessError(null);
-    try {
-      const data = await fetchFromAPI<{run_id: string}>(`/governance/imports/${resolvedParams.run_id}/reprocess`, {
-        method: "POST"
-      });
-      if (!data || !data.run_id) {
-        throw new Error("Falha ao reprocessar");
-      }
-      router.push(`/governance/review?run=${data.run_id}`);
-    } catch (err: any) {
-      setReprocessError(err.message || "Erro desconhecido ao reprocessar");
-      setIsReprocessing(false);
-    }
+    // Reprocess is currently not supported for all import types natively.
+    // The user should upload the file again instead.
+    alert("Para reprocessar, inicie uma nova importação.");
   };
 
   if (isLoading) return <div className="flex h-screen items-center justify-center text-slate-400">Carregando...</div>;
@@ -62,9 +51,9 @@ export default function AuditRunPage({ params }: { params: Promise<{ run_id: str
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         
-        <Link href="/governance/audit" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+        <Link href="/governance/imports" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          Voltar para Auditoria
+          Voltar para Importações
         </Link>
 
         <section className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
@@ -78,18 +67,16 @@ export default function AuditRunPage({ params }: { params: Promise<{ run_id: str
             </div>
             <div className="flex flex-col items-end gap-3">
               <StatusBadge status={run.status} />
-              {(run.status === "SUCCESS" || run.status === "CONFIRMED" || run.status === "FAILED" || run.status === "CANCELLED" || run.status === "PARTIAL") && (
+              {(run.status === "FAILED" || run.status === "PARTIAL") && (
                 <Button 
                   variant="admin"
                   onClick={handleReprocess} 
-                  disabled={isReprocessing}
                   className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-md text-sm h-8"
                 >
-                  {isReprocessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCw className="w-4 h-4 mr-2" />}
-                  Reprocessar
+                  <RotateCw className="w-4 h-4 mr-2" />
+                  Nova Importação
                 </Button>
               )}
-              {reprocessError && <span className="text-xs text-rose-400">{reprocessError}</span>}
             </div>
           </div>
 

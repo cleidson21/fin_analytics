@@ -21,11 +21,7 @@ type SearchParamsLike = {
   toString(): string;
 };
 
-export const GOVERNANCE_TABS = [
-  { name: "Auditoria", href: "/governance/audit", dotColor: "bg-rose-500" },
-  { name: "Saneamento", href: "/governance/database", dotColor: "bg-zinc-500" },
-  { name: "Dados", href: "/governance/data", dotColor: "bg-blue-500" },
-] as const;
+// GOVERNANCE_TABS removido pois os sub-módulos ganharam rotas próprias
 
 export const SIDEBAR_NAV = [
   { name: "Controle Financeiro", href: "/", icon: LayoutDashboard },

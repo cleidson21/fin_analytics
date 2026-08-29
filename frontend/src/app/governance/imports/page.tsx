@@ -1,268 +1,170 @@
 "use client";
 
-import { useState } from "react";
-import { ClipboardPaste, Loader2, FileUp, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { fetchFromAPI } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { UploadCloud, FileText, CheckCircle2, AlertCircle, Clock, ChevronRight, Loader2, RefreshCcw } from "lucide-react";
+import { AuthRequiredCard } from "@/components/ui/AuthRequiredCard";
 
-interface ImportResponse {
-  run_id: string;
-  preview: Record<string, unknown>;
+interface ImportItem {
+  id: string;
+  source_type: string;
+  file_name: string;
+  started_at: string;
+  status: string;
+  rows_read: number;
+  rows_inserted: number;
+  rows_failed: number;
 }
 
-interface PreviewData {
-  detected_file_type?: string;
-  total_rows?: number;
-  valid_rows?: number;
-  invalid_rows?: number;
-  period_start?: string;
-  period_end?: string;
-  tickers_found?: string[];
-  errors?: string[];
-  run_id?: string;
-}
+export default function ImportsHubPage() {
+  const [items, setItems] = useState<ImportItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
-export default function GovernanceUploadPage() {
-  const router = useRouter();
-  const [sourceType, setSourceType] = useState<string>("MYPROFIT_PROVENTOS");
-  
-  const [rawText, setRawText] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [preview, setPreview] = useState<PreviewData | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
-  const isPasteMode = sourceType === "PIERRE";
-
-  // File drop handling
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setSelectedFile(e.dataTransfer.files[0]);
-      setPreview(null);
-      setErrorMsg(null);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-      setPreview(null);
-      setErrorMsg(null);
-    }
-  };
-
-  async function handleSubmit(event?: React.FormEvent) {
-    if (event) event.preventDefault();
-    
-    if (isSubmitting) return;
-    if (isPasteMode && rawText.trim().length === 0) return;
-    if (!isPasteMode && !selectedFile) return;
-
-    setIsSubmitting(true);
-    setErrorMsg(null);
-    setPreview(null);
-
+  async function loadData() {
+    setLoading(true);
+    setIsUnauthorized(false);
     try {
-      const formData = new FormData();
-      formData.append("source_type", sourceType);
-      
-      if (isPasteMode) {
-        formData.append("raw_text", rawText);
-      } else if (selectedFile) {
-        formData.append("file", selectedFile);
+      const data = await fetchFromAPI<{items: ImportItem[], total: number}>("/governance/imports?limit=50");
+      if (data && data.items) {
+        setItems(data.items);
       }
-
-      const response = await fetchFromAPI<ImportResponse>("/governance/imports/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response) {
-        setErrorMsg("Não foi possível processar o arquivo.");
-        return;
-      }
-
-      setPreview({ ...(response.preview as PreviewData), run_id: response.run_id });
-      
-      // If it's paste mode, we might just want to show preview or redirect
-      if (isPasteMode) {
-        router.push(`/governance/review?run=${response.run_id}`);
-      }
-      
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Erro desconhecido");
-    } finally {
-      setIsSubmitting(false);
+    } catch (e: any) {
+      if (e.name === "AuthError") setIsUnauthorized(true);
+      console.error(e);
     }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  if (isUnauthorized) {
+    return <AuthRequiredCard title="Importações" />;
+  }
+
+  function StatusBadge({ status }: { status: string }) {
+    if (status === 'CONFIRMED' || status === 'SUCCESS') {
+      return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-full"><CheckCircle2 className="w-3.5 h-3.5"/> Sucesso</span>;
+    }
+    if (status === 'RUNNING' || status === 'AWAITING_CONFIRMATION') {
+      return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-full"><Clock className="w-3.5 h-3.5"/> Pendente</span>;
+    }
+    if (status === 'PARTIAL') {
+      return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-500/10 text-sky-400 text-xs font-medium rounded-full"><AlertCircle className="w-3.5 h-3.5"/> Parcial</span>;
+    }
+    return <span className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 text-rose-400 text-xs font-medium rounded-full"><AlertCircle className="w-3.5 h-3.5"/> Falha</span>;
   }
 
   return (
     <PageLayout 
-      title="Nova Importação" 
-      subtitle="Selecione a origem e envie os dados" 
+      title="Central de Importações" 
       hideTitle={true}
       breadcrumb={
         <div className="text-sm font-medium text-zinc-500 flex items-center gap-2">
           <Link href="/governance" className="hover:text-white transition-colors">Governança</Link>
-          <span>/</span>
+          <ChevronRight className="w-4 h-4" />
           <span className="text-zinc-300">Importações</span>
         </div>
       }
     >
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Link 
-          href="/governance"
-          className="inline-flex items-center text-sm font-medium text-zinc-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="mr-2 w-4 h-4" />
-          Voltar para Dashboard
-        </Link>
+      <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-100 flex items-center gap-3 mb-2">
+            <UploadCloud className="w-6 h-6 text-emerald-400" />
+            Central de Importações
+          </h1>
+          <p className="text-zinc-500 text-sm">
+            Histórico de sincronizações Pierre Finance e importações de dados MyProfit.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="admin-outline" size="sm" onClick={loadData} disabled={loading}
+            className="text-zinc-300 border-white/10 hover:bg-white/5">
+            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+          <Link href="/governance/imports/new">
+            <Button variant="admin" className="bg-emerald-600 hover:bg-emerald-500">
+              <UploadCloud className="h-4 w-4 mr-2" /> Nova Importação
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <div className="max-w-4xl mx-auto w-full">
-        <section className="rounded-md border border-slate-800 bg-slate-900/50 p-8 shadow-sm">
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-zinc-400 mb-2">Origem dos Dados</label>
-            <select
-              value={sourceType}
-              onChange={(e) => {
-                setSourceType(e.target.value);
-                setPreview(null);
-                setErrorMsg(null);
-                setSelectedFile(null);
-                setRawText("");
-              }}
-              className="w-full sm:w-1/2 rounded-md border border-slate-800 bg-slate-900 p-3 text-sm text-zinc-100 outline-none transition focus:border-emerald-400/50"
-            >
-              <option value="MYPROFIT_PROVENTOS">MyProfit - Proventos (CSV)</option>
-              <option value="MYPROFIT_EVOLUCAO">MyProfit - Evolução (CSV)</option>
-            </select>
-          </div>
-
-          {isPasteMode ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="mb-6 flex items-center gap-3">
-                <ClipboardPaste className="h-5 w-5 text-emerald-300" />
-                <h2 className="text-xl font-semibold text-zinc-100">Colar Extrato</h2>
-              </div>
-              <textarea
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                rows={12}
-                placeholder="Cole aqui as linhas copiadas..."
-                className="w-full rounded-md border border-slate-800 bg-slate-900 p-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/50"
-              />
-              <Button
-                variant="admin"
-                type="submit"
-                disabled={isSubmitting || rawText.trim().length === 0}
-                className="w-full"
-              >
-                {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                Processar e Importar
-              </Button>
-            </form>
-          ) : (
-            <div>
-              <div className="mb-6 flex items-center gap-3">
-                <FileUp className="h-5 w-5 text-emerald-300" />
-                <h2 className="text-xl font-semibold text-zinc-100">Upload de Arquivo</h2>
-              </div>
-
-              {!preview ? (
-                <div
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-800 bg-slate-900/50 p-16 text-center transition hover:border-emerald-500/50 cursor-pointer"
-                  onClick={() => document.getElementById("fileInput")?.click()}
-                >
-                  <FileUp className="mb-4 h-10 w-10 text-emerald-500/50" />
-                  <p className="text-base font-medium text-zinc-300">Arraste o arquivo CSV aqui</p>
-                  <p className="mt-2 text-sm text-zinc-500">Ou clique para procurar em seu computador</p>
-                  <input id="fileInput" type="file" accept=".csv,.txt,.xlsx" className="hidden" onChange={handleFileSelect} />
-                </div>
-              ) : null}
-
-              {selectedFile && !preview && (
-                <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between rounded-md border border-emerald-500/20 bg-emerald-500/5 p-4 gap-4">
-                  <div className="flex items-center gap-3">
-                    <FileUp className="h-5 w-5 text-emerald-400" />
-                    <span className="text-sm font-medium text-zinc-200">{selectedFile.name}</span>
-                  </div>
-                  <Button variant="admin" onClick={() => handleSubmit()} disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Validar Arquivo"}
-                  </Button>
-                </div>
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/50 shadow-xl overflow-hidden flex flex-col h-full mt-6">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-zinc-400">
+            <thead className="bg-black/20 text-xs uppercase text-zinc-500">
+              <tr>
+                <th className="px-6 py-4 font-medium">Data</th>
+                <th className="px-6 py-4 font-medium">Origem</th>
+                <th className="px-6 py-4 font-medium">Arquivo / Lote</th>
+                <th className="px-6 py-4 font-medium">Status</th>
+                <th className="px-6 py-4 font-medium text-right">Lidas</th>
+                <th className="px-6 py-4 font-medium text-right">Inseridas</th>
+                <th className="px-6 py-4 font-medium text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 bg-transparent">
+              {loading && items.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-zinc-500">
+                    <Loader2 className="inline animate-spin mr-2" size={16} /> Carregando...
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-zinc-500">
+                    Nenhuma importação encontrada.
+                  </td>
+                </tr>
+              ) : (
+                items.map(item => (
+                  <tr key={item.id} className="hover:bg-white/5 transition-colors group">
+                    <td className="px-6 py-4 font-mono text-zinc-400">
+                      {new Date(item.started_at).toLocaleString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-zinc-200">
+                      {item.source_type}
+                    </td>
+                    <td className="px-6 py-4 text-zinc-400 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-zinc-500" />
+                      {item.file_name}
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={item.status} />
+                    </td>
+                    <td className="px-6 py-4 text-right text-zinc-300 font-mono">
+                      {item.rows_read}
+                    </td>
+                    <td className="px-6 py-4 text-right text-emerald-400 font-mono">
+                      {item.rows_inserted}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {item.status === 'RUNNING' || item.status === 'AWAITING_CONFIRMATION' ? (
+                        <Link href={`/governance/imports/review?run=${item.id}`}>
+                          <Button variant="admin-outline" size="sm" className="text-amber-400 border-amber-500/20 hover:bg-amber-500/10">
+                            Revisar
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href={`/governance/imports/${item.id}`}>
+                          <Button variant="admin-outline" size="sm" className="text-zinc-400 border-white/10 hover:text-white hover:bg-white/5">
+                            Detalhes
+                          </Button>
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                ))
               )}
-            </div>
-          )}
-
-          {errorMsg && (
-            <div className="mt-6 rounded-md border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
-              {errorMsg}
-            </div>
-          )}
-
-          {preview && !isPasteMode && (
-            <div className="mt-6 space-y-6 rounded-md border border-slate-800 bg-slate-900 p-6">
-              <div className="border-b border-slate-800 pb-4">
-                <h3 className="text-lg font-medium text-zinc-100">Resultado da Validação</h3>
-                <p className="text-sm text-zinc-400 mt-1">Verifique os dados extraídos antes de prosseguir.</p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                <div className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
-                  <span className="block text-zinc-500 mb-1">Total de Linhas Encontradas</span>
-                  <span className="font-medium text-zinc-200">{preview.total_rows ?? 0}</span>
-                </div>
-                <div className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
-                  <span className="block text-zinc-500 mb-1">Linhas Válidas</span>
-                  <span className="font-medium text-zinc-200">{preview.valid_rows ?? 0}</span>
-                </div>
-                <div className="rounded-md border border-slate-800 bg-slate-900/50 p-4">
-                  <span className="block text-zinc-500 mb-1">Tipo de Arquivo</span>
-                  <span className="font-medium text-zinc-200">{preview.detected_file_type || '-'}</span>
-                </div>
-              </div>
-              
-              {preview.errors && preview.errors.length > 0 && (
-                <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-                  <strong className="text-sm text-red-400 block mb-2">Erros e Avisos:</strong>
-                  <ul className="list-inside list-disc text-sm text-red-300/80 space-y-1">
-                    {preview.errors.map((e: string, i: number) => <li key={i}>{e}</li>)}
-                  </ul>
-                </div>
-              )}
-
-              <div className="mt-8 flex gap-4">
-                <Button 
-                  onClick={() => { setSelectedFile(null); setPreview(null); }} 
-                  variant="admin-outline" 
-                  className="flex-1 text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300 h-12"
-                >
-                  Descartar Arquivo
-                </Button>
-                <Button 
-                  variant="admin"
-                  onClick={() => router.push(`/governance/review?run=${preview.run_id}`)} 
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 h-12 text-base"
-                >
-                  Continuar para Revisão
-                </Button>
-              </div>
-            </div>
-          )}
-        </section>
+            </tbody>
+          </table>
+        </div>
       </div>
     </PageLayout>
   );

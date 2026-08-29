@@ -58,8 +58,8 @@ export default function GovernanceDashboardPage() {
             className="text-zinc-300 border-white/10 hover:bg-white/5">
             <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Atualizar
           </Button>
-          <Link href="/governance/imports">
-            <Button variant="admin"><UploadCloud className="h-4 w-4 mr-2" /> Nova Importação MyProfit</Button>
+          <Link href="/governance/imports/new">
+            <Button variant="admin"><UploadCloud className="h-4 w-4 mr-2" /> Nova Importação</Button>
           </Link>
         </div>
       </div>

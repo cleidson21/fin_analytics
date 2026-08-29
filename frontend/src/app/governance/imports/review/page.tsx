@@ -59,9 +59,16 @@ function ReviewContent() {
   const [confirming, setConfirming] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
   const [stagingData, setStagingData] = useState<StagingData | null>(null);
-  const [parsedLog, setParsedLog] = useState<{ warnings: string[], errors: string[] } | null>(null);
+  const [parsedLog, setParsedLog] = useState<{ warnings: string[], errors: string[], missing_columns?: string[], ignored_columns?: string[], required_columns?: string[], optional_columns?: string[] } | null>(null);
   const [filter, setFilter] = useState<string>("ALL");
   const [isUnauthorized, setIsUnauthorized] = useState(false);
+  
+  // MyProfit Ativos specific states
+  const [accountId, setAccountId] = useState<string>("");
+  const [referenceDate, setReferenceDate] = useState<string>("");
+
+  const isMyProfitAtivos = runData?.source_type === "MYPROFIT_ATIVOS";
+
 
   useEffect(() => {
     if (runId) {
@@ -104,10 +111,25 @@ function ReviewContent() {
 
   async function handleConfirm() {
     if (!runData) return;
+    if (isMyProfitAtivos && (!accountId || !referenceDate)) {
+      setConfirmMessage("Erro: Selecione a Conta e a Data de Referência.");
+      return;
+    }
+    
     setConfirming(true);
     setConfirmMessage(null);
     try {
-      await fetchFromAPI(`/governance/imports/${runData.id}/confirm`, { method: "POST" });
+      const payload: Record<string, any> = {};
+      if (isMyProfitAtivos) {
+        payload.account_id = accountId;
+        payload.reference_date = referenceDate;
+      }
+      
+      await fetchFromAPI(`/governance/imports/${runData.id}/confirm`, { 
+        method: "POST",
+        body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined,
+        headers: Object.keys(payload).length > 0 ? { "Content-Type": "application/json" } : undefined
+      });
       setConfirmMessage("Importação confirmada com sucesso!");
       loadRunDetails(runData.id);
     } catch (e: any) {
@@ -197,13 +219,13 @@ function ReviewContent() {
             </div>
             <div className="flex items-center gap-4">
               {renderStatusBadge(runData.status)}
-              {runData.status === 'AWAITING_CONFIRMATION' && (
+              {(runData.status === 'AWAITING_CONFIRMATION' || runData.status === 'RUNNING') && (
                 <div className="flex items-center gap-3 ml-4 border-l border-white/10 pl-4">
                   <Button variant="admin-outline" onClick={handleCancel} disabled={confirming} className="border-red-500/20 text-red-400 hover:bg-red-500/10">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Cancelar
                   </Button>
-                  <Button variant="admin" onClick={handleConfirm} disabled={confirming} className="bg-emerald-600 hover:bg-emerald-500">
+                  <Button variant="admin" onClick={handleConfirm} disabled={confirming || (isMyProfitAtivos && (!accountId || !referenceDate))} className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50">
                     {confirming ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                     Confirmar Importação
                   </Button>
@@ -237,6 +259,34 @@ function ReviewContent() {
               <span className="text-4xl font-bold text-red-400">{counters.error}</span>
             </div>
           </div>
+
+          {/* Staging Parameters (Account & Date) for MYPROFIT_ATIVOS */}
+          {isMyProfitAtivos && (runData.status === 'AWAITING_CONFIRMATION' || runData.status === 'RUNNING') && (
+            <div className="rounded-3xl border border-indigo-500/20 bg-indigo-500/5 p-6 shadow-xl mb-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Parâmetros de Importação</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-sm font-medium text-slate-300">ID da Conta / Carteira</label>
+                  <input
+                    type="text"
+                    value={accountId}
+                    onChange={(e) => setAccountId(e.target.value)}
+                    placeholder="Ex: Minha Carteira Principal"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-md py-2 px-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Data de Referência (Snapshot) <span className="text-rose-400">*</span></label>
+                  <input 
+                    type="date"
+                    value={referenceDate}
+                    onChange={(e) => setReferenceDate(e.target.value)}
+                    className="w-full rounded-md border border-slate-800 bg-slate-900 p-3 text-sm text-zinc-100 outline-none transition focus:border-indigo-400/50"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Table of items */}
@@ -359,6 +409,63 @@ function ReviewContent() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* Relatório de Colunas (Obrigatórias, Opcionais, Ausentes, Ignoradas) */}
+                {parsedLog?.missing_columns && parsedLog.missing_columns.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="h-5 w-5 text-rose-400" />
+                      <span className="text-sm font-medium text-rose-300">Colunas Obrigatórias Ausentes ({parsedLog.missing_columns.length})</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedLog.missing_columns.map((col, i) => (
+                        <span key={i} className="text-xs text-rose-300 bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20">{col}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {parsedLog?.required_columns && parsedLog.required_columns.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckCircle className="h-5 w-5 text-emerald-400" />
+                      <span className="text-sm font-medium text-emerald-300">Colunas Obrigatórias Reconhecidas ({parsedLog.required_columns.length})</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedLog.required_columns.map((col, i) => (
+                        <span key={i} className="text-xs text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">{col}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {parsedLog?.optional_columns && parsedLog.optional_columns.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckCircle className="h-5 w-5 text-blue-400" />
+                      <span className="text-sm font-medium text-blue-300">Colunas Opcionais Reconhecidas ({parsedLog.optional_columns.length})</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedLog.optional_columns.map((col, i) => (
+                        <span key={i} className="text-xs text-blue-300 bg-blue-500/10 px-2 py-1 rounded-md border border-blue-500/20">{col}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {parsedLog?.ignored_columns && parsedLog.ignored_columns.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="h-5 w-5 text-zinc-400" />
+                      <span className="text-sm font-medium text-zinc-300">Colunas Ignoradas ({parsedLog.ignored_columns.length})</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {parsedLog.ignored_columns.map((col, i) => (
+                        <span key={i} className="text-xs text-zinc-400 bg-zinc-500/10 px-2 py-1 rounded-md border border-zinc-500/20">{col}</span>
+                      ))}
+                    </div>
                   </div>
                 )}
 

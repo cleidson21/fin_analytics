@@ -8,6 +8,7 @@ from backend.domains.pierre.read_router import router as read_router
 from backend.domains.pierre.governance_router import router as governance_router
 from backend.api.routers.dashboard import router as dashboard_router
 from backend.api.routers.auth import router as auth_router
+from backend.api.routers.governance import router as api_governance_router
 from backend.domains.pierre.installments_router import router as installments_router
 
 # Ensure all V3 tables exist on startup (including GovernanceAuditLog from Sprint 2.8)
@@ -40,3 +41,6 @@ app.include_router(governance_router, prefix="/api/v1")
 
 # Dashboard — KPIs, Pacing, Heatmap, Categorias
 app.include_router(dashboard_router, prefix="/api/v1")
+
+# API Governance (Imports & Dashboard)
+app.include_router(api_governance_router, prefix="/api/v1")
