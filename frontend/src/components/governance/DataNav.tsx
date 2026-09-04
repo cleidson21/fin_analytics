@@ -9,6 +9,7 @@ export function DataNav() {
 
   const tabs = [
     { name: "Posições", href: "/governance/data/positions", icon: PieChart },
+    { name: "Evolução", href: "/governance/data/evolucao", icon: LineChart },
     { name: "Proventos", href: "/governance/data/dividends", icon: LineChart },
     { name: "Categorias", href: "/governance/data/categories", icon: Tag },
   ];

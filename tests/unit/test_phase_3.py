@@ -21,6 +21,7 @@ async def test_get_transactions_use_case():
     cat_id = uuid4()
     mock_tx = Transaction(
         id=tx_id,
+        user_id=uuid4(),
         provider="manual",
         account_id=uuid4(),
         amount=Decimal("100.0"),
@@ -68,6 +69,7 @@ async def test_get_transaction_details_use_case():
     tx_id = uuid4()
     mock_tx = Transaction(
         id=tx_id,
+        user_id=uuid4(),
         provider="manual",
         account_id=uuid4(),
         amount=Decimal("50.0"),

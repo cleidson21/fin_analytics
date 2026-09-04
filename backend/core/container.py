@@ -164,10 +164,23 @@ def get_pierre_client() -> IPierreProvider:
     """Retorna uma instância não-inicializada do PierreClient."""
     return PierreClient()
 
+from backend.application.services.pierre_legacy_tx_adapter import PierreLegacyTransactionAdapter
+from backend.application.services.pierre_legacy_acc_adapter import PierreLegacyAccountAdapter
+from backend.application.services.pierre_legacy_cat_adapter import PierreLegacyCategoryAdapter
+
+def get_pierre_legacy_transaction_adapter() -> ITransactionRepository:
+    return PierreLegacyTransactionAdapter()
+
+def get_pierre_legacy_account_adapter() -> IAccountRepository:
+    return PierreLegacyAccountAdapter()
+
+def get_pierre_legacy_category_adapter():
+    return PierreLegacyCategoryAdapter()
+
 def get_pierre_import_service(
-    transaction_repo: ITransactionRepository = Depends(get_transaction_repository),
-    account_repo: IAccountRepository = Depends(get_account_repository),
-    category_repo: ICategoryRepository = Depends(get_category_repository),
+    transaction_repo: ITransactionRepository = Depends(get_pierre_legacy_transaction_adapter),
+    account_repo: IAccountRepository = Depends(get_pierre_legacy_account_adapter),
+    category_repo = Depends(get_pierre_legacy_category_adapter),
     sync_log_repo: ISyncLogRepository = Depends(get_sync_log_repository),
 ) -> PierreImportService:
     """Constrói o PierreImportService com suas dependências injetadas."""

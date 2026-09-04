@@ -94,6 +94,23 @@ class UploadImportUseCase:
                         f"Arquivo incompatível com o tipo {source_type}: "
                         + "; ".join(parse_report["errors"])
                     )
+            elif source_type == "MYPROFIT_EVOLUCAO":
+                # Validação e parse para Evolução
+                rows, parse_report = parser.parse_evolucao()
+
+                if parse_report.get("errors"):
+                    raise ValueError(
+                        f"Arquivo incompatível com o tipo {source_type}: "
+                        + "; ".join(parse_report["errors"])
+                    )
+            elif source_type == "MYPROFIT_PROVENTOS":
+                rows, parse_report = parser.parse_proventos()
+
+                if parse_report.get("errors"):
+                    raise ValueError(
+                        f"Arquivo incompatível com o tipo {source_type}: "
+                        + "; ".join(parse_report["errors"])
+                    )
             else:
                 # Modo genérico para outros tipos (backward compatibility)
                 rows = parser.parse()

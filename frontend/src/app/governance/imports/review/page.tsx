@@ -68,6 +68,8 @@ function ReviewContent() {
   const [referenceDate, setReferenceDate] = useState<string>("");
 
   const isMyProfitAtivos = runData?.source_type === "MYPROFIT_ATIVOS";
+  const isMyProfitEvolucao = runData?.source_type === "MYPROFIT_EVOLUCAO";
+  const isMyProfitProventos = runData?.source_type === "MYPROFIT_PROVENTOS";
 
 
   useEffect(() => {
@@ -115,23 +117,37 @@ function ReviewContent() {
       setConfirmMessage("Erro: Selecione a Conta e a Data de Referência.");
       return;
     }
+    if ((isMyProfitEvolucao || isMyProfitProventos) && !accountId) {
+      setConfirmMessage("Erro: Selecione a Conta origem.");
+      return;
+    }
     
     setConfirming(true);
     setConfirmMessage(null);
     try {
-      const payload: Record<string, any> = {};
+      const payload: Record<string, any> = {
+        account_id: accountId
+      };
       if (isMyProfitAtivos) {
-        payload.account_id = accountId;
         payload.reference_date = referenceDate;
       }
       
-      await fetchFromAPI(`/governance/imports/${runData.id}/confirm`, { 
+      const res = await fetchFromAPI(`/governance/imports/${runData.id}/confirm`, { 
         method: "POST",
         body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined,
         headers: Object.keys(payload).length > 0 ? { "Content-Type": "application/json" } : undefined
       });
+      
+      if (!res) {
+        throw new Error("Erro desconhecido na API ou falha de rede.");
+      }
+      
       setConfirmMessage("Importação confirmada com sucesso!");
-      loadRunDetails(runData.id);
+      
+      // Delay curto para mostrar a mensagem de sucesso e redirecionar
+      setTimeout(() => {
+        router.push('/governance/imports');
+      }, 1500);
     } catch (e: any) {
       setConfirmMessage("Erro ao confirmar: " + e.message);
     } finally {
@@ -225,7 +241,7 @@ function ReviewContent() {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Cancelar
                   </Button>
-                  <Button variant="admin" onClick={handleConfirm} disabled={confirming || (isMyProfitAtivos && (!accountId || !referenceDate))} className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50">
+                  <Button variant="admin" onClick={handleConfirm} disabled={confirming || (isMyProfitAtivos && (!accountId || !referenceDate)) || (isMyProfitEvolucao && !accountId)} className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50">
                     {confirming ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                     Confirmar Importação
                   </Button>
@@ -260,8 +276,8 @@ function ReviewContent() {
             </div>
           </div>
 
-          {/* Staging Parameters (Account & Date) for MYPROFIT_ATIVOS */}
-          {isMyProfitAtivos && (runData.status === 'AWAITING_CONFIRMATION' || runData.status === 'RUNNING') && (
+          {/* Staging Parameters (Account & Date) for MYPROFIT */}
+          {(isMyProfitAtivos || isMyProfitEvolucao || isMyProfitProventos) && (runData.status === 'AWAITING_CONFIRMATION' || runData.status === 'RUNNING') && (
             <div className="rounded-3xl border border-indigo-500/20 bg-indigo-500/5 p-6 shadow-xl mb-6">
               <h3 className="text-lg font-semibold text-white mb-4">Parâmetros de Importação</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -275,15 +291,17 @@ function ReviewContent() {
                     className="w-full bg-slate-900 border border-slate-700 rounded-md py-2 px-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">Data de Referência (Snapshot) <span className="text-rose-400">*</span></label>
-                  <input 
-                    type="date"
-                    value={referenceDate}
-                    onChange={(e) => setReferenceDate(e.target.value)}
-                    className="w-full rounded-md border border-slate-800 bg-slate-900 p-3 text-sm text-zinc-100 outline-none transition focus:border-indigo-400/50"
-                  />
-                </div>
+                {isMyProfitAtivos && (
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Data de Referência (Snapshot) <span className="text-rose-400">*</span></label>
+                    <input 
+                      type="date"
+                      value={referenceDate}
+                      onChange={(e) => setReferenceDate(e.target.value)}
+                      className="w-full rounded-md border border-slate-800 bg-slate-900 p-3 text-sm text-zinc-100 outline-none transition focus:border-indigo-400/50"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

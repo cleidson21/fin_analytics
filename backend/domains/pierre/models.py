@@ -1,13 +1,14 @@
 from datetime import datetime
 from sqlalchemy import Column, String, Numeric, DateTime, Boolean, Integer, ForeignKeyConstraint, Text
-from backend.database.base import Base
+from sqlalchemy.orm import declarative_base
 
+LegacyBase = declarative_base()
 
 # ==========================================================================
 # RAW LAYER — dados originais da API
 # ==========================================================================
 
-class Account(Base):
+class Account(LegacyBase):
     __tablename__ = "accounts"
 
     provider = Column(String, primary_key=True)
@@ -21,7 +22,7 @@ class Account(Base):
     last_sync = Column(DateTime)
 
 
-class Transaction(Base):
+class Transaction(LegacyBase):
     """
     Tabela principal com duas camadas bem separadas:
 
@@ -106,7 +107,7 @@ class Transaction(Base):
 # INSERT-only. Nunca UPDATE ou DELETE.
 # ==========================================================================
 
-class GovernanceAuditLog(Base):
+class GovernanceAuditLog(LegacyBase):
     """
     Registro imutável de cada transição de estado de governança.
 
@@ -143,7 +144,7 @@ class GovernanceAuditLog(Base):
     reason = Column(String, nullable=True)       # motivo informado pelo usuário
 
 
-class Category(Base):
+class Category(LegacyBase):
     __tablename__ = "categories"
 
     provider = Column(String, primary_key=True)
@@ -151,7 +152,7 @@ class Category(Base):
     normalized_name = Column(String)
 
 
-class SyncState(Base):
+class SyncState(LegacyBase):
     __tablename__ = "sync_state"
 
     provider = Column(String, primary_key=True)
@@ -162,7 +163,7 @@ class SyncState(Base):
     api_version = Column(String)
 
 
-class SyncHistory(Base):
+class SyncHistory(LegacyBase):
     __tablename__ = "sync_history"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

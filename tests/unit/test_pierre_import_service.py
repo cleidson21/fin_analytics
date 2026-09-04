@@ -24,8 +24,18 @@ def make_service(mock_provider=None, mock_tx_repo=None, mock_acc_repo=None) -> P
     provider = mock_provider or MagicMock()
     tx_repo = mock_tx_repo or AsyncMock()
     acc_repo = mock_acc_repo or AsyncMock()
+    category_repo = AsyncMock()
+    sync_log_repo = AsyncMock()
     tx_repo.bulk_upsert = AsyncMock(return_value={"inserted": 0, "skipped": 0})
-    return PierreImportService(pierre_provider=provider, transaction_repo=tx_repo, account_repo=acc_repo)
+    # sync_log_repo.create retorna o próprio log passado (comportamento real)
+    sync_log_repo.create = AsyncMock(side_effect=lambda log: log)
+    return PierreImportService(
+        pierre_provider=provider,
+        transaction_repo=tx_repo,
+        account_repo=acc_repo,
+        category_repo=category_repo,
+        sync_log_repo=sync_log_repo,
+    )
 
 
 def make_dto(**kwargs) -> ProviderTransactionDTO:
@@ -64,7 +74,7 @@ class TestToEntity:
     def test_basic_conversion(self):
         service = self._get_service()
         dto = make_dto()
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert entity.provider.value == "PIERRE"
         assert entity.external_id == "pierre_001"
         assert entity.amount == Decimal("200")
@@ -74,46 +84,46 @@ class TestToEntity:
     def test_description_normalization(self):
         service = self._get_service()
         dto = make_dto(description="  mercado  extra  ")
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert entity.description == "mercado extra"
 
     def test_description_control_chars_removed(self):
         service = self._get_service()
         dto = make_dto(description="Loja\x00Extra\x1f")
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert "\x00" not in entity.description
         assert "\x1f" not in entity.description
 
     def test_description_empty_uses_fallback(self):
         service = self._get_service()
         dto = make_dto(description="   ")
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert entity.description == "Sem descrição"
 
     def test_type_mapping_purchase(self):
         service = self._get_service()
         dto = make_dto(type="purchase")
-        assert service._to_entity(dto, uuid4()).type.value == "PURCHASE"
+        assert service._to_entity(dto, uuid4(), {}).type.value == "PURCHASE"
 
     def test_type_mapping_transfer(self):
         service = self._get_service()
         dto = make_dto(type="transferência")
-        assert service._to_entity(dto, uuid4()).type.value == "TRANSFER"
+        assert service._to_entity(dto, uuid4(), {}).type.value == "TRANSFER"
 
     def test_type_fallback_debit(self):
         service = self._get_service()
         dto = make_dto(type=None, direction="DEBIT")
-        assert service._to_entity(dto, uuid4()).type.value == "PURCHASE"
+        assert service._to_entity(dto, uuid4(), {}).type.value == "PURCHASE"
 
     def test_type_fallback_credit(self):
         service = self._get_service()
         dto = make_dto(type=None, direction="CREDIT")
-        assert service._to_entity(dto, uuid4()).type.value == "OTHER"
+        assert service._to_entity(dto, uuid4(), {}).type.value == "OTHER"
 
     def test_installment_count_from_dto(self):
         service = self._get_service()
         dto = make_dto(installment_count=12, installment_current=3)
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert entity.installment_count == 12
         assert entity.installment_current == 3
 
@@ -121,7 +131,7 @@ class TestToEntity:
         """Se current > count, deve ser clamped ao count."""
         service = self._get_service()
         dto = make_dto(installment_count=3, installment_current=5)
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert entity.installment_current == 3
 
     def test_hash_differs_on_different_ids(self):
@@ -134,14 +144,14 @@ class TestToEntity:
         """Transações parceladas sem purchaseId devem ter um UUID gerado."""
         service = self._get_service()
         dto = make_dto(installment_count=3, installment_current=1)
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert entity.purchase_id is not None
 
     def test_no_purchase_id_for_single_purchase(self):
         """Transações simples sem parcelamento não devem ter purchase_id."""
         service = self._get_service()
         dto = make_dto(installment_count=None, installment_current=None)
-        entity = service._to_entity(dto, uuid4())
+        entity = service._to_entity(dto, uuid4(), {})
         assert entity.purchase_id is None
 
 
@@ -162,8 +172,17 @@ async def test_import_transactions_success():
     mock_tx_repo.bulk_upsert = AsyncMock(return_value={"inserted": 1, "skipped": 0})
     
     mock_acc_repo = AsyncMock()
+    mock_category_repo = AsyncMock()
+    mock_sync_log_repo = AsyncMock()
+    mock_sync_log_repo.create = AsyncMock(side_effect=lambda log: log)
 
-    service = PierreImportService(pierre_provider=mock_provider, transaction_repo=mock_tx_repo, account_repo=mock_acc_repo)
+    service = PierreImportService(
+        pierre_provider=mock_provider,
+        transaction_repo=mock_tx_repo,
+        account_repo=mock_acc_repo,
+        category_repo=mock_category_repo,
+        sync_log_repo=mock_sync_log_repo,
+    )
     result = await service.import_transactions(
         user_id=uuid4(),
         start_date=date(2024, 3, 1),
@@ -184,7 +203,16 @@ async def test_import_transactions_handles_client_error():
 
     mock_tx_repo = AsyncMock()
     mock_acc_repo = AsyncMock()
-    service = PierreImportService(pierre_provider=mock_provider, transaction_repo=mock_tx_repo, account_repo=mock_acc_repo)
+    mock_category_repo = AsyncMock()
+    mock_sync_log_repo = AsyncMock()
+    mock_sync_log_repo.create = AsyncMock(side_effect=lambda log: log)
+    service = PierreImportService(
+        pierre_provider=mock_provider,
+        transaction_repo=mock_tx_repo,
+        account_repo=mock_acc_repo,
+        category_repo=mock_category_repo,
+        sync_log_repo=mock_sync_log_repo,
+    )
 
     result = await service.import_transactions(
         user_id=uuid4(),
@@ -207,8 +235,17 @@ async def test_import_transactions_skips_on_duplicate():
     mock_tx_repo = AsyncMock()
     mock_tx_repo.bulk_upsert = AsyncMock(return_value={"inserted": 0, "skipped": 2})
     mock_acc_repo = AsyncMock()
+    mock_category_repo = AsyncMock()
+    mock_sync_log_repo = AsyncMock()
+    mock_sync_log_repo.create = AsyncMock(side_effect=lambda log: log)
 
-    service = PierreImportService(pierre_provider=mock_provider, transaction_repo=mock_tx_repo, account_repo=mock_acc_repo)
+    service = PierreImportService(
+        pierre_provider=mock_provider,
+        transaction_repo=mock_tx_repo,
+        account_repo=mock_acc_repo,
+        category_repo=mock_category_repo,
+        sync_log_repo=mock_sync_log_repo,
+    )
     result = await service.import_transactions(user_id=uuid4())
     assert result.skipped == 2
     assert result.imported == 0

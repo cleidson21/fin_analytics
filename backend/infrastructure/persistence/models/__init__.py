@@ -7,6 +7,8 @@ from .tag import TagModel
 from .sync_log import SyncLogModel
 from .wealth.asset import AssetModel
 from .wealth.position_snapshot import PositionSnapshotModel
+from .wealth.portfolio_snapshot import PortfolioSnapshotModel
+from .wealth.income_event import IncomeEventModel
 
 __all__ = [
     "UserModel",
@@ -18,4 +20,6 @@ __all__ = [
     "SyncLogModel",
     "AssetModel",
     "PositionSnapshotModel",
+    "PortfolioSnapshotModel",
+    "IncomeEventModel",
 ]

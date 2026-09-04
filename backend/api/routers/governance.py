@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, Depends, Query, File, UploadFile, Form, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -23,7 +24,7 @@ router = APIRouter(prefix="/governance", tags=["Governance"])
 
 class ConfirmImportRequest(BaseModel):
     account_id: str
-    reference_date: str  # YYYY-MM-DD
+    reference_date: Optional[str] = None  # YYYY-MM-DD
 
 
 # ---------------------------------------------------------------------------
@@ -134,21 +135,58 @@ async def get_staging_items(
 
     items = []
     for i, row in enumerate(staging_rows):
-        ticker = row.get("ticker", "")
-        qty = row.get("quantity")
-        sector = str(row.get("sector") or "").upper()
-        is_rdb = sector == "RDB"
-        is_valid = bool(ticker and (qty is not None or is_rdb))
-        
-        items.append({
-            "source_line_no": i + 2,  # +2 porque linha 1 é header
-            "ticker": ticker,
-            "quantity": qty,
-            "avg_price": row.get("avg_price"),
-            "sector": row.get("sector"),
-            "validation_status": "VALID" if is_valid else "ERROR",
-            "validation_message": None if is_valid else "Ticker ou quantidade inválidos",
-        })
+        if source_type == "MYPROFIT_ATIVOS":
+            ticker = row.get("ticker", "")
+            qty = row.get("quantity")
+            sector = str(row.get("sector") or "").upper()
+            is_rdb = sector == "RDB"
+            is_valid = bool(ticker and (qty is not None or is_rdb))
+            
+            items.append({
+                "source_line_no": i + 2,
+                "ticker": ticker,
+                "quantity": qty,
+                "avg_price": row.get("avg_price"),
+                "sector": row.get("sector"),
+                "validation_status": "VALID" if is_valid else "ERROR",
+                "validation_message": None if is_valid else "Ticker ou quantidade inválidos",
+            })
+        elif source_type == "MYPROFIT_EVOLUCAO":
+            ref = row.get("reference_month")
+            patr = row.get("patrimonio")
+            is_valid = bool(ref and patr is not None)
+            
+            items.append({
+                "source_line_no": i + 2,
+                "ticker": ref,
+                "quantity": None,
+                "avg_price": patr,
+                "sector": None,
+                "validation_status": "VALID" if is_valid else "ERROR",
+                "validation_message": None if is_valid else "Mês de referência ou patrimônio ausente",
+            })
+        elif source_type == "MYPROFIT_PROVENTOS":
+            ativo = row.get("ativo")
+            recebido = row.get("recebido")
+            data_pgto = row.get("data_pgto")
+            is_valid = bool(ativo and recebido is not None and data_pgto)
+            
+            items.append({
+                "source_line_no": i + 2,
+                "ticker": f"{ativo} ({row.get('tipo', '')})",
+                "quantity": row.get("cotas"),
+                "avg_price": recebido,
+                "sector": None,
+                "validation_status": "VALID" if is_valid else "ERROR",
+                "validation_message": None if is_valid else "Campos obrigatórios ausentes",
+            })
+        else:
+            items.append({
+                "source_line_no": i + 2,
+                "ticker": "Desconhecido",
+                "validation_status": "ERROR",
+                "validation_message": f"Tipo {source_type} não formatado para UI"
+            })
 
     return {
         "run_id": run_id,
@@ -207,20 +245,46 @@ async def confirm_import(
     Requer account_id e reference_date (YYYY-MM-DD).
     """
     try:
-        use_case = ConfirmMyProfitAtivosSyncUseCase(session)
-        report = await use_case.execute(
-            run_id=run_id,
-            account_id=body.account_id,
-            reference_date=body.reference_date,
-        )
-
-        # Persiste account_id e reference_date no metadata para exibição futura
+        # Descobre o tipo primeiro
         result = await session.execute(select(SyncLogModel).where(SyncLogModel.id == run_id))
         log = result.scalar_one_or_none()
-        if log and log.provider_metadata:
+        if not log:
+            raise ValueError(f"Importação {run_id} não encontrada")
+            
+        source_type = log.provider.value
+
+        if source_type == "MYPROFIT_ATIVOS":
+            if not body.reference_date:
+                raise ValueError("Data de referência é obrigatória para MYPROFIT_ATIVOS.")
+            use_case = ConfirmMyProfitAtivosSyncUseCase(session)
+            report = await use_case.execute(
+                run_id=run_id,
+                account_id=body.account_id,
+                reference_date=body.reference_date,
+            )
+        elif source_type == "MYPROFIT_EVOLUCAO":
+            from backend.application.use_cases.confirm_myprofit_evolucao import ConfirmMyProfitEvolucaoSyncUseCase
+            use_case = ConfirmMyProfitEvolucaoSyncUseCase(session)
+            report = await use_case.execute(
+                run_id=run_id,
+                account_id=body.account_id,
+            )
+        elif source_type == "MYPROFIT_PROVENTOS":
+            from backend.application.use_cases.confirm_myprofit_proventos import ConfirmMyProfitProventosSyncUseCase
+            use_case = ConfirmMyProfitProventosSyncUseCase(session)
+            report = await use_case.execute(
+                run_id=run_id,
+                account_id=body.account_id,
+            )
+        else:
+            raise ValueError(f"Não há fluxo de confirmação para o tipo {source_type}")
+
+        # Persiste account_id e reference_date no metadata para exibição futura
+        if log.provider_metadata:
             meta = dict(log.provider_metadata)
             meta["confirmed_account_id"] = body.account_id
-            meta["confirmed_reference_date"] = body.reference_date
+            if source_type == "MYPROFIT_ATIVOS":
+                meta["confirmed_reference_date"] = body.reference_date
             meta["confirmation_report"] = report
             log.provider_metadata = meta
             await session.commit()
@@ -229,6 +293,8 @@ async def confirm_import(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Erro interno ao confirmar importação: {str(e)}")
 
@@ -328,7 +394,155 @@ async def get_positions(
             "observacao": None,
         })
 
-    return {"data": data, "total": total, "limit": limit, "offset": offset}
+    return {
+        "data": data,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
+
+
+# ---------------------------------------------------------------------------
+# Evolution — leitura dos portfolio_snapshots
+# ---------------------------------------------------------------------------
+
+@router.get("/data/evolution", response_model=Dict[str, Any])
+async def get_evolution_data(
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    account_id: Optional[str] = Query(None),
+    current_user: UserResponseDTO = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """
+    Lista evolução patrimonial (portfolio_snapshots).
+    """
+    from sqlalchemy import func
+    from backend.infrastructure.persistence.models.wealth.portfolio_snapshot import PortfolioSnapshotModel
+
+    stmt = select(PortfolioSnapshotModel)
+
+    if account_id:
+        stmt = stmt.where(PortfolioSnapshotModel.account_id == account_id)
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_result = await session.execute(count_stmt)
+    total = total_result.scalar_one()
+
+    stmt = stmt.order_by(
+        PortfolioSnapshotModel.reference_month.desc()
+    ).limit(limit).offset(offset)
+
+    result = await session.execute(stmt)
+    rows = result.scalars().all()
+
+    data = []
+    for snap in rows:
+        data.append({
+            "account_id": snap.account_id,
+            "reference_month": snap.reference_month,
+            "patrimonio": float(snap.patrimonio) if snap.patrimonio is not None else None,
+            "pct_mensal": float(snap.pct_mensal) if snap.pct_mensal is not None else None,
+            "pct_acumulada": float(snap.pct_acumulada) if snap.pct_acumulada is not None else None,
+            "compras": float(snap.compras) if snap.compras is not None else None,
+            "vendas": float(snap.vendas) if snap.vendas is not None else None,
+            "op_finalizadas": float(snap.op_finalizadas) if snap.op_finalizadas is not None else None,
+            "proventos": float(snap.proventos) if snap.proventos is not None else None,
+            "ibov_mensal": float(snap.ibov_mensal) if snap.ibov_mensal is not None else None,
+            "ibov_acumulado": float(snap.ibov_acumulado) if snap.ibov_acumulado is not None else None,
+            "cdi_mensal": float(snap.cdi_mensal) if snap.cdi_mensal is not None else None,
+            "cdi_acumulado": float(snap.cdi_acumulado) if snap.cdi_acumulado is not None else None,
+            "ipca_mensal": float(snap.ipca_mensal) if snap.ipca_mensal is not None else None,
+            "ipca_acumulado": float(snap.ipca_acumulado) if snap.ipca_acumulado is not None else None,
+            "ifix_mensal": float(snap.ifix_mensal) if snap.ifix_mensal is not None else None,
+            "ifix_acumulado": float(snap.ifix_acumulado) if snap.ifix_acumulado is not None else None,
+            "sp_mensal": float(snap.sp_mensal) if snap.sp_mensal is not None else None,
+            "sp_acumulado": float(snap.sp_acumulado) if snap.sp_acumulado is not None else None,
+            "idiv_mensal": float(snap.idiv_mensal) if snap.idiv_mensal is not None else None,
+            "idiv_acumulado": float(snap.idiv_acumulado) if snap.idiv_acumulado is not None else None,
+        })
+
+    return {
+        "data": data,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
+
+
+@router.get("/dividends", response_model=Dict[str, Any])
+async def get_governance_proventos(
+    account_id: Optional[str] = None,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    ticker: Optional[str] = None,
+    tipo_evento: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: UserResponseDTO = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    from backend.infrastructure.persistence.models.wealth.income_event import IncomeEventModel
+    from backend.infrastructure.persistence.models.wealth.asset import AssetModel
+    from datetime import datetime
+    
+    stmt = select(IncomeEventModel, AssetModel.ticker).join(
+        AssetModel, IncomeEventModel.asset_id == AssetModel.id
+    )
+
+    if account_id:
+        stmt = stmt.where(IncomeEventModel.account_id == account_id)
+    if ticker:
+        stmt = stmt.where(AssetModel.ticker.ilike(f"%{ticker}%"))
+    if tipo_evento:
+        stmt = stmt.where(IncomeEventModel.event_type.ilike(f"%{tipo_evento}%"))
+    if start_date:
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d").date()
+            stmt = stmt.where(IncomeEventModel.payment_date >= sd)
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            ed = datetime.strptime(end_date, "%Y-%m-%d").date()
+            stmt = stmt.where(IncomeEventModel.payment_date <= ed)
+        except ValueError:
+            pass
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_result = await session.execute(count_stmt)
+    total = total_result.scalar_one()
+
+    stmt = stmt.order_by(
+        IncomeEventModel.payment_date.desc()
+    ).limit(limit).offset(offset)
+
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    data = []
+    for snap, ticker_val in rows:
+        data.append({
+            "id": snap.id,
+            "account_id": snap.account_id,
+            "asset_id": snap.asset_id,
+            "ticker": ticker_val,
+            "tipo_evento": snap.event_type,
+            "data_pagamento": snap.payment_date.isoformat() if snap.payment_date else None,
+            "ex_date": snap.ex_date.isoformat() if snap.ex_date else None,
+            "quantity": float(snap.quantity) if snap.quantity is not None else None,
+            "value_per_unit": float(snap.value_per_unit) if snap.value_per_unit is not None else None,
+            "valor": float(snap.gross_amount) if snap.gross_amount is not None else None,
+            "yoc": float(snap.yoc) if snap.yoc is not None else None,
+            "dy": float(snap.dy) if snap.dy is not None else None,
+        })
+
+    return {
+        "data": data,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
 
 
 @router.put("/positions/{ticker}/{snapshot_date}", response_model=Dict[str, Any])

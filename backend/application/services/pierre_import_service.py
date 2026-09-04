@@ -104,83 +104,85 @@ class PierreImportService:
         imported = skipped = errors = accounts_synced = categories_synced = 0
         error_message = None
 
-        # try:
-        async with self._provider as provider:
-            # 1. Sync accounts to avoid FK constraint errors
-            raw_accounts = await provider.get_accounts()
-            for acc_dto in raw_accounts:
-                account_uuid = self._deterministic_uuid(f"pierre_account_{acc_dto.id}")
-                # Upsert Account
-                from backend.domain.enums.account_type import AccountType
-                acc_type_str = acc_dto.type.upper() if acc_dto.type else "BANK"
-                try:
-                    acc_type = AccountType(acc_type_str)
-                except ValueError:
-                    acc_type = AccountType.BANK
+        try:
+            async with self._provider as provider:
+                # 1. Sync accounts to avoid FK constraint errors
+                raw_accounts = await provider.get_accounts()
+                for acc_dto in raw_accounts:
+                    account_uuid = self._deterministic_uuid(f"pierre_account_{acc_dto.id}")
+                    # Upsert Account
+                    from backend.domain.enums.account_type import AccountType
+                    acc_type_str = acc_dto.type.upper() if acc_dto.type else "BANK"
+                    try:
+                        acc_type = AccountType(acc_type_str)
+                    except ValueError:
+                        acc_type = AccountType.BANK
 
-                from backend.domain.enums.currency_code import CurrencyCode
-                currency_str = acc_dto.currency_code.upper() if acc_dto.currency_code else "BRL"
-                try:
-                    currency = CurrencyCode(currency_str)
-                except ValueError:
-                    currency = CurrencyCode.BRL
+                    from backend.domain.enums.currency_code import CurrencyCode
+                    currency_str = acc_dto.currency_code.upper() if acc_dto.currency_code else "BRL"
+                    try:
+                        currency = CurrencyCode(currency_str)
+                    except ValueError:
+                        currency = CurrencyCode.BRL
 
-                acc_entity = Account(
-                    id=account_uuid,
-                    user_id=user_id,
-                    external_id=acc_dto.id,
-                    provider=_PROVIDER,
-                    institution_id=None,
-                    name=acc_dto.name,
-                    type=acc_type,
-                    subtype=None,
-                    currency_code=currency,
-                    balance=acc_dto.balance if hasattr(acc_dto, "balance") and acc_dto.balance else Decimal("0"),
-                    balance_updated_at=datetime.now(timezone.utc),
-                    is_active=True,
-                    provider_code=None,
-                    provider_metadata=None,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
+                    acc_entity = Account(
+                        id=account_uuid,
+                        user_id=user_id,
+                        external_id=acc_dto.id,
+                        provider=_PROVIDER,
+                        institution_id=None,
+                        name=acc_dto.name,
+                        type=acc_type,
+                        subtype=None,
+                        currency_code=currency,
+                        balance=acc_dto.balance if hasattr(acc_dto, "balance") and acc_dto.balance else Decimal("0"),
+                        balance_updated_at=datetime.now(timezone.utc),
+                        is_active=True,
+                        provider_code=None,
+                        provider_metadata=None,
+                        created_at=datetime.now(timezone.utc),
+                        updated_at=datetime.now(timezone.utc),
+                    )
+                    await self._account_repo.upsert(acc_entity)
+                    accounts_synced += 1
+
+                # 2. Sync transactions
+                raw_transactions = await provider.get_transactions(start_date, end_date)
+
+            # 3. Extract unique categories and upsert them
+            unique_categories = set(t.category for t in raw_transactions if t.category)
+            category_map: dict[str, UUID] = {}
+            for cat_name in unique_categories:
+                cat_slug = cat_name.lower().replace(" ", "-")
+                cat_uuid = self._deterministic_uuid(f"category_{cat_slug}")
+                cat_entity = Category(
+                    id=cat_uuid,
+                    name=cat_name,
+                    slug=cat_slug,
+                    is_system=False,
                 )
-                await self._account_repo.upsert(acc_entity)
-                accounts_synced += 1
+                await self._category_repo.save(cat_entity)
+                category_map[cat_name] = cat_uuid
+                categories_synced += 1
 
-            # 2. Sync transactions
-            raw_transactions = await provider.get_transactions(start_date, end_date)
-            
-        # 3. Extract unique categories and upsert them
-        unique_categories = set(t.category for t in raw_transactions if t.category)
-        category_map: dict[str, UUID] = {}
-        for cat_name in unique_categories:
-            cat_slug = cat_name.lower().replace(" ", "-")
-            cat_uuid = self._deterministic_uuid(f"category_{cat_slug}")
-            cat_entity = Category(
-                id=cat_uuid,
-                name=cat_name,
-                slug=cat_slug,
-                is_system=False,
+            logger.info(
+                "pierre.import.fetched",
+                extra={"count": len(raw_transactions)},
             )
-            await self._category_repo.save(cat_entity)
-            category_map[cat_name] = cat_uuid
-            categories_synced += 1
 
-        logger.info(
-            "pierre.import.fetched",
-            extra={"count": len(raw_transactions)},
-        )
+            # 4. Process in batches
+            for batch_start in range(0, len(raw_transactions), _BATCH_SIZE):
+                batch = raw_transactions[batch_start : batch_start + _BATCH_SIZE]
+                b_imported, b_skipped, b_errors = await self._process_batch(batch, user_id, category_map)
+                imported += b_imported
+                skipped += b_skipped
+                errors += b_errors
 
-        # Process in batches
-        for batch_start in range(0, len(raw_transactions), _BATCH_SIZE):
-            batch = raw_transactions[batch_start : batch_start + _BATCH_SIZE]
-            b_imported, b_skipped, b_errors = await self._process_batch(batch, user_id, category_map)
-            imported += b_imported
-            skipped += b_skipped
-            errors += b_errors
+        except Exception as exc:
+            logger.error("pierre.import.failed", extra={"error": str(exc)})
+            error_message = str(exc)
+            raw_transactions = []
 
-        # except Exception as exc:
-        #     logger.error("pierre.import.failed", extra={"error": str(exc)})
-        #     error_message = str(exc)
 
         duration = round(time.monotonic() - t0, 2)
         if error_message:
@@ -297,7 +299,10 @@ class PierreImportService:
             installment_count=inst_count,
             installment_current=inst_current,
             purchase_id=purchase_uuid,
-            provider_metadata={"pierre_category": dto.category} if dto.category else None,
+            provider_metadata={
+                "pierre_category": dto.category,
+                "account_external_id": dto.account_id
+            } if dto.category or dto.account_id else None,
             hash=self._compute_hash(dto.id, _PROVIDER.value, transaction_date, amount),
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),

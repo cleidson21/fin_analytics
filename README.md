@@ -110,6 +110,17 @@ npm run dev
 
 A aplicação estará disponível em `http://localhost:3000`.
 
+### Testes
+
+Para executar a suíte oficial de testes do projeto (baseline validado):
+```bash
+pytest tests/unit/
+```
+
+### Dívida Técnica Conhecida (Pipeline Pierre)
+
+O fluxo oficial de importação Pierre utiliza o adapter legado porque a Governança atual opera sobre o schema legado. Existe coexistência temporária entre infraestrutura canônica e models legados (`LegacyBase`). O legado permanece como fonte operacional da Governança até futura migração planejada.
+
 ---
 
 ## 📂 Estrutura de Diretórios (Padrão Enterprise)

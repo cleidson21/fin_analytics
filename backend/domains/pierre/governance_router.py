@@ -15,7 +15,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List, Any, Dict
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, field_validator
 
 from backend.database.session import SessionLocal
@@ -25,6 +25,8 @@ from backend.domains.pierre.repository import (
     GovernedFinancialQuery,
 )
 from backend.domains.pierre.models import Transaction, GovernanceAuditLog, Account
+from backend.api.dependencies.auth import get_current_user
+from backend.application.dtos.user_response_dto import UserResponseDTO
 
 router = APIRouter(prefix="/governance", tags=["Governance"])
 
@@ -187,6 +189,7 @@ def list_transactions(
     sort_dir: str = Query("desc", description="asc | desc"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
+    current_user: UserResponseDTO = Depends(get_current_user),
 ):
     """
     Lista transações com dados RAW + governança.
@@ -239,7 +242,11 @@ def list_transactions(
 
 
 @router.get("/transactions/{provider}/{external_id}", response_model=TransactionDetailOut)
-def get_transaction_detail(provider: str, external_id: str):
+def get_transaction_detail(
+    provider: str,
+    external_id: str,
+    current_user: UserResponseDTO = Depends(get_current_user),
+):
     """
     Detalhe completo de uma transação: dados RAW + governança + histórico de eventos de auditoria.
     """
@@ -264,7 +271,12 @@ def get_transaction_detail(provider: str, external_id: str):
 
 
 @router.patch("/transactions/{provider}/{external_id}/classify", response_model=TransactionGovernanceOut)
-def classify_transaction(provider: str, external_id: str, payload: ClassifyRequest):
+def classify_transaction(
+    provider: str,
+    external_id: str,
+    payload: ClassifyRequest,
+    current_user: UserResponseDTO = Depends(get_current_user),
+):
     """
     Classifica manualmente uma transação.
 
@@ -302,7 +314,11 @@ def classify_transaction(provider: str, external_id: str, payload: ClassifyReque
 
 
 @router.get("/transactions/{provider}/{external_id}/history", response_model=List[AuditEventOut])
-def get_history(provider: str, external_id: str):
+def get_history(
+    provider: str,
+    external_id: str,
+    current_user: UserResponseDTO = Depends(get_current_user),
+):
     """
     Histórico completo de eventos de governança para uma transação.
     Cada evento contém: action, before_json, after_json, changed_at, reason.
@@ -322,7 +338,13 @@ def get_history(provider: str, external_id: str):
 
 
 @router.post("/transactions/{provider}/{external_id}/rollback/{audit_id}", response_model=TransactionGovernanceOut)
-def rollback_to_event(provider: str, external_id: str, audit_id: int, reason: Optional[str] = Query(None)):
+def rollback_to_event(
+    provider: str,
+    external_id: str,
+    audit_id: int,
+    reason: Optional[str] = Query(None),
+    current_user: UserResponseDTO = Depends(get_current_user),
+):
     """
     Restaura o estado de governança para o snapshot 'before_json' do evento especificado.
     ATÔMICO: restaura governança + insere audit_log action=ROLLBACK em uma única transação.
@@ -359,6 +381,7 @@ def get_financial_summary(
     end_date: Optional[str] = Query(None, description="YYYY-MM-DD — usa transactions.date"),
     economic_classification: Optional[str] = Query(None, description="ENTRADA | SAIDA | IGNORAR — filtra os totais"),
     category: Optional[str] = Query(None, description="Nome da categoria RAW"),
+    current_user: UserResponseDTO = Depends(get_current_user),
 ):
     """
     Totais financeiros baseados em classificações governadas.
@@ -389,6 +412,7 @@ def get_global_audit_log(
     limit: int = Query(100, ge=1, le=500, description="Máximo de eventos a retornar"),
     action: Optional[str] = Query(None, description="Filtrar por ação: CREATE_CLASSIFICATION, UPDATE_CLASSIFICATION, ROLLBACK"),
     provider: Optional[str] = Query(None, description="Filtrar por provedor"),
+    current_user: UserResponseDTO = Depends(get_current_user),
 ):
     """
     Histórico global de eventos de governança (governance_audit_log).
