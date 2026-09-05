@@ -26,7 +26,7 @@ export function useCategoriesAdmin(filters: CategoryFilters) {
       queryParams.set("offset", filters.offset.toString());
 
       const response = await fetchFromAPI<PaginatedResponse<Category>>(
-        `/governance/categories?${queryParams.toString()}`
+        `/categories?${queryParams.toString()}`
       );
 
       if (response && response.data) {

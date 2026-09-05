@@ -13,27 +13,50 @@ import { AllocationDonut } from "@/components/wealth/charts/AllocationDonut";
 import { DiversificationGauge } from "@/components/wealth/charts/DiversificationGauge";
 
 // ── Classify ticker into asset class ──────────────────────────────────────────
-type AssetClass = "Todos" | "Renda Fixa" | "Fundos Imobiliários (FIIs)" | "Ações Brasil" | "ETFs Globais" | "Criptomoedas" | "Outros";
+
+const ASSET_LABEL_MAP: Record<string, string> = {
+  "FIXED_INCOME": "Renda Fixa",
+  "STOCK": "Ações",
+  "FII": "FIIs",
+  "ETF_GLOBAL": "ETFs Globais",
+  "BDR": "BDRs",
+  "CRYPTO": "Criptomoedas",
+  "OTHER": "Outros",
+  "Todos": "Todos"
+};
+
+const ASSET_COLOR_MAP: Record<string, string> = {
+  "FIXED_INCOME": "#34D399", // Emerald 400 - Safe, steady
+  "STOCK": "#60A5FA",        // Blue 400 - Sleek, professional
+  "FII": "#FBBF24",          // Amber 400 - Real estate, yield
+  "ETF_GLOBAL": "#FB7185",   // Rose 400 - International
+  "BDR": "#A78BFA",          // Purple 400
+  "CRYPTO": "#FB923C",       // Orange 400 - High risk
+  "OTHER": "#94A3B8",        // Slate 400 - Neutral
+  "Desconhecido": "#94A3B8",
+  "N/A": "#94A3B8"
+};
 
 function getTickerColor(assetClass: string): string {
-  if (assetClass === "Renda Fixa") return "#4ecf98";
-  if (assetClass === "Fundos Imobiliários (FIIs)") return "#7F77DD";
-  if (assetClass === "Ações Brasil") return "#7EB8F7";
-  if (assetClass === "Criptomoedas") return "#e97070";
-  return "#f5a623"; // ETFs Globais / Outros
+  return ASSET_COLOR_MAP[assetClass] || ASSET_COLOR_MAP["OTHER"];
 }
 
-const FILTER_PILLS: { label: string; value: AssetClass }[] = [
+function getTickerLabel(assetClass: string): string {
+  return ASSET_LABEL_MAP[assetClass] || assetClass;
+}
+
+const FILTER_PILLS = [
   { label: "Todos", value: "Todos" },
-  { label: "Renda Fixa", value: "Renda Fixa" },
-  { label: "FIIs", value: "Fundos Imobiliários (FIIs)" },
-  { label: "Ações BR", value: "Ações Brasil" },
-  { label: "ETFs Globais", value: "ETFs Globais" },
-  { label: "Criptomoedas", value: "Criptomoedas" },
+  { label: "Renda Fixa", value: "FIXED_INCOME" },
+  { label: "Ações", value: "STOCK" },
+  { label: "FIIs", value: "FII" },
+  { label: "BDRs", value: "BDR" },
+  { label: "ETFs Globais", value: "ETF_GLOBAL" },
+  { label: "Cripto", value: "CRYPTO" },
 ];
 
 export default function AllocationPage() {
-  const [activeFilter, setActiveFilter] = useState<AssetClass>("Todos");
+  const [activeFilter, setActiveFilter] = useState<string>("Todos");
 
   const {
     allocation, positions, top5Concentration,
@@ -50,7 +73,7 @@ export default function AllocationPage() {
 
   // ── Donut Data ───────────────────────────────────────────────────────────────
   const donutData = allocation.map((a) => ({
-    name: a.asset_class,
+    name: getTickerLabel(a.asset_class),
     value: a.current_total_value,
     color: getTickerColor(a.asset_class)
   }));
@@ -67,7 +90,7 @@ export default function AllocationPage() {
     .sort((a, b) => b.valor_atual_value - a.valor_atual_value)
     .slice(0, 5);
 
-  const filterLabel = activeFilter === "Todos" ? "Top 5 Posições (Risco)" : `Top 5 — ${activeFilter}`;
+  const filterLabel = activeFilter === "Todos" ? "Top 5 Posições (Risco)" : `Top 5 — ${getTickerLabel(activeFilter)}`;
 
 
 
@@ -127,7 +150,7 @@ export default function AllocationPage() {
 
         <WealthKpiCard
           title="Classe Dominante"
-          value={isLoading ? "..." : dominantClass.name}
+          value={isLoading ? "..." : getTickerLabel(dominantClass.name)}
           icon={PieChart}
           iconBgColor="bg-[#7F77DD]/10"
           iconColor="text-[#7F77DD]"
@@ -214,11 +237,11 @@ export default function AllocationPage() {
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getTickerColor(p.asset_class) }} />
                     <Link href={`/wealth/asset/${p.ticker}`} className="font-medium text-[#4ecf98] hover:underline cursor-pointer">{p.ticker}</Link>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded text-neutral-500" style={{ background: "rgba(255,255,255,0.05)" }}>
-                      {p.asset_class}
+                    <span className="text-[10px] px-1.5 py-0.5 rounded text-neutral-500 font-semibold uppercase tracking-wider" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {getTickerLabel(p.asset_class)}
                     </span>
                   </div>
-                  <span className="text-neutral-400">{formatCurrency(p.valor_atual_value)} ({p.peso_percentual})</span>
+                  <span className="text-neutral-400">{formatCurrency(p.valor_atual_value)} ({p.peso_percentual_value.toFixed(2)}%)</span>
                 </div>
                 <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
                   <div
@@ -253,19 +276,53 @@ export default function AllocationPage() {
               { header: "Qtd", accessorKey: "quantidade", align: "right" },
               { header: "Preço Médio", cell: (item: unknown) => formatCurrency((item as PositionDetail).preco_medio_value || 0), align: "right" },
               { header: "Valor Investido", cell: (item: unknown) => formatCurrency((item as PositionDetail).valor_investido_value || 0), align: "right" },
-              { header: "Valor Atual", cell: (item: unknown) => formatCurrency((item as PositionDetail).valor_atual_value || 0), align: "right" },
-              { header: "Diferença (R$)", cell: (item: unknown) => (item as PositionDetail).ganho, align: "right", className: (item: unknown) => ((item as PositionDetail).ganho_value || 0) >= 0 ? "text-[#4ecf98]" : "text-[#e97070]" },
+              { 
+                header: "Valor Atual", 
+                cell: (item: unknown) => {
+                  const p = item as PositionDetail;
+                  if (!p.has_market_value) return <span className="text-neutral-500 font-mono">-</span>;
+                  return (
+                    <div className="flex flex-col items-end gap-0.5 leading-tight">
+                      <span>{formatCurrency(p.valor_atual_value)}</span>
+                      {p.market_data_provider === "YFINANCE" && (
+                        <span className="text-[9px] text-neutral-500 border border-white/5 bg-white/[0.03] px-1 rounded uppercase tracking-wider">
+                          Mercado
+                        </span>
+                      )}
+                    </div>
+                  );
+                }, 
+                align: "right" 
+              },
+              { 
+                header: "Diferença (R$)", 
+                cell: (item: unknown) => {
+                  const p = item as PositionDetail;
+                  if (!p.has_market_value) return <span className="text-neutral-500 font-mono">-</span>;
+                  const val = p.ganho_value || 0;
+                  const sign = val > 0 ? "+" : "";
+                  return `${sign}${formatCurrency(val)}`;
+                }, 
+                align: "right", 
+                className: (item: unknown) => {
+                  const p = item as PositionDetail;
+                  if (!p.has_market_value) return "";
+                  const val = p.ganho_value || 0;
+                  return val === 0 ? "text-neutral-500 font-mono" : `${val > 0 ? "text-[#4ecf98]" : "text-[#e97070]"} font-mono`;
+                }
+              },
               { header: "%", cell: (item: unknown) => {
                  const typedItem = item as PositionDetail;
-                 if (!typedItem.valor_investido_value || typedItem.valor_investido_value === 0) return "-";
+                 if (!typedItem.has_market_value || !typedItem.valor_investido_value) return <span className="text-neutral-500 font-mono">-</span>;
                  const diff = ((typedItem.ganho_value || 0) / typedItem.valor_investido_value) * 100;
+                 if (diff === 0) return <span className="text-neutral-500 font-mono">0.00%</span>;
                  return (
-                   <span className={diff >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
-                     {diff >= 0 ? "+" : ""}{diff.toFixed(2)}%
+                   <span className={`${diff > 0 ? "text-[#4ecf98]" : "text-[#e97070]"} font-mono`}>
+                     {diff > 0 ? "+" : ""}{diff.toFixed(2)}%
                    </span>
                  );
               }, align: "right" },
-              { header: "Peso", accessorKey: "peso_percentual", align: "right" },
+              { header: "Peso", cell: (item: unknown) => `${((item as PositionDetail).peso_percentual_value || 0).toFixed(2)}%`, align: "right", className: "text-neutral-400 font-mono" },
             ]}
           />
         </WealthChartCard>

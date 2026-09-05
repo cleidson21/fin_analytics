@@ -34,7 +34,7 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
               <th 
                 key={i} 
                 className={cn(
-                  "px-4 pb-2 pt-3 text-[10px] tracking-[0.08em] uppercase text-neutral-500 font-normal border-b border-white/[0.05]",
+                  "px-2 sm:px-3 pb-2 pt-3 text-[10px] tracking-[0.08em] uppercase text-neutral-500 font-normal border-b border-white/[0.05]",
                   col.align === "right" && "text-right",
                   col.align === "center" && "text-center",
                   typeof col.className === "string" ? col.className : undefined,
@@ -75,7 +75,7 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
                   <td 
                     key={colIndex} 
                     className={cn(
-                      "px-4 py-3 text-[13px] text-neutral-400",
+                      "px-2 sm:px-3 py-3 text-[13px] text-neutral-400 whitespace-nowrap",
                       col.align === "right" && "text-right",
                       col.align === "center" && "text-center",
                       typeof col.className === "function" ? col.className(row) : col.className

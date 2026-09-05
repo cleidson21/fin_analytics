@@ -70,18 +70,25 @@ def normalize_myprofit_position(row: Dict[str, Any]) -> Dict[str, Any]:
     }
     
     sec_upper = (sector or "").upper()
-    if "FUNDO" in sec_upper and "IMOBILI" in sec_upper or "FII" in sec_upper:
+    if "FUNDO" in sec_upper and "IMOBILI" in sec_upper or "FII" in sec_upper or "FUNDO DE INVESTIMENTO" in sec_upper:
+        normalized["asset_class"] = "FII"
+    elif sec_upper in ["PAPEIS", "MISTO", "SHOPPINGS", "FUNDO DE FUNDOS", "LAJES CORPORATIVAS", "GALPÕES LOGÍSTICOS"]:
         normalized["asset_class"] = "FII"
     elif "BDR" in sec_upper:
         normalized["asset_class"] = "BDR"
     elif "ETF" in sec_upper:
-        normalized["asset_class"] = "ETF"
+        normalized["asset_class"] = "ETF_GLOBAL"
     elif "CRIPTO" in sec_upper:
         normalized["asset_class"] = "CRYPTO"
     elif sec_upper in ["RDB", "TESOURO DIRETO", "RENDA FIXA"]:
         normalized["asset_class"] = "FIXED_INCOME"
     elif not sector:
         normalized["asset_class"] = "OTHER"
+    else:
+        if sec_upper in ["OUTROS", "DIVERSOS"] and ticker.isalpha() and len(ticker) <= 4:
+            normalized["asset_class"] = "ETF_GLOBAL"
+        else:
+            normalized["asset_class"] = "STOCK"
 
     if sector == "RDB":
         normalized["quantity"] = Decimal("1")

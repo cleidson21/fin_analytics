@@ -128,8 +128,6 @@ export default function EvolutionPage() {
               { header: "IBOV (Acum)", cell: (item) => `${item.ibov_acumulado_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#7EB8F7]", className: (item) => item.ibov_acumulado_pct === 0 ? "text-neutral-600" : colorForValue(item.ibov_acumulado_pct) },
               { header: "CDI (Mês)", cell: (item) => `${item.cdi_mensal_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#7F77DD]", className: (item) => item.cdi_mensal_pct === 0 ? "text-neutral-600" : colorForValue(item.cdi_mensal_pct) },
               { header: "CDI (Acum)", cell: (item) => `${item.cdi_acumulado_pct.toFixed(2)}%`, align: "right", headerClassName: "text-[#7F77DD]", className: (item) => item.cdi_acumulado_pct === 0 ? "text-neutral-600" : colorForValue(item.cdi_acumulado_pct) },
-              { header: "Aportes", cell: (item) => formatCurrency(item.compras_value), align: "right" },
-              { header: "Vendas", cell: (item) => formatCurrency(item.vendas_value), align: "right" },
             ]}
           />
         </WealthChartCard>

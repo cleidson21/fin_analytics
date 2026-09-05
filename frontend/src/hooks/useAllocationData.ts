@@ -21,8 +21,11 @@ export interface PositionDetail {
   preco_medio_value?: number;
   valor_investido_value?: number;
   valor_atual_value: number;
-  ganho_value?: number;
+  ganho_value?: number | null;
   peso_percentual_value: number;
+  has_market_value: boolean;
+  market_data_provider?: string;
+  market_price?: number;
 }
 
 import { WealthSummary } from "./usePortfolioData";
@@ -50,23 +53,31 @@ export function useAllocationData() {
             current_total_value: Number(cls.market_value || 0)
           }));
 
-          const posMapped: PositionDetail[] = (wealth.by_asset || []).map((asset: any) => ({
-            ticker: asset.name || "N/A",
-            asset_class: asset.name || "N/A",
-            asset_subclass: "N/A",
-            quantidade: "0",
-            preco_medio: "0",
-            valor_investido: "0",
-            valor_atual: String(asset.market_value || 0),
-            ganho: "0",
-            peso_percentual: String(asset.allocation_percent || 0),
-            quantidade_value: 0,
-            preco_medio_value: 0,
-            valor_investido_value: 0,
-            valor_atual_value: Number(asset.market_value || 0),
-            ganho_value: 0,
-            peso_percentual_value: Number(asset.allocation_percent || 0)
-          }));
+          const posMapped: PositionDetail[] = (wealth.by_asset || []).map((asset: any) => {
+            const has_market_value = asset.has_market_value === true;
+            const effective_current_value = has_market_value ? Number(asset.market_value) : Number(asset.invested_value || 0);
+
+            return {
+              ticker: asset.name || "N/A",
+              asset_class: asset.asset_class || "N/A",
+              asset_subclass: "N/A",
+              quantidade: String(asset.quantity || 0),
+              preco_medio: String(asset.avg_price || 0),
+              valor_investido: String(asset.invested_value || 0),
+              valor_atual: String(asset.market_value || 0),
+              ganho: String(asset.profit || 0),
+              peso_percentual: String(asset.allocation_percent || 0),
+              quantidade_value: Number(asset.quantity || 0),
+              preco_medio_value: Number(asset.avg_price || 0),
+              valor_investido_value: Number(asset.invested_value || 0),
+              valor_atual_value: effective_current_value,
+              ganho_value: has_market_value ? Number(asset.profit) : null,
+              peso_percentual_value: Number(asset.allocation_percent || 0),
+              has_market_value,
+              market_data_provider: asset.market_data_provider,
+              market_price: asset.market_price ? Number(asset.market_price) : undefined
+            };
+          });
 
           setAllocation(allocMapped);
           setPositions(posMapped);

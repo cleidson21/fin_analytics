@@ -29,10 +29,10 @@ export function useAlphaData(period: string) {
             proventos_totais: Number(summaryRes.total_dividends || 0),
             compras_totais: Number(summaryRes.total_invested || 0),
             vendas_totais: 0,
-            ibov_acumulado_pct: 0,
-            cdi_acumulado_pct: 0,
-            alpha_vs_ibov: 0,
-            alpha_vs_cdi: 0
+            ibov_acumulado_pct: Number(summaryRes.ibov_acumulado || 0),
+            cdi_acumulado_pct: Number(summaryRes.cdi_acumulado || 0),
+            alpha_vs_ibov: Number(summaryRes.alpha_vs_ibov || 0),
+            alpha_vs_cdi: Number(summaryRes.alpha_vs_cdi || 0)
           });
         } else {
           setIsError(true);

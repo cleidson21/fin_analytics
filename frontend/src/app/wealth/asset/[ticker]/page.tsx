@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Percent, TrendingUp, ChevronLeft, Wallet, Hash, PieChart, ClipboardList, Receipt, Scale, Droplets, Activity } from "lucide-react";
 import { Dividend } from "@/types/entities";
 import Link from 'next/link';
-import { BarChart, Bar, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 import { WealthKpiCard } from '@/components/wealth/ui/WealthKpiCard';
 import { WealthChartCard } from '@/components/wealth/ui/WealthChartCard';
@@ -33,6 +33,8 @@ interface AssetDetails {
   timeline: { date: string; title: string; description: string; type: string; }[];
 }
 
+import { fetchFromAPI } from "@/lib/api";
+
 export default function AssetDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -41,6 +43,9 @@ export default function AssetDetailPage() {
   const [data, setData] = useState<AssetDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [dividendPage, setDividendPage] = useState(1);
+  const [chartPeriod, setChartPeriod] = useState("1A");
+  const DIVIDEND_PAGE_SIZE = 8;
   
 
 
@@ -49,9 +54,8 @@ export default function AssetDetailPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/investments/asset/${ticker}`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const json = await res.json();
+        const json = await fetchFromAPI<AssetDetails>(`/investments/asset/${ticker}`);
+        if (!json) throw new Error('Failed to fetch');
         if (mounted) {
           setData(json);
           setIsError(false);
@@ -71,6 +75,23 @@ export default function AssetDetailPage() {
   const identity = useMemo(() => {
     return getAssetIdentity(position?.asset_class);
   }, [position?.asset_class]);
+
+  const filteredHistory = useMemo(() => {
+    if (!data?.market_data?.history) return [];
+    const hist = data.market_data.history as any[];
+    if (chartPeriod === '1D') return hist.slice(-2);
+    if (chartPeriod === '1S') return hist.slice(-5);
+    if (chartPeriod === '1M') return hist.slice(-21);
+    if (chartPeriod === '6M') return hist.slice(-126);
+    return hist; // 1A
+  }, [data?.market_data?.history, chartPeriod]);
+
+  const latestMarketData = useMemo(() => {
+    if (filteredHistory.length > 0) {
+      return filteredHistory[filteredHistory.length - 1];
+    }
+    return null;
+  }, [filteredHistory]);
 
   if (isLoading) {
     return (
@@ -232,49 +253,120 @@ export default function AssetDetailPage() {
           <WealthChartCard title="Histórico de Preço" className="h-full flex-1">
             <div className="flex justify-between items-center mb-6">
               <div className="flex gap-2">
-                {["1M", "6M", "1A", "Tudo"].map(p => (
-                  <button key={p} disabled className="px-3 py-1 rounded-full text-xs font-medium text-neutral-600 bg-black/20 cursor-not-allowed">
+                {["1D", "1S", "1M", "6M", "1A"].map(p => (
+                  <button 
+                    key={p} 
+                    onClick={() => setChartPeriod(p)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      chartPeriod === p 
+                        ? 'bg-white/10 text-white' 
+                        : 'text-neutral-500 bg-black/20 hover:bg-white/5'
+                    }`}
+                  >
                     {p}
                   </button>
                 ))}
               </div>
             </div>
             
-            {/* Empty State Graph */}
-            <div className="relative w-full h-[220px] bg-[#141414] rounded-xl border border-white/[0.04] overflow-hidden flex items-center justify-center">
-               <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                 <path d="M 0,200 Q 100,180 200,150 T 400,100 T 600,80 T 800,40" 
-                       fill="none" 
-                       stroke={identity.color} 
-                       strokeOpacity={0.15}
-                       strokeWidth={2}
-                       strokeDasharray="6 4" />
-               </svg>
-               <div className="z-10 flex flex-col items-center gap-3 bg-[#141414]/80 px-6 py-4 rounded-xl backdrop-blur-sm border border-white/5">
-                 <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center">
-                   <TrendingUp size={18} className="text-neutral-500" />
+            {data.market_data.available && filteredHistory.length > 0 ? (
+              <div className="w-full h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={filteredHistory} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={identity.color} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={identity.color} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fill: '#737373', fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={30}
+                    />
+                    <YAxis 
+                      domain={['auto', 'auto']}
+                      tick={{ fill: '#737373', fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(val) => `R$${val.toFixed(0)}`}
+                    />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                      itemStyle={{ color: '#fff', fontSize: '12px' }}
+                      labelStyle={{ color: '#a3a3a3', fontSize: '10px', marginBottom: '4px' }}
+                      formatter={(value: any) => {
+                        const numValue = Number(value);
+                        return [`R$ ${isNaN(numValue) ? '0.00' : numValue.toFixed(2)}`, 'Cotação'];
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="close" 
+                      stroke={identity.color} 
+                      strokeWidth={2}
+                      fillOpacity={1} 
+                      fill="url(#colorClose)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="relative w-full h-[320px] bg-[#141414] rounded-xl border border-white/[0.04] overflow-hidden flex items-center justify-center">
+                 <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                   <path d="M 0,200 Q 100,180 200,150 T 400,100 T 600,80 T 800,40" 
+                         fill="none" 
+                         stroke={identity.color} 
+                         strokeOpacity={0.15}
+                         strokeWidth={2}
+                         strokeDasharray="6 4" />
+                 </svg>
+                 <div className="z-10 flex flex-col items-center gap-3 bg-[#141414]/80 px-6 py-4 rounded-xl backdrop-blur-sm border border-white/5">
+                   <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center">
+                     <TrendingUp size={18} className="text-neutral-500" />
+                   </div>
+                   <p className="text-xs text-neutral-500 text-center max-w-[200px]">
+                     Histórico temporariamente indisponível.
+                   </p>
                  </div>
-                 <p className="text-xs text-neutral-500 text-center max-w-[200px]">
-                   Cotações em tempo real disponíveis após integração yfinance
-                 </p>
-               </div>
-            </div>
+              </div>
+            )}
 
             {/* Mini cards */}
             <div className="grid grid-cols-4 gap-3 mt-4">
-              {['Abertura', 'Máxima', 'Mínima', 'Volume'].map(label => (
-                <div key={label} className="bg-[#141414] rounded-lg p-2.5 border border-white/[0.04]">
-                  <p className="text-[10px] uppercase text-neutral-600 tracking-wider mb-1">{label}</p>
-                  <p className="text-sm font-medium text-neutral-700">—</p>
-                </div>
-              ))}
+              <div className="bg-[#141414] rounded-lg p-2.5 border border-white/[0.04]">
+                <p className="text-[10px] uppercase text-neutral-600 tracking-wider mb-1">Abertura</p>
+                <p className="text-sm font-medium text-neutral-200">
+                  {latestMarketData?.open ? formatCurrency(latestMarketData.open) : '—'}
+                </p>
+              </div>
+              <div className="bg-[#141414] rounded-lg p-2.5 border border-white/[0.04]">
+                <p className="text-[10px] uppercase text-neutral-600 tracking-wider mb-1">Máxima</p>
+                <p className="text-sm font-medium text-neutral-200">
+                  {latestMarketData?.high ? formatCurrency(latestMarketData.high) : '—'}
+                </p>
+              </div>
+              <div className="bg-[#141414] rounded-lg p-2.5 border border-white/[0.04]">
+                <p className="text-[10px] uppercase text-neutral-600 tracking-wider mb-1">Mínima</p>
+                <p className="text-sm font-medium text-neutral-200">
+                  {latestMarketData?.low ? formatCurrency(latestMarketData.low) : '—'}
+                </p>
+              </div>
+              <div className="bg-[#141414] rounded-lg p-2.5 border border-white/[0.04]">
+                <p className="text-[10px] uppercase text-neutral-600 tracking-wider mb-1">Volume</p>
+                <p className="text-sm font-medium text-neutral-200">
+                  {latestMarketData?.volume ? (latestMarketData.volume >= 1e6 ? `${(latestMarketData.volume/1e6).toFixed(2)}M` : latestMarketData.volume.toLocaleString('pt-BR')) : '—'}
+                </p>
+              </div>
             </div>
           </WealthChartCard>
         </div>
 
         {/* Indicadores & Proventos */}
         <div className="flex flex-col gap-6">
-          <WealthChartCard title="Indicadores" className="flex-1">
+          <WealthChartCard title="Indicadores" className="flex-1" tableMode={true}>
             <div className="flex flex-col mt-2">
               {/* Dividend Yield */}
               <div className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04]">
@@ -294,45 +386,29 @@ export default function AssetDetailPage() {
                 <span className="text-[13px] font-medium text-[#4ecf98]">{yoc.toFixed(2)}%</span>
               </div>
               
-              {/* P/VPA */}
-              <div className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04]">
-                <div className="flex items-center gap-[7px]">
-                  <Scale size={15} className="text-neutral-600 flex-shrink-0" />
-                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">P/VPA</span>
+              {/* Dynamic Indicators from API */}
+              {data.indicators?.available && Object.entries(data.indicators.indicators).map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04] last:border-0">
+                  <div className="flex items-center gap-[7px]">
+                    <Scale size={15} className="text-neutral-600 flex-shrink-0" />
+                    <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">{key}</span>
+                  </div>
+                  <div className="flex items-center whitespace-nowrap">
+                    <span className="text-[13px] font-medium text-neutral-200">{String(value)}</span>
+                    <span className="text-[9px] text-neutral-700 bg-white/[0.03] border border-white/[0.05] rounded px-[5px] py-[1px] ml-1.5 whitespace-nowrap">yfinance</span>
+                  </div>
                 </div>
-                <div className="flex items-center whitespace-nowrap">
-                  <span className="text-[13px] font-medium text-neutral-700">—</span>
-                  <span className="text-[9px] text-neutral-700 bg-white/[0.03] border border-white/[0.05] rounded px-[5px] py-[1px] ml-1.5 whitespace-nowrap">yfinance</span>
-                </div>
-              </div>
+              ))}
               
-              {/* Liquidez Diária */}
-              <div className="flex justify-between items-center gap-3 py-[9px] border-b border-white/[0.04]">
-                <div className="flex items-center gap-[7px]">
-                  <Droplets size={15} className="text-neutral-600 flex-shrink-0" />
-                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">Liquidez Diária</span>
+              {!data.indicators?.available && (
+                <div className="py-4 text-center">
+                  <span className="text-xs text-neutral-500">Indicadores fundamentalistas temporariamente indisponíveis.</span>
                 </div>
-                <div className="flex items-center whitespace-nowrap">
-                  <span className="text-[13px] font-medium text-neutral-700">—</span>
-                  <span className="text-[9px] text-neutral-700 bg-white/[0.03] border border-white/[0.05] rounded px-[5px] py-[1px] ml-1.5 whitespace-nowrap">yfinance</span>
-                </div>
-              </div>
-              
-              {/* Volatilidade 12M */}
-              <div className="flex justify-between items-center gap-3 py-[9px]">
-                <div className="flex items-center gap-[7px]">
-                  <Activity size={15} className="text-neutral-600 flex-shrink-0" />
-                  <span className="text-[12.5px] text-neutral-400 whitespace-nowrap">Volatilidade 12M</span>
-                </div>
-                <div className="flex items-center whitespace-nowrap">
-                  <span className="text-[13px] font-medium text-neutral-700">—</span>
-                  <span className="text-[9px] text-neutral-700 bg-white/[0.03] border border-white/[0.05] rounded px-[5px] py-[1px] ml-1.5 whitespace-nowrap">yfinance</span>
-                </div>
-              </div>
+              )}
             </div>
           </WealthChartCard>
 
-          <WealthChartCard title="Resumo Proventos">
+          <WealthChartCard title="Resumo Proventos" tableMode={true}>
             <div className="space-y-4 mt-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-neutral-400">Total recebido</span>
@@ -366,6 +442,7 @@ export default function AssetDetailPage() {
               </div>
             } 
             className="h-full flex flex-col"
+            tableMode={true}
           >
             {chartData.length >= 2 && (
               <div className="w-full h-[50px] mb-6 mt-4 opacity-70">
@@ -388,38 +465,69 @@ export default function AssetDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {dividends!.items.map((item: Dividend, i: number) => {
-                    const parts = ((item as any).data || "").split("-");
-                    const dtFormat = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : (item as any).data;
-                    return (
-                      <tr key={i} className="hover:bg-white/5 transition-colors">
-                        <td className="py-3 text-neutral-300 font-mono text-[13px]">{dtFormat}</td>
-                        <td className="py-3">
-                           <span className="bg-[#f5a623]/10 border border-[#f5a623]/20 text-[#f5a623] px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
-                             {(item as any).tipo}
-                           </span>
-                        </td>
-                        <td className="py-3 text-neutral-500">—</td>
+                  {(() => {
+                    if (!dividends || dividends.items.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-neutral-600 text-xs">
+                            Nenhum provento registrado.
+                          </td>
+                        </tr>
+                      );
+                    }
+                    
+                    const startIdx = (dividendPage - 1) * DIVIDEND_PAGE_SIZE;
+                    const paginatedItems = dividends.items.slice(startIdx, startIdx + DIVIDEND_PAGE_SIZE);
+                    
+                    return paginatedItems.map((item: Dividend, i: number) => {
+                      const parts = ((item as any).data || "").split("-");
+                      const dtFormat = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : (item as any).data;
+                      return (
+                        <tr key={`${dividendPage}-${i}`} className="hover:bg-white/5 transition-colors">
+                          <td className="py-3 text-neutral-300 font-mono text-[13px]">{dtFormat}</td>
+                          <td className="py-3">
+                             <span className="bg-[#f5a623]/10 border border-[#f5a623]/20 text-[#f5a623] px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                               {(item as any).tipo}
+                             </span>
+                          </td>
+                          <td className="py-3 text-neutral-500">—</td>
                           <td className="px-4 py-3 text-[#4ecf98] font-medium text-right">{formatCurrency((item as any).valor || 0)}</td>
-                      </tr>
-                    );
-                  })}
-                  {dividends!.items.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-8 text-center text-neutral-600 text-xs">
-                        Nenhum provento registrado.
-                      </td>
-                    </tr>
-                  )}
+                        </tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
+              {dividends && dividends.items.length > DIVIDEND_PAGE_SIZE && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.05]">
+                  <span className="text-xs text-neutral-500">
+                    Página {dividendPage} de {Math.ceil(dividends.items.length / DIVIDEND_PAGE_SIZE)}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setDividendPage(p => Math.max(1, p - 1))}
+                      disabled={dividendPage === 1}
+                      className="px-3 py-1 text-xs font-medium text-white bg-white/[0.03] border border-white/[0.05] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/[0.06] transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    <button
+                      onClick={() => setDividendPage(p => Math.min(Math.ceil(dividends.items.length / DIVIDEND_PAGE_SIZE), p + 1))}
+                      disabled={dividendPage === Math.ceil(dividends.items.length / DIVIDEND_PAGE_SIZE)}
+                      className="px-3 py-1 text-xs font-medium text-white bg-white/[0.03] border border-white/[0.05] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/[0.06] transition-colors"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </WealthChartCard>
         </div>
 
         {/* Timeline & Negócios */}
         <div className="flex flex-col gap-6">
-          <WealthChartCard title="Marcos Históricos" className="flex-1">
+          <WealthChartCard title="Marcos Históricos" className="flex-1" tableMode={true}>
             <div className="relative flex flex-col gap-0 mt-4 pl-[11px]">
                <div className="absolute left-[11px] top-0 bottom-0 w-px bg-white/[0.06]" />
                
