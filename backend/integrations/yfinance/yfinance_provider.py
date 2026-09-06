@@ -161,7 +161,7 @@ class YFinanceProvider(MarketDataProvider):
             if "priceToBook" in info:
                 indicators["P/VP"] = f"{info['priceToBook']:.2f}"
             if "dividendYield" in info and info["dividendYield"] is not None:
-                indicators["Div. Yield"] = f"{info['dividendYield'] * 100:.2f}%"
+                indicators["Div. Yield"] = f"{info['dividendYield']:.2f}%"
             if "beta" in info:
                 indicators["Beta"] = f"{info['beta']:.2f}"
             if "marketCap" in info:

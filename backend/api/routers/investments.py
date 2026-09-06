@@ -464,6 +464,86 @@ async def get_asset_detail(
         
     indicators_available = len(indicators_data) > 0
 
+    # 8. Marcos Históricos (Timeline)
+    timeline = []
+    
+    # 8.1 Primeiro Aporte
+    stmt_first_pos = select(PositionSnapshotModel).where(
+        PositionSnapshotModel.asset_id == asset.id,
+        PositionSnapshotModel.quantity > 0
+    ).order_by(PositionSnapshotModel.reference_date.asc()).limit(1)
+    if account_id:
+        stmt_first_pos = stmt_first_pos.where(PositionSnapshotModel.account_id == account_id)
+        
+    result_first_pos = await session.execute(stmt_first_pos)
+    first_pos = result_first_pos.scalar_one_or_none()
+    
+    if first_pos:
+        timeline.append({
+            "date": first_pos.reference_date,
+            "title": "Primeiro Aporte",
+            "description": f"Início da posição em {asset.ticker}",
+            "type": "compra"
+        })
+        
+    # 8.2 Primeiro e Maior Provento
+    from datetime import date
+    def format_date(d):
+        if isinstance(d, datetime): return d.strftime("%Y-%m-%d")
+        if isinstance(d, date): return d.strftime("%Y-%m-%d")
+        return str(d)
+
+    valid_incomes = [inc for inc in income_rows if inc.payment_date]
+    if valid_incomes:
+        # Sort by date asc
+        sorted_incomes = sorted(valid_incomes, key=lambda x: x.payment_date if isinstance(x.payment_date, datetime) else datetime.combine(x.payment_date, datetime.min.time()))
+        first_inc = sorted_incomes[0]
+        
+        timeline.append({
+            "date": format_date(first_inc.payment_date),
+            "title": "Primeiro Provento",
+            "description": f"Recebeu {first_inc.event_type} de R$ {float(first_inc.gross_amount or 0):.2f}",
+            "type": "provento"
+        })
+        
+        # Maior provento
+        max_inc = max(valid_incomes, key=lambda x: float(x.gross_amount or 0))
+        if max_inc != first_inc and float(max_inc.gross_amount or 0) > float(first_inc.gross_amount or 0):
+            timeline.append({
+                "date": format_date(max_inc.payment_date),
+                "title": "Recorde de Provento",
+                "description": f"Maior pagamento de {max_inc.event_type} (R$ {float(max_inc.gross_amount or 0):.2f})",
+                "type": "provento_recorde"
+            })
+            
+    # 8.3 Marcos de Valorização (se houver lucro)
+    if invested_value > 0 and gain > 0:
+        gain_pct = (gain / invested_value) * 100
+        if gain_pct >= 50:
+            timeline.append({
+                "date": datetime.utcnow().strftime("%Y-%m-%d"),
+                "title": "Super Valorização",
+                "description": f"Ativo atingiu mais de 50% de ganho de capital",
+                "type": "gain_50"
+            })
+        elif gain_pct >= 20:
+            timeline.append({
+                "date": datetime.utcnow().strftime("%Y-%m-%d"),
+                "title": "Ótima Valorização",
+                "description": f"Ativo atingiu mais de 20% de ganho de capital",
+                "type": "gain_20"
+            })
+        elif gain_pct >= 10:
+            timeline.append({
+                "date": datetime.utcnow().strftime("%Y-%m-%d"),
+                "title": "Boa Valorização",
+                "description": f"Ativo rompeu a marca de 10% de ganho",
+                "type": "gain_10"
+            })
+
+    # Sort timeline by date descending
+    timeline.sort(key=lambda x: x["date"], reverse=True)
+
     return {
         "position": {
             "ticker": asset.ticker,
@@ -493,5 +573,5 @@ async def get_asset_detail(
                 "yoc": yoc
             }
         },
-        "timeline": []
+        "timeline": timeline
     }

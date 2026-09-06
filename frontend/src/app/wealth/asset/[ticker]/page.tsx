@@ -250,7 +250,7 @@ export default function AssetDetailPage() {
         
         {/* Histórico de Preço */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          <WealthChartCard title="Histórico de Preço" className="h-full flex-1">
+          <WealthChartCard title="Histórico de Preço" className="h-full flex-1" tableMode={true}>
             <div className="flex justify-between items-center mb-6">
               <div className="flex gap-2">
                 {["1D", "1S", "1M", "6M", "1A"].map(p => (
