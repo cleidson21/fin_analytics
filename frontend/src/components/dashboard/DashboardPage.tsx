@@ -419,7 +419,7 @@ export function DashboardPage() {
             ))
           ) : (
             [
-              { label: "Patrimônio Total", value: summary.patrimonio, color: "text-[#4ecf98]", isExpense: false },
+              { label: "Patrimônio Total", value: summary.patrimonio, color: colorForValue(summary.patrimonio.current), isExpense: false },
               { label: "Receitas", value: summary.receitas, color: "text-[#4ecf98]", isExpense: false },
               { label: "Despesas", value: summary.despesas, color: "text-[#e97070]", isExpense: true },
               { label: "Saldo Líquido", value: summary.saldo_liquido, color: colorForValue(summary.saldo_liquido.current), isExpense: false },
