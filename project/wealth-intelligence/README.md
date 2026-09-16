@@ -1,7 +1,7 @@
 # FINANALYTICS — Wealth Intelligence
 **Repository:** fin_analytics_v2
 **Version:** v3.1.0-investments (baseline audited)
-**Documentation Status:** Phase 10.2 Financial Health completed; Phase 10.3 next
+**Documentation Status:** Phase 10.2 Financial Health completed and merged; Phase 10.3 planned, not started
 
 ---
 
@@ -21,7 +21,7 @@ This is NOT a public product. This is a personal-use, self-hosted application.
 | Investimentos | ✅ STABLE | Portfolio dashboard, dividends, allocation, performance (from MyProfit) |
 | Governança | ✅ STABLE | Import pipeline, audit trail, AI classification DB scaffold |
 | Metas | ✅ IMPLEMENTED / VALIDATED | CRUD, progress deterministic and functional UI |
-| Financial Health | ✅ COMPLETE | 10.2.0–10.2.10-C validated; independent release review passed |
+| Financial Health | ✅ COMPLETE / MERGED | 10.2.0–10.2.10-C validated; independent release review passed; PR #2 merged into `main` |
 | Wealth Intelligence | 🔵 IN PROGRESS | Goals and Financial Health foundation implemented |
 
 ---
@@ -98,8 +98,8 @@ See [MASTER_PLAN.md](MASTER_PLAN.md) for the full roadmap.
 |-------|------|--------|
 | 10.0 | Architecture & Product Design | ✅ COMPLETE |
 | 10.1 | Goal Domain Foundation | ✅ IMPLEMENTED / VALIDATED |
-| 10.2 | Financial Health Intelligence | ✅ COMPLETED — 10.2.10-C VALIDATED |
-| 10.3 | Planning & Projection Engine | 🔲 NOT STARTED / NEXT |
+| 10.2 | Financial Health Intelligence | ✅ COMPLETED / MERGED — 10.2.10-C VALIDATED |
+| 10.3 | Planning & Projection Engine | 📋 PLANNED / NOT STARTED — 10.3.0 NEXT |
 | 10.4 | Retirement / Financial Independence | 🔲 NOT STARTED |
 | 10.5 | Portfolio Intelligence & Simulation | 🔲 NOT STARTED |
 | 10.6 | Rebalancing & Watchlist | 🔲 NOT STARTED |

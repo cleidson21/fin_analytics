@@ -2,6 +2,23 @@
 
 ---
 
+## [TSK-TRANSITION-10.2-TO-10.3] — 2026-09-16 — Post-Merge Checkpoint and Planning Decomposition
+
+### Verified
+- GitHub PR #2 merged `develop` into `main` at `b7ce8b8`; approved Goals/Health commit `2006e0f` is an ancestor of the merge.
+- Local and remote `main`/`develop` were fast-forwarded to the same post-merge checkpoint without rebase, reset, or a new local merge commit.
+- Phase 10.2 is `COMPLETED / MERGED`; 10.2.10-C remains `VALIDATED`.
+
+### Planned
+- Phase 10.3 is `PLANNED / NOT STARTED`, decomposed into microprocesses 10.3.0–10.3.12 in `IMPLEMENTATION_ROADMAP.md`.
+- Planning remains deterministic and contract-first. It separates realized surplus, sustainable contribution capacity, and user-defined scenario contribution; keeps FIRE in 10.4 and portfolio recommendations in 10.5; and requires Decimal-safe read inputs before any engine.
+- Scenario delivery is staged: transient comparisons first, persistence only after an approved lifecycle/data contract.
+
+### Scope
+- Documentation only. No Planning code, schema, migration, DTO, endpoint, frontend, calculation, or scenario engine was implemented.
+
+---
+
 ## [PHASE-10.2-CLOSE] — 2026-09-15 — Financial Health Phase Closure
 
 ### Reviewed

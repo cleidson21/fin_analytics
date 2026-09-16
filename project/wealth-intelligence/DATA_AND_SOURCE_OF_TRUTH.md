@@ -1,6 +1,6 @@
 # Data Lineage & Source of Truth Matrix
-**Status:** VERIFIED (data sources) + PROPOSED (future layers)
-**Date:** 2026-09-08
+**Status:** VERIFIED (current sources) + PLANNED (Phase 10.3 boundaries)
+**Date:** 2026-09-16
 
 ---
 
@@ -186,6 +186,51 @@ The LLM is **READ-ONLY** with respect to financial truth.
 
 ---
 
+## Planning Data Boundary (Phase 10.3 — PLANNED / NOT STARTED)
+
+Planning will not create a second financial truth. Its inputs must retain source, scope, reference/as-of date, and Decimal precision.
+
+| Planning Input | Candidate Source | Authority | Approved Use | Not Approved |
+|---|---|---|---|---|
+| Goal target/date/type/status | `goals` | User governed | Goal-specific planning facts | Duplicating Goal ownership in Planning |
+| Goal current amount | `goals.current_amount` | User governed | Candidate goal-specific initial value | Treating it automatically as total wealth |
+| Current investment wealth | Latest approved `portfolio_snapshots.patrimonio` | External → governed (MyProfit) | Candidate initial investment wealth with explicit account/as-of scope | Calling it consolidated net worth without a contract |
+| Realized surplus/deficit | `HistoricalFinancialMetricsService` over certified Health facts | Deterministic historical fact | Context and future capacity-contract input | Equating it to sustainable contribution capacity |
+| Planned/scenario contribution | Explicit user assumption or goal field | User governed | Forward-projection input after contract validation | Deriving it silently from Health history |
+| Return rate | Explicit user assumption | Scenario assumption | Projection input after rate contract approval | Inferring future return from portfolio history or market data |
+| Inflation rate | Explicit user assumption initially | Scenario assumption | Real/nominal conversion only after contract approval | Treating historical IPCA as a future forecast |
+| Portfolio history/benchmarks | `portfolio_snapshots` | External → governed historical fact | Context and independent reconciliation | Automatic projection assumptions |
+| Dividends | `income_events` | External → governed historical fact | Historical context | Guaranteed future income or FIRE result |
+
+### Required Read Boundary
+
+- Existing Goals and Investments HTTP responses are not internal Planning data sources. Planning must consume repositories/read services directly.
+- Goal persistence uses SQL `Numeric`, but the current Goal entity/repository/DTO path converts money to `float`. A Planning-specific Decimal-safe input boundary is required before calculations; this is not authorization to refactor Goals in advance.
+- Existing Investments routes query snapshots directly and expose several float/dynamic-dictionary fields. If `portfolio_snapshots.patrimonio` is approved as an initial-value source, Phase 10.3.1 must expose it through a typed read-only Decimal contract.
+- `PortfolioSnapshotModel.patrimonio` represents the investment portfolio imported from MyProfit. It is not currently proven to be consolidated net worth across cash accounts, liabilities, and all asset sources.
+- Health trends, categories, and anomalies can provide factual context but are not default numerical projection inputs.
+
+### Planned Deterministic Lineage
+
+```text
+Certified Wealth + Certified Health Facts + User-Governed Goals
+                              + Explicit User Assumptions
+                                      ↓
+                         Decimal Planning Inputs
+                                      ↓
+                    Deterministic Planning Engines
+                                      ↓
+               Results + assumptions + provenance/as-of
+                                      ↓
+                              API → UI
+                                      ↓
+                    Future LLM interpretation only
+```
+
+No production Planning engine, result, API, persistence model, or UI exists yet. The complete microprocess plan and open contract questions are maintained only in `IMPLEMENTATION_ROADMAP.md`.
+
+---
+
 ## Data Quality Notes
 
 ### MyProfit Data [VERIFIED]
@@ -201,9 +246,10 @@ The LLM is **READ-ONLY** with respect to financial truth.
 - **FX:** BRL=X via Yahoo, 1-hour cache, fallback 5.0 hardcoded
 - **FIXED_INCOME assets:** No yfinance ticker available — returns None
 
-### Goals Data [PARTIAL]
-- current_amount not tracked — must be added in Lote 10.1
-- No projection engine exists yet
+### Goals Data [VERIFIED FOUNDATION / PLANNING PENDING]
+- `target_amount`, `target_date`, `current_amount`, `monthly_contribution`, `goal_type`, `status`, `priority`, `linked_account_id`, and `assumptions_json` exist after Phase 10.1.
+- Goal values are user governed. `current_amount` is manual and nullable; it is not automatically linked to certified wealth.
+- No projection engine exists yet. `assumptions_json` is opaque storage and is not an approved executable Planning contract.
 
 ---
 
