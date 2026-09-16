@@ -2,6 +2,25 @@
 
 ---
 
+## [TSK-10.3.0-A] — 2026-09-16 — Planning Contract Approval and ADR Lock
+
+### Approved
+- Added ADR-019 through ADR-022 for the Planning input/source boundary, the shared monthly mathematical contract, scenario semantics/lifecycle, and the combined Retirement/FIRE plus Portfolio Intelligence phase boundaries.
+- Locked explicit initial-wealth origins, no-double-counting/provenance rules, the Goals Decimal read boundary, four independent contribution concepts, `END_OF_MONTH` timing, partial-month period zero, effective-annual Decimal rates with no arbitrary positive cap, compound monthly conversion, negative-return support, and the nominal/real/inflation validation matrix.
+- Locked the 1–1,200-month horizon, month-level target dates, 34-digit Decimal context, monthly cent-scale `ROUND_HALF_EVEN` recurrence, forward output/equation, target-date states, and cent-discrete required-contribution solver using the Forward Projection Engine as its only production oracle.
+- Locked editable `CONSERVATIVE`/`BASE`/`OPTIMISTIC` labels without rates, historical-data-not-forecast, transient-first scenarios, Goal timing/eligibility, and null months-saved/lost when temporal comparison is not applicable.
+
+### Deferred / Boundaries
+- `sustainable_monthly_contribution_capacity` remains `DEFERRED — CONTRACT NOT APPROVED` in 10.3.7; Planning MVP uses explicit `scenario_monthly_contribution`.
+- Phase 10.4 is now canonically `Retirement & Financial Independence (FIRE)` and reuses 10.3 engines. Phase 10.5 remains Portfolio Intelligence. Both are boundary definitions only; neither was implemented.
+
+### Status
+- `10.3.0 = VALIDATED`.
+- `10.3.1 — Planning Read Foundation = READY / NOT STARTED`.
+- Documentation only. No production code, schema, migration, DTO, service, engine, endpoint, UI, database data, Retirement/FIRE, or Portfolio Intelligence implementation changed.
+
+---
+
 ## [TSK-TRANSITION-10.2-TO-10.3] — 2026-09-16 — Post-Merge Checkpoint and Planning Decomposition
 
 ### Verified

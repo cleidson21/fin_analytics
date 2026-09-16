@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-09-14
+**Updated:** 2026-09-16
 
 ---
 
@@ -26,6 +26,10 @@
 | ADR-016 | Gemini Micro-Process Execution Strategy | APPROVED | 10.2 |
 | ADR-017 | Financial Health Consolidated Account Scope | APPROVED | 10.2 |
 | ADR-018 | Financial Trend, Acceptance Boundary, and Stability Readiness | APPROVED | 10.2.10-A |
+| ADR-019 | Planning Input and Source Boundary | APPROVED | 10.3.0-A |
+| ADR-020 | Planning Mathematical Contract | APPROVED | 10.3.0-A |
+| ADR-021 | Planning Scenario Semantics and Lifecycle | APPROVED | 10.3.0-A |
+| ADR-022 | Retirement/FIRE and Portfolio Intelligence Boundary | APPROVED | 10.3.0-A |
 
 ---
 
@@ -235,3 +239,125 @@
 **Product vision and AI boundary:** Root `ESPECIFICACAO_PRODUTO_METAS.md` is high-level product vision used to preserve acceptance goals and expose roadmap gaps; the executable micro-phase contracts remain in `project/wealth-intelligence/`. Deterministic backend services calculate directions, deltas, trends, and any future approved stability facts. A future LLM may explain those certified facts but must not recalculate them.
 
 **Consequences:** 10.2.10-B may implement only the global and category trend contracts above. Stability implementation remains gated by a separate explicit contract decision in 10.2.10-C. Certified trend facts are reusable by Planning and Goals context, the deterministic Dashboard, and future LLM/Copilot explanations without transferring calculation authority. Phase 10.2 and its final QA remain open.
+
+---
+
+## ADR-019: Planning Input and Source Boundary
+**Status:** APPROVED
+**Date locked:** 2026-09-16
+**Context:** Phase 10.3 needs an explicit, Decimal-safe boundary between certified current facts, user-governed Goals, and scenario assumptions. The 10.3.0 audit found no universal certified value that can safely be called global `initial_wealth`. It also found material double-counting risk between manual Goal progress and MyProfit investment wealth, and confirmed that the existing Goals application/entity path converts persisted SQL `Numeric` money to `float`.
+
+**Initial-wealth decision:** Planning has no implicit global `initial_wealth`. Every input declares exactly one conceptual origin:
+- `GOAL_CURRENT_AMOUNT` — the user-governed, nullable amount recorded for one Goal;
+- `INVESTMENT_PORTFOLIO_SNAPSHOT` — the selected MyProfit investment-portfolio snapshot;
+- `USER_PROVIDED_SCENARIO` — an explicit scenario assumption, not a certified observed fact.
+
+These origins are alternatives for one calculation. They are never added, merged, or substituted automatically. A user may explicitly select or copy a value, but that action creates an auditable input choice rather than an inferred equivalence.
+
+**Investment-wealth decision:** `portfolio_snapshots.patrimonio` represents investment wealth within the currently governed MyProfit scope. It is not proven consolidated net worth and must not be labeled `net worth`. It does not prove coverage of real estate, liabilities, non-imported accounts, or every external financial asset. `PositionSnapshotModel` and asset-level valuations may reconcile scoped facts but must not be summed inside Planning when the approved portfolio total is used.
+
+**Goal precision decision:** Goals persists monetary fields as SQL `Numeric`, but the current Goal entity, repository, DTO, progress calculation, and HTTP response path introduce `float`. Planning must not consume that path as mathematical truth. Phase 10.3.1 must introduce a read-only Decimal boundary/adapter for approved Goal facts without changing Goal ownership or treating opaque `assumptions_json` as an executable contract.
+
+**Provenance decision:** Every Planning input/result boundary retains the selected origin, scope/account where applicable, reference or as-of date, source/update timestamp when available, and Decimal value. Missing ownership, freshness, scope, or required facts must remain explicit; no silent fallback is permitted.
+
+**Consequences:** Phase 10.3.1 may add only the typed read adapters/DTOs needed to expose approved Goal, Health, and investment-wealth facts. It must not create projection mathematics, duplicate existing read engines, call internal HTTP APIs, synthesize consolidated net worth, or modify Goals/Investments semantics without separate scope.
+
+---
+
+## ADR-020: Planning Mathematical Contract
+**Status:** APPROVED
+**Date locked:** 2026-09-16
+**Context:** Forward projections and inverse solvers must share one deterministic, auditable monthly model. The contract must support explicit nominal and real scenarios, negative returns above -100%, exact cent behavior, and reuse by Retirement/FIRE without turning historical data into forecasts.
+
+**Time and contribution decision:** The engine operates monthly. `as_of_date` is period zero. A partial current month receives no projected return, projected contribution, or daily proration; the first cycle is the next complete calendar month. Contributions use `END_OF_MONTH` timing, so the contribution for period `t` earns no return in that same period. `scenario_monthly_contribution` must be a non-negative cent-scale Decimal; zero is valid and negative contributions are invalid. Withdrawals require a future separate contract.
+
+**Rate decision:** `rate_basis = EFFECTIVE_ANNUAL`. The UI may accept a human percentage, while the backend/API contract uses a Decimal fraction such as `"0.085"`. Any finite Decimal `annual_rate > -1` is mathematically valid: zero, supported negative rates, and positive rates above 100% are allowed. `NaN`, infinity, and rates `<= -1` are invalid. The core has no arbitrary positive upper cap; future UX may warn about extreme assumptions without changing them.
+
+The equivalent monthly rate is:
+
+```text
+monthly_rate = (1 + annual_rate)^(1/12) - 1
+```
+
+Simple division by 12 and all float arithmetic are prohibited.
+
+**Nominal/real and inflation decision:** `return_type` and `output_mode` are explicit `NOMINAL` or `REAL` values. Inflation is an explicit finite effective annual Decimal with `inflation_rate > -1`; it is never inferred from IPCA, MyProfit, CDI, IBOV, portfolio history, dividend history, or Health trends.
+
+| Return Type | Output Mode | Inflation | Approved Behavior |
+|---|---|---|---|
+| `NOMINAL` | `NOMINAL` | Does not participate | Nominal return, constant nominal monthly contribution, nominal outputs |
+| `NOMINAL` | `REAL` | Required | Apply Fisher exactly once, then run directly in real money of `as_of_date`; contribution is constant in real terms |
+| `REAL` | `REAL` | Forbidden | Use the supplied real return directly; contribution is constant in real terms |
+| `REAL` | `NOMINAL` | Not supported initially | Validation error; never reinflate silently |
+
+For nominal return to real output:
+
+```text
+real_annual_rate = (1 + nominal_annual_rate) / (1 + inflation_rate) - 1
+```
+
+Any inconsistent combination is a validation error. Goals does not currently define whether `target_amount` is future nominal money or current purchasing power; Goal Planning requests must therefore declare `target_value_basis = NOMINAL | REAL` (or an exactly equivalent approved name) without changing the Goals schema in this contract-lock task.
+
+**Horizon decision:** A projection supplies exactly one of `horizon_months` or `target_date`. The supported horizon is 1 through 1,200 complete monthly cycles. The 1,200-month maximum is a series-size and computational guardrail, not a market forecast. Dates compare at `YYYY-MM` granularity: every day in the same month is the same target month, and future UI language must say “até mês/ano,” not promise an exact day.
+
+**Precision decision:** Monetary inputs are Decimal with at most two decimal places; fractional-cent inputs are validation errors. Rates are Decimal. The calculation context has at least 34 digits, and the equivalent monthly rate retains at least 18 decimal places. Monthly projected monetary return is quantized to `Decimal("0.01")` with `ROUND_HALF_EVEN`; the cent-scale ending wealth becomes the next period's opening wealth. Financial API values serialize as strings and null remains JSON `null`. The frontend formats but never recalculates projection truth.
+
+**Forward equation and output:** With `q` as the approved monetary quantization:
+
+```text
+projected_return[t] = q(opening_wealth[t] * monthly_rate)
+ending_wealth[t] = opening_wealth[t] + projected_return[t] + contribution[t]
+opening_wealth[t+1] = ending_wealth[t]
+```
+
+Each period exposes `period`, `period_end`, `opening_wealth`, `contribution`, `projected_return`, `ending_wealth`, `cumulative_contributions`, and `cumulative_projected_growth`. The summary exposes initial/final wealth, total contributions, total projected growth, assumptions, provenance, `as_of`, scope, and conditional-result disclaimer metadata. No generative narrative belongs to the engine result.
+
+**Target-date solver:** It reuses the Forward Projection Engine month by month and returns `ALREADY_ACHIEVED`, `ACHIEVED`, `UNREACHABLE`, or `NOT_REACHED_WITHIN_HORIZON`. `UNREACHABLE` is used only when impossibility is mathematically demonstrated; exhausting 1,200 months alone produces `NOT_REACHED_WITHIN_HORIZON`. Missing facts produce orchestration-layer `INSUFFICIENT_DATA`; invalid mathematical inputs are validation errors.
+
+**Required-contribution solver:** It returns `ALREADY_ACHIEVED`, `ZERO_CONTRIBUTION_REQUIRED`, `SOLVED`, `IMPOSSIBLE_HORIZON`, or `OUT_OF_SUPPORTED_RANGE`. It performs monotonic binary search over integer cents and uses the same Forward Projection Engine as its oracle. The result is the smallest cent-scale `C` such that ending wealth reaches the target: `C` succeeds and `C - 0.01` fails unless `C = 0`. The upper bound may expand dynamically; any technical bound must be documented as computational protection, never as a financially reasonable maximum.
+
+**Goal timing and eligibility:** Approved Planning statuses are `PROJECTED_EARLY`, `PROJECTED_ON_TIME`, `PROJECTED_LATE`, `ALREADY_ACHIEVED`, `NOT_REACHED_WITHIN_HORIZON`, `INSUFFICIENT_DATA`, and `NOT_APPLICABLE`. They compare achievement month directly with Goal target month and use no percentage threshold. Initially eligible amount-based types are `EMERGENCY_RESERVE`, `TRAVEL`, `PURCHASE`, `CUSTOM`, `WEALTH_TARGET`, and `INVESTMENT_TARGET`. `RETIREMENT` and `FINANCIAL_INDEPENDENCE` belong to Phase 10.4; `DIVIDEND_INCOME` requires a specific income/yield contract. `PAUSED` and `CANCELLED` goals are not projected automatically.
+
+**Consequences:** All future projection, solver, Goal integration, API, UI, and Retirement/FIRE reuse must conform to this single mathematical contract. An independent Decimal oracle or spreadsheet must validate implementations; production code cannot be its own oracle.
+
+---
+
+## ADR-021: Planning Scenario Semantics and Lifecycle
+**Status:** APPROVED
+**Date locked:** 2026-09-16
+**Context:** Planning must distinguish observed surplus, stored intent, explicit simulation inputs, and any future derived capacity. Scenario comparison must remain deterministic, non-advisory, and isolated from real financial state.
+
+**Contribution semantics:** The following concepts are independent:
+- `realized_savings_amount` — Health's realized surplus or deficit;
+- `goal_planned_monthly_contribution` — the user's stored Goal plan;
+- `scenario_monthly_contribution` — the explicit non-negative input for one Planning scenario;
+- `sustainable_monthly_contribution_capacity` — a future derived capacity with no approved formula.
+
+No value becomes another automatically. In particular, `savings_amount` is not sustainable capacity, and a Goal contribution is not the scenario contribution unless the user explicitly selects or copies it.
+
+**Archetype decision:** `CONSERVATIVE`, `BASE`, and `OPTIMISTIC` are scenario identities/slots only. They contain no hardcoded rates. The user supplies all assumptions. The core does not require `optimistic > base > conservative`; a future UI may warn about unusual ordering but must not change values.
+
+**Comparison decision:** Comparable scenarios share `as_of_date`, horizon, target, output mode, `END_OF_MONTH` timing, and currency semantics. They may explicitly vary contribution, return, coherent inflation assumptions, and initial wealth when that difference is declared. Outputs include final-wealth delta, achievement month/date, months saved/lost, contribution delta, projected-growth delta, and assumptions. If either scenario does not reach the target, months saved/lost is `null` and the result states that temporal comparison is not applicable.
+
+**No-forecast decision:** Portfolio historical return, CDI, IPCA, IBOV, dividend history, and Health trends may be future context only. None may become a future return, inflation, income, or contribution assumption automatically.
+
+**Lifecycle decision:** Initial projections and comparisons are `TRANSIENT FIRST` and do not persist. Saved scenarios require a later explicit ownership, lifecycle, versioning, expiration, and provenance contract after engines and API are validated. `goals.assumptions_json` is not canonical scenario persistence.
+
+**Deferred capacity:** `sustainable_monthly_contribution_capacity` remains `DEFERRED — CONTRACT NOT APPROVED` in 10.3.7. Planning MVP depends only on explicit `scenario_monthly_contribution`.
+
+**Consequences:** Scenarios never modify Goals, Health, portfolio snapshots, or other real financial data. Scenario output is factual conditional comparison, not a recommendation.
+
+---
+
+## ADR-022: Retirement/FIRE and Portfolio Intelligence Boundary
+**Status:** APPROVED
+**Date locked:** 2026-09-16
+**Context:** Product vision includes generic Planning, retirement, financial independence, and portfolio intelligence. Their responsibilities must be separated without duplicating the deterministic engines.
+
+**Phase decision:** Phase 10.4 is named `Retirement & Financial Independence (FIRE)` and is one combined phase. It will reuse Phase 10.3 Forward Projection, target-date solver, required-contribution solver, scenario comparison, inflation, contribution, wealth, and horizon contracts.
+
+**Modes:** Retirement mode asks, “With a target age, what will my financial situation be?” FIRE mode asks, “When do my wealth/income facts satisfy the approved independence contract?” Phase 10.4 will add age, desired retirement age, desired income, FIRE target wealth, potential/passive income, withdrawal/sustainable-income assumptions, FI progress, and estimated FI age/date.
+
+**Portfolio boundary:** Phase 10.5 remains `Portfolio Intelligence` and owns allocation, concentration, diversification, rebalance analysis, portfolio quality, and asset-level intelligence. Planning does not select investments, recommend assets, rebalance portfolios, or infer expected returns from portfolio composition/history.
+
+**Consequences:** ADR-022 establishes boundaries only. TSK-10.3.0-A implements no Retirement, FIRE, or Portfolio Intelligence schema, service, endpoint, or UI. Phase 10.4 cannot begin until Phase 10.3 is complete and explicitly closed.

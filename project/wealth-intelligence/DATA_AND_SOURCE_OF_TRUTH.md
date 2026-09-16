@@ -1,5 +1,5 @@
 # Data Lineage & Source of Truth Matrix
-**Status:** VERIFIED (current sources) + PLANNED (Phase 10.3 boundaries)
+**Status:** VERIFIED (current sources) + APPROVED (Phase 10.3 input boundaries)
 **Date:** 2026-09-16
 
 ---
@@ -186,19 +186,22 @@ The LLM is **READ-ONLY** with respect to financial truth.
 
 ---
 
-## Planning Data Boundary (Phase 10.3 — PLANNED / NOT STARTED)
+## Planning Data Boundary (Phase 10.3 — CONTRACT LOCKED, ADR-019/020/021)
 
 Planning will not create a second financial truth. Its inputs must retain source, scope, reference/as-of date, and Decimal precision.
 
-| Planning Input | Candidate Source | Authority | Approved Use | Not Approved |
+| Planning Input | Source | Authority | Approved Use | Not Approved |
 |---|---|---|---|---|
 | Goal target/date/type/status | `goals` | User governed | Goal-specific planning facts | Duplicating Goal ownership in Planning |
-| Goal current amount | `goals.current_amount` | User governed | Candidate goal-specific initial value | Treating it automatically as total wealth |
-| Current investment wealth | Latest approved `portfolio_snapshots.patrimonio` | External → governed (MyProfit) | Candidate initial investment wealth with explicit account/as-of scope | Calling it consolidated net worth without a contract |
+| `GOAL_CURRENT_AMOUNT` | `goals.current_amount` | User governed | Explicit goal-specific initial-wealth origin | Treating it automatically as total wealth or adding it to another origin |
+| `INVESTMENT_PORTFOLIO_SNAPSHOT` | Selected `portfolio_snapshots.patrimonio` | External → governed (MyProfit) | Explicit investment-wealth origin with account/scope/as-of provenance | Calling it consolidated net worth or summing positions again |
+| `USER_PROVIDED_SCENARIO` | Explicit Planning request | User assumption | Explicit scenario initial-wealth origin | Presenting it as observed/certified wealth |
 | Realized surplus/deficit | `HistoricalFinancialMetricsService` over certified Health facts | Deterministic historical fact | Context and future capacity-contract input | Equating it to sustainable contribution capacity |
-| Planned/scenario contribution | Explicit user assumption or goal field | User governed | Forward-projection input after contract validation | Deriving it silently from Health history |
-| Return rate | Explicit user assumption | Scenario assumption | Projection input after rate contract approval | Inferring future return from portfolio history or market data |
-| Inflation rate | Explicit user assumption initially | Scenario assumption | Real/nominal conversion only after contract approval | Treating historical IPCA as a future forecast |
+| Goal planned contribution | `goals.monthly_contribution` | User governed | `goal_planned_monthly_contribution` only | Treating it as the scenario contribution without explicit user selection/copy |
+| Scenario contribution | Explicit Planning request | User assumption | Non-negative `scenario_monthly_contribution` | Deriving it from Goal or Health automatically |
+| Return rate | Explicit Planning request | Scenario assumption | Finite effective annual Decimal `> -1` | Inferring future return from portfolio history or market data |
+| Inflation rate | Explicit Planning request | Scenario assumption | Finite effective annual Decimal `> -1`, only in the approved nominal-to-real mode | Treating historical IPCA as a future forecast or double-adjusting a real return |
+| Target value basis | Explicit Planning request | User assumption | `NOMINAL` or `REAL` basis required for Goal Planning | Inferring basis from the existing Goal row |
 | Portfolio history/benchmarks | `portfolio_snapshots` | External → governed historical fact | Context and independent reconciliation | Automatic projection assumptions |
 | Dividends | `income_events` | External → governed historical fact | Historical context | Guaranteed future income or FIRE result |
 
@@ -206,11 +209,15 @@ Planning will not create a second financial truth. Its inputs must retain source
 
 - Existing Goals and Investments HTTP responses are not internal Planning data sources. Planning must consume repositories/read services directly.
 - Goal persistence uses SQL `Numeric`, but the current Goal entity/repository/DTO path converts money to `float`. A Planning-specific Decimal-safe input boundary is required before calculations; this is not authorization to refactor Goals in advance.
-- Existing Investments routes query snapshots directly and expose several float/dynamic-dictionary fields. If `portfolio_snapshots.patrimonio` is approved as an initial-value source, Phase 10.3.1 must expose it through a typed read-only Decimal contract.
-- `PortfolioSnapshotModel.patrimonio` represents the investment portfolio imported from MyProfit. It is not currently proven to be consolidated net worth across cash accounts, liabilities, and all asset sources.
+- Existing Investments routes query snapshots directly and expose several float/dynamic-dictionary fields. Phase 10.3.1 must expose approved `portfolio_snapshots.patrimonio` facts through a typed read-only Decimal contract.
+- `PortfolioSnapshotModel.patrimonio` represents the investment portfolio imported from MyProfit. It is not proven to be consolidated net worth across cash accounts, liabilities, real estate, non-imported accounts, or all asset sources; future API/UI must not label it `net worth`.
+- Exactly one initial-wealth origin participates in a calculation. Planning never sums Goal progress, portfolio snapshots, position valuations, or user-provided scenario wealth automatically.
+- Every input/result retains origin, scope/account where applicable, reference/as-of date, source/update timestamp when available, and Decimal precision. No silent fallback is approved.
 - Health trends, categories, and anomalies can provide factual context but are not default numerical projection inputs.
+- `realized_savings_amount`, `goal_planned_monthly_contribution`, `scenario_monthly_contribution`, and `sustainable_monthly_contribution_capacity` are distinct. No automatic conversion is permitted; sustainable capacity remains uncontracted and deferred to 10.3.7.
+- Portfolio return history, CDI, IPCA, IBOV, dividend history, and Health trends are context only and never automatic future assumptions.
 
-### Planned Deterministic Lineage
+### Approved Deterministic Lineage
 
 ```text
 Certified Wealth + Certified Health Facts + User-Governed Goals
@@ -227,7 +234,7 @@ Certified Wealth + Certified Health Facts + User-Governed Goals
                     Future LLM interpretation only
 ```
 
-No production Planning engine, result, API, persistence model, or UI exists yet. The complete microprocess plan and open contract questions are maintained only in `IMPLEMENTATION_ROADMAP.md`.
+No production Planning engine, result, API, persistence model, or UI exists yet. ADRs 019–022 are the detailed approved contracts; `IMPLEMENTATION_ROADMAP.md` owns execution status. Phase 10.3.1 is limited to the typed Decimal read foundation.
 
 ---
 
@@ -246,10 +253,11 @@ No production Planning engine, result, API, persistence model, or UI exists yet.
 - **FX:** BRL=X via Yahoo, 1-hour cache, fallback 5.0 hardcoded
 - **FIXED_INCOME assets:** No yfinance ticker available — returns None
 
-### Goals Data [VERIFIED FOUNDATION / PLANNING PENDING]
+### Goals Data [VERIFIED FOUNDATION / PLANNING BOUNDARY APPROVED]
 - `target_amount`, `target_date`, `current_amount`, `monthly_contribution`, `goal_type`, `status`, `priority`, `linked_account_id`, and `assumptions_json` exist after Phase 10.1.
 - Goal values are user governed. `current_amount` is manual and nullable; it is not automatically linked to certified wealth.
-- No projection engine exists yet. `assumptions_json` is opaque storage and is not an approved executable Planning contract.
+- No projection engine exists yet. `assumptions_json` is opaque storage and is not an approved executable Planning contract or canonical scenario persistence.
+- Goals does not define whether `target_amount` is future nominal money or current purchasing power. Goal Planning must receive an explicit `target_value_basis = NOMINAL | REAL` (or exactly equivalent approved field) without inferring or changing the Goal row.
 
 ---
 

@@ -1,5 +1,5 @@
 # Implementation Roadmap — Wealth Intelligence
-**Status:** ACTIVE (Phase 10.2 merged; Phase 10.3 planned, not started)
+**Status:** ACTIVE (Phase 10.3 contracts locked; 10.3.1 ready, not started)
 **Date:** 2026-09-16
 
 ---
@@ -11,9 +11,9 @@
 | 10.0 | Architecture & Product Design | **COMPLETE** | — | Documentation only |
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | 10.0 | DB migration, Goal model enrichment, CRUD, basic UI |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 | Expense analytics, savings rate, spending trends |
-| 10.3 | Planning & Projection Engine | **PLANNED / NOT STARTED — 10.3.0 NEXT** | 10.1, 10.2 | Goal calculations, deterministic projections, explicit scenarios |
-| 10.4 | Retirement / Financial Independence | NOT_STARTED | 10.3 | Retirement engine, FI projection, sensitivity |
-| 10.5 | Portfolio Intelligence & Simulation | NOT_STARTED | existing Investments, 10.3 | Attribution, simulations |
+| 10.3 | Planning & Projection | **CONTRACT LOCKED — 10.3.0 VALIDATED; 10.3.1 READY / NOT STARTED** | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
+| 10.4 | Retirement & Financial Independence (FIRE) | NOT_STARTED — BOUNDARY APPROVED | 10.3 | Retirement/FIRE domain semantics over reusable 10.3 engines |
+| 10.5 | Portfolio Intelligence | NOT_STARTED — BOUNDARY APPROVED | existing Investments, 10.3 | Allocation, concentration, diversification, rebalancing analysis, portfolio quality |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
 | 10.8 | LLM Provider Foundation | NOT_STARTED | 10.7 | LLMProvider abstraction, Ollama + Gemini |
@@ -196,13 +196,13 @@
 
 ---
 
-### PHASE 10.3 — Planning & Projection Engine
+### PHASE 10.3 — Planning & Projection
 
-**Status:** PLANNED / NOT STARTED. Execute one microprocess at a time.
+**Status:** CONTRACT LOCKED. `10.3.0 = VALIDATED`; `10.3.1 = READY / NOT STARTED`. Execute one microprocess at a time.
 
 **Entry Criteria:** 10.1 and 10.2 are complete, validated, merged, and available as certified inputs. Satisfied by PR #2 merge commit `b7ce8b8`.
 
-**Responsibility:** Planning combines certified current facts, user-governed Goals, and explicit user assumptions to produce deterministic forward projections, target calculations, and scenario comparisons. Projections are conditional outputs, never guaranteed returns.
+**Responsibility:** Planning combines certified current facts, user-governed Goals, and explicit user assumptions to produce generic deterministic forward projections, future wealth, target dates, required contributions, scenario comparisons, inflation-aware nominal/real results, Goal timing facts, and other conditional Planning results. Projections are conditional outputs, never guaranteed returns.
 
 **Out of Scope:** FIRE/retirement-specific target wealth, withdrawal rates, retirement income sustainability, asset selection, portfolio rebalancing, trades, market forecasts, recommendation engines, and LLM calculation. Phase 10.4 owns FIRE/retirement semantics; Phase 10.5 owns portfolio intelligence. A future LLM may explain certified Planning results but never calculate them.
 
@@ -242,35 +242,33 @@ Certified investment wealth + certified Health facts + user-governed Goals
                  Future LLM interpretation only
 ```
 
-#### Open Contract Questions (must be closed before calculation code)
+#### Locked Contract Summary
 
-1. **Initial wealth:** choose between goal-specific `current_amount`, certified investment `patrimonio`, or an explicit scenario value; define account scope, as-of date, staleness, fallback, and whether investment wealth is sufficient for each goal type.
-2. **Decimal boundary:** define how existing Goal `Numeric` values bypass the current float conversions before entering Planning.
-3. **Contribution semantics:** keep realized Health surplus, sustainable contribution capacity, stored goal contribution, and scenario contribution as distinct concepts.
-4. **Return assumptions:** define nominal/real mode, annual input, monthly conversion, allowed range, negative-rate support, and explicit user ownership. Historical returns remain context only.
-5. **Inflation:** decide whether nominal, real, or both modes are supported and prevent double adjustment.
-6. **Compounding:** define monthly timing, contribution before/after return, rate conversion, partial months, target-date alignment, and maximum horizon.
-7. **Precision:** define internal Decimal precision, quantization points, solver tolerance, display rounding, and string serialization.
-8. **Solver behavior:** define already-achieved, impossible/undefined, zero contribution, zero/negative return, convergence, and maximum-iteration semantics.
-9. **Goal eligibility:** define which goal types use generic Planning and keep `RETIREMENT` / `FINANCIAL_INDEPENDENCE` specific semantics in Phase 10.4.
-10. **Scenario lifecycle:** define identity, ownership, versioning, comparison baseline, expiration, and persistence. Recommended sequence: transient scenarios first; persisted saved scenarios only after validated engines and an approved storage contract.
-11. **Freshness/provenance:** every result must expose source scope and as-of/reference dates so stale facts are not silently treated as current.
-12. **Sustainable capacity:** define history window, eligible income/expense, positive/negative months, gaps, variability, recurring commitments, outliers, conservative margin, and insufficient-data behavior before implementation.
-13. **Result language:** define factual statuses and projection disclaimers without introducing financial advice or guaranteed-growth wording.
+ADRs 019–022 are the detailed source of truth. The approved implementation constraints are:
+
+1. **Typed inputs:** initial wealth declares exactly one origin (`GOAL_CURRENT_AMOUNT`, `INVESTMENT_PORTFOLIO_SNAPSHOT`, or `USER_PROVIDED_SCENARIO`) with scope/as-of/provenance; sources are never summed automatically. MyProfit `patrimonio` is investment wealth, not consolidated net worth.
+2. **Decimal boundary:** 10.3.1 must bypass the existing Goal float path through read-only Decimal adapters. No projection math belongs in 10.3.1.
+3. **Monthly math:** period zero is `as_of_date`; the next complete calendar month is period one; contributions use `END_OF_MONTH` timing.
+4. **Rates:** explicit finite effective annual Decimal rates accept every value `> -1`, with no arbitrary positive cap. Monthly conversion is compound-equivalent, never annual/12.
+5. **Nominal/real:** the approved matrix applies inflation exactly once when converting nominal return to real output. `REAL` return to `NOMINAL` output is unsupported initially. Goal integration must declare `target_value_basis`.
+6. **Horizon and precision:** exactly one horizon selector; 1–1,200 full months; month-level target dates; 34-digit context; monthly rate with at least 18 decimal places; cent-scale `ROUND_HALF_EVEN` monetary recurrence.
+7. **Solvers:** both reuse the Forward Projection Engine. Required contribution uses monotonic cent-based binary search and returns the smallest satisfying cent value.
+8. **Scenarios:** archetypes are editable labels without hardcoded rates; historical data is never an automatic forecast; scenarios are transient first.
+9. **Boundaries:** sustainable contribution capacity remains deferred in 10.3.7; Retirement/FIRE is Phase 10.4; Portfolio Intelligence is Phase 10.5.
 
 #### Microprocess Roadmap
 
 | ID | Name | Objective | Depends On | Produces Code? |
 |---|---|---|---|---:|
-| 10.3.0 | Planning Contract & Data Audit | Lock domain boundaries, source ownership, account/user scope, freshness/provenance, Goal applicability, and the list of mathematical decisions. Produce no engine. | 10.1, 10.2 | No |
-| 10.3.1 | Planning Read Foundation | Add only the missing typed read adapters/DTOs needed to supply approved Goal, Health, and current-wealth facts as Decimal with source dates. Do not duplicate existing engines or call internal APIs. | 10.3.0 | Yes, if audit confirms gaps |
-| 10.3.2 | Projection Assumptions Contract | Approve initial-value semantics, contribution timing, return/inflation modes, rate conversion, horizon, precision, validation limits, and missing-data behavior. Prefer an ADR; no projection engine before approval. | 10.3.0, 10.3.1 findings | No |
+| 10.3.0 | Planning Contract & Data Audit | **VALIDATED.** Domain/data audit completed and contracts locked by ADRs 019–022. No engine. | 10.1, 10.2 | No |
+| 10.3.1 | Planning Read Foundation | **READY / NOT STARTED.** Add only the missing typed read adapters/DTOs needed to supply approved Goal, Health, and current-wealth facts as Decimal with source dates. Do not duplicate existing engines or call internal APIs. | 10.3.0 | Yes, if audit confirms gaps |
+| 10.3.2 | Projection Assumptions Boundary | Map the locked ADR-020 assumptions into exact typed application contracts and resolve only adapter-derived gaps. Do not reopen approved mathematics or implement the engine. | 10.3.0, 10.3.1 findings | No |
 | 10.3.3 | Deterministic Forward Projection Engine | Produce a monthly Decimal schedule of opening wealth, contribution, projected growth, closing wealth, and totals from explicit assumptions. No Goal coupling. | 10.3.2 | Yes |
-| 10.3.4 | Target Solver | Calculate achievement date and required monthly contribution with explicit tolerance, bounds, and impossible/undefined states. | 10.3.3 | Yes |
+| 10.3.4 | Target Solver | Calculate achievement date and cent-minimal required monthly contribution using the Forward Projection Engine as the sole production oracle and the approved explicit states/bounds. | 10.3.3 | Yes |
 | 10.3.5 | Goal Planning Integration | Map eligible Goal facts into the validated engines and return projected date, required contribution, factual gap, and an approved on-track state without duplicating Goal data. | 10.3.1, 10.3.3, 10.3.4 | Yes |
 | 10.3.6 | Scenario Comparison Engine | Compare explicit base/alternative assumptions while preserving engine output order and provenance; produce wealth, date, and contribution deltas without advice. | 10.3.3, 10.3.4 | Yes |
-| 10.3.7 | Sustainable Contribution Capacity Contract | Determine whether a defensible deterministic capacity definition exists. Start contract-only; if not approved, defer calculation and keep user-defined contribution as the Planning input. | 10.3.0, validated Health facts | No initially; implementation gated |
-| 10.3.8 | Planning API & Scenario Persistence | Expose authenticated Decimal-string projection/solver/goal/scenario contracts. Start with transient requests; add persistence only if its model and lifecycle were explicitly approved. Routers orchestrate and never calculate. | 10.3.3–10.3.7 as applicable | Yes |
+| 10.3.7 | Sustainable Contribution Capacity Contract | **DEFERRED — CONTRACT NOT APPROVED.** Reassess whether a defensible deterministic capacity definition exists; Planning MVP continues with explicit scenario contribution. | 10.3.0, validated Health facts | No; implementation gated |
+| 10.3.8 | Planning API | Expose authenticated Decimal-string projection/solver/goal/scenario contracts with transient requests. Routers orchestrate and never calculate. Scenario persistence remains outside this microtask until a later lifecycle/versioning/ownership contract. | 10.3.3–10.3.7 as applicable | Yes |
 | 10.3.9 | Planning Frontend Foundation | Add `/wealth-intelligence/planning`, exact TypeScript contracts, authenticated fetch, navigation, loading/error/empty states, and request-race protection. | 10.3.8 | Yes |
 | 10.3.10 | Planning Analytical UI | Present assumptions, conditional projection, target trajectory, and scenario comparison with clear nominal/real and provenance context. Frontend formats only. | 10.3.9 | Yes |
 | 10.3.11 | Integration & Stabilization | Audit Goals → Planning, Health → Planning, Wealth → Planning, API → UI; validate freshness, Decimal fidelity, auth, races, regressions, and absence of frontend recalculation. | 10.3.5–10.3.10 | Yes, fixes only |
@@ -296,36 +294,30 @@ Certified investment wealth + certified Health facts + user-governed Goals
 - Independent spreadsheet or separate Decimal oracle validation for projection and inverse-solver cases; the production engine cannot be its own oracle.
 - Frontend contract/type/build/lint validation plus proof that the browser does not recalculate projections.
 
-**Execution Gate:** The next task is `10.3.0 — Planning Contract & Data Audit`. Do not begin 10.3.1 or any mathematical implementation until 10.3.0 is explicitly validated.
+**Execution Gate:** `10.3.0` is `VALIDATED`. The next task is `10.3.1 — Planning Read Foundation`, `READY / NOT STARTED`. It may implement only Decimal read boundaries/adapters and provenance for approved inputs; it must not implement projection mathematics.
 
 ---
 
-### PHASE 10.4 — Retirement / Financial Independence
+### PHASE 10.4 — Retirement & Financial Independence (FIRE)
 
 **Entry Criteria:** 10.3 COMPLETE
 
-**Scope:**
-- Full Retirement/FI page: inputs panel, scenario chart, gap analysis, sensitivity table
-- RetirementProjectionService: full implementation (inflation, withdrawal rate, passive income)
-- UserRetirementProfile model/endpoint for saving assumptions
-- Simulation scenarios: conservative/baseline/optimistic
+**Approved boundary only (ADR-022):** This combined future phase reuses the generic 10.3 Forward Projection Engine, target solver, required-contribution solver, scenario comparison, inflation, contribution, wealth, and horizon contracts. It adds age, desired retirement age, desired income, FIRE target wealth, potential/passive income, withdrawal/sustainable-income assumptions, FI progress, and estimated FI age/date.
 
-**Tests:** Unit tests for projection engine (compare against Excel formula manually), sensitivity calculation tests
+- **Retirement mode:** “With a target age, what will my financial situation be?”
+- **FIRE mode:** “When do my wealth/income facts satisfy the approved independence contract?”
+
+No Retirement/FIRE implementation is authorized during Phase 10.3 contract lock.
 
 ---
 
-### PHASE 10.5 — Portfolio Intelligence & Simulation
+### PHASE 10.5 — Portfolio Intelligence
 
 **Entry Criteria:** 10.3 COMPLETE, existing Investments stable
 
-**Scope:**
-- Portfolio attribution service (contributions + price changes + dividends + FX)
-- Winners/losers analysis
-- Sector/class/geographic exposure
-- Concentration risk indicator
-- SimulationEngine extended for portfolio scenarios
-- Frontend: Portfolio Intelligence page, Simulations page
-- NOTE: Do NOT modify existing /wealth pages
+**Approved boundary only (ADR-022):** Future allocation, concentration, diversification, attribution, rebalance analysis, portfolio quality, and asset-level intelligence. Planning does not select assets, recommend investments, or infer future returns from portfolio composition/history.
+
+No Portfolio Intelligence implementation is authorized during Phase 10.3 contract lock. Existing `/wealth` remains stable and unchanged.
 
 **Tests:** Attribution calculation unit tests, integration tests against test portfolio data
 

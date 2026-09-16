@@ -1,5 +1,5 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; Phase 10.3 strategy planned
+**Status:** ACTIVE; Phase 10.3 contracts locked by ADRs 019–022
 **Date:** 2026-09-16
 
 ---
@@ -121,20 +121,25 @@ tests/
 - Final manual QA: verify login/navigation, populated and empty reference months, rapid month switching, complete history versus the six-record chart window, category/anomaly presentation, UTF-8 labels, browser console, desktop usability, Goals smoke, and Wealth Intelligence hub links. Global mobile responsiveness debt remains non-blocking.
 - Manual: verify values match known transaction history, responsive behavior, UTF-8 labels, tooltips, and browser console output.
 
-### Phase 10.3 — Projections
-- Contract/read boundary: source scope, as-of date, staleness, missing facts, account scope, Goal eligibility, and Decimal normalization from approved persisted sources.
-- Forward projection: zero initial wealth, zero contribution, zero return, positive return, supported negative return, contribution timing, cross-year horizon, long horizon, rate conversion, and exact deterministic repeatability.
-- Precision: Decimal throughout, explicit quantization points, no premature float conversion, JSON string/null serialization, and independent expected values.
-- Target solver: already achieved, exact-boundary achievement, invalid/impossible target, zero contribution, zero/negative return as contracted, maximum horizon, tolerance, convergence, and deterministic failure states.
-- Goal integration: nullable current amount/date/contribution, supported goal types, paused/cancelled/achieved states, factual gap/on-track semantics, and user isolation.
-- Scenario comparison: equal scenarios, contribution/rate/horizon changes, exact output deltas, stable ordering, and no mutation of source facts.
-- Sustainable contribution capacity: no implementation test until window, eligible facts, variability/outlier, conservative-margin, gap, null, and insufficient-data semantics are approved.
-- API: authentication, validation boundaries, provenance/as-of fields, Decimal strings, transient scenarios, and persisted scenario ownership/versioning only if persistence is approved.
-- Frontend: TypeScript contract parity, no financial recalculation, loading/error/empty states, request-race protection, nominal/real labeling, and clear conditional-projection language.
-- Independent validation: compare production results with a separate Decimal oracle or independently constructed spreadsheet; the production engine cannot generate its own expected values.
+### Phase 10.3 — Planning & Projection
+- Contract/read boundary: all three initial-wealth origins, single-origin enforcement, no double counting, source/scope/as-of/update provenance, missing/stale facts, account scope, Goal ownership, and exact Decimal normalization from persisted `Numeric` sources. Prove that Planning bypasses the current Goal float path and never labels MyProfit investment wealth as net worth.
+- Time contract: `as_of_date` is period zero; the current partial month has no projection/proration; the next complete calendar month is period one; target dates compare at `YYYY-MM` granularity; horizons accept exactly one selector and enforce 1–1,200 cycles.
+- Forward projection: zero initial wealth/contribution/return, positive rates including values above 100%, every supported negative rate above -100%, invalid `<= -100%`, `END_OF_MONTH` contribution timing, cross-year/long horizons, compound monthly conversion, and exact deterministic repeatability.
+- Nominal/real matrix: nominal-to-nominal without inflation, nominal-to-real with required one-time Fisher conversion, real-to-real with forbidden inflation, and validation rejection for real-to-nominal. Inflation itself must be finite and `> -1`. Goal integration must require an explicit target value basis.
+- Precision: Decimal only; money inputs reject fractional cents; calculation context has at least 34 digits; equivalent monthly rates retain at least 18 decimal places; every monthly projected return uses cent-scale `ROUND_HALF_EVEN`; closing/opening recurrence reconciles exactly; JSON uses strings/null.
+- Forward output: every approved period and summary field, assumption echo, provenance, scope/as-of, and conditional-result metadata; no generative narrative and no frontend financial recalculation.
+- Target-date solver: `ALREADY_ACHIEVED`, `ACHIEVED`, mathematically proven `UNREACHABLE`, and `NOT_REACHED_WITHIN_HORIZON`. Exhausting 1,200 months alone must not be called unreachable.
+- Required-contribution solver: approved states, dynamic upper-bound expansion, cent-discrete monotonic binary search using the Forward Projection Engine as oracle, and the invariant that `C` succeeds while `C - 0.01` fails unless `C = 0`.
+- Goal integration: nullable facts, exact eligible/ineligible Goal types, paused/cancelled behavior, the seven approved timing statuses, direct month comparison without thresholds, and user isolation.
+- Scenario comparison: editable archetype labels without rates, shared comparison invariants, explicit contribution/return/inflation/initial-wealth differences, exact deltas, null months-saved/lost when either target is not reached, stable ordering, and no mutation of source facts.
+- Historical facts: prove portfolio returns, CDI, IPCA, IBOV, dividends, and Health trends never become future assumptions automatically.
+- Sustainable contribution capacity: `DEFERRED — CONTRACT NOT APPROVED`; no formula or implementation test until the 10.3.7 contract is separately approved.
+- API/lifecycle: authentication, validation boundaries, provenance/as-of, Decimal strings/null, and transient-only scenarios. Persistence tests are prohibited until a later lifecycle/versioning/ownership contract.
+- Frontend: TypeScript parity, no financial recalculation, loading/error/empty states, request-race protection, nominal/real/target-basis labels, month-level date language, and clear conditional-projection wording.
+- Independent validation: compare production results with a separate Decimal oracle or independently constructed spreadsheet; production code cannot generate its own expected values.
 - Regression: Goals, Financial Health, and Investments baselines remain unchanged unless a microprocess explicitly authorizes an integration modification.
 
-### Phase 10.4 — Retirement
+### Phase 10.4 — Retirement & Financial Independence (FIRE)
 - Unit: FI target = annual_expenses / withdrawal_rate
 - Unit: compound growth with monthly contributions
 - Unit: gap analysis = FI_target - current_wealth

@@ -1,5 +1,5 @@
 # Master Plan & Status — FINANALYTICS Wealth Intelligence
-**Updated:** 2026-09-16 (Phase 10.2 merged; Phase 10.3 planned)
+**Updated:** 2026-09-16 (Phase 10.3 contracts locked; 10.3.1 ready)
 
 ---
 
@@ -35,9 +35,9 @@ The platform provides:
 | 10.0 | Architecture & Product Design | **COMPLETE** | — |
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | Complete |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 complete |
-| 10.3 | Planning & Projection Engine | **PLANNED / NOT STARTED — 10.3.0 NEXT** | 10.1 and 10.2 complete |
-| 10.4 | Retirement / Financial Independence | NOT STARTED | 10.3 complete |
-| 10.5 | Portfolio Intelligence & Simulation | NOT STARTED | Stable investments, 10.3 complete |
+| 10.3 | Planning & Projection | **CONTRACT LOCKED — 10.3.0 VALIDATED; 10.3.1 READY / NOT STARTED** | 10.1 and 10.2 complete |
+| 10.4 | Retirement & Financial Independence (FIRE) | NOT STARTED — BOUNDARY APPROVED | 10.3 complete |
+| 10.5 | Portfolio Intelligence | NOT STARTED — BOUNDARY APPROVED | Stable investments, 10.3 complete |
 | 10.6 | Rebalancing & Watchlist | NOT STARTED | 10.5 complete |
 | 10.7 | External Market Intelligence | NOT STARTED | 10.5 complete, BCB/news validated |
 | 10.8 | LLM Provider Foundation | NOT STARTED | 10.7 complete, Ollama installed |
@@ -60,7 +60,7 @@ The active dependencies `pydantic-settings`, `aiosqlite`, `python-jose[cryptogra
 
 ---
 
-## Key Decisions Made in 10.0
+## Key Architecture Decisions
 
 | Decision | ADR | Status |
 |----------|-----|--------|
@@ -81,6 +81,10 @@ The active dependencies `pydantic-settings`, `aiosqlite`, `python-jose[cryptogra
 | Deterministic anomaly specification | ADR-015 | APPROVED |
 | Financial Health consolidated account scope | ADR-017 | APPROVED |
 | Financial trend and stability readiness | ADR-018 | APPROVED |
+| Planning input and source boundary | ADR-019 | APPROVED |
+| Planning mathematical contract | ADR-020 | APPROVED |
+| Planning scenario semantics and lifecycle | ADR-021 | APPROVED |
+| Retirement/FIRE and Portfolio Intelligence boundary | ADR-022 | APPROVED |
 
 ---
 
@@ -91,7 +95,7 @@ When complete, the user experience includes:
 1. **Wealth Intelligence Overview** — net worth, investments, savings rate, goal progress, FI timeline, daily alerts
 2. **Financial Health** — observed cashflow, spending distribution, deterministic historical trends, and anomaly detection
 3. **Goals Engine** — goal tracking, projections, required contributions, scenarios
-4. **Retirement / FI** — compound interest projection, gap analysis, sensitivity analysis
+4. **Retirement & Financial Independence (FIRE)** — retirement/FI modes over reusable Planning engines, gap analysis, income/withdrawal assumptions, and sensitivity
 5. **Portfolio Intelligence** — attribution, exposure, concentration risk
 6. **Rebalancing** — target vs current, deviation alerts
 7. **Market Radar** — asset signals, technical indicators, BCB macro data

@@ -1,5 +1,5 @@
 # Current Repository State
-**Updated:** 2026-09-16 (Phase 10.2 merged; Phase 10.3 planned)
+**Updated:** 2026-09-16 (Phase 10.3 contracts locked; 10.3.1 ready)
 
 This document reflects the VERIFIED reality of the repository as of the baseline audit.
 
@@ -18,9 +18,9 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 | **Goals Backend** | IMPLEMENTED / VALIDATED | `api/routers/goals.py`, `use_cases/goal/`, `persistence/models/goal.py` | Complete |
 | **Goals Frontend** | IMPLEMENTED / VALIDATED | `frontend/src/app/goals/`, `/wealth-intelligence` hub | Complete |
 | **Financial Health** | **PHASE 10.2 COMPLETED / MERGED; 10.2.10-C VALIDATED** | `backend/domains/health/repository.py`, `domains/health/service.py`, `api/routers/financial_health.py`, `frontend/src/app/wealth-intelligence/health/` | Complete |
-| **Planning Engine** | PLANNED / NOT STARTED | No production Planning code | 10.3.0 contract and data audit |
-| **Retirement / FI** | NOT STARTED | — | Phase 10.4 |
-| **Portfolio Intelligence** | NOT STARTED | — | Phase 10.5 |
+| **Planning & Projection** | CONTRACT LOCKED / NO ENGINE | ADRs 019–021; no production Planning code | 10.3.1 Planning Read Foundation — READY / NOT STARTED |
+| **Retirement & Financial Independence (FIRE)** | NOT STARTED — BOUNDARY ONLY | ADR-022 | Phase 10.4 after 10.3 completion |
+| **Portfolio Intelligence** | NOT STARTED — BOUNDARY ONLY | ADR-022 | Phase 10.5 |
 | **Rebalancing** | NOT STARTED | — | Phase 10.6 |
 | **Watchlist** | NOT STARTED | — | Phase 10.6 |
 | **BCB / Macro Data** | NOT STARTED | — | Phase 10.7 |
@@ -93,7 +93,7 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 
 - No real-time market data streaming (15-min cache only)
 - No retirement projection calculations
-- No Planning-derived sustainable contribution-capacity calculation; deferred to Phase 10.3.
+- No Planning-derived sustainable contribution-capacity calculation; `DEFERRED — CONTRACT NOT APPROVED` in 10.3.7.
 - No investment-capacity calculation; deferred to Planning / Portfolio Intelligence.
 - No composite financial-stability metric or score; deferred until a deterministic contract is approved.
 - No AI insight generation (empty files)
@@ -112,3 +112,5 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 - GitHub PR #2 (`develop` → `main`) merged the approved Goals 10.1 and Financial Health 10.2 work.
 - `main`, `develop`, `origin/main`, and `origin/develop` were synchronized at merge commit `b7ce8b8` on 2026-09-16.
 - Phase 10.3 has a documented microprocess plan but no production code, schema, migration, endpoint, or UI implementation.
+- TSK-10.3.0 and its approval lock are validated. ADRs 019–022 approve the Planning input/source, mathematical, scenario/lifecycle, and Retirement/FIRE/Portfolio boundaries.
+- `10.3.1 — Planning Read Foundation` is `READY / NOT STARTED` and may add only typed Decimal read boundaries/adapters and provenance. No projection engine is authorized yet.
