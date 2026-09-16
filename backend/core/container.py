@@ -192,3 +192,37 @@ def get_pierre_import_service(
         category_repo=category_repo,
         sync_log_repo=sync_log_repo,
     )
+
+# ------------------------------------------------------------------ #
+#  Goals Integration                                                   #
+# ------------------------------------------------------------------ #
+from backend.infrastructure.persistence.repositories.goal_repository import GoalRepository
+from backend.application.use_cases.goal.create_goal import CreateGoalUseCase
+from backend.application.use_cases.goal.list_goals import ListGoalsUseCase
+from backend.application.use_cases.goal.get_goal import GetGoalUseCase
+from backend.application.use_cases.goal.update_goal import UpdateGoalUseCase
+from backend.application.use_cases.goal.delete_goal import DeleteGoalUseCase
+
+
+def get_goal_repository(session: AsyncSession = Depends(get_db_session)) -> GoalRepository:
+    return GoalRepository(session=session)
+
+
+def get_create_goal_use_case(repo: GoalRepository = Depends(get_goal_repository)) -> CreateGoalUseCase:
+    return CreateGoalUseCase(repository=repo)
+
+
+def get_list_goals_use_case(repo: GoalRepository = Depends(get_goal_repository)) -> ListGoalsUseCase:
+    return ListGoalsUseCase(repository=repo)
+
+
+def get_get_goal_use_case(repo: GoalRepository = Depends(get_goal_repository)) -> GetGoalUseCase:
+    return GetGoalUseCase(repository=repo)
+
+
+def get_update_goal_use_case(repo: GoalRepository = Depends(get_goal_repository)) -> UpdateGoalUseCase:
+    return UpdateGoalUseCase(repository=repo)
+
+
+def get_delete_goal_use_case(repo: GoalRepository = Depends(get_goal_repository)) -> DeleteGoalUseCase:
+    return DeleteGoalUseCase(repository=repo)
