@@ -1,0 +1,16 @@
+from enum import Enum
+
+
+class GoalType(str, Enum):
+    # Tipos originais — preservados
+    EMERGENCY_RESERVE = "EMERGENCY_RESERVE"
+    RETIREMENT = "RETIREMENT"
+    TRAVEL = "TRAVEL"
+    PURCHASE = "PURCHASE"
+    CUSTOM = "CUSTOM"
+
+    # Novos tipos — Lote 10.1 (Wealth Intelligence)
+    WEALTH_TARGET = "WEALTH_TARGET"
+    INVESTMENT_TARGET = "INVESTMENT_TARGET"
+    DIVIDEND_INCOME = "DIVIDEND_INCOME"
+    FINANCIAL_INDEPENDENCE = "FINANCIAL_INDEPENDENCE"

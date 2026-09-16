@@ -19,6 +19,9 @@ const TAB_COLORS: Record<string, string> = {
   "/governance/imports":       "#4ecf98",  // Nova Importação — verde
   "/governance/database":      "#94a3b8",  // Saneamento — slate
   "/governance/audit":         "#f687b3",  // Auditoria — rosa
+  "/wealth-intelligence":      "#b794f4",  // Wealth Intelligence Dashboard — violeta
+  "/wealth-intelligence/health": "#7EB8F7", // Saúde Financeira — azul
+  "/goals":                    "#4ecf98",  // Metas — verde
   "/wealth":                   "#94a3b8",  // Resumo — neutro
   "/wealth/patrimonio":        "#4ecf98",  // Patrimônio — verde
   "/wealth/allocation":        "#f5a623",  // Alocação — âmbar
@@ -34,7 +37,7 @@ export function TopNav() {
   const { user, logout } = useAuth();
 
   const tabs = getTabsForPath(pathname);
-  if (!tabs || tabs.length === 0) {
+  if (!tabs) {
     return null;
   }
 

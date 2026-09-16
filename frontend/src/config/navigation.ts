@@ -26,7 +26,7 @@ type SearchParamsLike = {
 export const SIDEBAR_NAV = [
   { name: "Controle Financeiro", href: "/", icon: LayoutDashboard },
   { name: "Investimentos", href: "/wealth", icon: LineChart },
-  { name: "Metas", href: "/goals", icon: Target },
+  { name: "Wealth Intelligence", href: "/wealth-intelligence", icon: Target },
   { name: "Governança", href: "/governance", icon: ShieldCheck },
 ] as const;
 
@@ -58,13 +58,17 @@ export const SECTION_TABS = {
     { name: "Perfil", href: "/profile", icon: Settings },
     { name: "Contas", href: "/accounts", icon: Building2 },
   ],
-  goals: [],
+  wealthIntelligence: [
+    { name: "Dashboard", href: "/wealth-intelligence", icon: LayoutDashboard },
+    { name: "Metas", href: "/goals", icon: Target },
+    { name: "Saúde Financeira", href: "/wealth-intelligence/health", icon: TrendingUp },
+  ],
 } as const;
 
 export function getTabsForPath(pathname: string) {
+  if (pathname.startsWith("/wealth-intelligence") || pathname.startsWith("/goals")) return SECTION_TABS.wealthIntelligence;
   if (pathname.startsWith("/wealth")) return SECTION_TABS.wealth;
   if (pathname.startsWith("/governance")) return SECTION_TABS.governance;
-  if (pathname.startsWith("/goals")) return SECTION_TABS.goals;
   if (pathname.startsWith("/settings") || pathname.startsWith("/accounts") || pathname.startsWith("/profile")) return SECTION_TABS.settings;
 
   // /cashflow e /transactions compartilham as tabs de dashboard

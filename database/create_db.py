@@ -50,7 +50,16 @@ MIGRATION_ORDER = [
     "011_ai_prompt_versioning.sql",
     "012_freeze_fixes.sql",
     # --- Plataforma de Investimentos (Sprint 2) ---
-    "013_position_snapshots.sql",
+    # NOTA (Lote 10.0-A): 013_position_snapshots.sql define um schema com snapshot_hash
+    # (B3 Área do Investidor) que foi SUPERSEDIDO pelo Alembic (wealth_phase1 / a1b2c3d4e5f6)
+    # antes de ser executado em produção.
+    # O banco atual usa o schema Alembic: id + account_id + asset_id + reference_date (MYPROFIT_ATIVOS).
+    # O CREATE TABLE IF NOT EXISTS da 013 não causou dano porque a tabela já existia.
+    # Em ambientes fresh (novo DB), o create_db.py NÃO deve ser usado para tabelas de Investments.
+    # O Alembic (alembic upgrade head) é o único sistema de migration autorizado para Investments.
+    # Este arquivo (create_db.py) só é relevante para as migrations 001–012 (domínio Pierre/Core).
+    # "013_position_snapshots.sql",  # SUPERSEDIDO — não executar em novos ambientes
+
 ]
 
 

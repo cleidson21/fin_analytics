@@ -2,6 +2,7 @@ fastapi==0.103.2
 uvicorn==0.23.2
 sqlalchemy==2.0.21
 pydantic==2.4.2
+pydantic-settings==2.14.2      # usado em backend/core/config.py (BaseSettings)
 pandas==2.1.1
 python-dateutil==2.8.2
 python-multipart==0.0.6
@@ -9,4 +10,9 @@ pytest==7.4.2
 yfinance==0.2.31
 apscheduler==3.11.3
 requests==2.34.2
+httpx==0.28.1                  # usado em backend/infrastructure/http/pierre_client.py e domains/pierre/client.py
 google-generativeai==0.8.6
+aiosqlite==0.22.1              # driver async SQLite — usado em database/engine.py (ASYNC_DATABASE_URL)
+python-jose[cryptography]==3.5.0  # usado em backend/infrastructure/security/jwt_service.py e api/dependencies/auth.py
+alembic==1.18.5                # usado para migrations Alembic (backend/database/migrations/)
+bcrypt==4.0.1                  # usado em backend/infrastructure/security/password_hasher.py (hash de senhas)

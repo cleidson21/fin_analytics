@@ -9,6 +9,7 @@ from .wealth.asset import AssetModel
 from .wealth.position_snapshot import PositionSnapshotModel
 from .wealth.portfolio_snapshot import PortfolioSnapshotModel
 from .wealth.income_event import IncomeEventModel
+from .goal import GoalModel
 
 __all__ = [
     "UserModel",
@@ -22,4 +23,5 @@ __all__ = [
     "PositionSnapshotModel",
     "PortfolioSnapshotModel",
     "IncomeEventModel",
+    "GoalModel",
 ]

@@ -41,6 +41,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                       ? isFinancialDomain
                       : item.href.startsWith("/governance")
                         ? pathname.startsWith("/governance")
+                      : item.href.startsWith("/wealth-intelligence")
+                        ? pathname.startsWith("/wealth-intelligence") || pathname.startsWith("/goals")
+                      : item.href === "/wealth"
+                        ? pathname === "/wealth" || pathname.startsWith("/wealth/")
                       : pathname === item.href || pathname.startsWith(item.href);
 
                   return (
