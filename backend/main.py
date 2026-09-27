@@ -12,6 +12,7 @@ from backend.api.routers.governance import router as api_governance_router
 from backend.domains.pierre.installments_router import router as installments_router
 from backend.api.routers.investments import router as investments_router
 from backend.api.routers.financial_health import router as financial_health_router
+from backend.api.routers.planning import router as planning_router
 
 # Ensure all V3 tables exist on startup (including GovernanceAuditLog from Sprint 2.8)
 # Structural migrations (ALTER TABLE) are managed via versioned SQL scripts in database/migrations/
@@ -56,3 +57,6 @@ app.include_router(financial_health_router, prefix="/api/v1")
 # Goals (Wealth Intelligence Lote 10.1)
 from backend.api.routers.goals import router as goals_router
 app.include_router(goals_router, prefix="/api/v1")
+
+# Planning API foundation (10.3.8-B): endpoints arrive in later microphases.
+app.include_router(planning_router, prefix="/api/v1")
