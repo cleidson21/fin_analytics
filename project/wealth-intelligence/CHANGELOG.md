@@ -1,5 +1,640 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [POST-10.3-UX-B7] — 2026-09-27 — Independent validation and UX closure
+
+- Independently reconciled ADR-024, real Planning UX implementation, source boundaries, accessibility/living states, and documentation. The user-approved UX-B6 manual review is recorded as `VALIDATED`.
+- Repeated frontend Vitest (`64 passed`), TypeScript, focused Planning/Health lint, production build, focused Planning API/domain/resolver regression (`496 passed`), and a secured five-route Planning OpenAPI probe. The only textual financial conversion to `Number` remains the isolated Recharts rendering adapter.
+- `UX-B1–UX-B7 = VALIDATED`; `POST-10.3 UX = VALIDATED / CLOSED`. No backend/API/engine/financial-contract/persistence/FIRE/Portfolio Intelligence/Copilot change, commit, or push was made. Historical Swagger manual auth, Investments timeline tests, ADR-014, and Recharts SSG warning remain explicit debt.
+
+---
+
+## [POST-10.3-UX-B6] — 2026-09-27 — Living states and responsive polish
+
+- Added CSS-only first-submit skeletons, accessible loading announcements, preserved prior results during recalculation, and explicit stale-premise feedback across all five Planning capabilities. No API call occurs outside explicit submit.
+- Result surfaces now transition as a unit with reduced-motion support; no financial counter, optimistic value, live indicator, backend/API change, or new dependency was added.
+
+---
+
+## [POST-10.3-UX-B5-R1] — 2026-09-27 — Quiet Financial OS visual polish
+
+- Reconciled the accepted Planning result surfaces toward a quieter output-first hierarchy: responsive tabular hero values, restrained two-pixel semantic accent edges, editorial secondary metrics, calmer form surfaces, and a deliberate CTA-to-result/chart rhythm.
+- Unified primary Planning calculation actions under violet. Success, attention/target, comparison, and neutral reference states remain semantic within results; late Goal projection is amber rather than pink/rose.
+- Refined Recharts grid, analytical line palette and stroke hierarchy, compact provenance details, and neutral comparison-reference treatment. No motion, live/freshness affordance, recommendation, backend/API/financial behavior, or additional Decimal conversion was added. `UX-B5 = FUNCTIONALLY ACCEPTED`; `UX-B5-R1 = IMPLEMENTED / READY FOR MANUAL VISUAL REVIEW`; `UX-B6 = READY / NOT STARTED`.
+
+---
+
+## [POST-10.3-UX-B5] — 2026-09-27 — Results, Charts, Visual Hierarchy & Provenance
+
+- Reworked all Planning response surfaces into answer-first result heroes with pt-BR string-safe BRL, annual/monthly rate, civil-date, and reference-month formatting. Supporting metrics are visually secondary; no response contract, financial calculation, or source semantics changed.
+- Compressed source provenance into accessible details chips, preserving MyProfit monthly buckets and imported-version terminology while omitting technical account/run IDs and never fabricating portfolio observation dates. Comparison cards now present neutral named scenarios and the explicit reference without ranking.
+- Improved Recharts axis, tooltip, legend, line hierarchy, spacing, and certified target reference lines. The sole Decimal→`Number` conversion remains isolated in the chart-rendering adapter. Vitest `64`, TypeScript, focused lint, and production build passed. `UX-B4 = VALIDATED`; `UX-B5 = IMPLEMENTED / READY FOR MANUAL UI REVIEW`; `UX-B6 = READY / NOT STARTED`.
+
+---
+
+## [POST-10.3-UX-B4] — 2026-09-26 — Scenario Comparison Shared Context
+
+- Replaced repeated scenario context with one shared date-base, horizon, output mode, fixed operational disclosure, and optional target pair. The pure builder expands that context into the unchanged ordered comparison request; source, contribution, return, return type, inflation, label, archetype, and manual provenance remain scenario-specific.
+- Reference is now explicitly selected and clears when its scenario is removed. Scenario cards show user-facing fallback names rather than internal IDs, preserve mixed source semantics, and remain responsive without a parallel API or calculation path.
+- Added four pure shared-context tests; the Node-only Vitest suite is `64 passed`. TypeScript, focused Planning lint, and production build passed. `UX-B3 = VALIDATED` from accepted manual review; `UX-B4 = IMPLEMENTED / READY FOR MANUAL UI REVIEW`; `UX-B5 = READY / NOT STARTED`. No backend, API, engine, persistence, result/chart redesign, skeleton, motion, commit, or push was added.
+
+---
+
+## [POST-10.3-UX-B3] — 2026-09-26 — Smart Defaults & Advanced Options
+
+- Added submit-time local civil data-base context, submit-time manual-source observation, explicit Advanced overrides, and a visible Nominal→Nominal standard state. The backend still receives the complete certified contract; no financial assumption, API contract, or backend behavior changed.
+- Migrated user-entered Planning money, contribution, targets, return, and conditional inflation through the UX-B1 exact pt-BR parsers. Lexical errors remain beside the field and prevent the request without clearing form state. MyProfit now has an accessible compact information disclosure rather than permanent technical copy.
+- Added three pure request-builder tests; the Node-only Vitest suite is now `60 passed`. TypeScript, focused Planning lint, and production build passed. `UX-B2 = VALIDATED` from the accepted manual review; `UX-B3 = IMPLEMENTED / READY FOR MANUAL UI REVIEW`; `UX-B4 = READY / NOT STARTED`. No backend, engine, persistence, result/chart redesign, shared comparison context, commit, or push was added.
+
+---
+
+## [POST-10.3-UX-B2] — 2026-09-26 — Page Chrome, Copy & Three Intentions
+
+- Replaced the five peer Planning tabs with the compact `Simular`, `Objetivo`, and `Comparar` entry control. `Objetivo` reveals the secondary tasks `Quando alcanço?`, `Quanto aportar?`, and `Meta existente`; all map to the unchanged capability components and API contracts.
+- Removed redundant visible Planning and Financial Health eyebrows/titles, preserving semantic `sr-only` H1 headings. Removed repeated capability headers and implementation-detail copy without changing forms, results structure, charts, financial display/input, or request payloads.
+- TypeScript, B1 Vitest (`57 passed`), focused Planning/Health lint, and production build passed. `UX-B2 = IMPLEMENTED / READY FOR MANUAL UI REVIEW`; `UX-B3 = READY / NOT STARTED`; Phase 10.3 remains `VALIDATED / CLOSED` and 10.4 remains `READY / NOT STARTED`.
+
+---
+
+## [POST-10.3-UX-B1] — 2026-09-26 — pt-BR Financial Input/Output Primitives
+
+- Added isolated, string-safe `planningLocale` primitives for BRL money, human percentage/fraction conversion, civil dates, monthly reference buckets, and structured lexical error codes/copy. Financial text never converts through JavaScript `Number` or float formatting.
+- Added Node-only Vitest `3.2.4` as a dev dependency and `57` focused table/boundary tests, including values beyond `Number.MAX_SAFE_INTEGER`, strict pt-BR grouping, no silent rounding, percentage unit semantics, display rounding, and local civil dates.
+- TypeScript, focused lint, and production build pass. No Planning form, capability, backend, engine, or financial request path changed. `UX-B1 = VALIDATED`; `UX-B2 = READY / NOT STARTED`; Phase 10.3 remains `VALIDATED / CLOSED` and 10.4 remains `READY / NOT STARTED`.
+
+---
+
+## [POST-10.3-UX-A] — 2026-09-26 — Planning UX & Simplicity Contract
+
+- Locked ADR-024 and `PLANNING_UX_CONTRACT.md` without production changes. The official direction is `Quiet Financial OS`, with minimal Wealth Intelligence page chrome, three Planning intentions (`Simular`, `Objetivo`, `Comparar`), progressive disclosure, and answer-first result hierarchy.
+- Defined exact string-safe pt-BR money, percentage, and date input/display; submit-time temporal context defaults; explicit source semantics; Goal target-basis handling; shared Scenario Comparison context; compact provenance; Recharts presentation boundaries; restrained motion; and the Tailwind/Radix/shadcn-compatible/Recharts stack policy.
+- Classified frontend-now, small-backend-contract, future-phase, and rejected items. Portfolio preview, assumption references, and Goal-derived presets remain separate optional contracts; FIRE, Portfolio Intelligence, Copilot, persistence, automatic assumptions, ranking, and browser-side MyProfit lookup were not started. Phase 10.3 remains `VALIDATED / CLOSED`; 10.4 remains `READY / NOT STARTED`.
+
+---
+
+## [TSK-10.3.12] — 2026-09-26 — Planning Final Validation & Closure
+
+- Closed Phase 10.3 as a deterministic, transient Planning capability: forward projection, Target Achievement, Required Contribution, Goal Planning, Scenario Comparison, authenticated API, analytical frontend, and the certified MyProfit investment-portfolio wealth source.
+- Closure checks: `269 passed` across API integration, portfolio resolver, and representative Planning domain suites; five secured OpenAPI operations; TypeScript, focused lint, and production build passed. The general baseline remains `614 passed, 2` known historical Investments/MagicMock failures.
+- Preserved boundaries: no persistence, Sustainable Capacity, FIRE, Portfolio Intelligence, LLM, net-worth aggregation, realtime portfolio claim, multi-user portfolio ownership, or complete historical snapshot reconstruction. Swagger manual auth remains deferred by user. `10.3 = VALIDATED / CLOSED`; `10.4 = READY / NOT STARTED`; post-closure Planning UX refinement review awaits user feedback.
+
+---
+
+## [TSK-10.3.11] — 2026-09-26 — Planning Integration & Stabilization
+
+- Reconciled all five Planning capabilities and authenticated APIs against ADRs 019–023, including source-specific selector boundaries, nominal/real behavior, period-zero/timing/horizon semantics, Goal applicability-first, explicit ordered scenarios, certified deltas, and ADR-023 portfolio temporality/provenance.
+- No production defect or feature change was needed. Planning API suites: `157 passed`; Planning domain/resolver suites: `339 passed`; full unit baseline: `614 passed, 2` unchanged historical Investments/MagicMock timeline failures. TypeScript, focused Planning ESLint, and production build passed; `/wealth-intelligence/planning` remains present.
+- `10.3.11 = VALIDATED / STABILIZED`; `10.3.12 = READY / NOT STARTED`. Swagger Authorize manual smoke, ADR-014, Investments timeline tests, Recharts SSR warning, absent frontend test runner, and broad UX refinements remain deferred/accepted debt. No commit or push was created.
+
+---
+
+## [TSK-10.3.10B4] — 2026-09-26 — Independent / Adversarial Portfolio Source Validation
+
+- Validated `INVESTMENT_PORTFOLIO_SNAPSHOT` end-to-end: guarded single-user/single-tenant ownership, semantic UUID and import-run provenance, zero/one/many scope handling, Decimal preservation, strict source-only API selection, and frontend source-state isolation.
+- Reconfirmed `LATEST ELIGIBLE AS OF`: the greatest eligible monthly `reference_month` is selected only when its technical snapshot-version update time is not after the requested as-of date. `observed_at` remains null; the UI presents only `MM/YYYY` and an import/update timestamp, never a fabricated daily observation.
+- B1 resolver: `16 passed`; Planning API: `157 passed`; Planning domain: `323 passed`; full units: `614 passed, 2` unchanged historical Investments/MagicMock timeline failures. OpenAPI has exactly five secured Planning POST routes; TypeScript, focused ESLint, and production build pass. User confirmed B3 manual smoke for Projection, Target, Required, Goal, and Scenario Comparison.
+- `10.3.10B1` through `10.3.10B4 = VALIDATED`; `10.3.10B = VALIDATED / COMPLETE`; `10.3.11 = READY / NOT STARTED`. Limitations remain: investment portfolio wealth, not net worth; BRL-only; monthly reference bucket; no complete historical time travel, preview endpoint, or multi-user account ownership model. No production code, schema, migration, engine, frontend dependency, commit, or push was added during validation.
+
+---
+
+## [TSK-10.3.10B3] — 2026-09-25 — Planning Frontend Portfolio Source Integration
+
+- Added the strict `INVESTMENT_PORTFOLIO_SNAPSHOT` selector to the existing shared Planning form and request unions for Projection, Target Achievement, Required Contribution, Goal Planning, and Scenario Comparison. The browser sends only the discriminant; no manual amount/timestamp state, account, run, temporal data, or provenance can enter the portfolio selector.
+- The UI now labels the source as MyProfit investment-portfolio wealth, hides manual wealth inputs, has no preview or Investments lookup, and renders only certified source facts. Monthly `reference_month` is displayed as `MM/YYYY`; technical `updated_at` is not called a financial observation; null `observed_at` is omitted.
+- TypeScript and focused ESLint pass. `10.3.10B3 = IMPLEMENTED / READY FOR MANUAL VALIDATION`; `10.3.10B4 = READY / NOT STARTED`; `10.3.10B = IN PROGRESS`. No backend, migration, engine, persistence, dependency, commit, or push was added.
+
+---
+
+## [TSK-10.3.10B2] — 2026-09-25 — Planning API Portfolio Source Integration
+
+- Added the strict source-only `INVESTMENT_PORTFOLIO_SNAPSHOT` selector to the authenticated Planning boundary and routed it exclusively to the validated ADR-023 resolver with `current_user.id` and the request `as_of_date`.
+- Integrated Projection, Target Achievement, Required Contribution, Goal Planning after applicability preflight, and atomic Scenario Comparison source resolution. Resolver failures now produce a safe `422`; `reference_month` and technical provenance `updated_at` are preserved while `observed_at` remains null.
+- Added `8` dedicated B2 HTTP tests. Planning API suites: `157 passed`; B1 plus Planning domain: `339 passed`; general units: `614 passed, 2 historical Investments/MagicMock failures`. No frontend, migration, schema, engine, write path, preview endpoint, commit, or push was added. `10.3.10B2 = VALIDATED`; `10.3.10B3 = READY / NOT STARTED`; `10.3.10B = IN PROGRESS`.
+
+---
+
+## [TSK-10.3.10B1] — 2026-09-25 — Investment Portfolio Source Resolver & Reader Foundation
+
+- Added the internal ADR-023 resolver and Decimal-safe portfolio fact construction. It verifies the one-user tenant guard, semantic UUID ownership, complete scope/run provenance, zero/one/many cardinality, strict monthly bucket validity, latest-eligible-as-of selection, and `observed_at = null` for this source.
+- No router, public DTO selector, OpenAPI, frontend, Planning engine, migration, schema, write path, aggregation, or automatic source exposure was added.
+- Focused resolver tests: `16 passed`; Planning read foundation: `12 passed`; Goal Planning: `101 passed`; general units: `609 passed, 2 historical Investments/MagicMock failures`. `10.3.10B1 = VALIDATED`; `10.3.10B2 = READY / NOT STARTED`; `10.3.10B = IN PROGRESS`.
+
+---
+
+## [TSK-10.3.10A-R1] — 2026-09-25 — MyProfit Snapshot Temporal Semantics Lock
+
+- Confirmed from the real MyProfit Evolução CSV and parser that `Data` contains only `Mmm-YYYY`; `reference_month` is a monthly evolution bucket, not an invariant month-end timestamp. A live `2026-09` row persisted before September month-end proves that the current bucket may be month-to-date.
+- Confirmed that `portfolio_snapshots.updated_at` is assigned by the confirmation UPSERT and means snapshot-version update/import time, not financial observation time. ADR-023 no longer aliases it to `PlanningFactAsOf.observed_at`.
+- Retained `LATEST ELIGIBLE AS OF` as look-ahead safe: the greatest period not after the as-of month is eligible only when its current persisted version was updated no later than `as_of_date`. Same-month data can be eligible; a later import cannot be used for an earlier as-of.
+- Locked `HISTORICAL AS-OF UNSUPPORTED WITH CURRENT DATA MODEL` as a reproducible time-travel guarantee because UPSERT retains neither previous versions nor a source observation timestamp. No production code, schema, or database data changed.
+
+---
+
+## [TSK-10.3.10A] — 2026-09-24 — Investment Portfolio Source Contract & Ownership Audit
+
+### Contract
+
+- Added ADR-023. The authenticated selector will contain only `INVESTMENT_PORTFOLIO_SNAPSHOT`; the server must enforce a formal one-user/one-MyProfit-scope tenant invariant and successful import-run ownership. Zero or multiple scopes are `422`; the client never supplies account, amount, or certified provenance.
+- Locked `LATEST ELIGIBLE AS OF`: select the greatest portfolio reference month not after the scenario month only when the current persisted row version was updated no later than `as_of_date`. TSK-10.3.10A-R1 later clarified that this is technical persistence/import time rather than a financial observation timestamp. Future data and later UPSERT versions cannot leak into historical requests; no arbitrary staleness threshold was added.
+- Locked `portfolio_snapshots.patrimonio` as Decimal investment-portfolio wealth in the current BRL application context, never net worth or a positions aggregation. All five Planning capabilities may use the source; Goal applicability remains first and comparison resolution remains atomic.
+
+### Evidence and status
+
+- Read-only live audit: 1 user, 7 Pierre/Core accounts, no MyProfit row in `accounts`, 1 logical MyProfit scope, and 49 unique monthly snapshots from `2022-09` through `2026-09`, all currently tied to a successful `MYPROFIT_EVOLUCAO` run for the sole user. ADR-014 does not govern `portfolio_snapshots` and is non-blocking.
+- `NO MIGRATION REQUIRED` for this constrained single-tenant implementation; future multi-user or multi-portfolio support requires a separate explicit investment-account ownership model. No production code or database row changed.
+- `10.3.10 = VALIDATED`; `10.3.10A = CONTRACT LOCKED / READY FOR 10.3.10B`; `10.3.10B = READY / NOT STARTED`; `10.3.11–10.3.12 = NOT STARTED`. Planning visual/UX refinements remain deliberately deferred by the user. Swagger Authorize manual smoke remains `DEFERRED BY USER`.
+
+---
+
+## [TSK-10.3.9] — 2026-09-23 — Planning Frontend Foundation
+
+### Added
+
+- Canonical `/wealth-intelligence/planning` entry, Wealth Intelligence navigation, and a functional hub card.
+- Strict TypeScript contracts plus authenticated API client functions for all five transient Planning routes. Financial values are preserved as strings; only approved user-provided and Goal-current-amount selectors are represented.
+- Projection-only vertical slice with explicit inputs, loading, error, empty, and direct certified-result states. No browser calculation, chart, persistence, recommendation, capacity, Retirement/FIRE, Portfolio Intelligence, or LLM capability was added.
+
+### Verified
+
+- `npx.cmd tsc --noEmit`, focused ESLint, static search for financial conversions/math, and `npm.cmd run build` passed. The production build includes `/wealth-intelligence/planning`; the pre-existing Recharts SSR size warning remains unrelated.
+
+### Status
+
+- Independent validation passed: `10.3.9 = TECHNICALLY VALIDATED / MANUAL UI SMOKE PENDING`; `10.3.10 = READY / NOT STARTED`.
+- `10.3.8-F` automated validation remains complete. Swagger Authorize manual smoke is `DEFERRED BY USER`, not passed.
+
+---
+
+## [TSK-10.3.8-F] — 2026-09-23 — Planning API Integration & Stabilization
+
+### Status
+
+`AUTOMATED VALIDATION PASSED / READY FOR MANUAL SMOKE`
+
+### Verification
+
+- Added only `tests/unit/test_planning_api_integration.py`: five cross-endpoint checks for exact secured route/OpenAPI inventory, common Decimal and blocked-portfolio request behavior, uniform non-enumerating Goal ownership, and deterministic 1,200-month serialization.
+- Integration `5 passed`; B–E API `147 passed`; Planning domain `323 passed`; Goals `65 passed`; Health `68 passed`; general unit `593 passed, 2 historical Investments/MagicMock failures`.
+- No production fix. `10.3.8` macro closure remains pending the user Swagger smoke; persistence remains `DEFERRED — TRANSIENT API FIRST`.
+
+## [TSK-10.3.8-E-V] — 2026-09-23 — Independent Scenario Comparison Endpoint Validation
+
+### Status
+
+`VALIDATED`
+
+### Verification
+
+- Independently validated the authenticated ordered endpoint through HTTP, domain, mapper, OpenAPI, ownership, and regression probes. Added test-only checks for atomic prevalidation before financial subengines, no Goal Planning applicability leakage, strict target Decimal input, rejected ranking/recommendation fields, and direct certified-delta mapping.
+- Focused suite: `42 passed`; Planning domain regressions `323 passed`; Goals `65 passed`; Health `68 passed`; general unit `585 passed, 2 historical Investments/MagicMock failures`.
+- `10.3.8-E = VALIDATED`; `10.3.8-F = READY / NOT STARTED`; scenario persistence remains `DEFERRED — TRANSIENT API FIRST`.
+
+## [TSK-10.3.8-E] — 2026-09-23 — Scenario Comparison Endpoint
+
+### Status
+
+`IMPLEMENTED / READY FOR VALIDATION`
+
+### Added
+
+- Added authenticated transient `POST /api/v1/planning/scenarios/compare` with strict ordered DTOs, explicit reference, optional shared target/basis, metadata-only archetypes, source-preserving response DTOs, and full certified nested projection/target results.
+- The boundary resolves every approved Goal source server-side before one `ScenarioComparisonEngine` call; clients cannot forge a certified fact and portfolio source remains structurally unavailable.
+- The API only maps engine-owned Decimal deltas and temporal semantics. It neither sorts/ranks/recommends nor recomputes financial values, invokes other Planning services, writes state, or persists scenarios.
+
+### Verification
+
+- Focused Scenario Comparison HTTP suite: `21 passed`; focused foundation/calculation/Goal/Scenario/Goal Planning regression: `428 passed`.
+- `10.3.8-E = IMPLEMENTED / READY FOR VALIDATION`; `10.3.8-F = READY / NOT STARTED`; persistence remains `DEFERRED — TRANSIENT API FIRST`.
+
+## [TSK-10.3.8-D-R1-SOL] — 2026-09-22 — Goal Source / Applicability Reconciliation
+
+### Status
+
+`RECONCILED / READY FOR FINAL REVALIDATION`
+
+### Reconciled
+
+- Locked the authoritative result: a structurally valid non-projectable Goal does not consume an unavailable projection-specific `GOAL_CURRENT_AMOUNT` and returns `200 / NOT_APPLICABLE`; an ACTIVE eligible Goal still returns `422` when that selected fact is required and absent.
+- Added a pure `GoalPlanningService` applicability preflight used by the HTTP orchestration before source resolution. The service remains the single type/status authority; the router has no duplicated eligibility list, and the domain has no database knowledge.
+- No dummy wealth, fallback source, Goal mutation, financial-engine change, persistence, or 10.3.8-E implementation was introduced.
+
+### Verification
+
+- Goal endpoint `37 passed`; Goal Planning `65`; foundation `41`; calculation endpoints `25`; other Planning `222`; Goals `65`; Health `68`. General unit: `508 passed, 2 historical Investments/MagicMock failures`.
+- `10.3.8-D = RECONCILED / READY FOR FINAL REVALIDATION`; `10.3.8-E = NOT STARTED`.
+
+## [TSK-10.3.8-D-V2] - 2026-09-23 - Final Owned Goal Planning API Validation
+
+### Status
+
+`VALIDATED`
+
+### Validation
+
+- Confirmed one internal lifecycle/type applicability authority shared by `preflight_applicability()` and `evaluate()` across all real Goal status/type pairs.
+- Confirmed HTTP call order: applicable Goals resolve the selected source only after preflight; non-projectable Goals stop after preflight even when current amount is available.
+- Added validation-only matrix and malformed-user-source coverage. No production code was changed during V2.
+
+### Verification
+
+- Goal endpoint `39 passed`; Goal Planning `101`; foundation `41`; calculation endpoints `25`; other Planning `222`; Goals `65`; Health `68`. General unit: `546 passed, 2 historical Investments/MagicMock failures`.
+- `10.3.8-D = VALIDATED`; `10.3.8-E = READY / NOT STARTED`.
+
+## [TSK-10.3.8-D] — 2026-09-21 — Owned Goal Planning Endpoint
+
+### Status
+
+`IMPLEMENTED / READY FOR VALIDATION`
+
+### Added
+
+- Authenticated transient `POST /api/v1/planning/goals/{goal_id}/projection`, with owned server-side Goal/Decimal read, a path-specific Goal-current-amount selector, and a separate Goal Planning response mapper/DTO.
+- One `GoalPlanningService` delegation per executable request. The HTTP boundary does not duplicate eligibility, target crossing, timing, monetary math, or Goal state changes.
+- Strict Goal-field forgery rejection; exact Decimal-string response mapping for the Goal fact, assumptions, initial fact, and nested target result.
+
+### Verification
+
+- Focused endpoint suite: `28 passed`; foundation `41`, calculation endpoints `25`, Goal Planning `63`, other Planning `222`, Goals `65`, Health `68` passed. General unit: `497 passed, 2 historical Investments/MagicMock failures`.
+- `10.3.8-E = READY / NOT STARTED`; Scenario Persistence remains `DEFERRED — TRANSIENT API FIRST`.
+
+## [TSK-10.3.8-C] — 2026-09-21 — Planning Calculation Endpoints
+
+### Status
+`IMPLEMENTED / READY FOR VALIDATION`
+
+### Implementation
+- Added authenticated transient `POST /api/v1/planning/projection`, `/target-achievement`, and `/required-contribution` with boundary DTOs that preserve Decimal-string request and response truth, certified projection timelines/summaries, solver statuses, nested results, and public provenance.
+- `USER_PROVIDED_SCENARIO` remains caller-provided only. `GOAL_CURRENT_AMOUNT` is resolved only through `PlanningGoalReadQuery(goal_id, current_user.id)` and the Decimal-safe reader; missing and wrong-owner Goals share `404`, unavailable selected amount is `422`, and portfolio source remains structurally unsupported.
+- Each route delegates exactly once to its corresponding certified engine. Target value basis must match output mode without conversion. Valid domain outcomes, including non-achievement states, return `200`; local validation maps to `422`, unexpected arithmetic to generic `500`. No write, persistence, financial recalculation, Goal Planning endpoint, Scenario endpoint, Sustainable Capacity, commit, or push was added.
+
+### Verification
+- Independent validation: `25 passed` after adding validation-only HTTP coverage for declared precision/determinism, no engine call after failed Goal resolution, intact Required template contribution, Required basis mismatch, and string-only numbers across every endpoint. Foundation `41`, Projection `38`, Target `32`, Required `40`, Goal Planning `63`, Scenario `37`, Assumptions `63`, Read Foundation `12`, Goals `65`, Health `68` passed. General unit: `465 passed, 2 historical Investments/MagicMock failures`.
+- `10.3.8-C = VALIDATED`; `10.3.8-D = READY / NOT STARTED`; Scenario Persistence remains `DEFERRED — TRANSIENT API FIRST`.
+
+## [TSK-10.3.8-A] — 2026-09-20 — Planning API & Scenario Persistence Contract Audit
+
+### Status
+`API CONTRACT LOCKED / PERSISTENCE DEFERRED — TRANSIENT API FIRST`
+
+### Contract
+- Locked five separate authenticated transient POST capabilities under `/api/v1/planning`: Forward Projection, Target Achievement, Required Contribution, owned Goal Planning, and Scenario Comparison. DTOs must use strict decimal strings, canonical ISO dates/enums, stable domain-to-API mapping, complete period/summary results, and no recalculation or automatic assumptions.
+- Locked a discriminated initial-wealth selector. User-provided amounts remain explicitly user-provided; Goal current amount is loaded server-side through `goal_id + current_user.id` and the Decimal-safe Planning reader; clients cannot manufacture certified provenance. Portfolio snapshot sourcing is not exposed because its MyProfit account scope has no authenticated-user ownership relation.
+- Locked existing bearer/JWT reuse, wrong-owner Goal `404` non-enumeration, `422` for request/domain validation, successful payloads for legitimate solver/planning statuses, and `500` for unexpected arithmetic/invariant failures.
+- Full certified monthly timelines and summaries are returned in the initial contract. No arbitrary scenario-count cap, pagination, or summary-only flag was added; transport resource controls remain a later measured infrastructure concern and must never truncate financial requests.
+
+### Persistence Decision
+- Scenario storage remains deferred. Owner-scoped lifecycle, identity/naming, update/versioning, frozen-versus-live provenance, refresh/staleness, timestamps/expiration, deletion, Goal relationship, and schema/migration semantics are not approved. `goals.assumptions_json` remains prohibited as canonical storage.
+- No router, DTO, service, migration, table, frontend, production test, commit, or push was created. `10.3.8-B — Planning API Foundation` is `READY / NOT STARTED`.
+
+## [TSK-10.3.8-B] — 2026-09-20 — Planning API Foundation
+
+### Status
+`VALIDATED`
+
+### Foundation
+- Added the registered but endpoint-free `/api/v1/planning` router; shared existing-JWT and synchronous Planning-read dependency annotations; strict decimal-string/date/timestamp request primitives; safe supported source selectors; pure Planning builders/mappers; public provenance responses; and local Planning error translation.
+- Decimal input rejects JSON numbers, floats, booleans, non-finite values, scientific notation, and whitespace. It retains declared exponent through the domain boundary; `"1.000"` remains `Decimal("1.000")` until the domain rejects cent-scale violations. Responses emit Decimal strings without rounding or float conversion.
+- No financial engine, calculation endpoint, Goal lookup, database read/write, portfolio source, persistence, migration, frontend, Sustainable Capacity, commit, or push was added.
+
+### Verification
+- Independent validation added real-JSON Decimal/source-selector coverage. Foundation `41 passed`; Goal Planning `63 passed`; Scenario Comparison `37 passed`; Goals API/domain/repository `65 passed`; Health `68 passed`; general `444 passed, 2 historical Investments/MagicMock failures`.
+- `10.3.8-C = READY / NOT STARTED`; Scenario Persistence remains `DEFERRED — TRANSIENT API FIRST`.
+
+---
+
+## [TSK-10.3.7-A] — 2026-09-19 — Sustainable Contribution Capacity Contract Decision
+
+### Status
+`DEFERRED — INSUFFICIENT CONTRACT / DATA`
+
+### Decision
+- Audited ADRs 019–022, certified Health/Planning boundaries, canonical documentation, and the current database through read-only certified facts. Health exposes realized monthly income, expense, net cashflow/`savings_amount`, savings rate, dates/gaps, categories, anomalies, and trends; it does not establish recurring future affordability.
+- Current evidence is 17 consecutive monthly facts from `2025-05` through partial `2026-09`, including 16 closed months with 12 surpluses and 4 deficits. No approved contract selects a lookback, minimum history, partial-month, deficit, anomaly/outlier, statistic, negative-result, currency, or zero/null policy. Future obligations, required cash buffers, income continuity, and external commitments are not certified inputs.
+- No formula, production code, test, API, frontend, migration, persistence, commit, or push was created. Realized, planned, scenario, and required contributions remain distinct and are never mapped automatically to sustainable capacity.
+- The deferral does not block already certified Planning capabilities. `10.3.8 — Planning API & Scenario Persistence Contract Audit` is `READY / NOT STARTED`; transient API exposure may be contracted independently, while persistence remains separately unapproved.
+
+---
+
+## [TSK-10.3.6-B-V] — 2026-09-19 — Independent Scenario Comparison Validation
+
+### Status
+`VALIDATED`
+
+### Validation
+- Independently audited the locked ADR-021 contract, comparison implementation, certified engine reuse, and an external Decimal oracle. Verified explicit non-BASE reference behavior, atomic prevalidation before engine calls, exact candidate-minus-reference deltas, period-zero/null temporal semantics, source/provenance preservation, and absence of duplicate financial math, persistence, ranking, recommendation, Goal auto-integration, or Required Contribution automation.
+- Added only a validation regression proving frozen `ScenarioDefinition` and preservation of the caller-owned scenario list. No production code changed during validation.
+- Results: Scenario Comparison `37 passed`; Goal Planning `63`; Required `40`; Target `32`; Projection `38`; Assumptions `63`; Read `12`; Goals `65`; Health `68`; general `tests/unit` `403 passed, 2 historical Investments/MagicMock failures`.
+- `10.3.6-A = CONTRACT LOCKED`; `10.3.6-B = VALIDATED`; `10.3.6` macro = `VALIDATED`; `10.3.7 = DEFERRED — CONTRACT NOT APPROVED`.
+
+---
+
+## [TSK-10.3.6-B] — 2026-09-19 — Scenario Comparison Engine Implementation
+
+### Status
+`IMPLEMENTED / READY FOR VALIDATION`
+
+### Implementation
+- Added a pure immutable Scenario Comparison engine over the certified `ForwardProjectionEngine` and `TargetAchievementSolver`, with no duplicate financial recurrence, rate conversion, Fisher calculation, rounding, or target crossing logic.
+- Added ordered explicit scenarios, unique IDs, explicit reference selection, atomic comparison prevalidation, optional shared target/basis handling, source-preserving nested results, exact Decimal candidate-minus-reference deltas, and certified period-zero/null temporal behavior.
+- Extracted `TargetValueBasis` mechanically into a neutral Planning module while preserving `goal_planning.TargetValueBasis` public identity.
+- Added contract-focused comparison tests. No API, frontend, persistence, database, migration, Required Contribution automation, sustainable-capacity implementation, commit, or push was created.
+- `10.3.6-A = CONTRACT LOCKED`; `10.3.6-B = IMPLEMENTED / READY FOR VALIDATION`; `10.3.6` macro = `IMPLEMENTED / READY FOR VALIDATION`; `10.3.7 = DEFERRED — CONTRACT NOT APPROVED`.
+
+---
+
+## [TSK-10.3.6-A] — 2026-09-19 — Scenario Comparison Contract & Architecture Lock
+
+### Status
+`CONTRACT LOCKED / READY FOR IMPLEMENTATION`
+
+### Contract Locked
+- ADR-021 now defines ordered immutable scenarios with unique opaque string IDs, optional non-authoritative labels/archetypes, and an explicit reference ID; `BASE` is never an automatic reference.
+- Comparison requires at least two scenarios and shared as-of date, resolved monthly horizon, output mode, and contribution timing. Return type and explicit initial wealth may differ while complete provenance is preserved.
+- Target comparison is optional. Without target, one Forward Projection runs per scenario. With one shared target amount/basis, Target Achievement is authoritative and its projection is reused; period-zero `ALREADY_ACHIEVED` receives one forward projection only for the horizon summary.
+- Money deltas are candidate minus reference. Months saved/lost are reference months minus candidate months; period zero participates, while any non-achieving side makes the temporal delta null.
+- Results preserve input order and complete certified nested outputs. Prevalidation and failure are atomic; no ranking, recommendation, causal attribution, persistence, Goal auto-integration, Required Contribution automation, sustainable-capacity inference, market forecast, or 10.4/10.5 implementation is allowed.
+- `10.3.6-A = CONTRACT LOCKED`; `10.3.6-B = READY / NOT STARTED`; `10.3.7 = DEFERRED — CONTRACT NOT APPROVED`. No production code, tests, API, frontend, schema, migration, commit, or push was created.
+
+---
+
+## [TSK-10.3.5-V3] — 2026-09-19 — Final Independent Goal Planning Validation
+
+### Status
+`VALIDATED`
+
+### Final Evidence
+- Final independent controlled probes and the complete regressions confirmed the R2-SOL applicability-first correction.
+- `GoalStatus.ACTIVE` is the sole projectable lifecycle status. Non-active Goals and reserved Goal types return `NOT_APPLICABLE` before target basis/output, Goal-current-amount provenance, and deadline validation, with zero solver calls.
+- ACTIVE Goals retain strict target-basis and cross-goal-provenance validation. Persisted lifecycle `ACHIEVED` remains separate from mathematical `ALREADY_ACHIEVED`.
+- Goal Planning `63 passed`; Required `40`; Target `32`; Projection `38`; Assumptions `63`; Read `12`; Goals `65`; Health `68`; general `366 passed, 2 historical Investments/MagicMock failures`.
+- No production code was changed during V3. No database, migration, API, frontend, commit, or push was performed.
+- `10.3.5 = VALIDATED`; `10.3.6 = READY / NOT STARTED`.
+
+---
+
+## [TSK-10.3.5-R2-SOL] — 2026-09-19 — Authoritative Goal Planning Contract Reconciliation
+
+### Status
+`RECONCILED / READY FOR FINAL REVALIDATION`
+
+### Reconciliation
+- Re-audited ADRs 019–022, the real Goal enums/entity/update semantics, Planning code, tests, canonical documentation, and Git baseline without relying on prior validation reports.
+- Confirmed the projection-specific validation ordering defect: `GoalPlanningService` previously validated Goal-current-amount provenance and target basis/output compatibility before determining whether the Goal was eligible for forward Planning.
+- Corrected the smallest affected boundary: a positive `GoalStatus.ACTIVE` whitelist and type/status applicability now precede projection-specific validation. `ACHIEVED`, `PAUSED`, `CANCELLED`, and reserved Goal types return `NOT_APPLICABLE` without solver calls, basis/output validation, or Goal-current-amount provenance consumption.
+- Active eligible Goals still reject basis/output mismatches and cross-Goal `GOAL_CURRENT_AMOUNT` provenance. Mathematical `ALREADY_ACHIEVED` remains exclusive to an ACTIVE Goal evaluated by `TargetAchievementSolver`.
+- ADR-020 gained only the ordering clarification. No financial engine, Goals-domain, API, frontend, schema, migration, database, or persistence behavior changed.
+
+### Verification
+- Goal Planning: `63 collected`, `63 passed`; Required `40`; Target `32`; Projection `38`; Assumptions `63`; Read Foundation `12`; Goals `65`; Health `68`.
+- General unit suite: `366 passed, 2 failed`; the two known historical Investments timeline tests still fail only on `MagicMock` versus `str` sorting.
+- `10.3.6 = NOT STARTED`; no commit or push.
+
+---
+
+## [TSK-10.3.5-V2] — 2026-09-17 — Independent Goal Status Revalidation
+
+### Status
+`VALIDATED`
+
+### Verification Performed (independent, no trust in 10.3.5-R report)
+- **GoalStatus real enum:** Exactly 4 members: `ACTIVE`, `ACHIEVED`, `PAUSED`, `CANCELLED`. No hidden or extra members.
+- **ACTIVE-only contract:** `_NON_PROJECTABLE_STATUSES = {ACHIEVED, PAUSED, CANCELLED}` correctly enforces ACTIVE as the sole projectable lifecycle status in the current domain.
+- **ACHIEVED coverage confirmed:** `NOT_APPLICABLE` for initial below/equal/above target, missing basis, missing deadline, and `current_amount=None`. Solver calls = 0 in all cases.
+- **ALREADY_ACHIEVED separation confirmed:** `GoalStatus.ACHIEVED` (lifecycle) and `GoalPlanningStatus.ALREADY_ACHIEVED` (mathematical) are distinct. ACTIVE + initial ≥ target → ALREADY_ACHIEVED (1 solver call). ACHIEVED never produces ALREADY_ACHIEVED (0 calls, mutation guard).
+- **Code audit:** `goal_planning.py` contains zero financial math, zero IO, zero RequiredContributionSolver reference. No `ln`, `exp`, `Fisher`, `quantize`, `ROUND_HALF_EVEN`, `date.today`, `utcnow`, `Session`, or solver arithmetic.
+- **Goals domain:** Untouched (`git diff HEAD -- backend/domain/enums/goal_status.py backend/domain/entities/ ...` returned empty).
+- **ADR-020 clarification (DECISION_LOG.md line 321):** Confirmed. Records: ACTIVE-only eligibility, ACHIEVED = NOT_APPLICABLE, persisted ACHIEVED ≠ mathematical ALREADY_ACHIEVED, no reconciliation engine in 10.3.
+- **Ordering:** `_require_matching_target_basis` fires before NOT_APPLICABLE gate (basis mismatch is a validation error regardless of type/status — confirmed by `test_explicit_basis_mismatch_is_invalid_even_for_non_projectable_goal`).
+- **Cross-goal provenance:** Confirmed unchanged for ACTIVE Goals.
+- **Contribution, deadline/horizon, nested UNREACHABLE, immutability, determinism:** All preserved.
+
+### Test Counts (real, independently verified)
+- Goal Planning collected: **54** | Executed: **54 passed**
+- Required Solver: **40 passed** | Target Solver: **32 passed**
+- Projection: **38 passed** | Assumptions: **63 passed** | Read: **12 passed**
+- Goals: **65 passed** | Health (explicit): **68 passed** (`pytest backend/tests/domains/health`)
+- General `tests/unit`: **357 passed, 2 failed** (historical Investments/MagicMock only — unchanged)
+
+### Test Count Discrepancy (§41 mandatory audit)
+- The 10.3.5-R report contained inconsistent text: stated "−1 removed + 9 added / net +8" but also "+6 net". The real result: 54 tests collected. The 10.3.5-R implementation removed 1 test and added 8 new tests (7 ACHIEVED contract + 1 separation proof §31). Net = +7 tests above the original 47-test baseline → 54. The discrepancy in the report's arithmetic was in the narrative text only; the test code and execution result are correct and consistent.
+
+### Production Changes During V2
+`NONE`
+
+---
+
+## [TSK-10.3.5-R] — 2026-09-17 — Goal Status Contract Reconciliation
+
+### Context
+Independent validation of 10.3.5 returned `BLOCKED — GOAL STATUS CONTRACT GAP`. The validation confirmed that `GoalStatus.ACHIEVED` is a persisted/manual lifecycle fact that does not prove `current_amount >= target_amount`, yet the prior implementation treated it as projectable (alongside `ACTIVE`). No approved contract existed for this behavior.
+
+### Human Contract Decision
+- `GoalStatus.ACTIVE` is the **only** lifecycle status eligible for forward Planning 10.3.
+- `GoalStatus.ACHIEVED` → `GoalPlanningStatus.NOT_APPLICABLE`. `TargetAchievementSolver` is not called. No re-projection. No automatic conversion to `ALREADY_ACHIEVED`.
+- `GoalStatus.PAUSED` → `NOT_APPLICABLE` (unchanged).
+- `GoalStatus.CANCELLED` → `NOT_APPLICABLE` (unchanged).
+- `GoalPlanningStatus.ALREADY_ACHIEVED` remains valid but is **strictly mathematical**: it may only arise from `TargetAchievementSolver` for a `ACTIVE` Goal when initial wealth ≥ target. It is not equivalent to and must not be inferred from `GoalStatus.ACHIEVED`.
+- No reconciliation engine, status-mismatch detection, or automatic lifecycle correction is implemented.
+
+### Changed
+- `goal_planning.py`: Added `GoalStatus.ACHIEVED` to `_NON_PROJECTABLE_STATUSES`. Added module-level comment documenting the ACTIVE-only forward planning contract and the lifecycle/mathematical distinction.
+
+### Tests Added / Updated
+- Removed `test_active_and_persisted_achieved_statuses_use_mathematical_target_state` (encoded the contract gap).
+- Added ACHIEVED coverage (6 mandatory + 1 mutation guard): `test_achieved_goal_with_initial_below_target_is_not_applicable`, `test_achieved_goal_with_initial_equal_target_is_not_applicable`, `test_achieved_goal_with_initial_above_target_is_not_applicable`, `test_achieved_goal_with_missing_basis_is_not_applicable_not_insufficient`, `test_achieved_goal_with_missing_deadline_is_not_applicable`, `test_achieved_goal_with_current_amount_none_is_not_applicable`, `test_achieved_status_never_produces_already_achieved`.
+- Added separation proof: `test_active_goal_with_initial_at_target_produces_mathematical_already_achieved` (ACTIVE + initial ≥ target → mathematical ALREADY_ACHIEVED via solver, 1 solver call).
+
+### ADR Change
+- ADR-020 in `DECISION_LOG.md` updated with a "Goal status eligibility — TSK-10.3.5-R clarification (2026-09-17)" note recording the human contract decision.
+
+### Validation
+- Goal Planning: `54 passed` (was 48; +6 ACHIEVED contract tests, +1 separation proof, −1 removed gap test = net +6).
+- Required/Target Solvers: `72 passed`. Projection/Assumptions: `101 passed`. Planning Read: `12 passed`. Goals: `65 passed`.
+- General: `357 passed, 2 failed`; failures are the unchanged historical Investments MagicMock cases only. No new regression.
+- `10.3.5 = RECONCILED / READY FOR REVALIDATION`. `10.3.6 = NOT STARTED`. No database, migration, Goal domain, API, frontend, or financial math was changed.
+- ADR-020 updated. No new ADR created. No commit or push performed.
+
+---
+
+## [TSK-10.3.5] — 2026-09-17 — Goal Planning Integration
+
+### Added
+- Added immutable `TargetValueBasis`, `GoalPlanningStatus`, and `GoalPlanningResult` contracts plus a pure `GoalPlanningService` over the already validated Target Achievement Solver.
+- Added explicit Goal/source/basis validation, cross-Goal current-amount provenance protection, approved Goal type/status eligibility, month-level early/on-time/late classification, and preservation of the complete nested solver result.
+- Added 48 focused tests proving basis behavior, no target conversion, no automatic wealth selection/aggregation, no planned-to-scenario contribution copy, Goal deadline/horizon independence, all source identities, large Decimal values, immutability, determinism, and solver call counts.
+
+### Validation
+- Focused/regression results: Goal Planning `48 passed`; Required/Target Solvers `72 passed`; Projection/Assumptions `101 passed`; Planning Read `12 passed`; Goals `65 passed`; Health `68 passed`.
+- General unit result: `351 passed, 2 failed`; failures are the unchanged historical Investments asset-detail timeline/MagicMock cases.
+- `10.3.5 = IMPLEMENTED / READY FOR VALIDATION`; `10.3.6 = NOT STARTED`. No Required Contribution automation, scenario comparison, sustainable capacity, database, migration, API, frontend, Retirement/FIRE, or Portfolio Intelligence implementation was added.
+- ADR-019 through ADR-022 remain unchanged. No commit or push was performed.
+
+---
+
+## [TSK-10.3.4-B-V] — 2026-09-17 — Independent Required Contribution Solver Validation
+
+### Validated
+- Independently audited the solver chain and confirmed that Required Contribution performs only exact Decimal/integer-cent conversion and binary-search orchestration over `TargetAchievementSolver` and `ForwardProjectionEngine`; no financial recurrence, target-basis conversion, Goal integration, scenario comparison, or sustainability semantics were introduced.
+- Proved monotonicity independently for positive, zero, and negative monthly rates. Negative-rate validation covered adjacent-cent `ROUND_HALF_EVEN` ties, near-`-1` behavior, 90 small-domain combinations with 7,128 candidates, and exact agreement between brute-force first-success cents and production results.
+- Proved `target_amount` is a constructive first-period upper bound because cent-scale pre-contribution wealth remains nonnegative for every monthly rate above `-1`; exercised 3,507 local cases and six source/mode/magnitude cases.
+- Confirmed strict targets, three template contributions, exact `C`/`C - 0.01`, target-date and monthly horizons, nominal/real modes, all source identities, 101-digit negative-rate money against a 500-digit oracle, immutable provenance, determinism, and logarithmic target-solver call growth of 18/24/30.
+
+### Validation
+- No production or test change was required. Required Solver `40 passed`; Target Solver `32 passed`; Projection `38 passed`; Assumptions `63 passed`; Planning Read `12 passed`; Goals `65 passed`; Health `68 passed`.
+- General unit result remains `303 passed, 2 failed`; both failures are the unchanged historical Investments timeline/MagicMock cases.
+- `10.3.4-A = VALIDATED`; `10.3.4-B = VALIDATED`; macro `10.3.4 = VALIDATED`; `10.3.5 = READY / NOT STARTED`.
+- ADR-019 through ADR-022 remain unchanged. No commit or push was performed.
+
+---
+
+## [TSK-10.3.4-B] — 2026-09-17 — Required Contribution Solver
+
+### Added
+- Added immutable `RequiredContributionStatus`/`RequiredContributionResult` contracts and a pure `RequiredContributionSolver` that treats the supplied assumptions as a template and delegates every candidate to `TargetAchievementSolver`.
+- Added integer-cent monotonic binary search with zero-contribution short-circuiting, a mathematically safe `target_amount` upper bound, and explicit final verification that `C` succeeds while `C - 0.01` fails.
+- Added 40 focused tests covering status semantics, strict Decimal targets, positive/negative/near-`-1` returns, `END_OF_MONTH`, `ROUND_HALF_EVEN`, nominal/real modes, target-date horizons, source/provenance independence, large magnitudes, monotonicity, logarithmic call count, immutability, and determinism.
+
+### Validation
+- Focused/regression results: Required Contribution `40 passed`; Target Solver `32 passed`; Projection `38 passed`; Assumptions `63 passed`; Planning Read `12 passed`; Goals `65 passed`; Health `68 passed`.
+- General unit result: `303 passed, 2 failed`; failures are the unchanged historical Investments asset-detail timeline/MagicMock cases.
+- `10.3.4-A = VALIDATED`; `10.3.4-B = IMPLEMENTED / READY FOR VALIDATION`; macro 10.3.4 remains incomplete pending independent validation; `10.3.5 = NOT STARTED`.
+- No database, migration, API, frontend, Goal integration, scenario comparison, Retirement/FIRE, or Portfolio Intelligence behavior was added. ADR-019 through ADR-022 remain unchanged.
+
+---
+
+## [TSK-10.3.4-A-V] — 2026-09-17 — Independent Target Achievement Solver Validation
+
+### Validated
+- Independently audited the four approved statuses, strict positive finite cent-scale Decimal target boundary, period-zero representation, exact first crossing, engine call counts, conservative impossibility proofs, horizon-exhaustion distinction, output-basis neutrality, and complete result consistency.
+- External probes covered literal scale behavior through rejected `Decimal("1.000")`, nominal/nominal, nominal/real and real/real targets without conversion, horizons 1 and 1,200, 221-digit money, all initial-wealth origins, provenance, immutable inputs/results, and deterministic repetitions. Source inspection found no duplicated financial or calendar mathematics.
+- Existing tests kill the critical `>`/last-crossing/overbroad-unreachable/wrong-date/repeated-engine-call mutations, so no validation test or production change was required.
+- Target Solver `32 passed`; Projection `38 passed`; Assumptions `63 passed`; Planning Read `12 passed`; Goals `65 passed`; Health `68 passed`; general unit `263 passed, 2 failed`, limited to the unchanged historical Investments timeline/MagicMock failures.
+
+### Status
+- `10.3.4-A = VALIDATED`.
+- `10.3.4-B = READY / NOT STARTED`; 10.3.4 remains incomplete and 10.3.5 was not promoted.
+- ADR-019 through ADR-022 remain unchanged.
+
+---
+
+## [TSK-10.3.4-A] — 2026-09-17 — Target Achievement Solver
+
+### Implemented
+- Added a pure immutable Decimal `TargetAchievementSolver` that validates a positive finite cent-scale target, returns period-zero `ALREADY_ACHIEVED` without projecting, and otherwise scans exactly one complete validated `ForwardProjectionEngine` result for the first `ending_wealth >= target_amount` crossing.
+- Added the four approved mathematical statuses, complete fact/assumption/projection audit references, projection-owned achievement dates, and conservative `UNREACHABLE` proofs limited to zero-contribution paths that cannot grow. Targets are compared in the projection output basis without nominal/real conversion.
+- Added 32 focused tests for exact and overshoot crossings, positive/negative/real modes, unreachable versus horizon exhaustion, target-date reuse, source independence, determinism, immutability, strict Decimal validation, one engine call, and more-than-200-digit money.
+
+### Validation
+- Projection `38 passed`; assumptions `63 passed`; Planning Read `12 passed`; Goals `65 passed`; Health `68 passed`; general unit `263 passed, 2 failed`, limited to the unchanged historical Investments timeline/MagicMock failures.
+
+### Status
+- `10.3.4-A = IMPLEMENTED / READY FOR VALIDATION`.
+- `10.3.4-B = NOT STARTED`; no required-contribution search, Goal integration, scenario comparison, database, API, frontend, Retirement/FIRE, or Portfolio Intelligence behavior was added.
+
+---
+
+## [TSK-10.3.3-V2] — 2026-09-17 — Independent Numerical Revalidation
+
+### Validated
+- Independently revalidated the adaptive precision derivation, monotonicity, cent-level rate accuracy, local Decimal exponent context, deterministic recurrence, and accounting/summary invariants without changing production or tests.
+- Matched an independent 800-digit Newton/cent oracle across every blocker period, including 439/440, and across large initial wealth, dominating contribution, combined magnitude, rates 2.5/10/25/100, Fisher, real/real, zero-real, deflation, and negative/near-`-1` cases.
+- Mutation-style probes proved that an 80-digit rate still diverges at period 440 even when money arithmetic is adaptive, while adaptive rate with 80-digit money still fails at period 452. The permanent extreme regression therefore protects both halves of the former defect.
+- Projection `38 passed`; assumptions `63 passed`; Planning Read `12 passed`; Goals `65 passed`; Health `68 passed`; general unit `231 passed, 2 failed`, limited to the unchanged historical Investments timeline/MagicMock failures.
+
+### Status
+- `10.3.3 = VALIDATED`.
+- `10.3.4 = READY / NOT STARTED`.
+- ADR-020 remains unchanged; no production/test code, solver, Goal integration, scenario, API, frontend, database, Retirement/FIRE, or Portfolio Intelligence behavior changed.
+
+---
+
+## [TSK-10.3.3-R] — 2026-09-17 — Forward Projection Numerical Precision Reconciliation
+
+### Reconciled
+- Reproduced the valid annual-rate `100` / 1,200-month failure at period 452 and confirmed cent drift already began at period 440 under the fixed 80-digit context.
+- Replaced fixed calculation precision as a ceiling with a deterministic local budget derived from initial wealth, contribution, annual growth-factor magnitude, and horizon. The engine retains an 80-digit floor, cent scale, 34 guard digits, `ROUND_HALF_EVEN`, and the stdlib Decimal native exponent range.
+- Added a 500-digit independent Newton/cent oracle for the original blocker. All 1,200 monetary periods now match exactly; the final balance has 204 integer digits and the scenario completes without exception in approximately 0.02 seconds on the validation environment.
+- Projection tests now report `38 passed`; assumptions `63 passed`, Planning Read `12 passed`, Goals `65 passed`, and Health `68 passed`. General unit regression reports `231 passed, 2 failed`, limited to the unchanged historical Investments timeline/MagicMock failures.
+
+### Status
+- `10.3.3 = RECONCILED / READY FOR REVALIDATION`.
+- `10.3.4 = NOT STARTED`; no solver, Goal integration, scenario, API, frontend, persistence, Retirement/FIRE, or Portfolio Intelligence implementation was added.
+- ADR-020 remains unchanged.
+
+---
+
+## [TSK-10.3.3] — 2026-09-17 — Forward Projection Engine
+
+### Implemented
+- Added a pure immutable Forward Projection Engine over one explicit `InitialWealthFact` and validated `ProjectionAssumptions`, with no database, reader, HTTP, API, or wall-clock dependency.
+- Added isolated 80-digit Decimal rate mathematics: direct nominal/real modes, one-time Fisher conversion, and compound-equivalent monthly conversion through stdlib Decimal `ln`/`exp`; zero annual rate remains exactly zero.
+- Added `END_OF_MONTH` monthly recurrence, cent-scale `ROUND_HALF_EVEN` projected returns, real calendar month ends, immutable period tuples/results, preserved source/provenance, and exact cumulative contribution/growth invariants.
+- Added 34 projection tests with hardcoded 100-digit rate constants and a test-local independent recurrence. The general unit suite reports `227 passed, 2 failed`, limited to the unchanged historical Investments timeline/MagicMock failures.
+
+### Status
+- `10.3.3 = IMPLEMENTED / READY FOR VALIDATION`.
+- No target/contribution solver, Goal integration, scenario comparison/persistence, database, migration, API, frontend, Retirement/FIRE, or Portfolio Intelligence implementation was added.
+
+---
+
+## [TSK-10.3.2-V] — 2026-09-17 — Independent Projection Assumptions Validation
+
+### Validated
+- Independently reconciled ADRs 019–022 against the assumptions, facts/readers, exports, and both Planning test suites.
+- Challenged strict types, Decimal scale/precision and domains, matrix A–H, immutable/fixed contract identities, horizon XOR, month-level calendar behavior, leap year, and exact 1,200/1,201 limits without modifying production or test code.
+- Repeated assumptions (`63 passed`), Planning Read (`12 passed`), Goals (`65 passed`), Health (`68 passed`), and general unit regression (`193 passed, 2 failed`). The two failures remain the identical historical Investments timeline/MagicMock baseline.
+
+### Status
+- `10.3.2 = VALIDATED`.
+- `10.3.3 = READY / NOT STARTED`.
+- No database, migration, API, frontend, rate conversion, Fisher calculation, projection engine, solver, scenario, Retirement/FIRE, or Portfolio Intelligence implementation changed.
+
+---
+
+## [TSK-10.3.2] — 2026-09-17 — Projection Assumptions Contract
+
+### Implemented
+- Added immutable typed Planning assumptions with explicit `EFFECTIVE_ANNUAL`, nominal/real, and `END_OF_MONTH` identities.
+- Enforced strict Decimal inputs, non-negative cent-scale scenario contribution, finite return/inflation rates greater than `-1` without arbitrary positive caps, and the approved nominal/real inflation matrix.
+- Enforced one explicit 1–1,200-month horizon source and centralized deterministic `YYYY-MM` target-date resolution, including partial-month and cross-year behavior.
+- Added 63 assumptions tests; Planning Read, Goals, and Health regressions pass. The general unit suite reports `193 passed, 2 failed`, limited to the unchanged historical Investments timeline/MagicMock failures.
+
+### Status
+- `10.3.2 = IMPLEMENTED / READY FOR VALIDATION`.
+- No rate conversion, Fisher calculation, projection engine, solver, scenario comparison/persistence, database, API, frontend, Retirement/FIRE, or Portfolio Intelligence implementation was added.
+
+---
+
+## [TSK-10.3.1-V] — 2026-09-16 — Independent Planning Read Foundation Validation
+
+### Validated
+- Independently reconciled ADR-019 against immutable Planning facts, Goal/portfolio readers, certified Health reuse, SQLAlchemy models, controlled fixtures, and the live SQLite database opened in read-only mode.
+- Confirmed Decimal end-to-end, Goal ownership, `NULL` versus zero, explicit and isolated portfolio account scope, composite snapshot identity, typed provenance, gap preservation, no staleness invention, no automatic source resolution, no double counting, and read-only session state.
+- Repeated Planning (`12 passed`), Goals (`65 passed`), Health (`68 passed`), and general unit regression (`130 passed, 2 failed`). The two failures remain the identical historical Investments timeline/MagicMock baseline.
+
+### Status
+- `10.3.1 = VALIDATED`.
+- `10.3.2 = READY / NOT STARTED`.
+- Validation changed documentation only; no production/test code, migration, API, frontend, projection mathematics, scenario implementation, Retirement/FIRE, or Portfolio Intelligence behavior changed.
+
+---
+
+## [TSK-10.3.1] — 2026-09-16 — Planning Read Foundation
+
+### Implemented
+- Added immutable Planning facts for the three approved initial-wealth origin identities, typed scope/as-of/provenance, and Decimal-safe Goal facts.
+- Added an owned Goal reader that filters by `goal_id + user_id`, bypasses the legacy float entity/DTO path, preserves `NULL` versus explicit zero, and never executes `assumptions_json`.
+- Added an explicit-account portfolio reader that selects the latest canonical `reference_month` for only that account, preserves MyProfit source/run/update provenance, labels the scope as investment portfolio, and never sums positions or valuations.
+- Added a thin Health adapter over `HealthFinancialQuery` and `HistoricalFinancialMetricsService`, preserving realized savings semantics and historical gaps.
+
+### Validated Locally
+- Planning: `12 passed`; Goals: `65 passed`; Health: `68 passed`.
+- General unit baseline: `130 passed, 2 failed`; both failures are the unchanged Investments asset-detail timeline/MagicMock baseline.
+- Read-only live checks returned Goal `113000.00`, MyProfit portfolio `112888.91` at `2026-09`, and August 2026 Health metrics identical to the certified Health layer. All captured statements were `SELECT`; Goal and portfolio remained separate origins with no automatic sum.
+
+### Status
+- `10.3.1 = IMPLEMENTED / READY FOR VALIDATION`.
+- No projection/rate/inflation/solver/scenario engine, API, frontend, migration, scenario persistence, Retirement/FIRE, or Portfolio Intelligence implementation was added.
+
 ---
 
 ## [TSK-10.3.0-A] — 2026-09-16 — Planning Contract Approval and ADR Lock
@@ -364,3 +999,16 @@ This phase is documentation-only. No backend, frontend, or database changes were
 ## [3.1.0-investments] — Previous Baseline
 
 Prior version. Stable investments module. Pierre Finance + MyProfit integration operational. Goals stub introduced. AI prompt versioning DB scaffold added.
+## [TSK-10.3.9-R1] — 2026-09-23 — Planning Nominal/Real Form Reconciliation
+
+- Inflation is visible and sent only for `NOMINAL → REAL`; hidden combinations clear stale input and send `inflation_rate: null`.
+- `REAL → NOMINAL` is unavailable. No rate conversion or other financial calculation was added.
+- Automatic portfolio wealth remains deferred pending an authenticated ownership/source contract. Swagger Authorize manual smoke remains `DEFERRED BY USER`.
+- `10.3.9 = RECONCILED / READY FOR FINAL MANUAL UI SMOKE`; `10.3.10 = READY / NOT STARTED`.
+## [TSK-10.3.10] — 2026-09-24 — Planning Analytical UI
+
+- Closed 10.3.9 as `VALIDATED`: manual Nominal→Nominal, Real→Real, Nominal→Real, and unavailable Real→Nominal smoke cases passed.
+- Added analytical UI capabilities for Projection, Target Achievement, Required Contribution, owned Goal Planning, and ordered Scenario Comparison through the certified Planning client.
+- Added certified period charts and scenario chart rendering. The only Decimal-to-number conversion is isolated in the Recharts adapter and is presentation-only.
+- No backend change, persistence, automatic portfolio wealth, Sustainable Capacity, Retirement/FIRE, Portfolio Intelligence, ranking, recommendation, or LLM was added.
+- `10.3.10 = IMPLEMENTED / READY FOR MANUAL VALIDATION`; `10.3.11 = READY / NOT STARTED`. Swagger Authorize manual smoke remains `DEFERRED BY USER`.

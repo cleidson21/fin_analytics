@@ -1,6 +1,6 @@
 # Data Lineage & Source of Truth Matrix
 **Status:** VERIFIED (current sources) + APPROVED (Phase 10.3 input boundaries)
-**Date:** 2026-09-16
+**Date:** 2026-09-17
 
 ---
 
@@ -186,7 +186,7 @@ The LLM is **READ-ONLY** with respect to financial truth.
 
 ---
 
-## Planning Data Boundary (Phase 10.3 — CONTRACT LOCKED, ADR-019/020/021)
+## Planning Data Boundary (10.3.1–10.3.6 VALIDATED; 10.3.7-A DEFERRED — INSUFFICIENT CONTRACT / DATA)
 
 Planning will not create a second financial truth. Its inputs must retain source, scope, reference/as-of date, and Decimal precision.
 
@@ -207,15 +207,55 @@ Planning will not create a second financial truth. Its inputs must retain source
 
 ### Required Read Boundary
 
-- Existing Goals and Investments HTTP responses are not internal Planning data sources. Planning must consume repositories/read services directly.
-- Goal persistence uses SQL `Numeric`, but the current Goal entity/repository/DTO path converts money to `float`. A Planning-specific Decimal-safe input boundary is required before calculations; this is not authorization to refactor Goals in advance.
-- Existing Investments routes query snapshots directly and expose several float/dynamic-dictionary fields. Phase 10.3.1 must expose approved `portfolio_snapshots.patrimonio` facts through a typed read-only Decimal contract.
+- Existing Goals and Investments HTTP responses are not internal Planning data sources. `PlanningGoalReadQuery` and `PlanningPortfolioReadQuery` read their approved persisted sources directly and return typed immutable facts.
+- Goal persistence uses SQL `Numeric`, while the current public Goal entity/repository/DTO path converts money to `float`. `PlanningGoalReadQuery` bypasses that path, filters by `goal_id + user_id`, and preserves `target_amount`, nullable `current_amount`, and nullable `goal_planned_monthly_contribution` as `Decimal`. The public Goals flow remains unchanged.
+- The validated 10.3.1 `PlanningPortfolioReadQuery` requires an explicit `portfolio_snapshots.account_id` and returns the greatest canonical `reference_month` for only that account. The composite primary key `(account_id, reference_month)` prevents temporal duplicates, so no tie-break is required. It reads `patrimonio` directly as `Decimal` and does not query positions or asset valuations.
+- ADR-023 locks the authenticated orchestration without pretending that this logical scope is a Pierre/Core account. B1 enforces the formal single-user/single-tenant invariant, exactly one MyProfit snapshot scope, successful `MYPROFIT_EVOLUCAO` run ownership against `current_user`, strict monthly buckets, and latest-eligible-as-of Decimal fact resolution. B2 exposes only the source discriminant through all five authenticated Planning endpoints; zero, multiple, inconsistent, or no eligible as-of scopes map to safe `422` outcomes.
+- MyProfit Evolução supplies only `Data = Mmm-YYYY`; `reference_month` is therefore a monthly evolution bucket, not a guaranteed month-end timestamp. Closed months may contain final monthly values, while the current month may be month-to-date. A live September row persisted before month-end proves the latter is supported by the source.
+- Snapshot selection is `LATEST ELIGIBLE AS OF`: greatest `reference_month` not after the scenario's as-of month, with the current row version's `updated_at` not after `as_of_date`. `updated_at` is assigned during INSERT/UPSERT and means snapshot-version update/import time, not financial observation time; it must not populate `PlanningFactAsOf.observed_at`. The predicate remains a conservative availability barrier against look-ahead. Reproducible historical as-of is unsupported because mutable UPSERT history retains neither prior versions nor a source observation timestamp; future-only or later-updated rows are never used silently.
+- `PlanningHealthReadAdapter` calls `HealthFinancialQuery.get_monthly_totals` and `HistoricalFinancialMetricsService.build`. It does not access `Transaction`, duplicate Health SQL, synthesize gaps, or reinterpret `savings_amount`.
 - `PortfolioSnapshotModel.patrimonio` represents the investment portfolio imported from MyProfit. It is not proven to be consolidated net worth across cash accounts, liabilities, real estate, non-imported accounts, or all asset sources; future API/UI must not label it `net worth`.
 - Exactly one initial-wealth origin participates in a calculation. Planning never sums Goal progress, portfolio snapshots, position valuations, or user-provided scenario wealth automatically.
 - Every input/result retains origin, scope/account where applicable, reference/as-of date, source/update timestamp when available, and Decimal precision. No silent fallback is approved.
+- Portfolio source currency is constrained to the application's current single BRL context. The snapshot has no currency column, so no FX conversion, mixed-currency aggregation, or multi-currency claim is permitted; a change in that deployment assumption requires a new currency-aware contract.
 - Health trends, categories, and anomalies can provide factual context but are not default numerical projection inputs.
 - `realized_savings_amount`, `goal_planned_monthly_contribution`, `scenario_monthly_contribution`, and `sustainable_monthly_contribution_capacity` are distinct. No automatic conversion is permitted; sustainable capacity remains uncontracted and deferred to 10.3.7.
 - Portfolio return history, CDI, IPCA, IBOV, dividend history, and Health trends are context only and never automatic future assumptions.
+
+### Post-10.3 UX boundary (ADR-024)
+
+- Brazilian money and percentage controls are lexical adapters over the existing exact request contract. Display text and editable strings are separate from canonical `DecimalString` truth; cards/text never pass financial values through binary floating point.
+- A percentage field expresses percentage points to the user (`8,5%`) and shifts the exact text two decimal places for the API (`0.085`). This is representation conversion, not a return calculation.
+- Today and the manual-source observation timestamp may be captured at submit as explicit temporal context. They are not financial assumptions and are always materialized in the request.
+- `NOMINAL → NOMINAL` may be the visible standard interpretation; expected return, inflation, contribution, target, horizon, source, and comparison reference remain explicit and are never inferred from historical data.
+- Shared Scenario Comparison controls only de-duplicate values the domain already requires to be compatible. Initial source, contribution, return type/rate, conditional inflation, label, and archetype remain scenario-specific.
+- MyProfit preview and assumption references require separate certified backend contracts. Existing benchmark fields and future macro data cannot bypass this boundary.
+
+### Sustainable-capacity evidence audit (TSK-10.3.7-A)
+
+The current certified Health boundary can provide monthly `Decimal` income, expense, net cashflow/realized savings, savings rate, reference month, gaps, category totals, anomaly evaluations, and closed-month trends. A read-only reconciliation on 2026-09-19 returned 17 consecutive monthly facts from `2025-05` through partial `2026-09`; the 16 closed months contained 12 surpluses and 4 deficits. These counts describe available evidence only and do not establish a lookback or minimum-history contract.
+
+No certified Planning input states future debts or obligation schedules, annual/seasonal expenses, future taxes, required cash buffer/emergency reserve, dependents, future income continuity or salary changes, planned acquisitions, commitments outside the imported ledger, or personal risk tolerance. Raw transaction installment metadata is not a certified forward schedule. Health currently aggregates its approved transaction population without a sustainable-capacity currency-normalization contract; the current ledger contains both BRL and USD rows. Therefore no mean, median, percentile, minimum, haircut, deficit exclusion, anomaly exclusion, or clamp-to-zero may be inferred. `0.00` and unavailable evidence remain distinct.
+
+The 10.3.7-A decision is `DEFERRED — INSUFFICIENT CONTRACT / DATA`. Planning continues to use explicit `scenario_monthly_contribution`; Goal planned contribution and Required Contribution remain separate. This deferral does not block a 10.3.8 API/persistence contract audit over already certified transient engines, but does not approve scenario persistence.
+
+### Planning API source boundary (TSK-10.3.8-A)
+
+`10.3.8-B` implements the common API boundary: strict string-to-`Decimal` parsing that preserves declared scale, explicit date/date-time parsing, canonical Planning enums, a supported-source selector, and pure request-to-domain/response mapping. Its user-provided mapper uses `planning_request` only as internal provenance and never exposes that internal table label. `10.3.8-C` implements the first three transient authenticated operations — Forward Projection, Target Achievement, and Required Contribution — over that boundary. For `GOAL_CURRENT_AMOUNT`, the server uses the owned Decimal Planning reader. B2 adds the source-only `INVESTMENT_PORTFOLIO_SNAPSHOT` discriminant and dispatches it exclusively to B1; public provenance keeps monthly `reference_month` and technical `updated_at`, while `observed_at` remains null.
+
+`10.3.8-C` is independently validated: the HTTP boundary delegates only to the certified engine selected by each capability, preserves the complete certified result and Decimal representations, returns valid solver outcomes as data rather than transport failures, and makes no new financial source of truth. The API neither writes nor stores a calculation, converts target basis, selects a fallback source, infers assumptions, or exposes Scenario Comparison or Sustainable Capacity.
+
+`10.3.8-D` implements the owned Goal Planning route. Its path Goal is loaded server-side through `PlanningGoalReadQuery`; neither Goal facts nor lifecycle/type/target/deadline fields are client input. `GoalPlanningService` remains the sole authority for lifecycle/type applicability: the router asks its pure applicability preflight before consuming the selected projection source, without reproducing Goal status/type rules. A structurally valid non-projectable Goal returns `NOT_APPLICABLE` without resolving a null Goal current amount; an ACTIVE eligible Goal requiring that selected fact receives `422` when it is unavailable. No zero, placeholder wealth, or fallback source is created. The route is read-only and does not expose Scenario Comparison or Sustainable Capacity.
+
+The authenticated transient API is a boundary over certified Planning engines, not a new source of financial truth. Public requests never deserialize an arbitrary client-authored `InitialWealthFact`. They select one supported origin through a discriminated request:
+
+- `USER_PROVIDED_SCENARIO`: the caller supplies the Decimal-string amount and explicit provenance timestamp; the server labels it user-provided and never certified Goal/portfolio wealth.
+- `GOAL_CURRENT_AMOUNT`: the caller identifies an owned Goal, or uses the Goal Planning path ID; the server reads `goals.current_amount` through `PlanningGoalReadQuery(goal_id, current_user.id)` and constructs the fact/provenance. Client amount and provenance fields are forbidden for this origin.
+- `INVESTMENT_PORTFOLIO_SNAPSHOT`: 10.3.8 correctly withheld this source while the external snapshot `account_id` had no certified authorization relation to the authenticated user. B1 and B2 now enforce ADR-023's guarded single-user/single-tenant resolver for every authenticated Planning endpoint. B3 exposes only that source choice in the Planning UI: no amount, account, run, temporal, provenance, currency, scope, preview, or Investments lookup originates in the browser. Deployment being local or currently single-user is not, by itself, ownership proof.
+
+The server never sums or falls back between origins. A selected Goal with null current amount remains unavailable and is not converted to zero. Response provenance exposes source, scope, temporal anchor, source type, and relevant Goal/account/reference/run/timestamp identifiers while omitting internal table names. Monetary values and rates cross JSON as exact decimal strings; dates use ISO date form and provenance timestamps use ISO date-time form. API mappers copy certified results and never recalculate money, rates, crossings, deltas, or calendar periods.
+
+All calculation requests remain transient and read-only. Scenario persistence is `DEFERRED — TRANSIENT API FIRST`: there is no approved frozen-versus-live source policy, staleness/refresh behavior, owner-scoped lifecycle, versioning, expiration, deletion, Goal relationship, or schema. `goals.assumptions_json` is not a Planning truth source or scenario store.
 
 ### Approved Deterministic Lineage
 
@@ -234,7 +274,13 @@ Certified Wealth + Certified Health Facts + User-Governed Goals
                     Future LLM interpretation only
 ```
 
-No production Planning engine, result, API, persistence model, or UI exists yet. ADRs 019–022 are the detailed approved contracts; `IMPLEMENTATION_ROADMAP.md` owns execution status. Phase 10.3.1 is limited to the typed Decimal read foundation.
+The validated 10.3.1 typed Decimal read foundation and independently validated 10.3.2 immutable assumptions boundary feed the independently validated 10.3.3 Forward Projection Engine. The engine accepts exactly one explicit `InitialWealthFact`, preserves its complete provenance, applies the approved nominal/real transformation once, derives a compound-equivalent monthly rate under magnitude-derived local Decimal precision, and returns an immutable monthly cent-scale timeline and summary. V2 numerical revalidation proved exact money equality against an independent 800-digit oracle across the original blocker and large cross-mode cases. The independently validated 10.3.4-A Target Achievement Solver consumes that result without a second financial formula, compares a positive finite cent-scale Decimal target in the caller-declared projection output basis, and preserves the fact, assumptions, and complete projection result. The independently validated 10.3.4-B Required Contribution Solver preserves the original assumptions template, replaces only `scenario_monthly_contribution`, and delegates every zero/binary/final-minimality candidate to that same target/projection oracle chain. The 10.3.5 Goal Planning layer is `VALIDATED` (TSK-10.3.5-V3, 2026-09-19): final independent probes confirmed type/status applicability first, followed by projection-specific target basis/output, Goal-current-amount provenance, and deadline validation. Only ACTIVE eligible Goals reach the solver; lifecycle `ACHIEVED`, `PAUSED`, `CANCELLED`, and reserved types return `NOT_APPLICABLE`. `GoalPlanningStatus.ALREADY_ACHIEVED` remains strictly mathematical for an ACTIVE Goal. No source selection/aggregation, target conversion, planned-to-scenario contribution mapping, required-contribution automation, scenario persistence, API, UI, or lifecycle reconciliation was added. ADR-020 and ADRs 019–022 remain the approved contracts; `IMPLEMENTATION_ROADMAP.md` owns execution status.
+
+The validated 10.3.6-B comparison engine applies the locked 10.3.6-A boundary: at least two explicitly identified, ordered scenarios and one explicit reference ID. Each scenario carries its own immutable `InitialWealthFact` and `ProjectionAssumptions`; no fact is selected, merged, or copied automatically. Comparable scenarios share assumptions `as_of_date`, resolved monthly horizon, output mode, and contribution timing. Planning has no currency field, so the boundary is limited to one application-currency context and cannot perform multi-currency comparison. An optional target is shared at comparison level with one Decimal amount and explicit basis. Results preserve complete certified projection/achievement outputs and provenance, use exact candidate-minus-reference money deltas and reference-minus-candidate month deltas, and provide no attribution, ranking, recommendation, persistence, or mutation of source data.
+
+**Phase 10.3 closure (2026-09-26):** `VALIDATED / CLOSED`. The source-of-truth constraints remain unchanged: every calculation uses one explicit source; `INVESTMENT_PORTFOLIO_SNAPSHOT` means BRL investment-portfolio wealth rather than net worth, realtime wealth, or complete historical reconstruction; and Planning remains deterministic, read-only, transient, and non-advisory. ADR-024's post-closure UX cycle is `VALIDATED / CLOSED` (`UX-B1–UX-B7`) without changing those truths: certified text values are string-safe in UI presentation, chart number conversion remains rendering-only, and provenance remains source-preserving without raw technical identifiers.
+
+`10.3.8-E` exposes that same comparison only as an authenticated transient API boundary: each `USER_PROVIDED_SCENARIO` amount remains caller-provided and each selected `GOAL_CURRENT_AMOUNT` is resolved server-side through the owned Decimal Planning reader before the single comparison-engine call. `INVESTMENT_PORTFOLIO_SNAPSHOT` is now certified end-to-end through B1–B4: the source-only selector delegates to the guarded ownership/as-of resolver, and the frontend never supplies its amount, account, provenance, or temporal facts. The API does not save scenarios or comparison results, infer a reference, apply Goal lifecycle semantics, or derive financial deltas.
 
 ---
 
@@ -253,11 +299,12 @@ No production Planning engine, result, API, persistence model, or UI exists yet.
 - **FX:** BRL=X via Yahoo, 1-hour cache, fallback 5.0 hardcoded
 - **FIXED_INCOME assets:** No yfinance ticker available — returns None
 
-### Goals Data [VERIFIED FOUNDATION / PLANNING BOUNDARY APPROVED]
+### Goals Data [VERIFIED FOUNDATION / GOAL PLANNING IMPLEMENTED]
 - `target_amount`, `target_date`, `current_amount`, `monthly_contribution`, `goal_type`, `status`, `priority`, `linked_account_id`, and `assumptions_json` exist after Phase 10.1.
 - Goal values are user governed. `current_amount` is manual and nullable; it is not automatically linked to certified wealth.
-- No projection engine exists yet. `assumptions_json` is opaque storage and is not an approved executable Planning contract or canonical scenario persistence.
-- Goals does not define whether `target_amount` is future nominal money or current purchasing power. Goal Planning must receive an explicit `target_value_basis = NOMINAL | REAL` (or exactly equivalent approved field) without inferring or changing the Goal row.
+- Goal Planning consumes `GoalPlanningFact` directly, after the validated `goal_id + user_id` read boundary. It does not query Goals again. `assumptions_json` is omitted from the fact and remains opaque storage, not an executable Planning contract or canonical scenario persistence.
+- Goals still does not persist whether `target_amount` is future nominal money or current purchasing power. Goal Planning therefore requires explicit `TargetValueBasis.NOMINAL | REAL`; absence is `INSUFFICIENT_DATA`, mismatch with projection output is invalid, and no inference/conversion changes the Goal row.
+- `goal_planned_monthly_contribution` remains a manual Goal fact. Only the independently supplied `ProjectionAssumptions.scenario_monthly_contribution` drives projection math.
 
 ---
 

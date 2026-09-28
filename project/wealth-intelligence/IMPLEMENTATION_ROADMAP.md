@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth Intelligence
-**Status:** ACTIVE (Phase 10.3 contracts locked; 10.3.1 ready, not started)
-**Date:** 2026-09-16
+**Status:** ACTIVE (Phase 10.3 validated / closed; ADR-024 post-closure UX contract locked; 10.4 ready / not started)
+**Date:** 2026-09-24
 
 ---
 
@@ -11,8 +11,8 @@
 | 10.0 | Architecture & Product Design | **COMPLETE** | — | Documentation only |
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | 10.0 | DB migration, Goal model enrichment, CRUD, basic UI |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 | Expense analytics, savings rate, spending trends |
-| 10.3 | Planning & Projection | **CONTRACT LOCKED — 10.3.0 VALIDATED; 10.3.1 READY / NOT STARTED** | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
-| 10.4 | Retirement & Financial Independence (FIRE) | NOT_STARTED — BOUNDARY APPROVED | 10.3 | Retirement/FIRE domain semantics over reusable 10.3 engines |
+| 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
+| 10.4 | Retirement & Financial Independence (FIRE) | READY / NOT STARTED — BOUNDARY APPROVED | 10.3 | Retirement/FIRE domain semantics over reusable 10.3 engines |
 | 10.5 | Portfolio Intelligence | NOT_STARTED — BOUNDARY APPROVED | existing Investments, 10.3 | Allocation, concentration, diversification, rebalancing analysis, portfolio quality |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
@@ -21,6 +21,27 @@
 | 10.10 | Advanced Orchestration | NOT_STARTED | 10.9 — **CONDITIONAL** | Only if single-LLM approach proves insufficient |
 | 10.11 | Docker & Operations | NOT_STARTED | All backend phases | Containerization, compose, ops guide |
 | 10.12 | Global UX / Visual Polish | NOT_STARTED | All UI phases | Design system, typography, final visual pass |
+
+---
+
+## Post-10.3 Planning UX implementation
+
+This sequence is contract-preserving refinement, not a reopening of Phase 10.3
+and not the start of FIRE. ADR-024 and `PLANNING_UX_CONTRACT.md` are authoritative.
+
+| Microtask | Scope | Status |
+|---|---|---|
+| UX-B1 | pt-BR exact financial input/output adapters, field errors, executable parser/formatter tests | VALIDATED |
+| UX-B2 | Minimal Planning/Health page chrome, copy reduction, three intentions | VALIDATED |
+| UX-B3 | Submit-time context defaults, visible nominal standard state, Advanced options | VALIDATED |
+| UX-B4 | Scenario Comparison shared context with per-scenario differentiators | VALIDATED |
+| UX-B5 | Answer-first result hierarchy, chart formatting, compact provenance | VALIDATED |
+| UX-B5-R1 | Quiet Financial OS static visual reconciliation | VALIDATED |
+| UX-B6 | Skeletons, restrained microinteractions, responsive/accessibility stabilization | VALIDATED |
+| UX-B7 | Independent validation and stabilization | VALIDATED / CLOSED |
+
+Optional portfolio preview, assumption references, and Goal-derived presets are
+separate backend mini-contracts and do not block UX-B1–UX-B7.
 
 ---
 
@@ -198,7 +219,7 @@
 
 ### PHASE 10.3 — Planning & Projection
 
-**Status:** CONTRACT LOCKED. `10.3.0 = VALIDATED`; `10.3.1 = READY / NOT STARTED`. Execute one microprocess at a time.
+**Status:** `VALIDATED / CLOSED`. `10.3.0–10.3.6 = VALIDATED`; `10.3.7-A = DEFERRED — INSUFFICIENT CONTRACT / DATA`; `10.3.8-A = API CONTRACT LOCKED / PERSISTENCE DEFERRED`; `10.3.8-B–E = VALIDATED`; `10.3.8-F = AUTOMATED VALIDATION PASSED`; Swagger manual smoke is `DEFERRED BY USER`; `10.3.9–10.3.10 = VALIDATED`; `10.3.10A = CONTRACT LOCKED`; `10.3.10B1–B4 = VALIDATED`; `10.3.10B = VALIDATED / COMPLETE`; `10.3.11 = VALIDATED / STABILIZED`; `10.3.12 = VALIDATED / CLOSED`. ADR-024 governs the post-closure Planning UX refinement: `UX-B1–UX-B7 = VALIDATED`; POST-10.3 UX is `VALIDATED / CLOSED`; Phase 10.4 remains `READY / NOT STARTED`.
 
 **Entry Criteria:** 10.1 and 10.2 are complete, validated, merged, and available as certified inputs. Satisfied by PR #2 merge commit `b7ce8b8`.
 
@@ -244,7 +265,7 @@ Certified investment wealth + certified Health facts + user-governed Goals
 
 #### Locked Contract Summary
 
-ADRs 019–022 are the detailed source of truth. The approved implementation constraints are:
+ADRs 019–023 are the detailed source of truth. The approved implementation constraints are:
 
 1. **Typed inputs:** initial wealth declares exactly one origin (`GOAL_CURRENT_AMOUNT`, `INVESTMENT_PORTFOLIO_SNAPSHOT`, or `USER_PROVIDED_SCENARIO`) with scope/as-of/provenance; sources are never summed automatically. MyProfit `patrimonio` is investment wealth, not consolidated net worth.
 2. **Decimal boundary:** 10.3.1 must bypass the existing Goal float path through read-only Decimal adapters. No projection math belongs in 10.3.1.
@@ -261,18 +282,40 @@ ADRs 019–022 are the detailed source of truth. The approved implementation con
 | ID | Name | Objective | Depends On | Produces Code? |
 |---|---|---|---|---:|
 | 10.3.0 | Planning Contract & Data Audit | **VALIDATED.** Domain/data audit completed and contracts locked by ADRs 019–022. No engine. | 10.1, 10.2 | No |
-| 10.3.1 | Planning Read Foundation | **READY / NOT STARTED.** Add only the missing typed read adapters/DTOs needed to supply approved Goal, Health, and current-wealth facts as Decimal with source dates. Do not duplicate existing engines or call internal APIs. | 10.3.0 | Yes, if audit confirms gaps |
-| 10.3.2 | Projection Assumptions Boundary | Map the locked ADR-020 assumptions into exact typed application contracts and resolve only adapter-derived gaps. Do not reopen approved mathematics or implement the engine. | 10.3.0, 10.3.1 findings | No |
-| 10.3.3 | Deterministic Forward Projection Engine | Produce a monthly Decimal schedule of opening wealth, contribution, projected growth, closing wealth, and totals from explicit assumptions. No Goal coupling. | 10.3.2 | Yes |
-| 10.3.4 | Target Solver | Calculate achievement date and cent-minimal required monthly contribution using the Forward Projection Engine as the sole production oracle and the approved explicit states/bounds. | 10.3.3 | Yes |
-| 10.3.5 | Goal Planning Integration | Map eligible Goal facts into the validated engines and return projected date, required contribution, factual gap, and an approved on-track state without duplicating Goal data. | 10.3.1, 10.3.3, 10.3.4 | Yes |
-| 10.3.6 | Scenario Comparison Engine | Compare explicit base/alternative assumptions while preserving engine output order and provenance; produce wealth, date, and contribution deltas without advice. | 10.3.3, 10.3.4 | Yes |
-| 10.3.7 | Sustainable Contribution Capacity Contract | **DEFERRED — CONTRACT NOT APPROVED.** Reassess whether a defensible deterministic capacity definition exists; Planning MVP continues with explicit scenario contribution. | 10.3.0, validated Health facts | No; implementation gated |
-| 10.3.8 | Planning API | Expose authenticated Decimal-string projection/solver/goal/scenario contracts with transient requests. Routers orchestrate and never calculate. Scenario persistence remains outside this microtask until a later lifecycle/versioning/ownership contract. | 10.3.3–10.3.7 as applicable | Yes |
-| 10.3.9 | Planning Frontend Foundation | Add `/wealth-intelligence/planning`, exact TypeScript contracts, authenticated fetch, navigation, loading/error/empty states, and request-race protection. | 10.3.8 | Yes |
-| 10.3.10 | Planning Analytical UI | Present assumptions, conditional projection, target trajectory, and scenario comparison with clear nominal/real and provenance context. Frontend formats only. | 10.3.9 | Yes |
-| 10.3.11 | Integration & Stabilization | Audit Goals → Planning, Health → Planning, Wealth → Planning, API → UI; validate freshness, Decimal fidelity, auth, races, regressions, and absence of frontend recalculation. | 10.3.5–10.3.10 | Yes, fixes only |
-| 10.3.12 | Manual Validation & Phase Closure | Perform user QA, independent mathematical review, documentation closure, and Git checkpoint. Do not start 10.4 automatically. | 10.3.11 | Documentation/validation only |
+| 10.3.1 | Planning Read Foundation | **VALIDATED.** Immutable typed facts; Decimal-safe owned Goal reads; explicit-account latest portfolio snapshot reads; certified Health query/service reuse; typed source/scope/as-of/provenance; no automatic source selection or aggregation. No projection math. | 10.3.0 | Yes |
+| 10.3.2 | Projection Assumptions Boundary | **VALIDATED.** Immutable typed assumptions enforce Decimal-only contribution/rates, the nominal/real matrix, explicit constants, and one calendar-month horizon source. Independent validation confirmed strict boundaries without rate conversion, Fisher calculation, or projection math. | 10.3.0, 10.3.1 | Yes |
+| 10.3.3 | Deterministic Forward Projection Engine | **VALIDATED.** Pure immutable Decimal engine with magnitude-derived adaptive local precision, effective annual → monthly equivalent conversion, one-time Fisher when applicable, `END_OF_MONTH` contributions, cent-scale monthly `ROUND_HALF_EVEN`, month-end timeline, provenance, and exact cumulative totals. Independent V2 revalidation matched an 800-digit oracle across extreme and cross-mode cases and proved both sides of the former precision bug are regression-protected. No solver or Goal coupling. | 10.3.2 | Yes |
+| 10.3.4 | Target & Required Contribution Solvers | **VALIDATED.** `10.3.4-A = VALIDATED`: strict target input, period-zero semantics, first crossing, conservative `UNREACHABLE`, output-basis neutrality, provenance, immutability, and Decimal magnitude. `10.3.4-B = VALIDATED`: independent cent-grid and 500-digit oracles proved template-contribution independence, monotonicity including negative `ROUND_HALF_EVEN` ties and near-`-1`, the constructive target upper bound, logarithmic integer-cent search, and exact `C`/`C - 0.01` minimality without sustainability semantics. | 10.3.3 | Yes |
+| 10.3.5 | Goal Planning Integration | **VALIDATED** (TSK-10.3.5-V3). Final independent validation confirmed ACTIVE-only positive eligibility, applicability before target basis/output, Goal-current-amount provenance, and deadline validation, zero solver calls for non-projectable Goals, strict ACTIVE validation, and separation between lifecycle `ACHIEVED` and mathematical `ALREADY_ACHIEVED`. 63 tests. | 10.3.1, 10.3.3, 10.3.4 | Yes |
+| 10.3.6-A | Scenario Comparison Contract & Architecture Lock | **CONTRACT LOCKED.** Explicit unique scenario/reference IDs; BASE is not automatic reference; minimum two ordered scenarios; shared as-of/resolved horizon/output mode/timing; optional shared target; certified engine reuse; exact delta/month semantics; atomic prevalidation; transient, non-advisory output. | 10.3.3, 10.3.4, 10.3.5 | No |
+| 10.3.6-B | Scenario Comparison Engine Implementation | **VALIDATED.** Independent contract/code/oracle validation confirmed immutable pure-domain comparison over `ForwardProjectionEngine` and `TargetAchievementSolver`, explicit references, atomic comparability validation, optional shared target, exact Decimal deltas, certified-result preservation, and no second financial math, persistence, Goal auto-integration, Required Contribution automation, ranking, or advice. Focused suite: `37 passed`; all Planning/Goals/Health regressions passed; general unit: `403 passed, 2 historical Investments/MagicMock failures`. | 10.3.6-A | Yes |
+| 10.3.7-A | Sustainable Contribution Capacity Contract Decision | **DEFERRED — INSUFFICIENT CONTRACT / DATA.** Certified Health provides realized history, not recurring forward affordability. No approved window, minimum history, partial-month, deficit, anomaly/outlier, statistic, negative-result, currency, or missing/zero policy supports the word `sustainable`. No formula or implementation was created. | 10.3.0, validated Health facts | No; implementation remains gated |
+| 10.3.8-A | Planning API & Scenario Persistence Contract Audit | **API CONTRACT LOCKED / PERSISTENCE DEFERRED — TRANSIENT API FIRST.** Five authenticated capability endpoints are locked under `/api/v1/planning`; request facts cannot impersonate certified sources; Goal ownership is enforced server-side; portfolio API sourcing is deferred because snapshot accounts lack user ownership; JSON money/rates are strings; persistence lacks lifecycle/versioning/provenance/staleness contracts. | 10.3.3–10.3.6; 10.3.7-A decision | No |
+| 10.3.8-B | Planning API Foundation | **VALIDATED.** Independent review confirmed the empty registered `/planning` router, existing-JWT and synchronous-reader dependency annotations, real-JSON strict Decimal strings, secure selectors, pure builders/mappers, local error translation, and OpenAPI/startup safety. No financial endpoint, engine call, persistence, or portfolio source was added. | 10.3.8-A | Yes |
+| 10.3.8-C | Generic Planning Calculation Endpoints | **VALIDATED.** Independent HTTP validation confirmed exactly three authenticated transient routes, strict Decimal-string request/response fidelity, server-owned Goal-current-amount resolution and 404 non-enumeration, exact engine delegation, domain-status preservation, local errors, OpenAPI scope, and no financial recomputation, write, persistence, or out-of-scope endpoint. Focused suite: `25 passed`; general unit: `465 passed, 2 historical Investments/MagicMock failures`. | 10.3.8-B | Yes |
+| 10.3.8-D | Goal Planning Endpoint | **VALIDATED.** Final independent validation proved the pure preflight and evaluate path share one lifecycle/type authority across all real status/type pairs. Non-projectable Goals do not consume selected Goal current amount; ACTIVE eligible Goals still return `422` when that fact is required and absent. No dummy wealth, DB access in domain, or router eligibility duplication. Focused suite: `39 passed`; Goal Planning domain: `101`; general unit: `546 passed, 2 historical Investments/MagicMock failures`. | 10.3.8-B, 10.3.8-C | Yes |
+| 10.3.8-E | Scenario Comparison Endpoint | **VALIDATED.** Independent HTTP/domain/OpenAPI validation confirmed explicit scenario/reference IDs, input-order preservation, metadata-only archetypes, server-owned Goal resolution, atomic source failure, resolved-horizon equivalence, ReturnType variation, target-pair strictness, one Comparison engine call, certified delta mapping, and no ranking/recommendation/persistence/portfolio source. Focused HTTP suite: `42 passed`; Planning domain regressions: `323 passed`; Goals `65`; Health `68`; general `585 passed, 2 historical Investments/MagicMock failures`. | 10.3.8-B, 10.3.8-C | Yes |
+| 10.3.8-F | API Integration & Independent Validation | **AUTOMATED VALIDATION PASSED.** Cross-endpoint validation confirms exact authenticated OpenAPI route set, strict Decimal/source consistency, Goal ownership, read-only dependency boundaries, D/E regressions, deterministic 1,200-month serialization, and no persistence/advice/math duplication. Swagger Authorize manual smoke is deferred by user. | 10.3.8-C–10.3.8-E | Validation/fixes only |
+| 10.3.9 | Planning Frontend Foundation | **VALIDATED.** Manual smoke passed for Nominal→Nominal, Real→Real, Nominal→Real, and unavailable Real→Nominal. | 10.3.8 | Yes |
+| 10.3.10 | Planning Analytical UI | **VALIDATED.** Five certified capabilities share string-only assumptions/source inputs; certified results and chart-only period visualizations are displayed without browser financial calculation or persistence. Technical and manual validation passed; broader visual/UX refinements were deferred by the user. | 10.3.9 | Yes |
+| 10.3.10A | Investment Portfolio Source Contract & Ownership Audit | **CONTRACT LOCKED.** ADR-023 formalizes guarded single-tenant ownership, one canonical MyProfit scope, source-only request shape, no-look-ahead as-of selection, Decimal/BRL/provenance boundaries, all-five-endpoint coverage, and no migration for this constrained mode. | 10.3.10 | No |
+| 10.3.10B1 | Investment Portfolio Source Resolver & Reader Foundation | **VALIDATED.** Internal read-only ADR-023 resolver validates the exact one-user tenant invariant, semantic UUID ownership, complete MyProfit scope/run provenance, deterministic zero/one/many outcomes, strict `YYYY-MM` buckets, and latest-eligible-as-of Decimal fact construction without a fabricated `observed_at`. No public selector, router, frontend, engine, migration, or persistence was added. | 10.3.10A | Yes |
+| 10.3.10B2 | Planning API Portfolio Source Integration | **VALIDATED.** The strict source-only public selector is wired through Projection, Target Achievement, Required Contribution, Goal Planning after domain preflight, and Scenario Comparison before its atomic engine call. B1 remains the only portfolio resolver; source errors are safe `422`; no frontend, migration, schema, engine, or write path was added. | 10.3.10B1 | Yes |
+| 10.3.10B3 | Planning Frontend Portfolio Source Integration | **VALIDATED.** The shared Planning UI sends source-only portfolio requests and renders certified amount/month/provenance without preview, account selection, client-certified facts, or UI financial math. User smoke passed for all five capabilities. | 10.3.10B2 | Yes |
+| 10.3.10B4 | Planning Portfolio Source Independent Validation | **VALIDATED.** Adversarial end-to-end validation confirmed ownership, temporal, Decimal, trust, read-only, API, frontend, and documentation gates. Macro `10.3.10B = VALIDATED / COMPLETE`. | 10.3.10B3 | No |
+| 10.3.11 | Integration & Stabilization | **VALIDATED / STABILIZED.** Five APIs/capabilities, all approved sources, Decimal, provenance, auth, source switching, status/error/loading states, static boundaries, and regressions reconciled without a new Planning contract or production fix. | 10.3.5–10.3.10B | Yes, fixes only |
+| 10.3.12 | Manual Validation & Phase Closure | **VALIDATED / CLOSED.** Consolidated accepted manual evidence with proportional final backend/frontend/OpenAPI/static checks; no production fix, feature, or contract change required. Do not start 10.4 automatically. | 10.3.11 | Documentation/validation only |
+
+#### 10.3.10B Locked Implementation Order
+
+A. **Schema/migration:** no migration in the ADR-023 single-tenant mode; verify the locked invariant at runtime rather than introducing a partial ownership schema.
+B. **Reader/resolver:** add an ownership-aware application resolver plus an as-of-aware, read-only Decimal portfolio reader.
+C. **Domain/API selector:** expose only the portfolio source discriminant; reuse the existing source, scope, fact, and public provenance contracts.
+D. **Endpoint integration:** wire the selector into Projection, Target Achievement, Required Contribution, Goal Planning after applicability preflight, and atomically into Scenario Comparison.
+E. **Tests:** execute the ADR-023 ownership, cardinality, temporal, Decimal, provenance, endpoint, atomicity, and existing-source regression matrix.
+F. **Frontend source selector:** add the explicit portfolio option to existing Planning contracts and controls without accepting or calculating an amount in the browser.
+G. **Focused UI integration:** display only the returned certified amount and provenance dates; do not add a preview endpoint or broader UX redesign.
+H. **Independent validation:** adversarially validate the complete boundary before advancing to 10.3.11.
 
 #### Acceptance Question Ownership
 
@@ -280,7 +323,7 @@ ADRs 019–022 are the detailed source of truth. The approved implementation con
 |---|---|---|---|
 | Quanto terei em 5, 10 e 20 anos? | Planning | Forward projection | 10.3.3 |
 | Quando atinjo R$ 1 milhão? | Planning | Target-date solver | 10.3.4 |
-| Quanto preciso investir por mês para atingir minha meta? | Planning | Required-contribution solver | 10.3.4, integrated in 10.3.5 |
+| Quanto preciso investir por mês para atingir minha meta? | Planning | Required-contribution solver | 10.3.4 generic capability; explicit invocation only, not a 10.3.5 timing side effect |
 | Se aumentar meu aporte em R$ 500, o que muda? | Planning | Scenario comparison | 10.3.6 |
 | Minha meta está no caminho certo? | Planning + Goals | Goal integration over projection/solver facts | 10.3.5 |
 | Quanto posso aportar de forma sustentável? | Planning, contract-gated | Sustainable capacity engine only if approved | 10.3.7 |
@@ -294,7 +337,7 @@ ADRs 019–022 are the detailed source of truth. The approved implementation con
 - Independent spreadsheet or separate Decimal oracle validation for projection and inverse-solver cases; the production engine cannot be its own oracle.
 - Frontend contract/type/build/lint validation plus proof that the browser does not recalculate projections.
 
-**Execution Gate:** `10.3.0` is `VALIDATED`. The next task is `10.3.1 — Planning Read Foundation`, `READY / NOT STARTED`. It may implement only Decimal read boundaries/adapters and provenance for approved inputs; it must not implement projection mathematics.
+**Execution Gate:** Phase 10.3 is `VALIDATED / CLOSED`. 10.3.7-A remains `DEFERRED — INSUFFICIENT CONTRACT / DATA`; `10.3.8-F = AUTOMATED VALIDATION PASSED` and Swagger Authorize manual smoke remains `DEFERRED BY USER`; `10.3.10A = CONTRACT LOCKED`; macro `10.3.10B = VALIDATED / COMPLETE`; `10.3.11 = VALIDATED / STABILIZED`; `10.3.12 = VALIDATED / CLOSED`. Persistence remains prohibited until a separate owner/lifecycle/versioning/provenance/staleness contract is approved. ADR-024 governs the separate UX-B1–UX-B7 implementation sequence.
 
 ---
 

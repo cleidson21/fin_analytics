@@ -1,7 +1,7 @@
 # FINANALYTICS — Wealth Intelligence
 **Repository:** fin_analytics_v2
 **Version:** v3.1.0-investments (baseline audited)
-**Documentation Status:** Phase 10.2 completed/merged; Phase 10.3 contracts locked; 10.3.1 ready, not started
+**Documentation Status:** Phase 10.2 completed/merged; Phase 10.3 validated/closed; 10.3.7-A and Swagger manual smoke remain deferred by user/contract; ADR-024 post-closure Planning UX cycle validated/closed (UX-B1–UX-B7); 10.4 ready/not started
 
 ---
 
@@ -22,7 +22,7 @@ This is NOT a public product. This is a personal-use, self-hosted application.
 | Governança | ✅ STABLE | Import pipeline, audit trail, AI classification DB scaffold |
 | Metas | ✅ IMPLEMENTED / VALIDATED | CRUD, progress deterministic and functional UI |
 | Financial Health | ✅ COMPLETE / MERGED | 10.2.0–10.2.10-C validated; independent release review passed; PR #2 merged into `main` |
-| Wealth Intelligence | 🔵 IN PROGRESS | Goals and Health complete; Planning contracts locked; no Planning engine yet |
+| Wealth Intelligence | 🔵 IN PROGRESS | Planning 10.3 is validated/closed; ADR-023 portfolio source is certified end-to-end; ADR-024 post-closure UX cycle is validated/closed (UX-B1–UX-B7); 10.4 remains ready/not started |
 
 ---
 
@@ -41,6 +41,7 @@ All architectural documentation lives in `project/wealth-intelligence/`.
 | DECISION_LOG.md | Architecture Decision Records (ADRs) |
 | IMPLEMENTATION_ROADMAP.md | Phase contracts and detailed scope |
 | UI_UX_PLAN.md | Page designs and design system |
+| PLANNING_UX_CONTRACT.md | Locked post-10.3 Planning simplicity, pt-BR input/output, comparison, and implementation contract |
 | SECURITY_AND_GOVERNANCE.md | Security, AI governance, prompt injection defense |
 | INFRASTRUCTURE.md | Docker, Ollama, deployment strategy |
 | TESTING_STRATEGY.md | Testing requirements per phase |
@@ -99,8 +100,8 @@ See [MASTER_PLAN.md](MASTER_PLAN.md) for the full roadmap.
 | 10.0 | Architecture & Product Design | ✅ COMPLETE |
 | 10.1 | Goal Domain Foundation | ✅ IMPLEMENTED / VALIDATED |
 | 10.2 | Financial Health Intelligence | ✅ COMPLETED / MERGED — 10.2.10-C VALIDATED |
-| 10.3 | Planning & Projection | 📋 CONTRACT LOCKED — 10.3.0 VALIDATED; 10.3.1 READY / NOT STARTED |
-| 10.4 | Retirement & Financial Independence (FIRE) | 🔲 NOT STARTED — BOUNDARY APPROVED |
+| 10.3 | Planning & Projection | ✅ VALIDATED / CLOSED; 10.3.7-A DEFERRED; 10.3.8 AUTOMATED VALIDATION PASSED / Swagger smoke DEFERRED BY USER; 10.3.9–10.3.10 VALIDATED; 10.3.10A CONTRACT LOCKED; 10.3.10B VALIDATED / COMPLETE; 10.3.11–10.3.12 VALIDATED; ADR-024 post-closure UX cycle VALIDATED / CLOSED (UX-B1–UX-B7) |
+| 10.4 | Retirement & Financial Independence (FIRE) | 🔲 READY / NOT STARTED — BOUNDARY APPROVED |
 | 10.5 | Portfolio Intelligence | 🔲 NOT STARTED — BOUNDARY APPROVED |
 | 10.6 | Rebalancing & Watchlist | 🔲 NOT STARTED |
 | 10.7 | External Market Intelligence | 🔲 NOT STARTED |

@@ -1,5 +1,5 @@
 # Master Plan & Status — FINANALYTICS Wealth Intelligence
-**Updated:** 2026-09-16 (Phase 10.3 contracts locked; 10.3.1 ready)
+**Updated:** 2026-09-26 (Phase 10.3 validated / closed)
 
 ---
 
@@ -35,8 +35,8 @@ The platform provides:
 | 10.0 | Architecture & Product Design | **COMPLETE** | — |
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | Complete |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 complete |
-| 10.3 | Planning & Projection | **CONTRACT LOCKED — 10.3.0 VALIDATED; 10.3.1 READY / NOT STARTED** | 10.1 and 10.2 complete |
-| 10.4 | Retirement & Financial Independence (FIRE) | NOT STARTED — BOUNDARY APPROVED | 10.3 complete |
+| 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.1–10.3.6, 10.3.9–10.3.12 validated; 10.3.7-A deferred; 10.3.8 automated validation passed / Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete. ADR-024 post-closure UX contract implemented / validated; UX-B1–UX-B7 validated; POST-10.3 UX closed. | 10.1 and 10.2 complete |
+| 10.4 | Retirement & Financial Independence (FIRE) | READY / NOT STARTED — BOUNDARY APPROVED | 10.3 complete |
 | 10.5 | Portfolio Intelligence | NOT STARTED — BOUNDARY APPROVED | Stable investments, 10.3 complete |
 | 10.6 | Rebalancing & Watchlist | NOT STARTED | 10.5 complete |
 | 10.7 | External Market Intelligence | NOT STARTED | 10.5 complete, BCB/news validated |
@@ -85,6 +85,7 @@ The active dependencies `pydantic-settings`, `aiosqlite`, `python-jose[cryptogra
 | Planning mathematical contract | ADR-020 | APPROVED |
 | Planning scenario semantics and lifecycle | ADR-021 | APPROVED |
 | Retirement/FIRE and Portfolio Intelligence boundary | ADR-022 | APPROVED |
+| Investment portfolio initial-wealth source | ADR-023 | APPROVED |
 
 ---
 

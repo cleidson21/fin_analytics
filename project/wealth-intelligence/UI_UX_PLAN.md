@@ -1,6 +1,16 @@
 # UI/UX Plan — Wealth Intelligence
-**Status:** PROPOSED
+**Status:** PROPOSED / ADR-024 PLANNING ADDENDUM LOCKED
 **Date:** 2026-09-08
+
+> **Authoritative post-10.3 Planning addendum (2026-09-26):** ADR-024 and
+> `PLANNING_UX_CONTRACT.md` supersede this document wherever the older proposed
+> Planning/page-chrome design conflicts. The locked direction is `Quiet Financial
+> OS`: three intentions (`Simular`, `Objetivo`, `Comparar`), exact pt-BR string-safe
+> financial input/output, shared Scenario Comparison context, answer-first results,
+> compressed provenance, and restrained motion. Financial Health reuses the minimal
+> page-chrome pattern only. UX-B1–UX-B6 are validated after accepted manual reviews;
+> UX-B7 independently validated the complete UX cycle and closed it. The broader phase
+> designs below remain future proposals.
 
 ---
 
