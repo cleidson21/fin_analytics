@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import { PageLayout } from "@/components/layout/PageLayout";
 import { fetchFromAPI } from "@/lib/api";
@@ -102,17 +102,8 @@ export default function FinancialHealthPage() {
   return (
     <PageLayout hideTitle>
       <div className="space-y-6">
-        <header className="flex flex-col gap-5 border-b border-white/[0.06] pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-sky-300/80">
-              <CalendarDays aria-hidden="true" size={14} />
-              Wealth Intelligence
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
-              Saúde Financeira
-            </h1>
-          </div>
-
+        <header className="flex justify-end border-b border-white/[0.06] pb-4">
+          <h1 className="sr-only">Saúde Financeira</h1>
           <label className="flex w-full flex-col gap-1.5 text-xs font-medium text-zinc-400 sm:w-auto">
             Mês de referência
             <input
