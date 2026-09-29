@@ -10,9 +10,10 @@ interface WealthChartCardProps {
   onRetry?: () => void;
   className?: string;
   action?: ReactNode;
-  /** Modo tabela: desativa altura mínima e posicionamento absoluto do conteúdo,
-   *  permitindo que o card cresça com o conteúdo em vez de ter altura fixa. */
+  /** Modo tabela: desativa altura mínima e posicionamento absoluto do conteúdo */
   tableMode?: boolean;
+  /** Modo flex: renderiza filhos em flex (sem absolute), para painéis laterais dinâmicos */
+  flexMode?: boolean;
 }
 
 export function WealthChartCard({
@@ -24,10 +25,15 @@ export function WealthChartCard({
   className,
   action,
   tableMode = false,
+  flexMode = false,
 }: WealthChartCardProps) {
   return (
     <div
-      className={cn("rounded-2xl p-5 flex flex-col transition-all duration-200", className)}
+      className={cn(
+        "rounded-2xl p-5 flex flex-col transition-all duration-200",
+        flexMode ? "overflow-visible" : "",
+        className
+      )}
       style={{
         background: "rgba(26,26,26,0.9)",
         border: "1px solid rgba(255,255,255,0.07)",
@@ -69,6 +75,20 @@ export function WealthChartCard({
             </div>
           ) : (
             <div className="animate-in fade-in duration-300">{children}</div>
+          )}
+        </div>
+      ) : flexMode ? (
+        // Modo flex: filho controla seu próprio layout, sem absolute, overflow visível para popups
+        <div className="flex-1 w-full flex flex-col overflow-visible" style={{ minHeight: 200 }}>
+          {isLoading ? (
+            <div className="w-full h-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)", minHeight: 200 }} />
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-10" style={{ color: "#6b7280" }}>
+              <AlertCircle size={28} style={{ opacity: 0.5 }} />
+              <p className="text-sm">Dados indisponíveis no momento.</p>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col overflow-visible animate-in fade-in duration-300">{children}</div>
           )}
         </div>
       ) : (

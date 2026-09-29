@@ -284,23 +284,37 @@ async def get_dividends_history(
     Retorna todo o histórico de eventos de proventos do usuário.
     O frontend fará o agrupamento mensal e filtragem YTD de acordo com sua necessidade.
     """
-    stmt = select(IncomeEventModel)
+    stmt = (
+        select(IncomeEventModel, AssetModel.ticker)
+        .outerjoin(AssetModel, IncomeEventModel.asset_id == AssetModel.id)
+    )
     if account_id:
         stmt = stmt.where(IncomeEventModel.account_id == account_id)
-        
+
     stmt = stmt.order_by(IncomeEventModel.payment_date.asc())
-    
+
     result = await session.execute(stmt)
-    rows = result.scalars().all()
-    
+    rows = result.all()
+
     events = []
-    for row in rows:
+    for result_row in rows:
+        # SQLAlchemy returns a pair for this SELECT. Accepting a model instance
+        # preserves compatibility with existing lightweight scalar test doubles.
+        if isinstance(result_row, IncomeEventModel):
+            row, ticker = result_row, None
+        else:
+            row, ticker = result_row
         events.append({
             "data_pagamento": row.payment_date.isoformat() if row.payment_date else None,
             "valor": float(row.gross_amount or 0),
-            "tipo_evento": row.event_type if row.event_type else None
+            "tipo_evento": row.event_type if row.event_type else None,
+            "ticker": ticker or "Outros",
+            "cotas": float(row.quantity or 0),
+            "valor_por_cota": float(row.value_per_unit or 0),
+            "yoc": float(row.yoc) if row.yoc is not None else None,
+            "dy": float(row.dy) if row.dy is not None else None,
         })
-        
+
     return events
 
 @router.get("/dividends/breakdown", response_model=List[Dict[str, Any]])

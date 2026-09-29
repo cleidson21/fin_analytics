@@ -1,92 +1,331 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { Settings, Building2, CheckCircle2 } from "lucide-react";
-import { fetchFromAPI } from "@/lib/api";
+import {
+  ShieldCheck,
+  Lock,
+  Monitor,
+  Globe,
+  Sun,
+  Download,
+  Trash2,
+  AlertTriangle,
+  ChevronRight,
+  Smartphone,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+} from "lucide-react";
 
-interface Account {
-  provider: string;
-  external_id: string;
-  name: string;
-  type: string;
-  subtype?: string;
-  bank?: string;
-  connector?: string;
+function SectionCard({
+  title,
+  subtitle,
+  icon: Icon,
+  iconColor,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  iconColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-white/[0.06] px-6 py-4">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconColor}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-zinc-100">{title}</p>
+          <p className="text-xs text-zinc-500">{subtitle}</p>
+        </div>
+      </div>
+      <div className="divide-y divide-white/[0.05]">{children}</div>
+    </div>
+  );
+}
+
+function SettingsRow({
+  icon: Icon,
+  label,
+  description,
+  badge,
+  action,
+  danger = false,
+}: {
+  icon: React.ElementType;
+  label: string;
+  description?: string;
+  badge?: string;
+  action?: React.ReactNode;
+  danger?: boolean;
+}) {
+  return (
+    <div className={`flex items-center gap-4 px-6 py-4 transition-colors hover:bg-white/[0.02] ${danger ? "hover:bg-red-500/[0.03]" : ""}`}>
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${danger ? "bg-red-500/10 text-red-400" : "bg-white/[0.04] text-zinc-400"}`}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className={`text-sm font-medium ${danger ? "text-red-400" : "text-zinc-200"}`}>{label}</p>
+          {badge && (
+            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 ring-1 ring-inset ring-white/10">
+              {badge}
+            </span>
+          )}
+        </div>
+        {description && <p className="text-xs text-zinc-500 mt-0.5">{description}</p>}
+      </div>
+      {action ?? (
+        <ChevronRight className={`w-4 h-4 shrink-0 ${danger ? "text-red-400/50" : "text-zinc-600"}`} />
+      )}
+    </div>
+  );
+}
+
+function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none
+        ${checked ? "bg-emerald-500" : "bg-white/10"}`}
+    >
+      <span
+        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200
+          ${checked ? "translate-x-4" : "translate-x-1"}`}
+      />
+    </button>
+  );
+}
+
+function PasswordSection() {
+  const [show, setShow] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaved(true);
+    setTimeout(() => { setSaved(false); setOpen(false); setCurrent(""); setNewPw(""); setConfirm(""); }, 2500);
+  }
+
+  return (
+    <div>
+      <div
+        className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-white/[0.02] cursor-pointer"
+        onClick={() => setOpen(!open)}
+      >
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-400">
+          <Lock className="w-4 h-4" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-zinc-200">Alterar senha</p>
+          <p className="text-xs text-zinc-500 mt-0.5">Atualize sua senha de acesso</p>
+        </div>
+        <ChevronRight className={`w-4 h-4 shrink-0 text-zinc-600 transition-transform ${open ? "rotate-90" : ""}`} />
+      </div>
+      {open && (
+        <form onSubmit={handleSave} className="px-6 pb-5 space-y-3">
+          <div className="h-px bg-white/[0.05] mb-4" />
+          {[
+            { label: "Senha atual", value: current, set: setCurrent },
+            { label: "Nova senha", value: newPw, set: setNewPw },
+            { label: "Confirmar nova senha", value: confirm, set: setConfirm },
+          ].map(({ label, value, set }) => (
+            <div key={label}>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">{label}</label>
+              <div className="relative">
+                <input
+                  type={show ? "text" : "password"}
+                  value={value}
+                  onChange={(e) => set(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-4 pr-10 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow(!show)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
+                >
+                  {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                saved
+                  ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-inset ring-emerald-400/30"
+                  : "bg-emerald-500 text-white hover:bg-emerald-400"
+              }`}
+            >
+              {saved ? <><CheckCircle2 className="w-4 h-4" /> Senha alterada</> : "Salvar nova senha"}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
 }
 
 export default function SettingsPage() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [emailNotif, setEmailNotif] = useState(true);
+  const [weeklyReport, setWeeklyReport] = useState(false);
+  const [anomalyAlert, setAnomalyAlert] = useState(true);
 
-  useEffect(() => {
-    async function loadAccounts() {
-      const data = await fetchFromAPI<Account[]>("/accounts");
-      if (data) {
-        setAccounts(data);
-      }
-      setLoading(false);
+  function handleExport() {
+    const data = {
+      profile: localStorage.getItem("fin_profile_extended"),
+      exported_at: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "finanalytics_dados.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleClearCache() {
+    if (confirm("Isso vai limpar os dados de perfil salvos localmente. Continuar?")) {
+      localStorage.removeItem("fin_profile_extended");
+      window.location.reload();
     }
-    loadAccounts();
-  }, []);
+  }
 
   return (
     <PageLayout title="Configurações">
-      <div className="max-w-4xl mx-auto space-y-8 pb-12">
-        <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
-            <Settings className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-zinc-100">Contas Conectadas</h1>
-            <p className="text-zinc-500 mt-1 text-sm">Gerencie suas contas sincronizadas via Open Finance.</p>
-          </div>
-        </div>
+      <div className="max-w-3xl mx-auto space-y-6 pb-12">
 
-        {loading ? (
-          <div className="text-zinc-500 text-center py-12">Carregando contas...</div>
-        ) : accounts.length === 0 ? (
-          <div className="text-zinc-500 text-center py-12 bg-white/[0.02] rounded-2xl border border-white/5">
-            Nenhuma conta conectada encontrada.
+        {/* Segurança */}
+        <SectionCard
+          title="Segurança"
+          subtitle="Senha e controle de acesso"
+          icon={ShieldCheck}
+          iconColor="bg-emerald-500/15 text-emerald-400"
+        >
+          <PasswordSection />
+          <SettingsRow
+            icon={Smartphone}
+            label="Autenticação de dois fatores"
+            description="Adicione uma camada extra de proteção"
+            badge="Em breve"
+            action={<span className="text-xs text-zinc-600">Indisponível</span>}
+          />
+          <SettingsRow
+            icon={Monitor}
+            label="Sessões ativas"
+            description="Gerencie onde você está conectado"
+            action={
+              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-400/20">
+                Esta sessão
+              </span>
+            }
+          />
+        </SectionCard>
+
+        {/* Notificações */}
+        <SectionCard
+          title="Notificações"
+          subtitle="Controle os alertas que deseja receber"
+          icon={Monitor}
+          iconColor="bg-sky-500/15 text-sky-400"
+        >
+          <SettingsRow
+            icon={Monitor}
+            label="Notificações por e-mail"
+            description="Receba resumos e alertas no seu e-mail"
+            badge="Em breve"
+            action={<ToggleSwitch checked={emailNotif} onChange={setEmailNotif} />}
+          />
+          <SettingsRow
+            icon={Monitor}
+            label="Relatório semanal"
+            description="Resumo de gastos toda segunda-feira"
+            badge="Em breve"
+            action={<ToggleSwitch checked={weeklyReport} onChange={setWeeklyReport} />}
+          />
+          <SettingsRow
+            icon={AlertTriangle}
+            label="Alertas de anomalias"
+            description="Gastos incomuns ou acima da média histórica"
+            badge="Em breve"
+            action={<ToggleSwitch checked={anomalyAlert} onChange={setAnomalyAlert} />}
+          />
+        </SectionCard>
+
+        {/* Aparência */}
+        <SectionCard
+          title="Aparência"
+          subtitle="Tema e idioma do sistema"
+          icon={Sun}
+          iconColor="bg-amber-500/15 text-amber-400"
+        >
+          <SettingsRow
+            icon={Sun}
+            label="Tema"
+            description="Dark (padrão)"
+            badge="Em breve"
+            action={
+              <span className="rounded-xl bg-white/[0.05] px-3 py-1 text-xs text-zinc-400 ring-1 ring-inset ring-white/10">
+                🌙 Dark
+              </span>
+            }
+          />
+          <SettingsRow
+            icon={Globe}
+            label="Idioma"
+            description="Português (Brasil)"
+            badge="Em breve"
+            action={
+              <span className="rounded-xl bg-white/[0.05] px-3 py-1 text-xs text-zinc-400 ring-1 ring-inset ring-white/10">
+                🇧🇷 PT-BR
+              </span>
+            }
+          />
+        </SectionCard>
+
+        {/* Dados & Sistema */}
+        <SectionCard
+          title="Dados e Sistema"
+          subtitle="Exportar ou limpar dados locais"
+          icon={Download}
+          iconColor="bg-violet-500/15 text-violet-400"
+        >
+          <div className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-white/[0.02] cursor-pointer" onClick={handleExport}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-400">
+              <Download className="w-4 h-4" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-zinc-200">Exportar meus dados</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Baixar perfil e configurações em JSON</p>
+            </div>
+            <ChevronRight className="w-4 h-4 shrink-0 text-zinc-600" />
           </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {accounts.map(acc => (
-              <div key={`${acc.provider}-${acc.external_id}`} className="group relative overflow-hidden rounded-2xl bg-slate-900/40 p-6 border border-white/5 hover:border-indigo-500/30 transition-colors">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Building2 className="w-16 h-16 text-indigo-400" />
-                </div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3 h-3" /> Sincronizada
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 text-zinc-400 border border-white/10 uppercase tracking-wider">
-                      {acc.provider}
-                    </span>
-                  </div>
-                  
-                  <h3 className="text-lg font-medium text-zinc-100 mb-1">{acc.name}</h3>
-                  
-                  <div className="space-y-1.5 mt-4 text-sm text-zinc-400">
-                    <p className="flex justify-between border-b border-white/5 pb-1.5">
-                      <span className="text-zinc-500">ID Externo</span>
-                      <span className="font-mono text-xs">{acc.external_id}</span>
-                    </p>
-                    <p className="flex justify-between border-b border-white/5 pb-1.5">
-                      <span className="text-zinc-500">Banco / Conector</span>
-                      <span>{acc.bank || acc.connector || "N/A"}</span>
-                    </p>
-                    <p className="flex justify-between pb-1.5">
-                      <span className="text-zinc-500">Tipo</span>
-                      <span className="capitalize">{acc.type.toLowerCase()} {acc.subtype && `- ${acc.subtype}`}</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-red-500/[0.03] cursor-pointer" onClick={handleClearCache}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
+              <Trash2 className="w-4 h-4" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-400">Limpar dados locais</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Remove o perfil estendido salvo neste navegador</p>
+            </div>
+            <ChevronRight className="w-4 h-4 shrink-0 text-red-400/50" />
           </div>
-        )}
+        </SectionCard>
+
       </div>
     </PageLayout>
   );

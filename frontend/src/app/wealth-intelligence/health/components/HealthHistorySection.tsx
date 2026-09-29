@@ -132,7 +132,7 @@ export function HealthHistorySection({ history }: { history: HistoricalFinancial
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.05]">
-            {tableHistory.map((item) => (
+            {[...tableHistory].reverse().map((item) => (
               <tr
                 key={item.reference_month}
                 className="text-zinc-300 odd:bg-white/[0.012] even:bg-white/[0.028] hover:bg-white/[0.045]"
@@ -164,21 +164,21 @@ export function HealthHistorySection({ history }: { history: HistoricalFinancial
         <nav aria-label="Paginação do histórico" className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
-            onClick={() => setPageFromLatest((page) => Math.min(page + 1, pageCount - 1))}
-            disabled={!hasOlderRecords}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-35"
-          >
-            <ChevronLeft aria-hidden="true" size={14} />
-            Anteriores
-          </button>
-          <span className="text-xs tabular-nums text-zinc-500">{rangeStart}–{rangeEnd} de {history.length}</span>
-          <button
-            type="button"
             onClick={() => setPageFromLatest((page) => Math.max(0, page - 1))}
             disabled={!hasNewerRecords}
             className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-35"
           >
+            <ChevronLeft aria-hidden="true" size={14} />
             Mais recentes
+          </button>
+          <span className="text-xs tabular-nums text-zinc-500">{rangeStart}–{rangeEnd} de {history.length}</span>
+          <button
+            type="button"
+            onClick={() => setPageFromLatest((page) => Math.min(page + 1, pageCount - 1))}
+            disabled={!hasOlderRecords}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            Mais antigos
             <ChevronRight aria-hidden="true" size={14} />
           </button>
         </nav>

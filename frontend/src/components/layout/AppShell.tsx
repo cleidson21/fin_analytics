@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -24,12 +25,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
       <div className="flex min-h-screen">
         <aside className="hidden w-72 shrink-0 flex-col border-r border-white/10 bg-white/5 px-6 py-8 backdrop-blur lg:flex">
-          <Link href="/" className="mb-10 inline-flex items-center gap-3 self-start">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400/15 text-lg font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
-              F
-            </span>
-            <span className="text-lg font-semibold tracking-tight text-white">FinAnalytics</span>
+          <Link href="/" className="mb-10 inline-flex items-center gap-3 self-start group">
+            {/* Logo FA — FinAnalytics */}
+            <Image
+              src="/logo.jpg"
+              alt="FinAnalytics logo"
+              width={48}
+              height={48}
+              priority
+              className="shrink-0 rounded-xl transition-transform group-hover:scale-105"
+            />
+            <div className="flex flex-col leading-tight">
+              <span className="text-lg font-bold tracking-tight text-white">FinAnalytics</span>
+              <span className="text-[11px] font-semibold tracking-widest text-emerald-400/70 uppercase">Finance OS</span>
+            </div>
           </Link>
+
 
           <nav className="flex flex-1 flex-col gap-8">
             <div>

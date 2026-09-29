@@ -9,20 +9,22 @@ import { Coins, Percent, TrendingUp, CalendarDays } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { DividendFlowChart } from "@/components/wealth/charts/DividendFlowChart";
 import { DividendYoYChart } from "@/components/wealth/charts/DividendYoYChart";
+import { DividendMonthTable } from "@/components/wealth/charts/DividendMonthTable";
 
 export default function DividendsPage() {
-  const { 
-    history, breakdown, yoyArray, availableYears, 
+  const {
+    history, breakdown, monthlyAssets, monthlyAssetDetails, yoyArray, availableYears,
     totalDividends, average12m, yieldOnCost, ytdReceived,
-    isLoading, isError 
+    isLoading, isError
   } = useDividendsData();
 
-  // Create table data: reversed history
+  // Create table data: reversed history (most recent first)
   const tableData = [...history].reverse();
 
   return (
     <div className="space-y-6">
 
+      {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <WealthKpiCard
           title="Média Mensal (12m)"
@@ -46,7 +48,7 @@ export default function DividendsPage() {
           iconColor="text-[#7EB8F7]"
         />
         <WealthKpiCard
-          title="PROJEÇÃO ANUAL"
+          title="Projeção Anual"
           value={isLoading ? "..." : formatCurrency(average12m * 12)}
           icon={TrendingUp}
           iconBgColor="bg-[#7F77DD]/10"
@@ -54,7 +56,6 @@ export default function DividendsPage() {
           sub={
             isLoading ? "" : (
               <div className="w-full mt-1">
-                {/* Barra de progresso YTD */}
                 <div className="w-full rounded-full overflow-hidden" style={{ height: "4px", background: "rgba(255,255,255,0.06)" }}>
                   <div
                     className="h-full rounded-full transition-all duration-700"
@@ -74,57 +75,79 @@ export default function DividendsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WealthChartCard title="Fluxo Mensal de Proventos" isLoading={isLoading} isError={isError} className="h-[350px]">
-          <DividendFlowChart data={history} />
-        </WealthChartCard>
-        
-        <WealthChartCard title="Crescimento Ano a Ano (YoY)" isLoading={isLoading} isError={isError} className="h-[350px]">
-          <DividendYoYChart data={yoyArray} years={availableYears} />
-        </WealthChartCard>
-      </div>
+      {/* Fluxo Mensal — full row, overflow visible so popup is not clipped */}
+      <WealthChartCard
+        title="Fluxo Mensal de Proventos"
+        isLoading={isLoading}
+        isError={isError}
+        flexMode
+        className="min-h-[360px] overflow-visible"
+      >
+        <DividendFlowChart data={history} monthlyAssets={monthlyAssets} />
+      </WealthChartCard>
 
+      {/* YoY — full row, extra tall for year toggles + chart */}
+      <WealthChartCard
+        title="Crescimento Ano a Ano (YoY)"
+        isLoading={isLoading}
+        isError={isError}
+        className="h-[400px]"
+      >
+        <DividendYoYChart data={yoyArray} years={availableYears} />
+      </WealthChartCard>
+
+      {/* Tabela de composição por mês */}
+      <WealthChartCard title="Composição Mensal Detalhada" isLoading={isLoading} isError={isError} tableMode>
+        <DividendMonthTable
+          monthlyAssetDetails={monthlyAssetDetails}
+          availableMonths={[...history].reverse().map(h => h.month)}
+        />
+      </WealthChartCard>
+
+      {/* Tables row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <WealthChartCard title="Histórico de Recebimentos" isLoading={isLoading} isError={isError} tableMode>
-           <WealthTable
-              data={tableData}
-              pageSize={12}
-              columns={[
-                { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
-                { header: "Total Recebido", cell: (item) => formatCurrency(item.amount_received_value), align: "right", className: "text-[#f5a623] font-medium" },
-                { header: "Variação M/M", cell: (item) => {
-                   const index = tableData.indexOf(item);
-                   const prev = tableData[index + 1];
-                   if (!prev || prev.amount_received_value === 0) return "-";
-                   const variation = ((item.amount_received_value - prev.amount_received_value) / prev.amount_received_value) * 100;
-                   return (
-                     <span className={variation >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
-                       {variation >= 0 ? "+" : ""}{variation.toFixed(1)}%
-                     </span>
-                   );
-                }, align: "right" }
-              ]}
-           />
+          <WealthTable
+            data={tableData}
+            pageSize={10}
+            columns={[
+              { header: "Mês", accessorKey: "month", className: "text-white font-medium" },
+              { header: "Total Recebido", cell: (item) => formatCurrency(item.amount_received_value), align: "right", className: "text-[#f5a623] font-medium" },
+              {
+                header: "Variação M/M", cell: (item) => {
+                  const index = tableData.indexOf(item);
+                  const prev = tableData[index + 1];
+                  if (!prev || prev.amount_received_value === 0) return "-";
+                  const variation = ((item.amount_received_value - prev.amount_received_value) / prev.amount_received_value) * 100;
+                  return (
+                    <span className={variation >= 0 ? "text-[#4ecf98]" : "text-[#e97070]"}>
+                      {variation >= 0 ? "+" : ""}{variation.toFixed(1)}%
+                    </span>
+                  );
+                }, align: "right"
+              }
+            ]}
+          />
         </WealthChartCard>
 
         <WealthChartCard title="Maiores Pagadores Históricos" isLoading={isLoading} isError={isError} tableMode>
-           <WealthTable
-              data={breakdown}
-              pageSize={10}
-              columns={[
-                { 
-                  header: "Ativo", 
-                  cell: (item: DividendBreakdown) => (
-                    <Link href={`/wealth/asset/${item.ticker}`} className="text-[#4ecf98] hover:underline font-medium">
-                      {item.ticker}
-                    </Link>
-                  )
-                },
-                { header: "Pagamentos", accessorKey: "quantidade_eventos", align: "right" },
-                { header: "Total Recebido", cell: (item) => formatCurrency(item.total_recebido_value), align: "right", className: "text-[#4ecf98] font-medium" },
-                { header: "Participação", cell: (item) => totalDividends > 0 ? `${((item.total_recebido_value / totalDividends) * 100).toFixed(1)}%` : "0%", align: "right" },
-              ]}
-           />
+          <WealthTable
+            data={breakdown}
+            pageSize={10}
+            columns={[
+              {
+                header: "Ativo",
+                cell: (item: DividendBreakdown) => (
+                  <Link href={`/wealth/asset/${item.ticker}`} className="text-[#4ecf98] hover:underline font-medium">
+                    {item.ticker}
+                  </Link>
+                )
+              },
+              { header: "Pagamentos", accessorKey: "quantidade_eventos", align: "right" },
+              { header: "Total Recebido", cell: (item) => formatCurrency(item.total_recebido_value), align: "right", className: "text-[#4ecf98] font-medium" },
+              { header: "Participação", cell: (item) => totalDividends > 0 ? `${((item.total_recebido_value / totalDividends) * 100).toFixed(1)}%` : "0%", align: "right" },
+            ]}
+          />
         </WealthChartCard>
       </div>
 

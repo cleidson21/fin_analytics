@@ -85,6 +85,8 @@ def test_investments_dividends_history(client, mock_session):
     assert len(data) == 2
     assert data[0]["valor"] == 50.0
     assert data[0]["tipo_evento"] == "DIVIDENDO"
+    assert data[0]["ticker"] == "Outros"
+    assert data[0]["cotas"] == 0.0
     assert data[1]["valor"] == 25.0
     assert data[1]["tipo_evento"] == "JCP"
 

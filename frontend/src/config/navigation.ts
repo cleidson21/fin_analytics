@@ -2,6 +2,7 @@ import {
   BarChart3,
   Building2,
   CreditCard,
+  HeartPulse,
   LayoutDashboard,
   LineChart,
   PieChart,
@@ -10,11 +11,11 @@ import {
   Tag,
   Target,
   TrendingUp,
-  Tv,
   Database,
   Upload,
   ShieldCheck,
   History,
+  UserCircle,
 } from "lucide-react";
 
 type SearchParamsLike = {
@@ -55,13 +56,13 @@ export const SECTION_TABS = {
   ],
   settings: [
     { name: "Geral", href: "/settings", icon: Settings },
-    { name: "Perfil", href: "/profile", icon: Settings },
+    { name: "Perfil", href: "/profile", icon: UserCircle },
     { name: "Contas", href: "/accounts", icon: Building2 },
   ],
   wealthIntelligence: [
     { name: "Dashboard", href: "/wealth-intelligence", icon: LayoutDashboard },
     { name: "Metas", href: "/goals", icon: Target },
-    { name: "Saúde Financeira", href: "/wealth-intelligence/health", icon: TrendingUp },
+    { name: "Saúde Financeira", href: "/wealth-intelligence/health", icon: HeartPulse },
     { name: "Planejamento", href: "/wealth-intelligence/planning", icon: LineChart },
   ],
 } as const;
