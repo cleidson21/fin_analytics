@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth Intelligence
-**Status:** ACTIVE (Phase 10.3 validated / closed; ADR-024 post-closure UX contract locked; 10.4 ready / not started)
-**Date:** 2026-09-24
+**Status:** ACTIVE (Phase 10.3 and post-10.3 UX closed; Phase 10.4 implementation plan ready; implementation not started)
+**Date:** 2026-09-29
 
 ---
 
@@ -12,7 +12,7 @@
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | 10.0 | DB migration, Goal model enrichment, CRUD, basic UI |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 | Expense analytics, savings rate, spending trends |
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
-| 10.4 | Retirement & Financial Independence (FIRE) | READY / NOT STARTED — BOUNDARY APPROVED | 10.3 | Retirement/FIRE domain semantics over reusable 10.3 engines |
+| 10.4 | Retirement & Financial Independence (FIRE) | **IMPLEMENTATION PLAN READY / IMPLEMENTATION NOT STARTED** — awaiting user approval for 10.4-D1 | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.5 | Portfolio Intelligence | NOT_STARTED — BOUNDARY APPROVED | existing Investments, 10.3 | Allocation, concentration, diversification, rebalancing analysis, portfolio quality |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
@@ -219,7 +219,7 @@ separate backend mini-contracts and do not block UX-B1–UX-B7.
 
 ### PHASE 10.3 — Planning & Projection
 
-**Status:** `VALIDATED / CLOSED`. `10.3.0–10.3.6 = VALIDATED`; `10.3.7-A = DEFERRED — INSUFFICIENT CONTRACT / DATA`; `10.3.8-A = API CONTRACT LOCKED / PERSISTENCE DEFERRED`; `10.3.8-B–E = VALIDATED`; `10.3.8-F = AUTOMATED VALIDATION PASSED`; Swagger manual smoke is `DEFERRED BY USER`; `10.3.9–10.3.10 = VALIDATED`; `10.3.10A = CONTRACT LOCKED`; `10.3.10B1–B4 = VALIDATED`; `10.3.10B = VALIDATED / COMPLETE`; `10.3.11 = VALIDATED / STABILIZED`; `10.3.12 = VALIDATED / CLOSED`. ADR-024 governs the post-closure Planning UX refinement: `UX-B1–UX-B7 = VALIDATED`; POST-10.3 UX is `VALIDATED / CLOSED`; Phase 10.4 remains `READY / NOT STARTED`.
+**Status:** `VALIDATED / CLOSED`. `10.3.0–10.3.6 = VALIDATED`; `10.3.7-A = DEFERRED — INSUFFICIENT CONTRACT / DATA`; `10.3.8-A = API CONTRACT LOCKED / PERSISTENCE DEFERRED`; `10.3.8-B–E = VALIDATED`; `10.3.8-F = AUTOMATED VALIDATION PASSED`; Swagger manual smoke is `DEFERRED BY USER`; `10.3.9–10.3.10 = VALIDATED`; `10.3.10A = CONTRACT LOCKED`; `10.3.10B1–B4 = VALIDATED`; `10.3.10B = VALIDATED / COMPLETE`; `10.3.11 = VALIDATED / STABILIZED`; `10.3.12 = VALIDATED / CLOSED`. ADR-024 governs the post-closure Planning UX refinement: `UX-B1–UX-B7 = VALIDATED`; POST-10.3 UX is `VALIDATED / CLOSED`. Planning now remains the reusable projection/solver authority under the locked Phase 10.4 FIRE contract.
 
 **Entry Criteria:** 10.1 and 10.2 are complete, validated, merged, and available as certified inputs. Satisfied by PR #2 merge commit `b7ce8b8`.
 
@@ -345,12 +345,28 @@ H. **Independent validation:** adversarially validate the complete boundary befo
 
 **Entry Criteria:** 10.3 COMPLETE
 
-**Approved boundary only (ADR-022):** This combined future phase reuses the generic 10.3 Forward Projection Engine, target solver, required-contribution solver, scenario comparison, inflation, contribution, wealth, and horizon contracts. It adds age, desired retirement age, desired income, FIRE target wealth, potential/passive income, withdrawal/sustainable-income assumptions, FI progress, and estimated FI age/date.
+**Status:** `IMPLEMENTATION PLAN READY / IMPLEMENTATION NOT STARTED`
 
-- **Retirement mode:** “With a target age, what will my financial situation be?”
-- **FIRE mode:** “When do my wealth/income facts satisfy the approved independence contract?”
+| Microtask | Scope | Status |
+|---|---|---|
+| 10.4-A | FIRE contract and source-of-truth audit | AUDIT COMPLETE |
+| 10.4-B | FIRE contract lock and ADR-025 | CONTRACT LOCKED |
+| 10.4-C | Implementation decomposition | IMPLEMENTATION DECOMPOSITION COMPLETE / AWAITING USER REVIEW |
+| 10.4-D1 | FIRE Domain Core | READY / NOT STARTED — requires explicit user approval |
+| 10.4-D2 | FIRE Application Orchestration | NOT STARTED — gated by D1 |
+| 10.4-D3 | FIRE API | NOT STARTED — gated by D2 |
+| 10.4-D4 | FIRE Frontend Foundation | NOT STARTED — gated by D3 |
+| 10.4-D5 | FIRE Results & UX | NOT STARTED — gated by D4 |
+| 10.4-D6 | Integration & Stabilization | NOT STARTED — gated by D5 |
+| 10.4-D7 | Independent Validation & Closure | NOT STARTED — gated by D6 |
 
-No Retirement/FIRE implementation is authorized during Phase 10.3 contract lock.
+**Authority:** ADR-025 and `FIRE_CONTRACT.md`.
+
+**Locked MVP boundary:** FIRE is a thin deterministic orchestration layer over Planning. It constructs a real FIRE target from explicit monthly retirement spending and an explicit assumed annual withdrawal rate, reports summary progress and conditional withdrawal capacity, and delegates projected date and required contribution to the existing Planning solvers. It accepts exactly one of the certified portfolio selector or a user-provided Planning wealth scenario. Investment wealth is not net worth.
+
+The one future authenticated endpoint has three contracted modes: `SUMMARY`, `PROJECTED_DATE`, and `REQUIRED_CONTRIBUTION`. Output is real; return input may be real, or nominal with explicit inflation and one Planning-owned Fisher conversion. Health inference, dividends, external income, Goal linkage, persistence, taxes, longevity, Monte Carlo, FIRE variants, scenario comparison, and portfolio advice are outside the MVP.
+
+`FIRE_IMPLEMENTATION_PLAN.md` is the approved-for-review decomposition authority for D1–D7. No production implementation is authorized by 10.4-C. The next task is `10.4-D1 — FIRE Domain Core`, only after explicit user approval; it must not reopen the locked semantics.
 
 ---
 

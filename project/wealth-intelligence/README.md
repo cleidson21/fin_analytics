@@ -1,7 +1,7 @@
 # FINANALYTICS — Wealth Intelligence
 **Repository:** fin_analytics_v2
 **Version:** v3.1.0-investments (baseline audited)
-**Documentation Status:** Phase 10.2 completed/merged; Phase 10.3 validated/closed; 10.3.7-A and Swagger manual smoke remain deferred by user/contract; ADR-024 post-closure Planning UX cycle validated/closed (UX-B1–UX-B7); 10.4 ready/not started
+**Documentation Status:** Phase 10.2 completed/merged; Phase 10.3 and post-10.3 UX validated/closed; Phase 10.4-A audit complete; Phase 10.4-B contract locked under ADR-025; 10.4-C implementation plan ready/awaiting user approval
 
 ---
 
@@ -22,7 +22,7 @@ This is NOT a public product. This is a personal-use, self-hosted application.
 | Governança | ✅ STABLE | Import pipeline, audit trail, AI classification DB scaffold |
 | Metas | ✅ IMPLEMENTED / VALIDATED | CRUD, progress deterministic and functional UI |
 | Financial Health | ✅ COMPLETE / MERGED | 10.2.0–10.2.10-C validated; independent release review passed; PR #2 merged into `main` |
-| Wealth Intelligence | 🔵 IN PROGRESS | Planning 10.3 is validated/closed; ADR-023 portfolio source is certified end-to-end; ADR-024 post-closure UX cycle is validated/closed (UX-B1–UX-B7); 10.4 remains ready/not started |
+| Wealth Intelligence | 🔵 IN PROGRESS | Planning 10.3 and post-10.3 UX are validated/closed; FIRE 10.4 contract is locked under ADR-025; implementation has not started |
 
 ---
 
@@ -42,6 +42,9 @@ All architectural documentation lives in `project/wealth-intelligence/`.
 | IMPLEMENTATION_ROADMAP.md | Phase contracts and detailed scope |
 | UI_UX_PLAN.md | Page designs and design system |
 | PLANNING_UX_CONTRACT.md | Locked post-10.3 Planning simplicity, pt-BR input/output, comparison, and implementation contract |
+| FIRE_CONTRACT_AUDIT.md | Preserved Phase 10.4-A source-of-truth and contract analysis |
+| FIRE_CONTRACT.md | Locked Phase 10.4 FIRE MVP implementation contract under ADR-025 |
+| FIRE_IMPLEMENTATION_PLAN.md | Phase 10.4-C execution decomposition and D1–D7 gates |
 | SECURITY_AND_GOVERNANCE.md | Security, AI governance, prompt injection defense |
 | INFRASTRUCTURE.md | Docker, Ollama, deployment strategy |
 | TESTING_STRATEGY.md | Testing requirements per phase |
@@ -101,7 +104,7 @@ See [MASTER_PLAN.md](MASTER_PLAN.md) for the full roadmap.
 | 10.1 | Goal Domain Foundation | ✅ IMPLEMENTED / VALIDATED |
 | 10.2 | Financial Health Intelligence | ✅ COMPLETED / MERGED — 10.2.10-C VALIDATED |
 | 10.3 | Planning & Projection | ✅ VALIDATED / CLOSED; 10.3.7-A DEFERRED; 10.3.8 AUTOMATED VALIDATION PASSED / Swagger smoke DEFERRED BY USER; 10.3.9–10.3.10 VALIDATED; 10.3.10A CONTRACT LOCKED; 10.3.10B VALIDATED / COMPLETE; 10.3.11–10.3.12 VALIDATED; ADR-024 post-closure UX cycle VALIDATED / CLOSED (UX-B1–UX-B7) |
-| 10.4 | Retirement & Financial Independence (FIRE) | 🔲 READY / NOT STARTED — BOUNDARY APPROVED |
+| 10.4 | Retirement & Financial Independence (FIRE) | 📋 IMPLEMENTATION PLAN READY / IMPLEMENTATION NOT STARTED — 10.4-D1 READY / NOT STARTED |
 | 10.5 | Portfolio Intelligence | 🔲 NOT STARTED — BOUNDARY APPROVED |
 | 10.6 | Rebalancing & Watchlist | 🔲 NOT STARTED |
 | 10.7 | External Market Intelligence | 🔲 NOT STARTED |

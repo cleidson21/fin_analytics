@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-09-24
+**Updated:** 2026-09-29
 
 ---
 
@@ -32,6 +32,7 @@
 | ADR-022 | Retirement/FIRE and Portfolio Intelligence Boundary | APPROVED | 10.3.0-A |
 | ADR-023 | Investment Portfolio Initial Wealth Source | APPROVED | 10.3.10A |
 | ADR-024 | Post-10.3 Planning UX and Simplicity Contract | APPROVED | POST-10.3-UX-A |
+| ADR-025 | FIRE Deterministic Contract and Planning Composition | ACCEPTED | 10.4-B |
 
 ---
 
@@ -486,3 +487,39 @@ For `ProjectionAssumptions.as_of_date`, the resolver selects the greatest `refer
 **Future boundary:** Certified portfolio preview, assumption-reference facts, and Goal-derived presets each require a separate small backend contract. Historical portfolio performance requires a cashflow-aware certified engine/read model. FIRE, Portfolio Intelligence, Copilot scenario drafting, Goal proposals, and Planning persistence remain future phases/contracts. Direct browser MyProfit/Investments preview, automatic financial assumptions, ranking/advice, direct BCB assumption fetches, and `localStorage` scenario persistence are rejected.
 
 **Consequences:** Implementation is split into UX-B1 through UX-B7 as defined in `PLANNING_UX_CONTRACT.md`. No production code, financial engine, API, schema, persistence, or 10.4 work is authorized by this ADR alone. Phase 10.3 remains `VALIDATED / CLOSED`; 10.4 remains `READY / NOT STARTED`.
+
+---
+
+## ADR-025: FIRE Deterministic Contract and Planning Composition
+
+**Status:** ACCEPTED
+
+**Date locked:** 2026-09-29
+
+**Authoritative specification:** `FIRE_CONTRACT.md`
+
+**Context:** Phase 10.3 is validated and closed with certified deterministic projection, target-achievement, required-contribution, nominal/real, precision, provenance, and initial-wealth capabilities. Phase 10.4 must define financial independence without duplicating those engines or promoting historical Health, investment, dividend, or macro data into future assumptions.
+
+**Architecture decision:** FIRE is a thin deterministic domain and orchestration layer. It owns explicit retirement-spending and withdrawal-rate validation, FIRE target construction, summary status, gap, unbounded progress, and conditional withdrawal capacity. Planning remains the sole authority for initial-wealth resolution, projection, compound growth, contribution timing, nominal-to-real Fisher conversion, target achievement, required contribution, and their statuses. A second FIRE projection or solver engine is prohibited.
+
+**Target decision:** `monthly_retirement_spending` is an explicit positive cent-scale Decimal assumption in current purchasing power. `assumed_annual_withdrawal_rate` is an explicit annual Decimal fraction strictly between zero and one, with no default and no “safe” or guaranteed meaning. The real target is calculated as:
+
+```text
+annual_required_spending = monthly_retirement_spending * 12
+raw_fire_target = annual_required_spending / assumed_annual_withdrawal_rate
+fire_target = raw_fire_target quantized to 0.01 with ROUND_CEILING
+```
+
+`ROUND_CEILING` is limited to the positive canonical FIRE target. That same canonical target is displayed and passed to Planning. Ordinary FIRE money uses `ROUND_HALF_EVEN`; progress is an unclamped Decimal ratio quantized to eight decimal places with `ROUND_HALF_EVEN`.
+
+**Real-basis decision:** FIRE v1 target and output are always `REAL`. A supplied real effective annual return composes as `REAL → REAL` without inflation. A supplied nominal effective annual return composes as `NOMINAL → REAL` and requires explicit inflation; Planning applies Fisher exactly once. `NOMINAL → NOMINAL` and `REAL → NOMINAL` are not FIRE v1 modes. Return and inflation are never inferred and accept the existing Planning finite Decimal domain greater than `-1`.
+
+**Wealth decision:** Each analysis accepts exactly one of `INVESTMENT_PORTFOLIO_SNAPSHOT` or `USER_PROVIDED_SCENARIO`. Portfolio input is the source-only Planning selector and delegates exclusively to the ADR-023 resolver. Manual input reuses its explicit Planning amount and `observed_at` shape. `GOAL_CURRENT_AMOUNT` is excluded. The resolved concept is `eligible_investment_wealth`, not net worth; sources are never summed or used as fallbacks, and no emergency reserve is automatically added or subtracted.
+
+**API and mode decision:** The MVP has one authenticated transient endpoint, `POST /api/v1/fire/analysis`, and exactly three explicit analysis types: `SUMMARY`, `PROJECTED_DATE`, and `REQUIRED_CONTRIBUTION`. Every mode returns summary facts. `PROJECTED_DATE` requires explicit scenario contribution, return type/rate, conditional inflation, and a 1–1,200 month horizon, then delegates to `TargetAchievementSolver`. `REQUIRED_CONTRIBUTION` requires return type/rate, conditional inflation, and `desired_fire_date`, then delegates to `RequiredContributionSolver`; client contribution and horizon are forbidden. Mode-incompatible fields are rejected, not ignored. Planning solver statuses are preserved rather than renamed as FIRE statuses.
+
+**Summary decision:** FIRE summary contains spending, annualized spending, assumed rate, canonical target, eligible wealth, nonnegative gap, unclamped progress, conditional annual/monthly withdrawal capacity, as-of date, and wealth provenance. Summary status is exactly `ALREADY_FINANCIALLY_INDEPENDENT` or `BELOW_FIRE_TARGET`. Supported monthly withdrawal is derived from the unrounded annual product divided by 12, then rounded to cents with `ROUND_HALF_EVEN`.
+
+**Source and inference decision:** Health supplies no automatic expense, savings, contribution, or prefill in the MVP. Dividend history/yield is excluded to prevent total-return plus dividend double counting. External income offsets, taxes, macro-derived assumptions, Goal integration/writes, persistence, age/birthdate, emergency-reserve exclusions, FIRE variants, Monte Carlo, longevity, probability of success, and Portfolio Intelligence are deferred. The endpoint is deterministic, read-only, Decimal-first, and non-advisory.
+
+**Consequences:** Phase 10.4-B is `CONTRACT LOCKED / READY FOR USER REVIEW`; implementation remains not started. Phase 10.4-C may decompose implementation only after approval and must conform to `FIRE_CONTRACT.md`. No endpoint, engine, migration, frontend, test, persistence, or production source is created by this ADR lock.

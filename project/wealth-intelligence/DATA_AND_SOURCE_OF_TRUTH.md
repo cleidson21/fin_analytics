@@ -1,6 +1,6 @@
 # Data Lineage & Source of Truth Matrix
-**Status:** VERIFIED (current sources) + APPROVED (Phase 10.3 input boundaries)
-**Date:** 2026-09-17
+**Status:** VERIFIED (current sources) + APPROVED (Planning and FIRE input boundaries)
+**Date:** 2026-09-29
 
 ---
 
@@ -46,8 +46,8 @@ The LLM is **READ-ONLY** with respect to financial truth.
 | AI | Insights | Database (ai_insights — future) | AI Generated | YES (future) | NO | **READ DISPLAY** |
 | External | News articles | External APIs (future) | External | OPTIONAL | YES | SUMMARIZE ONLY |
 | External | Analyst consensus | External APIs (future) | External | OPTIONAL | YES | SUMMARIZE ONLY |
-| Retirement | Target portfolio | Calculated (user assumptions + math) | Deterministic Calc | OPTIONAL | NO | EXPLAIN ONLY |
-| Retirement | FI date projection | Calculated | Deterministic Calc | OPTIONAL | NO | EXPLAIN ONLY |
+| Retirement | Real FIRE target | Explicit spending + explicit assumed withdrawal rate | Deterministic Calc | NO (transient) | NO | EXPLAIN ONLY |
+| Retirement | FI date projection | FIRE target + certified Planning solver | Deterministic Calc | NO (transient) | NO | EXPLAIN ONLY |
 
 ---
 
@@ -72,7 +72,7 @@ The LLM is **READ-ONLY** with respect to financial truth.
 - Portfolio return = from portfolio_snapshots (MyProfit-sourced pct data)
 - Dividend yield = gross_amount / avg_cost
 - Goal progress = current_amount / target_amount
-- Retirement projection = compound interest formula with user assumptions
+- Retirement/FIRE projection = canonical FIRE target composed with certified Planning engines and explicit user assumptions
 - Savings rate = (income - expenses) / income
 - Portfolio allocation = per-class value / total portfolio value
 - Spending averages, category breakdowns, and approved historical trends; rolling averages require a separate future contract
@@ -221,6 +221,25 @@ Planning will not create a second financial truth. Its inputs must retain source
 - Health trends, categories, and anomalies can provide factual context but are not default numerical projection inputs.
 - `realized_savings_amount`, `goal_planned_monthly_contribution`, `scenario_monthly_contribution`, and `sustainable_monthly_contribution_capacity` are distinct. No automatic conversion is permitted; sustainable capacity remains uncontracted and deferred to 10.3.7.
 - Portfolio return history, CDI, IPCA, IBOV, dividend history, and Health trends are context only and never automatic future assumptions.
+
+### FIRE data boundary (ADR-025)
+
+FIRE v1 is a transient deterministic consumer of the existing Planning boundary. It creates no new observed financial truth.
+
+| FIRE concept | Authority | Locked use | Prohibited interpretation |
+|---|---|---|---|
+| `eligible_investment_wealth` | Exactly one Planning initial-wealth fact | `INVESTMENT_PORTFOLIO_SNAPSHOT` through ADR-023, or explicit `USER_PROVIDED_SCENARIO` | Net worth, automatic source sum, or fallback |
+| `monthly_retirement_spending` | Explicit request assumption | Positive cent-scale real spending in current purchasing power | Current Health expense, budget, or historical average |
+| `assumed_annual_withdrawal_rate` | Explicit request assumption | Finite annual Decimal fraction strictly between zero and one | Safe/guaranteed rate or silent 4% default |
+| `fire_target` | FIRE deterministic calculation | Annual spending divided by assumed rate, rounded up to cents with `ROUND_CEILING` | User-entered Goal target or nominal future target |
+| Projection return | Explicit request assumption | Existing Planning `expected_return_rate`; real, or nominal with explicit inflation | CDI, SELIC, portfolio return, or dividend forecast |
+| Future contribution | Explicit request assumption | Existing Planning `scenario_monthly_contribution` in `PROJECTED_DATE` | Health savings, salary, Goal contribution, or sustainable capacity |
+| Projected date | Planning `TargetAchievementSolver` | Canonical real FIRE target passed unchanged | FIRE-owned projection/crossing math |
+| Required contribution | Planning `RequiredContributionSolver` | Canonical real FIRE target and explicit desired date | FIRE-owned inverse solver |
+
+`GOAL_CURRENT_AMOUNT` is not an eligible FIRE v1 wealth source. Financial Health, dividends, external retirement income, emergency-reserve adjustments, and macro history supply no automatic FIRE input. The canonical FIRE target and all solver outputs remain derived facts under explicit assumptions; they are not observed facts or guarantees.
+
+FIRE output basis is always `REAL`. `REAL → REAL` uses no inflation. `NOMINAL → REAL` requires explicit inflation and delegates the one Fisher conversion to Planning. No other nominal/real path is exposed by FIRE v1.
 
 ### Post-10.3 UX boundary (ADR-024)
 

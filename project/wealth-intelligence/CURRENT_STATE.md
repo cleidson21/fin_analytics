@@ -1,5 +1,5 @@
 # Current Repository State
-**Updated:** 2026-09-26 (Phase 10.3 validated / closed)
+**Updated:** 2026-09-30 (Phase 10.4 implementation decomposition complete; implementation not started)
 
 This document reflects the VERIFIED reality of the repository as of the baseline audit.
 
@@ -18,8 +18,8 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 | **Goals Backend** | IMPLEMENTED / VALIDATED | `api/routers/goals.py`, `use_cases/goal/`, `persistence/models/goal.py` | Complete |
 | **Goals Frontend** | IMPLEMENTED / VALIDATED | `frontend/src/app/goals/`, `/wealth-intelligence` hub | Complete |
 | **Financial Health** | **PHASE 10.2 COMPLETED / MERGED; 10.2.10-C VALIDATED** | `backend/domains/health/repository.py`, `domains/health/service.py`, `api/routers/financial_health.py`, `frontend/src/app/wealth-intelligence/health/` | Complete |
-| **Planning & Projection** | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. Post-10.3 UX is `VALIDATED / CLOSED`; UX-B1–UX-B7 are validated. | ADRs 019–024; `backend/domains/planning/`; `frontend/src/lib/planning.ts`; `frontend/src/lib/planningLocale.ts`; `PLANNING_UX_CONTRACT.md` | 10.4 remains ready/not started |
-| **Retirement & Financial Independence (FIRE)** | READY / NOT STARTED — BOUNDARY ONLY | ADR-022 | Phase 10.4 after 10.3 closure |
+| **Planning & Projection** | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. Post-10.3 UX is `VALIDATED / CLOSED`; UX-B1–UX-B7 are validated. | ADRs 019–024; `backend/domains/planning/`; `frontend/src/lib/planning.ts`; `frontend/src/lib/planningLocale.ts`; `PLANNING_UX_CONTRACT.md` | Remains the reusable authority for FIRE projection/solvers |
+| **Retirement & Financial Independence (FIRE)** | **IMPLEMENTATION PLAN READY / IMPLEMENTATION NOT STARTED** | ADR-022, ADR-025, `FIRE_CONTRACT.md`; 10.4-A audit complete; 10.4-B contract locked; `FIRE_IMPLEMENTATION_PLAN.md` | User review before 10.4-D1 FIRE Domain Core |
 | **Portfolio Intelligence** | NOT STARTED — BOUNDARY ONLY | ADR-022 | Phase 10.5 |
 | **Rebalancing** | NOT STARTED | — | Phase 10.6 |
 | **Watchlist** | NOT STARTED | — | Phase 10.6 |
@@ -142,4 +142,7 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 - `POST-10.3-UX-B5 — results, charts, visual hierarchy, and provenance` is `VALIDATED`: B1 string-safe BRL/rate/date/reference-month formatters present Planning responses; answer-first heroes, secondary facts, compact source details, and readable Recharts visuals preserve backend financial authority. Comparison cards identify an explicit reference neutrally, retain request order, and expose no technical IDs.
 - `POST-10.3-UX-B5-R1 — Quiet Financial OS visual polish` is `VALIDATED` after the accepted manual visual review.
 - `POST-10.3-UX-B6 — living states, skeletons, responsiveness, and accessibility` is `VALIDATED`: the user approved the manual review. First-submit skeletons, accessible loading labels, stale-result identification, recalculation preservation, CSS-only reduced-motion transitions, and responsive result surfaces add feedback without changing Planning truth.
-- `POST-10.3-UX-B7 — independent validation and UX closure` is `VALIDATED / CLOSED`: independent source-of-truth, contract, static, frontend, focused Planning-backend, and secured OpenAPI checks passed. POST-10.3 UX is `VALIDATED / CLOSED`; Phase 10.4 remains `READY / NOT STARTED`.
+- `POST-10.3-UX-B7 — independent validation and UX closure` is `VALIDATED / CLOSED`: independent source-of-truth, contract, static, frontend, focused Planning-backend, and secured OpenAPI checks passed. At that closure checkpoint, Phase 10.4 was `READY / NOT STARTED`; ADR-025 now supersedes that phase-status snapshot.
+- `10.4-A — FIRE Contract & Source-of-Truth Audit` is `AUDIT COMPLETE`; its preserved evidence is `FIRE_CONTRACT_AUDIT.md`.
+- `10.4-B — FIRE Contract Lock & ADR-025` is `CONTRACT LOCKED`. `FIRE_CONTRACT.md` is the canonical implementation contract and ADR-025 is accepted.
+- `10.4-C — FIRE Implementation Decomposition & Execution Plan` is `IMPLEMENTATION DECOMPOSITION COMPLETE / AWAITING USER REVIEW`. `FIRE_IMPLEMENTATION_PLAN.md` maps the exact architecture, files, dependencies, tests, gates, risks, and seven-step D1–D7 execution order. No FIRE production code, endpoint, engine, test, migration, persistence, or frontend exists yet; implementation remains `NOT STARTED`.

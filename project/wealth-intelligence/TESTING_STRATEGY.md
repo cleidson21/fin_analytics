@@ -1,6 +1,6 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; Phase 10.3 contracts locked by ADRs 019–022
-**Date:** 2026-09-17
+**Status:** ACTIVE; Phase 10.3 closed; Phase 10.4 contract locked by ADR-025
+**Date:** 2026-09-29
 
 ---
 
@@ -185,11 +185,14 @@ tests/
 - Regression: Goals, Financial Health, and Investments baselines remain unchanged unless a microprocess explicitly authorizes an integration modification.
 
 ### Phase 10.4 — Retirement & Financial Independence (FIRE)
-- Unit: FI target = annual_expenses / withdrawal_rate
-- Unit: compound growth with monthly contributions
-- Unit: gap analysis = FI_target - current_wealth
-- Unit: sensitivity: return ±1%, contribution ±10%
-- Manual: validate against known retirement calculators
+- Unit: exact annual spending and canonical target calculation, including `ROUND_CEILING` cent boundaries.
+- Unit: nonnegative gap, unclamped eight-place progress ratio, exact summary status, and withdrawal capacity derived from the unrounded annual product.
+- Unit: strict Decimal/scale/rate domains and the complete required/forbidden/conditional mode matrix.
+- Unit/integration: `REAL → REAL` and `NOMINAL → REAL` composition, with inflation applied exactly once by Planning.
+- Integration: one authenticated transient endpoint, both allowed wealth selectors, ADR-023 unavailable/ambiguous outcomes, provenance, response nullability, and no writes.
+- Delegation: canonical target equality across summary and solver calls; `TargetAchievementSolver` and `RequiredContributionSolver` remain the only projection/inverse authorities and preserve their exact statuses.
+- Static boundary: no Goal source/mode, Health inference, dividends, macro forecast, external-income offset, persistence, float financial truth, scenario comparison, Portfolio Intelligence, or LLM calculation.
+- Independent validation: compare FIRE-specific Decimal outputs with a separate oracle; production code and Planning solvers cannot generate their own expected values.
 
 ### Phase 10.5 — Portfolio Intelligence
 - Unit: portfolio attribution = price_return + dividend_return + contribution_return
