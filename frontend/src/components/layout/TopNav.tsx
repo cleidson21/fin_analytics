@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const TAB_COLORS: Record<string, string> = {
   "/wealth-intelligence/planning": "#c4b5fd",
+  "/wealth-intelligence/fire": "#c4b5fd",
   "/":              "#4ecf98",  // Visão geral — verde
   "/transactions":  "#7EB8F7",  // Transações — azul
   "/installments":  "#f5a623",  // Parcelamentos — âmbar

@@ -1,5 +1,5 @@
 import { PageLayout } from "@/components/layout/PageLayout";
-import { HeartPulse, Target, Map, Brain, BarChart2, Sparkles } from "lucide-react";
+import { HeartPulse, Target, Map, Brain, BarChart2, Sparkles, Flag } from "lucide-react";
 import Link from "next/link";
 
 export default function WealthIntelligenceDashboard() {
@@ -91,6 +91,12 @@ export default function WealthIntelligenceDashboard() {
             >
               Abrir Planejamento &rarr;
             </Link>
+          </div>
+
+          <div style={{ background: "rgba(196,181,253,0.08)", border: "1px solid rgba(196,181,253,0.2)", borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div aria-hidden="true" style={{ color: "#c4b5fd", display: "flex", height: "24px", alignItems: "center" }}><Flag size={24} strokeWidth={1.8} /></div>
+            <div><h3 style={{ color: "#f1f5f9", fontSize: "16px", fontWeight: 600, margin: "0 0 4px" }}>Independência Financeira</h3><p style={{ color: "#94a3b8", fontSize: "13px", margin: 0, lineHeight: 1.5 }}>Calcule sua meta de independência e explore quando pode alcançá-la.</p></div>
+            <Link href="/wealth-intelligence/fire" style={{ color: "#c4b5fd", fontSize: "13px", fontWeight: 600, marginTop: "auto", display: "inline-block", paddingTop: "8px" }}>Abrir Independência Financeira &rarr;</Link>
           </div>
 
           {/* Coming Soon: Portfolio Intelligence */}

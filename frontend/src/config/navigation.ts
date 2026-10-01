@@ -64,6 +64,7 @@ export const SECTION_TABS = {
     { name: "Metas", href: "/goals", icon: Target },
     { name: "Saúde Financeira", href: "/wealth-intelligence/health", icon: HeartPulse },
     { name: "Planejamento", href: "/wealth-intelligence/planning", icon: LineChart },
+    { name: "Independência Financeira", href: "/wealth-intelligence/fire", icon: Target },
   ],
 } as const;
 
