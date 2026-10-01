@@ -2,6 +2,9 @@
 
 from decimal import Decimal
 
+from backend.application.services.planning_initial_wealth_fact_builder import (
+    build_user_initial_wealth_fact as _build_user_initial_wealth_fact,
+)
 from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
     GoalPlanningFactResponseDTO,
@@ -23,10 +26,6 @@ from backend.domains.planning.assumptions import ProjectionAssumptions
 from backend.domains.planning.facts import (
     GoalPlanningFact,
     InitialWealthFact,
-    InitialWealthScope,
-    InitialWealthSource,
-    PlanningFactAsOf,
-    PlanningFactProvenance,
 )
 from backend.domains.planning.projection import (
     ForwardProjectionResult,
@@ -78,15 +77,9 @@ def build_user_initial_wealth_fact(
 ) -> InitialWealthFact:
     """Create the single allowed caller-provided fact without certified provenance."""
 
-    return InitialWealthFact(
-        source=InitialWealthSource.USER_PROVIDED_SCENARIO,
+    return _build_user_initial_wealth_fact(
         amount=request.amount,
-        as_of=PlanningFactAsOf(observed_at=request.observed_at),
-        scope=InitialWealthScope.USER_PROVIDED_SCENARIO,
-        provenance=PlanningFactProvenance(
-            source_table="planning_request",
-            source_type=InitialWealthSource.USER_PROVIDED_SCENARIO.value,
-        ),
+        observed_at=request.observed_at,
     )
 
 

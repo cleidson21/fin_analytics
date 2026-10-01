@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth Intelligence
-**Status:** ACTIVE (Phase 10.3 and post-10.3 UX closed; Phase 10.4 implementation plan ready; implementation not started)
-**Date:** 2026-09-29
+**Status:** ACTIVE (Phase 10.3 and post-10.3 UX closed; Phase 10.4 implementation in progress; D1–D3 validated)
+**Date:** 2026-09-30
 
 ---
 
@@ -12,7 +12,7 @@
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | 10.0 | DB migration, Goal model enrichment, CRUD, basic UI |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 | Expense analytics, savings rate, spending trends |
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
-| 10.4 | Retirement & Financial Independence (FIRE) | **IMPLEMENTATION PLAN READY / IMPLEMENTATION NOT STARTED** — awaiting user approval for 10.4-D1 | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
+| 10.4 | Retirement & Financial Independence (FIRE) | **IMPLEMENTATION IN PROGRESS** — 10.4-D1–D3 validated; D4 ready/not started | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.5 | Portfolio Intelligence | NOT_STARTED — BOUNDARY APPROVED | existing Investments, 10.3 | Allocation, concentration, diversification, rebalancing analysis, portfolio quality |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
@@ -345,17 +345,17 @@ H. **Independent validation:** adversarially validate the complete boundary befo
 
 **Entry Criteria:** 10.3 COMPLETE
 
-**Status:** `IMPLEMENTATION PLAN READY / IMPLEMENTATION NOT STARTED`
+**Status:** `IMPLEMENTATION IN PROGRESS — 10.4-D1 THROUGH D3 VALIDATED`
 
 | Microtask | Scope | Status |
 |---|---|---|
 | 10.4-A | FIRE contract and source-of-truth audit | AUDIT COMPLETE |
 | 10.4-B | FIRE contract lock and ADR-025 | CONTRACT LOCKED |
 | 10.4-C | Implementation decomposition | IMPLEMENTATION DECOMPOSITION COMPLETE / AWAITING USER REVIEW |
-| 10.4-D1 | FIRE Domain Core | READY / NOT STARTED — requires explicit user approval |
-| 10.4-D2 | FIRE Application Orchestration | NOT STARTED — gated by D1 |
-| 10.4-D3 | FIRE API | NOT STARTED — gated by D2 |
-| 10.4-D4 | FIRE Frontend Foundation | NOT STARTED — gated by D3 |
+| 10.4-D1 | FIRE Domain Core | IMPLEMENTED / VALIDATED — pure Decimal summary core; 27 focused tests passed |
+| 10.4-D2 | FIRE Application Orchestration | IMPLEMENTED / VALIDATED — one wealth resolution, canonical target handoff, REAL Planning composition, provenance continuity |
+| 10.4-D3 | FIRE API | IMPLEMENTED / VALIDATED — authenticated discriminated endpoint, strict Decimal strings, safe mapping/OpenAPI |
+| 10.4-D4 | FIRE Frontend Foundation | READY / NOT STARTED — gated by validated D3 |
 | 10.4-D5 | FIRE Results & UX | NOT STARTED — gated by D4 |
 | 10.4-D6 | Integration & Stabilization | NOT STARTED — gated by D5 |
 | 10.4-D7 | Independent Validation & Closure | NOT STARTED — gated by D6 |
@@ -366,7 +366,7 @@ H. **Independent validation:** adversarially validate the complete boundary befo
 
 The one future authenticated endpoint has three contracted modes: `SUMMARY`, `PROJECTED_DATE`, and `REQUIRED_CONTRIBUTION`. Output is real; return input may be real, or nominal with explicit inflation and one Planning-owned Fisher conversion. Health inference, dividends, external income, Goal linkage, persistence, taxes, longevity, Monte Carlo, FIRE variants, scenario comparison, and portfolio advice are outside the MVP.
 
-`FIRE_IMPLEMENTATION_PLAN.md` is the approved-for-review decomposition authority for D1–D7. No production implementation is authorized by 10.4-C. The next task is `10.4-D1 — FIRE Domain Core`, only after explicit user approval; it must not reopen the locked semantics.
+`FIRE_IMPLEMENTATION_PLAN.md` remains the decomposition authority for D1–D7. `10.4-D1 — FIRE Domain Core`, `10.4-D2 — FIRE Application Orchestration`, and `10.4-D3 — FIRE API` are implemented and validated. The next task is `10.4-D4 — FIRE Frontend Foundation`, which is `READY / NOT STARTED` and must not reopen locked semantics.
 
 ---
 
