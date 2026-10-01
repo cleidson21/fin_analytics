@@ -1,6 +1,6 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; Phase 10.3 closed; Phase 10.4 contract locked by ADR-025
-**Date:** 2026-09-29
+**Status:** ACTIVE; Phase 10.3 and Phase 10.4 closed; Phase 10.5 ready / not started
+**Date:** 2026-10-01
 
 ---
 
@@ -193,6 +193,7 @@ tests/
 - Delegation: canonical target equality across summary and solver calls; `TargetAchievementSolver` and `RequiredContributionSolver` remain the only projection/inverse authorities and preserve their exact statuses.
 - Static boundary: no Goal source/mode, Health inference, dividends, macro forecast, external-income offset, persistence, float financial truth, scenario comparison, Portfolio Intelligence, or LLM calculation.
 - Independent validation: compare FIRE-specific Decimal outputs with a separate oracle; production code and Planning solvers cannot generate their own expected values.
+- **10.4-D7 independent closure (2026-10-01):** `VALIDATED / CLOSED`. Fresh-context review reconciled ADR-025 and the locked FIRE contract against the complete backend/frontend slice. FIRE backend `67 passed`; focused Planning `262 passed`; independent Decimal vectors and real-service REAL/NOMINAL composition passed; live OpenAPI exposed one secured FIRE POST plus five unchanged Planning POSTs; FIRE frontend `13 passed`, locale `57 passed`, full Vitest `77 passed`, TypeScript, focused lint, and production build passed. General backend units were `681 passed, 2 failed`, limited to the unchanged historical Investments/MagicMock sorting debt. No production/test/migration change was made during closure.
 
 ### Phase 10.5 — Portfolio Intelligence
 - Unit: portfolio attribution = price_return + dividend_return + contribution_return

@@ -1,5 +1,13 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.4-D7] — 2026-10-01 — FIRE independent validation and closure
+
+- Independently reconciled ADR-025 and `FIRE_CONTRACT.md` against the complete FIRE domain, orchestration, API, frontend, source/provenance, read-only, and deferred-feature boundaries. The implementation remains a thin deterministic REAL-basis layer over Planning with one selected wealth fact and no persistence.
+- Repeated FIRE backend (`67 passed`), focused Planning (`262 passed`), FIRE frontend (`13 passed`), locale (`57 passed`), full Vitest (`77 passed`), TypeScript, focused lint, production build, live secured OpenAPI, independent Decimal golden vectors, and real-service REAL/NOMINAL composition. General backend units reproduced only the two unchanged historical Investments/MagicMock failures (`681 passed, 2 failed`).
+- `10.4-A = AUDIT COMPLETE`; `10.4-B = CONTRACT LOCKED`; `10.4-C = IMPLEMENTATION PLAN COMPLETE`; `10.4-D1–D5 = IMPLEMENTED / VALIDATED`; `10.4-D6 = VALIDATED / STABILIZED`; `10.4-D7 = VALIDATED / CLOSED`; Phase 10.4 FIRE is `VALIDATED / CLOSED`. Phase 10.5 Portfolio Intelligence is `READY / NOT STARTED`. No code, test, migration, commit, or push was created during closure.
+
+---
+
 ## [POST-10.3-UX-B7] — 2026-09-27 — Independent validation and UX closure
 
 - Independently reconciled ADR-024, real Planning UX implementation, source boundaries, accessibility/living states, and documentation. The user-approved UX-B6 manual review is recorded as `VALIDATED`.

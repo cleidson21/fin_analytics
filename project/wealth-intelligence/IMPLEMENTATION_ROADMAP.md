@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth Intelligence
-**Status:** ACTIVE (Phase 10.3 and post-10.3 UX closed; Phase 10.4 implementation in progress; D1–D5 validated)
-**Date:** 2026-09-30
+**Status:** ACTIVE (Phase 10.3, post-10.3 UX, and Phase 10.4 FIRE validated / closed; Phase 10.5 ready / not started)
+**Date:** 2026-10-01
 
 ---
 
@@ -12,8 +12,8 @@
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | 10.0 | DB migration, Goal model enrichment, CRUD, basic UI |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 | Expense analytics, savings rate, spending trends |
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
-| 10.4 | Retirement & Financial Independence (FIRE) | **IMPLEMENTATION IN PROGRESS** — 10.4-D1–D5 validated; D6 ready/not started | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
-| 10.5 | Portfolio Intelligence | NOT_STARTED — BOUNDARY APPROVED | existing Investments, 10.3 | Allocation, concentration, diversification, rebalancing analysis, portfolio quality |
+| 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
+| 10.5 | Portfolio Intelligence | **READY / NOT STARTED** — BOUNDARY APPROVED | existing Investments, 10.4 | Allocation, concentration, diversification, rebalancing analysis, portfolio quality |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
 | 10.8 | LLM Provider Foundation | NOT_STARTED | 10.7 | LLMProvider abstraction, Ollama + Gemini |
@@ -345,20 +345,20 @@ H. **Independent validation:** adversarially validate the complete boundary befo
 
 **Entry Criteria:** 10.3 COMPLETE
 
-**Status:** `IMPLEMENTATION IN PROGRESS — 10.4-D1 THROUGH D5 VALIDATED`
+**Status:** `VALIDATED / CLOSED`
 
 | Microtask | Scope | Status |
 |---|---|---|
 | 10.4-A | FIRE contract and source-of-truth audit | AUDIT COMPLETE |
 | 10.4-B | FIRE contract lock and ADR-025 | CONTRACT LOCKED |
-| 10.4-C | Implementation decomposition | IMPLEMENTATION DECOMPOSITION COMPLETE / AWAITING USER REVIEW |
+| 10.4-C | Implementation decomposition | IMPLEMENTATION PLAN COMPLETE |
 | 10.4-D1 | FIRE Domain Core | IMPLEMENTED / VALIDATED — pure Decimal summary core; 27 focused tests passed |
 | 10.4-D2 | FIRE Application Orchestration | IMPLEMENTED / VALIDATED — one wealth resolution, canonical target handoff, REAL Planning composition, provenance continuity |
 | 10.4-D3 | FIRE API | IMPLEMENTED / VALIDATED — authenticated discriminated endpoint, strict Decimal strings, safe mapping/OpenAPI |
 | 10.4-D4 | FIRE Frontend Foundation | IMPLEMENTED / VALIDATED — typed client, strict builders, pt-BR form inputs, mode disclosure, minimal entry points |
 | 10.4-D5 | FIRE Results & UX | IMPLEMENTED / VALIDATED — target-first presentation, provenance, living result states, accessibility, and string-safe rendering |
-| 10.4-D6 | Integration & Stabilization | READY / NOT STARTED — gated by validated D5 |
-| 10.4-D7 | Independent Validation & Closure | NOT STARTED — gated by D6 |
+| 10.4-D6 | Integration & Stabilization | VALIDATED / STABILIZED — consolidated backend/frontend, OpenAPI, authority, read-only, and regression evidence |
+| 10.4-D7 | Independent Validation & Closure | VALIDATED / CLOSED — fresh-context contract, implementation, oracle, regression, OpenAPI, frontend, and boundary review passed |
 
 **Authority:** ADR-025 and `FIRE_CONTRACT.md`.
 
@@ -366,13 +366,15 @@ H. **Independent validation:** adversarially validate the complete boundary befo
 
 The one future authenticated endpoint has three contracted modes: `SUMMARY`, `PROJECTED_DATE`, and `REQUIRED_CONTRIBUTION`. Output is real; return input may be real, or nominal with explicit inflation and one Planning-owned Fisher conversion. Health inference, dividends, external income, Goal linkage, persistence, taxes, longevity, Monte Carlo, FIRE variants, scenario comparison, and portfolio advice are outside the MVP.
 
-`FIRE_IMPLEMENTATION_PLAN.md` remains the decomposition authority for D1–D7. `10.4-D1` through `10.4-D5` are implemented and validated. The next task is `10.4-D6 — Integration & Stabilization`, which is `READY / NOT STARTED` and must not reopen locked semantics.
+`FIRE_IMPLEMENTATION_PLAN.md` remains the decomposition authority for D1–D7. `10.4-D1` through `10.4-D5` are implemented and validated; D6 is validated/stabilized; D7 independently validated and closed the phase without reopening locked semantics. Phase 10.5 is `READY / NOT STARTED`.
 
 ---
 
 ### PHASE 10.5 — Portfolio Intelligence
 
-**Entry Criteria:** 10.3 COMPLETE, existing Investments stable
+**Entry Criteria:** 10.4 COMPLETE, existing Investments stable
+
+**Status:** `READY / NOT STARTED`
 
 **Approved boundary only (ADR-022):** Future allocation, concentration, diversification, attribution, rebalance analysis, portfolio quality, and asset-level intelligence. Planning does not select assets, recommend investments, or infer future returns from portfolio composition/history.
 

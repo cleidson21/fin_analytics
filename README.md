@@ -189,8 +189,8 @@ graph TD
 | **10.1**  | Fundação das Metas (CRUD + progresso)               | ✅ Concluído |
 | **10.2**  | Saúde Financeira (histórico, anomalias, categorias) | ✅ Concluído |
 | **10.3**  | Planejamento: cálculos, projeções e simulações   | ✅ Validated / Closed |
-| **10.4**  | Aposentadoria / FIRE / Independência Financeira      | 🟢 Ready / Not Started |
-| **10.5**  | Inteligência da Carteira (análise de posições)    | ⏳ Pendente   |
+| **10.4**  | Aposentadoria / FIRE / Independência Financeira      | ✅ Validated / Closed |
+| **10.5**  | Inteligência da Carteira (análise de posições)    | 🟢 Ready / Not Started |
 | **10.6**  | Alocação, Rebalanceamento e Watchlist               | ⏳ Pendente   |
 | **10.7**  | Mercado, Notícias e Radar de Oportunidades           | ⏳ Pendente   |
 | **10.8**  | Ollama / LLM / IA local                               | ⏳ Pendente   |

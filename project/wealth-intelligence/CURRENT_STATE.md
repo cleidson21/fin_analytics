@@ -1,5 +1,5 @@
 # Current Repository State
-**Updated:** 2026-09-30 (Phase 10.4-D1 through D5 validated; D6 not started)
+**Updated:** 2026-10-01 (Phase 10.4 FIRE validated / closed)
 
 This document reflects the VERIFIED reality of the repository as of the baseline audit.
 
@@ -19,8 +19,8 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 | **Goals Frontend** | IMPLEMENTED / VALIDATED | `frontend/src/app/goals/`, `/wealth-intelligence` hub | Complete |
 | **Financial Health** | **PHASE 10.2 COMPLETED / MERGED; 10.2.10-C VALIDATED** | `backend/domains/health/repository.py`, `domains/health/service.py`, `api/routers/financial_health.py`, `frontend/src/app/wealth-intelligence/health/` | Complete |
 | **Planning & Projection** | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. Post-10.3 UX is `VALIDATED / CLOSED`; UX-B1–UX-B7 are validated. | ADRs 019–024; `backend/domains/planning/`; `frontend/src/lib/planning.ts`; `frontend/src/lib/planningLocale.ts`; `PLANNING_UX_CONTRACT.md` | Remains the reusable authority for FIRE projection/solvers |
-| **Retirement & Financial Independence (FIRE)** | **IMPLEMENTATION IN PROGRESS.** 10.4-D1 through D5 are `IMPLEMENTED / VALIDATED`; D6 is ready/not started. | ADR-022, ADR-025, `FIRE_CONTRACT.md`; `FIRE_IMPLEMENTATION_PLAN.md`; FIRE backend and frontend | 10.4-D6 Integration & Stabilization |
-| **Portfolio Intelligence** | NOT STARTED — BOUNDARY ONLY | ADR-022 | Phase 10.5 |
+| **Retirement & Financial Independence (FIRE)** | **VALIDATED / CLOSED.** 10.4-A audit complete; 10.4-B contract locked; 10.4-C implementation plan complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed. | ADR-022, ADR-025, `FIRE_CONTRACT.md`; `FIRE_IMPLEMENTATION_PLAN.md`; FIRE backend and frontend | Complete |
+| **Portfolio Intelligence** | READY / NOT STARTED — BOUNDARY APPROVED | ADR-022 | Phase 10.5 |
 | **Rebalancing** | NOT STARTED | — | Phase 10.6 |
 | **Watchlist** | NOT STARTED | — | Phase 10.6 |
 | **BCB / Macro Data** | NOT STARTED | — | Phase 10.7 |
@@ -75,7 +75,7 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 - TanStack Query 5.101
 - Zustand 5.0.14
 - Active wealth pages: /wealth, /wealth/patrimonio, /wealth/allocation, /wealth/dividends, /wealth/evolution, /wealth/asset, /wealth/performance, /wealth/positions
-- Active Wealth Intelligence pages: /wealth-intelligence, /wealth-intelligence/health, /goals
+- Active Wealth Intelligence pages: /wealth-intelligence, /wealth-intelligence/health, /wealth-intelligence/planning, /wealth-intelligence/fire, /goals
 
 ---
 
@@ -93,7 +93,7 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 ## What the System Does NOT Do (verified)
 
 - No real-time market data streaming (15-min cache only)
-- No retirement projection calculations
+- No actuarial, Monte Carlo, longevity, tax, or probability-of-success retirement model
 - No Planning-derived sustainable contribution-capacity calculation; TSK-10.3.7-A concluded `DEFERRED — INSUFFICIENT CONTRACT / DATA`.
 - No investment-capacity calculation; deferred to Planning / Portfolio Intelligence.
 - No composite financial-stability metric or score; deferred until a deterministic contract is approved.
@@ -145,9 +145,11 @@ This document reflects the VERIFIED reality of the repository as of the baseline
 - `POST-10.3-UX-B7 — independent validation and UX closure` is `VALIDATED / CLOSED`: independent source-of-truth, contract, static, frontend, focused Planning-backend, and secured OpenAPI checks passed. At that closure checkpoint, Phase 10.4 was `READY / NOT STARTED`; ADR-025 now supersedes that phase-status snapshot.
 - `10.4-A — FIRE Contract & Source-of-Truth Audit` is `AUDIT COMPLETE`; its preserved evidence is `FIRE_CONTRACT_AUDIT.md`.
 - `10.4-B — FIRE Contract Lock & ADR-025` is `CONTRACT LOCKED`. `FIRE_CONTRACT.md` is the canonical implementation contract and ADR-025 is accepted.
-- `10.4-C — FIRE Implementation Decomposition & Execution Plan` is `IMPLEMENTATION DECOMPOSITION COMPLETE / AWAITING USER REVIEW`. `FIRE_IMPLEMENTATION_PLAN.md` maps the exact architecture, files, dependencies, tests, gates, risks, and seven-step D1–D7 execution order. No FIRE production code, endpoint, engine, test, migration, persistence, or frontend exists yet; implementation remains `NOT STARTED`.
+- `10.4-C — FIRE Implementation Decomposition & Execution Plan` is `IMPLEMENTATION PLAN COMPLETE`. `FIRE_IMPLEMENTATION_PLAN.md` remains the exact architecture, file, dependency, test, gate, risk, and D1–D7 execution authority.
 - `10.4-D1 — FIRE Domain Core` is `IMPLEMENTED / VALIDATED`: `backend/domains/fire/summary.py` provides immutable Decimal-only summary input/output and exactly the locked annual spending, CEILING target, nonnegative gap, unclamped eight-place progress, raw-annual monthly withdrawal, and two-status calculation. Its focused pure unit suite passes (`27 passed`); no Planning, API, database, persistence, migration, or frontend file changed.
-- `10.4-D2 — FIRE Application Orchestration` is `IMPLEMENTED / VALIDATED`: `FireAnalysisService` resolves one Planning wealth fact, reuses the D1 canonical target, delegates zero or one Planning solver, preserves fact provenance/statuses, and fixes output/target basis to REAL. The manual fact builder was extracted to the application layer with the existing Planning API behavior preserved. FIRE D1+D2 tests (`38 passed`), focused Planning domain/resolver tests (`151 passed`), and Planning API foundation (`41 passed`) pass. No FIRE API/router, frontend, migration, persistence, or Planning mathematics changed. `10.4-D3 = READY / NOT STARTED`.
-- `10.4-D3 — FIRE API` is `IMPLEMENTED / VALIDATED`: the single authenticated `POST /api/v1/fire/analysis` exposes discriminated SUMMARY, PROJECTED_DATE, and REQUIRED_CONTRIBUTION requests; exact Decimal-string responses; approved provenance; and safe local error handling. FIRE API tests (`29 passed`), combined FIRE tests (`67 passed`), and focused Planning regression (`216 passed`) pass. No frontend, migration, persistence, or Planning-domain change occurred. `10.4-D4 = READY / NOT STARTED`.
-- `10.4-D4 — FIRE Frontend Foundation` is `IMPLEMENTED / VALIDATED`: the route, strict typed API client, form/request builders, pt-BR inputs, source selector, three intent modes, nominal advanced disclosure, and minimal navigation/hub entry are available. FIRE builder tests (`6 passed`), TypeScript, focused lint, and production build pass. No backend, migration, persistence, chart, or financial browser calculation was added. `10.4-D5 = READY / NOT STARTED`.
-- `10.4-D5 — FIRE Results & UX` is `IMPLEMENTED / VALIDATED`: target-first results render only API facts with string-safe BRL/rate/date formatting, compact assumptions/provenance, status-specific Planning outcomes, first-load and recalculation states, dirty-result preservation, accessible errors, and responsive reduced-motion surfaces. FIRE frontend tests (`13 passed`), TypeScript, focused lint, and production build pass. No backend, persistence, chart, or browser financial calculation was added. `10.4-D6 = READY / NOT STARTED`.
+- `10.4-D2 — FIRE Application Orchestration` is `IMPLEMENTED / VALIDATED`: `FireAnalysisService` resolves one Planning wealth fact, reuses the D1 canonical target, delegates zero or one Planning solver, preserves fact provenance/statuses, and fixes output/target basis to REAL. The manual fact builder was extracted to the application layer with the existing Planning API behavior preserved. FIRE D1+D2 tests (`38 passed`), focused Planning domain/resolver tests (`151 passed`), and Planning API foundation (`41 passed`) pass. No FIRE API/router, frontend, migration, persistence, or Planning mathematics changed.
+- `10.4-D3 — FIRE API` is `IMPLEMENTED / VALIDATED`: the single authenticated `POST /api/v1/fire/analysis` exposes discriminated SUMMARY, PROJECTED_DATE, and REQUIRED_CONTRIBUTION requests; exact Decimal-string responses; approved provenance; and safe local error handling. FIRE API tests (`29 passed`), combined FIRE tests (`67 passed`), and focused Planning regression (`216 passed`) pass. No frontend, migration, persistence, or Planning-domain change occurred.
+- `10.4-D4 — FIRE Frontend Foundation` is `IMPLEMENTED / VALIDATED`: the route, strict typed API client, form/request builders, pt-BR inputs, source selector, three intent modes, nominal advanced disclosure, and minimal navigation/hub entry are available. FIRE builder tests (`6 passed`), TypeScript, focused lint, and production build pass. No backend, migration, persistence, chart, or financial browser calculation was added.
+- `10.4-D5 — FIRE Results & UX` is `IMPLEMENTED / VALIDATED`: target-first results render only API facts with string-safe BRL/rate/date formatting, compact assumptions/provenance, status-specific Planning outcomes, first-load and recalculation states, dirty-result preservation, accessible errors, and responsive reduced-motion surfaces. FIRE frontend tests (`13 passed`), TypeScript, focused lint, and production build pass. No backend, persistence, chart, or browser financial calculation was added.
+- `10.4-D6 — FIRE Integration & Stabilization` is `VALIDATED / STABILIZED`: consolidated FIRE backend (`67 passed`), focused Planning (`254 passed`), frontend Vitest (`77 passed`), locale (`57 passed`), TypeScript, lint, build, authenticated OpenAPI, source-of-truth, read-only, and authority audits passed. General backend units produced only the unchanged two historical Investments/MagicMock failures (`681 passed, 2 failed`). No defect or production change was required.
+- `10.4-D7 — FIRE Independent Validation & Closure` is `VALIDATED / CLOSED`: fresh-context review independently reconciled ADR-025, the complete backend/frontend implementation, real service composition, an external Decimal oracle, live secured OpenAPI, source/provenance, read-only and deferred-feature boundaries. FIRE backend (`67 passed`), focused Planning (`262 passed`), frontend Vitest (`77 passed`), locale (`57 passed`), TypeScript, focused lint, and production build passed. General backend units reproduced only the two unchanged historical Investments/MagicMock failures (`681 passed, 2 failed`). Phase 10.4 is `VALIDATED / CLOSED`; Phase 10.5 is `READY / NOT STARTED`.

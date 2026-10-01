@@ -1,5 +1,5 @@
 # Master Plan & Status — FINANALYTICS Wealth Intelligence
-**Updated:** 2026-09-30 (Phase 10.4-D1 through D5 validated; D6 not started)
+**Updated:** 2026-10-01 (Phase 10.4 FIRE validated / closed)
 
 ---
 
@@ -36,8 +36,8 @@ The platform provides:
 | 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | Complete |
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 complete |
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.1–10.3.6, 10.3.9–10.3.12 validated; 10.3.7-A deferred; 10.3.8 automated validation passed / Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete. ADR-024 post-closure UX contract implemented / validated; UX-B1–UX-B7 validated; POST-10.3 UX closed. | 10.1 and 10.2 complete |
-| 10.4 | Retirement & Financial Independence (FIRE) | **IMPLEMENTATION IN PROGRESS** — 10.4-A audit complete; 10.4-B contract locked under ADR-025; 10.4-C plan ready; 10.4-D1–D5 implemented/validated; D6 ready/not started | 10.3 complete |
-| 10.5 | Portfolio Intelligence | NOT STARTED — BOUNDARY APPROVED | Stable investments, 10.3 complete |
+| 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — 10.4-A audit complete; 10.4-B contract locked under ADR-025; 10.4-C implementation plan complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 complete |
+| 10.5 | Portfolio Intelligence | **READY / NOT STARTED** — BOUNDARY APPROVED | Stable investments, 10.4 complete |
 | 10.6 | Rebalancing & Watchlist | NOT STARTED | 10.5 complete |
 | 10.7 | External Market Intelligence | NOT STARTED | 10.5 complete, BCB/news validated |
 | 10.8 | LLM Provider Foundation | NOT STARTED | 10.7 complete, Ollama installed |
