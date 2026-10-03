@@ -1,3 +1,9 @@
+# Frontend Agent Addendum
+
+This file adds frontend-specific rules to the repository-root `AGENTS.md`. The
+root guide prevails on financial authority, contract safety, privacy, Git
+safety, and documentation governance. Nothing below weakens those rules.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

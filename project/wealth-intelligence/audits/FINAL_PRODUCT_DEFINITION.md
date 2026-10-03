@@ -1,6 +1,11 @@
 # Final Product Definition — FINANALYTICS Wealth Intelligence
-**Status:** PROPOSED
+**Status:** `SUPERSEDED / HISTORICAL PRODUCT INPUT`
 **Date:** 2026-09-08
+
+> Preserved as the 10.0 product narrative. `../MASTER_PLAN.md` now owns current
+> product vision and `../ARCHITECTURE.md` owns the product map. Examples below
+> are historical aspirations, not current capability, approved methodology,
+> route/widget contract, or roadmap authority.
 
 ---
 

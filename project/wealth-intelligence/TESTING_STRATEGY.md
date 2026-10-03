@@ -1,6 +1,6 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; Phase 10.3 and Phase 10.4 closed; Phase 10.5 ready / not started
-**Date:** 2026-10-01
+**Status:** ACTIVE; 10.R1 architecture/docs locked; 10.R2 ready/not started; 10.5-B paused pending R7
+**Date:** 2026-10-02
 
 ---
 
@@ -16,6 +16,12 @@ Every phase ends with:
 
 Browser-based E2E automation is NOT the default validation strategy.
 
+Validation must test repository reality, contracts, and independent oracles;
+status prose is never sufficient evidence. For documentation-only locks, verify
+canonical ownership, link/path validity, current-vs-future labeling, scope of
+the diff, and an empty Git index. Do not run production test suites merely to
+create noise when no code or contract behavior changed.
+
 ---
 
 ## 2. Test Categories
@@ -24,34 +30,33 @@ Browser-based E2E automation is NOT the default validation strategy.
 Every calculation service MUST have unit tests with known inputs/outputs.
 
 Priority areas:
-- GoalCalculationService: required_contribution, projected_completion, progress_pct
-- RetirementProjectionService: compound interest, gap analysis, scenarios
-- SimulationEngine: what-if calculations
-- PortfolioAttributionService: contribution attribution, exposure calculations
-- Financial Health services: cashflow, savings rate, historical/category trends, and anomaly detection
-- RebalancingEngine: target vs current deviation, tolerance bands
-- Technical indicators: RSI, SMA (verify against manual calculation)
-- LLM output validator: schema validation, rejection cases
-- Prompt injection sanitizer: detect and remove injection patterns
+- Financial Health services: cashflow, savings rate, history, category trends,
+  and anomaly rules.
+- Planning engines: projection, target achievement, required contribution, Goal
+  orchestration, and scenario comparison.
+- FIRE summary and composition over the certified Planning solvers.
+- Future Smart/External Context, Portfolio Intelligence, and AI services only
+  after their phase contracts approve exact behavior.
 
 ### Integration Tests (backend)
-- Database: CRUD operations for every new domain model
-- User isolation: access attempts across users must be rejected (HTTP 403 or 404)
+- Database: persistence and read behavior only where an approved contract adds
+  or consumes a model.
+- Ownership: wrong-user, ambiguous-scope, and non-enumeration behavior according
+  to the domain contract.
 - Market data: yfinance mock (avoid real network calls in CI)
-- BCB data: mock HTTP response
-- News: mock RSS feed parsing
-- LLM: mock LLM provider response (never call real LLM in tests)
-- APScheduler: test job registration (not execution)
+- Future external providers: mock HTTP/provider responses after R3 approval.
+- Future LLM: mock provider/tool responses; never require paid/live AI in the
+  default suite.
 
-### Contract Tests (LLM output)
-- InsightResponse Pydantic schema: all required fields present
-- InsightSection: is_ai_interpretation always True for AI content
-- data_references: all cited fields exist in input context
-- confidence: valid enum value
-- No numerical claims outside expected ranges
+### Contract tests
+- Exact request/response DTO parity, strict Decimal strings, enums, dates,
+  nullability, provenance, and error/status semantics.
+- Future AI structured-output/tool schemas only after R4 locks them; verify that
+  financial numbers originate in tool results, not model arithmetic.
 
 ### Security Tests
-- User isolation: every endpoint tested with wrong user_id
+- Ownership/isolation: every new or changed endpoint tested against its explicit
+  authenticated scope, including wrong-user and ambiguity cases where relevant
 - Prompt injection: test with known injection patterns in news content
 - JWT: expired token, invalid token, missing token
 - CORS: validate origin rejection (when production CORS configured)
@@ -59,7 +64,11 @@ Priority areas:
 
 ---
 
-## 3. Test Structure [PROPOSED]
+## 3. Historical test-structure proposal
+
+The original 10.0 tree below is preserved as planning input only. Actual test
+paths in the repository and each accepted phase contract take precedence; do
+not create placeholder suites merely to match this sketch.
 
 ```
 tests/
@@ -196,13 +205,53 @@ tests/
 - **10.4-D7 independent closure (2026-10-01):** `VALIDATED / CLOSED`. Fresh-context review reconciled ADR-025 and the locked FIRE contract against the complete backend/frontend slice. FIRE backend `67 passed`; focused Planning `262 passed`; independent Decimal vectors and real-service REAL/NOMINAL composition passed; live OpenAPI exposed one secured FIRE POST plus five unchanged Planning POSTs; FIRE frontend `13 passed`, locale `57 passed`, full Vitest `77 passed`, TypeScript, focused lint, and production build passed. General backend units were `681 passed, 2 failed`, limited to the unchanged historical Investments/MagicMock sorting debt. No production/test/migration change was made during closure.
 
 ### Phase 10.5 — Portfolio Intelligence
-- Unit: portfolio attribution = price_return + dividend_return + contribution_return
-- Unit: sector exposure = sector_value / total_portfolio
-- Unit: concentration score
-- Integration: attribution API with test portfolio
-- Manual: verify attribution sums to total portfolio return
+- 10.5-B remains paused until R7; 10.5-A is the preserved audit authority.
+- Contract tests must first lock one governed position-valuation basis,
+  completeness, temporal alignment, ownership, Decimal precision/rounding,
+  provenance, and empty/partial/error semantics.
+- When authorized, unit coverage may include allocation, largest position, and
+  fixed top-3/top-5 concentration as deterministic facts from one complete,
+  aligned valuation set.
+- Performance, attribution, benchmark comparison, yield, risk, score, target
+  allocation, and rebalancing tests are not approved by the MVP audit.
+- Frontend validation must prove presentation-only behavior and no mixed
+  fallback/browser financial authority.
 
-### Phase 10.7 — External Data
+### Phase 10.R2 — Smart Financial Context
+- Contract declared versus observed context, feature-specific source choice,
+  eligibility, provenance, freshness, confirmation, and override semantics.
+- Test Profile purpose limitation, ownership, persistence, and no automatic
+  mutation from transactions.
+- Recurring-income candidates require deterministic evidence, transfer/investment
+  exclusions, cadence/calendar cases, human confirmation, and insufficient-data
+  behavior.
+
+### Phase 10.R3 — External Context
+- Test provider adapters behind one normalization boundary, semantic distinction
+  between observation and expectation, unit/currency/horizon, cache/freshness,
+  timeout/error/stale behavior, and no silent replacement of internal facts.
+
+### Phase 10.R4 — AI Runtime Foundation
+- Test provider abstraction without financial-domain coupling, approved tool
+  authorization, minimum context, secret absence, structured output, audit,
+  timeout/error/cost telemetry, injection boundaries, and read-only behavior.
+- Real provider calls are not the default automated-test strategy.
+
+### Phase 10.R5 — Design / Navigation / Theme
+- Validate System/Light/Dark, persistence/system preference, semantic tokens,
+  contrast, charts, reduced motion, keyboard/focus, responsive layouts, living
+  states, deep links, and absence of financial-contract changes.
+
+### Phase 10.R6 — Experience Recomposition
+- Regress Goals, Health, Planning, and FIRE independently; verify smart values,
+  provenance, source switching, contextual actions, and no duplicated engines.
+
+### Phase 10.R7 — Independent Validation
+- Use a fresh context to challenge architecture, documentation precedence,
+  context semantics, external-data authority, AI/privacy/secrets, design/theme,
+  navigation, recomposed journeys, and regressions before closing realignment.
+
+### Historical 10.7 test input — superseded by 10.R3
 - Unit: news sanitizer removes injection patterns
 - Unit: BCB data parsing
 - Integration: BCB mock HTTP
@@ -210,7 +259,7 @@ tests/
 - Security: prompt injection test cases (10+ known patterns)
 - Manual: verify external data labels/timestamps appear in UI
 
-### Phase 10.8 — LLM Provider
+### Historical 10.8 test input — superseded by 10.R4
 - Unit: OllamaProvider.complete (mock HTTP)
 - Unit: GeminiProvider.complete (mock)
 - Unit: InsightResponse schema validation (valid + invalid cases)
@@ -219,7 +268,7 @@ tests/
 - Security: injection in context → sanitized before LLM
 - Manual: run real briefing generation, verify content quality
 
-### Phase 10.9 — AI Briefing
+### Historical 10.9 test input — superseded by 10.R4 / 10.R6
 - Unit: WealthContextBuilder produces valid context
 - Unit: BriefingService generates valid InsightResponse
 - Integration: briefing endpoint with mocked LLM

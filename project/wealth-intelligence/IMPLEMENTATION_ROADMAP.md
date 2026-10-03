@@ -1,10 +1,49 @@
-# Implementation Roadmap — Wealth Intelligence
-**Status:** ACTIVE (Phase 10.3, post-10.3 UX, and Phase 10.4 FIRE validated / closed; Phase 10.5 ready / not started)
-**Date:** 2026-10-01
+# Implementation Roadmap — Wealth OS
+**Status:** `ACTIVE QUEUE — 10.R2 READY / NOT STARTED`
+**Date:** 2026-10-02
 
 ---
 
-## Roadmap Overview
+## Active queue
+
+| Order | Phase | Outcome | Status | Hard dependency |
+|---:|---|---|---|---|
+| 1 | 10.R2 | Smart Financial Context: Profile persistence contract, declared context, observed recurring-income candidates, feature-specific source choice, smart values, provenance, override | `READY / NOT STARTED` | R1 locked |
+| 2 | 10.R3 | External Context Layer: adapters, normalization, cache/observation, semantic class, freshness/status, macro/reference provider foundations | `NOT STARTED` | R2 taxonomy and context boundary |
+| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
+| 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
+| 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
+| 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
+| 7 | 10.5-B | Resume Portfolio Intelligence contract lock using the realigned architecture | `PAUSED / PENDING WEALTH OS REALIGNMENT` | R7 closure; preserve 10.5-A |
+
+R2 must not become an AI feature. R3 must not silently implement the final
+Explore product. R4 is infrastructure, not the complete Copilot. R5 cannot
+rewrite financial engines. R6 composes validated capabilities and may change
+their interaction/presentation only within explicit contracts. R7 decides
+realignment closure.
+
+The main implementation path remains sequential. R3 provider research and R5
+token/visual audits may run in parallel after their inputs are stable, but no
+parallel activity changes the official dependency gates.
+
+## Closed and preserved baseline
+
+| Phase | Status |
+|---|---|
+| 10.1 Goals | `IMPLEMENTED / VALIDATED` |
+| 10.2 Financial Health | `IMPLEMENTED / VALIDATED` |
+| 10.3 Planning | `VALIDATED / CLOSED` |
+| POST-10.3 UX | `VALIDATED / CLOSED` |
+| 10.4 FIRE | `VALIDATED / CLOSED` |
+| 10.5-A Portfolio audit | `AUDIT COMPLETE / USER DECISIONS RESOLVED` |
+| 10.R0 | `AUDIT COMPLETE` |
+| 10.R1 | `ARCHITECTURE / DOCUMENTATION LOCKED` |
+
+The former 10.6–10.12 sequence is `SUPERSEDED / HISTORICAL` as an active queue.
+Its useful intentions are represented by R2–R7 or remain post-10.5 candidates;
+it does not independently authorize implementation.
+
+## Historical roadmap overview (non-authorizing)
 
 | Phase | Name | Status | Depends On | Est. Scope |
 |-------|------|--------|-----------|------------|
@@ -13,7 +52,9 @@
 | 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 | Expense analytics, savings rate, spending trends |
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
-| 10.5 | Portfolio Intelligence | **READY / NOT STARTED** — BOUNDARY APPROVED | existing Investments, 10.4 | Allocation, concentration, diversification, rebalancing analysis, portfolio quality |
+| 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 READY / NOT STARTED; R3–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
 | 10.8 | LLM Provider Foundation | NOT_STARTED | 10.7 | LLMProvider abstraction, Ollama + Gemini |
@@ -22,9 +63,19 @@
 | 10.11 | Docker & Operations | NOT_STARTED | All backend phases | Containerization, compose, ops guide |
 | 10.12 | Global UX / Visual Polish | NOT_STARTED | All UI phases | Design system, typography, final visual pass |
 
+The legacy 10.6–10.12 sequence remains historical planning input. R1 reconciled
+its duplicated external-data, AI, and UX responsibilities into R2–R7; the
+legacy sequence no longer authorizes implementation independently.
+
 ---
 
-## Post-10.3 Planning UX implementation
+## Historical execution records (non-authorizing)
+
+The remainder of this file preserves completed phase contracts and former
+10.6–10.12 proposals as historical evidence. Old `next` or `not started` labels
+are point-in-time records and do not override the Active queue above.
+
+### Post-10.3 Planning UX implementation
 
 This sequence is contract-preserving refinement, not a reopening of Phase 10.3
 and not the start of FIRE. ADR-024 and `PLANNING_UX_CONTRACT.md` are authoritative.
@@ -366,7 +417,7 @@ H. **Independent validation:** adversarially validate the complete boundary befo
 
 The one future authenticated endpoint has three contracted modes: `SUMMARY`, `PROJECTED_DATE`, and `REQUIRED_CONTRIBUTION`. Output is real; return input may be real, or nominal with explicit inflation and one Planning-owned Fisher conversion. Health inference, dividends, external income, Goal linkage, persistence, taxes, longevity, Monte Carlo, FIRE variants, scenario comparison, and portfolio advice are outside the MVP.
 
-`FIRE_IMPLEMENTATION_PLAN.md` remains the decomposition authority for D1–D7. `10.4-D1` through `10.4-D5` are implemented and validated; D6 is validated/stabilized; D7 independently validated and closed the phase without reopening locked semantics. Phase 10.5 is `READY / NOT STARTED`.
+`FIRE_IMPLEMENTATION_PLAN.md` remains the decomposition authority for D1–D7. `10.4-D1` through `10.4-D5` are implemented and validated; D6 is validated/stabilized; D7 independently validated and closed the phase without reopening locked semantics. Phase 10.5-A subsequently completed its audit; 10.5-B is paused by the Wealth OS realignment gate.
 
 ---
 
@@ -374,13 +425,18 @@ The one future authenticated endpoint has three contracted modes: `SUMMARY`, `PR
 
 **Entry Criteria:** 10.4 COMPLETE, existing Investments stable
 
-**Status:** `READY / NOT STARTED`
+**Status:** `10.5-A AUDIT COMPLETE / USER DECISIONS RESOLVED; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT`
+
+| Microtask | Scope | Status |
+|---|---|---|
+| 10.5-A | Portfolio Intelligence contract and source-of-truth audit | AUDIT COMPLETE / USER DECISIONS RESOLVED |
+| 10.5-B | Portfolio Intelligence contract lock | PAUSED / PENDING WEALTH OS REALIGNMENT |
 
 **Approved boundary only (ADR-022):** Future allocation, concentration, diversification, attribution, rebalance analysis, portfolio quality, and asset-level intelligence. Planning does not select assets, recommend investments, or infer future returns from portfolio composition/history.
 
-No Portfolio Intelligence implementation is authorized during Phase 10.3 contract lock. Existing `/wealth` remains stable and unchanged.
+The 10.5-A evidence is preserved in `PORTFOLIO_INTELLIGENCE_CONTRACT_AUDIT.md`. It found a certified aggregate monthly investment-wealth fact, but no currently reconciled position-valuation authority and no locally certified portfolio-performance engine. No Portfolio Intelligence implementation is authorized before 10.5-B locks the source, temporal, precision, ownership, and MVP metric contracts. Existing `/wealth` remains unchanged by 10.5-A.
 
-**Tests:** Attribution calculation unit tests, integration tests against test portfolio data
+**Tests:** To be locked in 10.5-B; no attribution or performance test contract is accepted by 10.5-A.
 
 ---
 

@@ -1,7 +1,15 @@
 
 # VISÃO DO PRODUTO — WEALTH INTELIGENCE
 
-> **Papel deste documento:** `HIGH-LEVEL PRODUCT VISION`. Os contratos executáveis de microfase e o estado canônico ficam em `project/wealth-intelligence/`.
+> **Status:** `SUPERSEDED / HISTORICAL PRODUCT INPUT` (2026-10-02).
+> `project/wealth-intelligence/MASTER_PLAN.md` is the canonical product-vision
+> owner; `ARCHITECTURE.md` owns the product map and
+> `IMPLEMENTATION_ROADMAP.md` owns the active queue. The content below is
+> preserved as original product intent and must not be read as current status,
+> approved methodology, route contract, or implementation promise.
+
+> **Papel histórico deste documento:** preservar a visão inicial que alimentou
+> os owners canônicos em `project/wealth-intelligence/`.
 
 ## O que a aba deve ser ao final do Lote 10
 

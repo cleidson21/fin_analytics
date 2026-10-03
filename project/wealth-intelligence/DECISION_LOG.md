@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-09-29
+**Updated:** 2026-10-02
 
 ---
 
@@ -18,7 +18,7 @@
 | ADR-008 | SQLite Retained for Local Use | PROPOSED | 10.11 |
 | ADR-009 | position_snapshots Conflict — Investigation Complete | RESOLVED | Lote 10.0-A |
 | ADR-010 | brFinance as Isolated Adapter | PROPOSED | 10.7 |
-| ADR-011 | Wealth Intelligence Navigation Restructure | PROPOSED | 10.1 |
+| ADR-011 | Wealth Intelligence Navigation Restructure | SUPERSEDED BY ADR-027 | Historical 10.0 proposal |
 | ADR-012 | Google News RSS as Primary News Source | PROPOSED | 10.7 |
 | ADR-013 | AI Insights Are Immutable After Storage | APPROVED | 10.9 |
 | ADR-014 | accounts Table PK — Dual System Incompatibility | DOCUMENTED | 10.0-A |
@@ -33,6 +33,8 @@
 | ADR-023 | Investment Portfolio Initial Wealth Source | APPROVED | 10.3.10A |
 | ADR-024 | Post-10.3 Planning UX and Simplicity Contract | APPROVED | POST-10.3-UX-A |
 | ADR-025 | FIRE Deterministic Contract and Planning Composition | ACCEPTED | 10.4-B |
+| ADR-026 | Wealth OS Product Realignment Gate | APPROVED | 10.R0 |
+| ADR-027 | Wealth OS Product Architecture & Documentation Ownership | ACCEPTED | 10.R1 |
 
 ---
 
@@ -132,10 +134,15 @@
 ---
 
 ## ADR-011: Wealth Intelligence Navigation Restructure
-**Status:** PROPOSED
+**Status:** `SUPERSEDED / HISTORICAL — ADR-027`
 **Context:** Current navigation has "Metas" → /goals as a top-level sidebar item (stub only). Wealth Intelligence needs a full multi-page section.
 **Decision:** Add "Wealth Intelligence" as a new top-level sidebar section with sub-tabs. The /goals stub is replaced by /wealth-intelligence/goals. The existing /goals route redirects.
 **Out of scope for 10.0:** Navigation change happens in Phase 10.1.
+
+**R1 reconciliation:** Preserve this as the original 10.0 proposal only. ADR-027
+locks conceptual product areas but deliberately does not lock exact routes.
+Existing URLs remain operational until R5/R6 contracts migration and deep-link
+behavior.
 
 ---
 
@@ -523,3 +530,109 @@ fire_target = raw_fire_target quantized to 0.01 with ROUND_CEILING
 **Source and inference decision:** Health supplies no automatic expense, savings, contribution, or prefill in the MVP. Dividend history/yield is excluded to prevent total-return plus dividend double counting. External income offsets, taxes, macro-derived assumptions, Goal integration/writes, persistence, age/birthdate, emergency-reserve exclusions, FIRE variants, Monte Carlo, longevity, probability of success, and Portfolio Intelligence are deferred. The endpoint is deterministic, read-only, Decimal-first, and non-advisory.
 
 **Consequences:** Phase 10.4-B is `CONTRACT LOCKED / READY FOR USER REVIEW`; implementation remains not started. Phase 10.4-C may decompose implementation only after approval and must conform to `FIRE_CONTRACT.md`. No endpoint, engine, migration, frontend, test, persistence, or production source is created by this ADR lock.
+
+---
+
+## ADR-026: Wealth OS Product Realignment Gate
+
+**Status:** APPROVED
+
+**Date:** 2026-10-02
+
+**Decision:** Insert the 10.R0–10.R7 Wealth OS product realignment sequence before
+continuing Phase 10.5-B. Preserve Goals, Financial Health, Planning, FIRE, and
+the completed 10.5-A decisions; do not treat the gate as cancellation or
+authorization to rewrite validated engines.
+
+**Authority boundary:** `WEALTH_OS_REALIGNMENT_AUDIT.md` records R0 findings and
+recommendations. Future Smart Context, external-provider, AI-tool, navigation,
+theme, and product-recomposition contracts remain unapproved until their
+explicit phases. `10.5-B = PAUSED / PENDING WEALTH OS REALIGNMENT`.
+
+---
+
+## ADR-027: Wealth OS Product Architecture & Documentation Ownership
+
+**Status:** ACCEPTED
+
+**Date locked:** 2026-10-02
+
+**Context:** R0 found validated deterministic capabilities but fragmented
+product composition, repeated form entry, overlapping vision/status/roadmap
+documents, provider-specific external context, placeholder Profile/Settings
+behavior, and no production AI runtime. The product needed one target
+architecture and one owner per documentation concern before implementation
+could continue.
+
+**Product decision:** FINANALYTICS is a personal Wealth OS connecting financial
+reality, Goals, Planning, portfolio, income, monitoring, external context,
+tools, and AI interpretation. The conceptual product areas are Home, Plan,
+Portfolio, Explore, Income, Monitor, Market, Copilot, Tools, Profile, Settings,
+and Data & Governance. Exact routes remain unlocked. Existing routes continue
+until a later migration contract.
+
+**Composition decision:** Adopt an incremental composition refactor. Goals owns
+objective lifecycle, Planning remains the deterministic engine/tool, FIRE
+remains a specialized Planning consumer, and future Portfolio Intelligence owns
+certified portfolio analysis. Goals 10.1, Health 10.2, Planning 10.3, FIRE 10.4,
+and the 10.5-A decisions remain valid. No rewrite-first strategy is approved.
+
+**Profile and Settings decision:** Reuse the existing Profile as the canonical
+Declared User Context surface and the existing Settings as the canonical
+configuration surface. Observed transactions do not become Profile data, and
+provider credentials do not become browser preferences. No Profile V2,
+Settings V2, standalone Preferences, or standalone AI Settings surface is
+approved.
+
+**Context decision:** Lock the conceptual classes `DECLARED`, `OBSERVED`,
+`DERIVED`, `EXTERNAL_OBSERVATION`, `EXTERNAL_EXPECTATION`, `ASSUMPTION`, and
+`USER_OVERRIDE`. There is no universal precedence. Each feature selects the
+semantically correct class. Known eligible values should prefill or be offered
+with visible source, meaning, scope, time/freshness, and explicit override
+semantics. Empty forms are a fallback. Declared and observed income never
+overwrite one another; recurring-income direction is deterministic candidates
+plus human confirmation.
+
+**External-context decision:** External providers flow through adapter,
+normalization/semantic classification, cache or governed observation,
+freshness/status, and reference context before feature/tool consumption.
+External observations and expectations remain distinct and never silently
+replace internal certified facts.
+
+**AI decision:** A future provider-aware runtime may support OpenAI, Gemini, and
+Ollama without a parity promise or hard-coded provider dependency. AI consumes
+approved tools and minimum-necessary context; it does not calculate financial
+truth, query arbitrary tables, write records autonomously, or receive secrets.
+Credentials remain server-side. Investment recommendations require a separate
+future contract.
+
+**Design decision:** The target is System/Light/Dark through incremental
+semantic-token migration. Quiet Financial OS principles continue with
+search-first discovery where appropriate, smart prefill, contextual actions,
+inline scenarios, side-by-side comparison, progressive disclosure,
+accessibility, controlled density, visible provenance, and visible freshness.
+R1 changes no routes, components, or theme behavior.
+
+**Documentation decision:** One concern has one canonical owner. Accepted ADRs
+and locked contracts prevail in their scope; then the concern owner;
+`CURRENT_STATE.md`; `MASTER_PLAN.md`; `IMPLEMENTATION_ROADMAP.md`; audit/research
+evidence; historical/superseded material. `ARCHITECTURE.md` owns cross-cutting
+architecture and product IA. `DATA_AND_SOURCE_OF_TRUTH.md` owns data semantics.
+`UI_UX_PLAN.md` owns frontend/UX principles. `AI_AND_LLM.md` owns AI direction
+and runtime truth. `PRODUCT_REFERENCES.md` owns external product inspiration.
+Root `AGENTS.md` operationalizes this order, while nested agent files add only
+scope-specific rules.
+
+**Roadmap decision:** The official path is R2 Smart Financial Context, R3
+External Context, R4 AI Runtime Foundation, R5 Design/Navigation/Theme, R6
+experience recomposition, R7 independent validation, then 10.5-B resume. R3
+provider research and R5 token audits may overlap after inputs stabilize, but
+the deterministic main queue remains sequential.
+
+**Portfolio gate:** 10.5-A remains authoritative. 10.5-B remains
+`PAUSED / PENDING WEALTH OS REALIGNMENT` and resumes only after R7 closure unless
+an explicit later decision changes the gate.
+
+**ADR packaging:** This single consolidated ADR is sufficient under the current
+repository convention. Separate ADRs for each product-area bullet would
+duplicate canonical owners and are not required.

@@ -1,10 +1,81 @@
 # Data Lineage & Source of Truth Matrix
-**Status:** VERIFIED (current sources) + APPROVED (Planning and FIRE input boundaries)
-**Date:** 2026-09-29
+**Status:** `CONTRACT LOCKED — 10.R1` plus accepted domain contracts
+**Date:** 2026-10-02
+
+**Canonical responsibility:** data classifications, source authority,
+provenance, freshness, scope, and the boundary between internal facts,
+external context, assumptions, and interpretation.
 
 ---
 
-## Principle
+## Canonical Smart Context taxonomy
+
+| Class | Meaning | Example | Authority rule |
+|---|---|---|---|
+| `DECLARED` | A personal fact or preference deliberately stated by the user | employment salary, Goal | User-governed; never overwritten silently |
+| `OBSERVED` | A governed event or fact seen in financial data | transaction, portfolio snapshot | Preserve source, scope, date, and completeness |
+| `DERIVED` | Deterministic output from governed inputs | savings rate, allocation weight | Backend engine/query authority |
+| `EXTERNAL_OBSERVATION` | Current or historical third-party observation | quote, observed SELIC | Source, observation/retrieval time, and freshness required |
+| `EXTERNAL_EXPECTATION` | Third-party forecast or forward expectation | Focus inflation expectation, analyst estimate | Label provider, publication date, horizon, and expectation semantics |
+| `ASSUMPTION` | Explicit premise used by a scenario | expected return, withdrawal rate | Reviewable and scoped to the analysis; never presented as fact |
+| `USER_OVERRIDE` | User-selected replacement for a reference or premise | chosen inflation for one run | Preserve both offered reference and chosen value |
+
+There is **no global precedence rule** such as observed over declared over
+external. Each feature selects the semantically correct class. Employment
+salary can be declared, recent cash income can be an observed candidate,
+inflation can be an external expectation, and expected portfolio return remains
+an assumption.
+
+## Smart value and provenance policy
+
+If FINANALYTICS already knows an eligible, semantically correct value, the
+product should not ask the user to type it again. The value must still disclose:
+
+- where it came from;
+- when it was observed, declared, calculated, or retrieved;
+- what it represents and its scope;
+- freshness/completeness when applicable;
+- whether and how it may be overridden.
+
+An auto-filled fact, a reference suggestion, and a default assumption are three
+different UX and data concepts. They must not share an indistinguishable
+presentation or API meaning. Empty form entry is the fallback when no legitimate
+fact/reference exists or when the value is intentionally an assumption.
+
+## External Context architecture
+
+```text
+Provider
+  -> Adapter
+  -> Normalization and semantic classification
+  -> Cache or governed observation
+  -> Freshness, completeness, and status
+  -> Reference Context
+  -> Feature, deterministic tool, or approved AI tool
+```
+
+Individual pages must not create provider-specific truth paths. External
+observations and expectations remain external through API and UI. A quote,
+rate, forecast, or analyst estimate never silently replaces a governed internal
+fact such as an imported portfolio snapshot.
+
+Every external context record must be able to carry the smallest relevant set
+of provider/source, semantic class, value and unit/currency, scope/horizon,
+observed/published/retrieved time, freshness/status, and completeness.
+
+## Profile and observed income boundary
+
+Profile owns `DECLARED` income context. Transactions may later support
+`OBSERVED` recurring-income candidates. Neither silently overwrites the other,
+and observed candidates do not mutate Profile. R2 owns the exact persistence,
+candidate-detection, confirmation, eligibility, and reconciliation contracts.
+The locked direction is deterministic candidate detection plus human
+confirmation, not AI-only detection as authority.
+
+## Legacy four-bucket framing
+
+The original four-bucket summary below remains useful as a broad grouping but
+is superseded by the seven-class taxonomy above wherever precision matters.
 
 The system enforces strict separation between:
 - **USER GOVERNED DATA** — entered or confirmed by the user
@@ -16,7 +87,7 @@ The LLM is **READ-ONLY** with respect to financial truth.
 
 ---
 
-## Source of Truth Matrix [VERIFIED]
+## Current source inventory [VERIFIED]
 
 | Domain | Data | Source of Truth | Type | Persistent? | External? | AI Can Modify? |
 |--------|------|-----------------|------|-------------|-----------|----------------|
@@ -60,22 +131,27 @@ The LLM is **READ-ONLY** with respect to financial truth.
 - Goals (user creates/edits)
 - is_manual=1 positions (protected from MyProfit overwrite)
 
-### EXTERNAL DATA (always labeled as external, never presented as fact)
+### EXTERNAL DATA (always labeled and never silently internalized)
 - yfinance quotes and history
 - yfinance fundamentals
 - MyProfit imported positions and returns
 - Pierre Finance imported transactions
 - Future: news, analyst consensus, BCB macro data
 
-### DETERMINISTIC CALCULATIONS (authoritative, computed by backend)
-- Portfolio value = Σ(position_quantity × current_price)
-- Portfolio return = from portfolio_snapshots (MyProfit-sourced pct data)
-- Dividend yield = gross_amount / avg_cost
-- Goal progress = current_amount / target_amount
-- Retirement/FIRE projection = canonical FIRE target composed with certified Planning engines and explicit user assumptions
-- Savings rate = (income - expenses) / income
-- Portfolio allocation = per-class value / total portfolio value
-- Spending averages, category breakdowns, and approved historical trends; rolling averages require a separate future contract
+### DETERMINISTIC CALCULATIONS (authoritative only when contracted)
+- Financial Health cashflow, savings rate, category metrics, anomaly rules, and
+  closed-month trends are certified under their accepted contracts.
+- Planning projection, target achievement, required contribution, Goal
+  planning, and scenario comparison are certified under ADRs 019–024.
+- FIRE summary and Planning composition are certified under ADR-025.
+- Goal progress is a deterministic presentation of user-governed Goal values.
+- Current Investments allocation, yield, performance-like, score, and browser
+  calculations are **not** certified Portfolio Intelligence authority.
+- Provider-reported returns/benchmarks remain external reported facts, not a
+  locally certified performance engine.
+- Portfolio allocation/concentration becomes authoritative only after 10.5-B
+  contracts one valuation basis, temporal alignment, completeness, Decimal
+  precision, and ownership.
 
 ### AI INTERPRETATION (never authoritative, always labeled)
 - "Your spending pattern suggests..."

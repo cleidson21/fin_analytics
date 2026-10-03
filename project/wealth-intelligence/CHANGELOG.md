@@ -1,5 +1,37 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R1] — 2026-10-02 — Wealth OS architecture and documentation lock
+
+- Locked FINANALYTICS as a personal Wealth OS and adopted the incremental
+  composition-refactor strategy while preserving Goals, Financial Health,
+  Planning, FIRE, and the 10.5-A decisions.
+- Consolidated product vision, current state, active queue, architecture, data
+  semantics, frontend/UX, AI, security, product references, agent guidance, and
+  document precedence into their existing canonical owners.
+- Locked the target product areas; Profile and Settings reuse; seven-class Smart
+  Context taxonomy; smart-value/provenance rules; External Context pipeline;
+  AI tool/privacy/secret boundary; System/Light/Dark target; and the R2–R7 then
+  10.5-B dependency order in ADR-027.
+- Marked the root product specification and final-product narrative as preserved
+  historical inputs rather than active authorities. R0 and 10.5-A remain
+  evidence, not duplicated architecture owners.
+- Reconciled current AI reality: no Advisor, Insights, Copilot, OpenAI, Ollama,
+  working Gemini, scheduler, tool registry, or provider abstraction exists.
+- `10.R1 = ARCHITECTURE / DOCUMENTATION LOCKED`; `10.R2 = READY / NOT STARTED`;
+  `10.5-B = PAUSED / PENDING WEALTH OS REALIGNMENT`. Documentation/agent files
+  only; no backend, frontend, test, migration, dependency, staging, commit, or
+  push action.
+
+---
+
+## [PHASE-10.R0] — 2026-10-02 — Wealth OS product realignment audit
+
+- Audited current product architecture, navigation, Goals/Planning/FIRE overlap, Profile, Settings, recurring-income feasibility, external data, AI, theme, privacy, product references, documentation ownership, target information architecture, and dependency order without changing production code.
+- Added the root operational `AGENTS.md`, one canonical realignment audit, and one product-reference catalog; recorded the high-level realignment gate in ADR-026 and updated status owners minimally.
+- `10.R0 = AUDIT COMPLETE`; `10.R1 = READY / NOT STARTED`; `10.5-A` remains complete with decisions preserved; `10.5-B = PAUSED / PENDING WEALTH OS REALIGNMENT`. No code, test, migration, package, staging, commit, or push was created.
+
+---
+
 ## [PHASE-10.4-D7] — 2026-10-01 — FIRE independent validation and closure
 
 - Independently reconciled ADR-025 and `FIRE_CONTRACT.md` against the complete FIRE domain, orchestration, API, frontend, source/provenance, read-only, and deferred-feature boundaries. The implementation remains a thin deterministic REAL-basis layer over Planning with one selected wealth fact and no persistence.

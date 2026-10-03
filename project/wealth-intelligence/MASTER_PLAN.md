@@ -1,106 +1,154 @@
-# Master Plan & Status — FINANALYTICS Wealth Intelligence
-**Updated:** 2026-10-01 (Phase 10.4 FIRE validated / closed)
+# Master Plan — FINANALYTICS Wealth OS
 
----
+**Status:** `ARCHITECTURE LOCKED / IMPLEMENTATION NEXT`
 
-## Vision
+**Updated:** 2026-10-02 — Phase 10.R1
 
-Evolve FINANALYTICS from a system that **explains the financial past** into a **personal financial intelligence platform** that supports decisions about the financial future.
+## Product vision
 
-The platform provides:
-1. **Visibility** — complete, current picture of wealth across all assets and accounts
-2. **Intelligence** — pattern recognition and anomaly detection in cashflow and investments
-3. **Planning** — deterministic projections for goals, retirement, and financial independence
-4. **Context** — relevant market and economic context, clearly labeled as external
-5. **Synthesis** — AI-generated briefings from verified data, never as financial authority
+FINANALYTICS is a **personal Wealth OS**: a private system that connects
+financial reality, goals, planning, portfolio, income, market context,
+monitoring, tools, and AI interpretation into coherent decision journeys. It is
+not defined primarily by a collection of domain pages or disconnected
+calculators.
 
----
+The long-term product flow is:
 
-## Governance Rules (Non-Negotiable)
+```text
+DATA
+  -> CERTIFIED FACTS
+  -> CONTEXT
+  -> DIAGNOSIS
+  -> PLANNING
+  -> PROJECTION
+  -> MONITORING
+  -> EXTERNAL CONTEXT
+  -> INTELLIGENCE
+```
 
-1. **AI IS READ-ONLY WITH RESPECT TO FINANCIAL TRUTH**
-2. All financial arithmetic is performed by deterministic backend services
-3. The existing Investments module is STABLE — do not modify without explicit scope
-4. New phases do not modify existing passing tests
-5. Every phase ends with a formal acceptance checklist sign-off
-6. External data is always timestamped and labeled
-7. All AI output is validated against Pydantic schema before storage
+This is product direction, not permission to couple layers or bypass their
+contracts.
 
----
+## Product promise
 
-## Phase Roadmap
+The product should help the user answer, with evidence:
 
-| Phase | Name | Status | Preconditions |
-|-------|------|--------|--------------|
-| 10.0 | Architecture & Product Design | **COMPLETE** | — |
-| 10.1 | Goal Domain Foundation | IMPLEMENTED / VALIDATED | Complete |
-| 10.2 | Financial Health Intelligence | **COMPLETED / MERGED — 10.2.10-C VALIDATED** | 10.1 complete |
-| 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.1–10.3.6, 10.3.9–10.3.12 validated; 10.3.7-A deferred; 10.3.8 automated validation passed / Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete. ADR-024 post-closure UX contract implemented / validated; UX-B1–UX-B7 validated; POST-10.3 UX closed. | 10.1 and 10.2 complete |
-| 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — 10.4-A audit complete; 10.4-B contract locked under ADR-025; 10.4-C implementation plan complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 complete |
-| 10.5 | Portfolio Intelligence | **READY / NOT STARTED** — BOUNDARY APPROVED | Stable investments, 10.4 complete |
-| 10.6 | Rebalancing & Watchlist | NOT STARTED | 10.5 complete |
-| 10.7 | External Market Intelligence | NOT STARTED | 10.5 complete, BCB/news validated |
-| 10.8 | LLM Provider Foundation | NOT STARTED | 10.7 complete, Ollama installed |
-| 10.9 | Wealth AI Briefing | NOT STARTED | 10.8, 10.4, 10.5 complete |
-| 10.10 | Advanced Orchestration | NOT STARTED (CONDITIONAL) | 10.9 quality gap demonstrated |
-| 10.11 | Docker & Operations | NOT STARTED | All backend phases stable |
-| 10.12 | Global UX / Visual Polish | NOT STARTED | All UI phases complete |
+- Where am I financially?
+- What changed, and what needs attention?
+- Am I progressing toward my goals and financial independence?
+- What happens if I change an explicit assumption?
+- How is my investment wealth composed?
+- Which external events are relevant, how fresh are they, and where did they
+  come from?
+- What can the system explain without inventing facts or advice?
 
----
+## Non-negotiable product rules
 
-## Pre-Work Resolution (Before 10.1)
+1. Deterministic services own financial facts and calculations; AI consumes
+   capabilities and interprets their results.
+2. Internal facts, external observations, external expectations, and scenario
+   assumptions remain semantically distinct.
+3. Known eligible facts should prefill or be offered with source, scope, date,
+   freshness, and an explicit override model. Empty forms are a fallback.
+4. Profile is the declared-user-context surface. Settings is the configuration
+   surface. Neither is duplicated into a V2 route.
+5. Simulation and saved tool state never silently become financial reality.
+6. Credentials remain server-side and minimum-necessary personal context is
+   used.
+7. Existing validated engines are composed incrementally; no big-bang rewrite
+   is authorized.
 
-### RESOLVED: position_snapshots schema investigation
-Migration 013 creates a SQL table `position_snapshots` with `snapshot_hash` UNIQUE key.
-The ORM `PositionSnapshotModel` maps to the same table name with a different schema.
-**Resolution:** The live DB was inspected and the Alembic-compatible schema is active. The remaining `alembic check` FK issue is documented in ADR-014 and is non-blocking for the current phase.
+## Validated core to preserve
 
-### RESOLVED: requirements.txt
-The active dependencies `pydantic-settings`, `aiosqlite`, `python-jose[cryptography]`, and `bcrypt` are listed in `requirements.txt`.
+| Capability | Status | Long-term responsibility |
+|---|---|---|
+| Goals 10.1 | `IMPLEMENTED / VALIDATED` | Objective lifecycle, stored intent, and tracking |
+| Financial Health 10.2 | `IMPLEMENTED / VALIDATED` | Certified observed cashflow, trends, distribution, and anomalies |
+| Planning 10.3 | `VALIDATED / CLOSED` | Deterministic projection and solver engine plus advanced tool |
+| FIRE 10.4 | `VALIDATED / CLOSED` | Specialized financial-independence experience composed over Planning |
+| Portfolio Intelligence 10.5-A | `AUDIT COMPLETE / USER DECISIONS RESOLVED` | Preserved evidence for a future certified portfolio-analysis contract |
 
----
+Realignment changes composition, context, navigation, defaults, interaction,
+and presentation. It does not reopen certified financial mathematics unless a
+future explicit reconciliation task finds and contracts a defect.
 
-## Key Architecture Decisions
+## Target product areas
 
-| Decision | ADR | Status |
-|----------|-----|--------|
-| Deterministic calculations first, LLM interprets | ADR-001 | APPROVED |
-| Ollama runs native on Windows host | ADR-002 | CONFIRMED |
-| Single documentation source | ADR-003 | APPROVED |
-| No agent frameworks until justified | ADR-004 | APPROVED |
-| External consensus clearly labeled | ADR-005 | APPROVED |
-| No second yfinance system | ADR-006 | APPROVED |
-| Single LLM + deterministic context (Option D) | ADR-007 | PROPOSED |
-| SQLite retained for local use | ADR-008 | PROPOSED |
-| position_snapshots conflict is a BLOCKER | ADR-009 | BLOCKER |
-| brFinance as isolated adapter | ADR-010 | PROPOSED |
-| Navigation restructure in 10.1 | ADR-011 | PROPOSED |
-| Google News RSS as news source | ADR-012 | PROPOSED |
-| AI insights immutable after storage | ADR-013 | APPROVED |
-| accounts PK incompatibility documented | ADR-014 | DOCUMENTED |
-| Deterministic anomaly specification | ADR-015 | APPROVED |
-| Financial Health consolidated account scope | ADR-017 | APPROVED |
-| Financial trend and stability readiness | ADR-018 | APPROVED |
-| Planning input and source boundary | ADR-019 | APPROVED |
-| Planning mathematical contract | ADR-020 | APPROVED |
-| Planning scenario semantics and lifecycle | ADR-021 | APPROVED |
-| Retirement/FIRE and Portfolio Intelligence boundary | ADR-022 | APPROVED |
-| Investment portfolio initial-wealth source | ADR-023 | APPROVED |
-| FIRE deterministic contract and Planning composition | ADR-025 | ACCEPTED |
+The conceptual information architecture is:
 
----
+- **Home** — personal financial command center;
+- **Plan** — contextual entry over Goals, Planning, and FIRE;
+- **Portfolio** — portfolio truth and future Portfolio Intelligence;
+- **Explore** — asset discovery and comparison;
+- **Income** — investment-generated income context;
+- **Monitor** — health, goals drift, watchlists, alerts, and tracked criteria;
+- **Market** — macro, market, news, events, source, and freshness;
+- **Copilot** — global AI interpretation and tool orchestration;
+- **Tools** — reusable deterministic laboratories and calculators;
+- **Profile** — declared user context;
+- **Settings** — security, notification, appearance, privacy, integration, AI,
+  and external-source configuration;
+- **Data & Governance** — imports, classification, provenance, quality, and
+  audit.
 
-## Target Product Summary
+`ARCHITECTURE.md` owns the responsibilities and exclusions for each area.
+Exact URLs and widgets remain implementation decisions for later contracts.
 
-When complete, the user experience includes:
+## Incremental realignment
 
-1. **Wealth Intelligence Overview** — net worth, investments, savings rate, goal progress, FI timeline, daily alerts
-2. **Financial Health** — observed cashflow, spending distribution, deterministic historical trends, and anomaly detection
-3. **Goals Engine** — goal tracking, projections, required contributions, scenarios
-4. **Retirement & Financial Independence (FIRE)** — retirement/FI modes over reusable Planning engines, gap analysis, income/withdrawal assumptions, and sensitivity
-5. **Portfolio Intelligence** — attribution, exposure, concentration risk
-6. **Rebalancing** — target vs current, deviation alerts
-7. **Market Radar** — asset signals, technical indicators, BCB macro data
-8. **Watchlist** — monitor assets not yet in portfolio
-9. **News & Events** — relevant news for owned assets
-10. **Wealth AI Briefing** — daily/weekly structured briefing from verified data
+The official strategy is **incremental composition refactor**:
+
+1. lock architecture and documentation ownership;
+2. establish internal Smart Context;
+3. normalize external context;
+4. add a provider-aware AI runtime over approved tools;
+5. implement navigation, design foundations, and System/Light/Dark;
+6. recompose Goals, Planning, FIRE, and Wealth Home;
+7. validate independently;
+8. resume Portfolio Intelligence 10.5-B under the new boundaries.
+
+Existing routes remain operational until an implementation phase explicitly
+migrates them. Deep links must not be broken incidentally.
+
+## Official phase status
+
+| Phase | Outcome | Status |
+|---|---|---|
+| 10.R0 | Product and documentation audit | `AUDIT COMPLETE` |
+| 10.R1 | Product architecture and documentation consolidation | `ARCHITECTURE / DOCUMENTATION LOCKED` |
+| 10.R2 | Smart Financial Context | `READY / NOT STARTED` |
+| 10.R3 | External Context Layer | `NOT STARTED` |
+| 10.R4 | AI Runtime Foundation | `NOT STARTED` |
+| 10.R5 | Design, navigation, and System/Light/Dark | `NOT STARTED` |
+| 10.R6 | Goals, Planning, FIRE, and Wealth Home recomposition | `NOT STARTED` |
+| 10.R7 | Independent product/architecture validation | `NOT STARTED` |
+| 10.5-B | Portfolio Intelligence contract lock | `PAUSED / PENDING WEALTH OS REALIGNMENT` |
+
+`IMPLEMENTATION_ROADMAP.md` owns the active queue and dependency gates. It must
+not be duplicated here.
+
+## Product boundaries
+
+- Portfolio is not a replacement for operational Investments imports,
+  transactions, positions, asset details, or governance.
+- Market and Explore are not sources of internal portfolio truth.
+- Copilot is not a calculator, autonomous record writer, or arbitrary database
+  interface.
+- Rankings, scores, target-price methods, recommendation portfolios, and
+  prescriptive investment advice require separate future contracts.
+- Historical wealth evolution is not portfolio performance.
+
+## Canonical supporting owners
+
+- present reality: `CURRENT_STATE.md`;
+- architecture and target information architecture: `ARCHITECTURE.md`;
+- data classes, provenance, and source authority:
+  `DATA_AND_SOURCE_OF_TRUTH.md`;
+- frontend/UX principles: `UI_UX_PLAN.md`;
+- AI direction and current runtime truth: `AI_AND_LLM.md`;
+- external product inspiration: `PRODUCT_REFERENCES.md`;
+- accepted decisions: `DECISION_LOG.md`.
+
+The repository-root `ESPECIFICACAO_PRODUTO_METAS.md` and
+`audits/FINAL_PRODUCT_DEFINITION.md` are preserved as historical product input.
+They no longer own current vision, status, roadmap, or implementation promises.
