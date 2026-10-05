@@ -1,5 +1,21 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R2-A] — 2026-10-03 — Smart Financial Context contract lock
+
+- Audited the real Profile/browser boundary, active transaction model and
+  endpoints, read-only SQLite evidence, and Health/Goals/Planning/FIRE source
+  authorities before defining R2 behavior.
+- Locked ADR-028 and `SMART_FINANCIAL_CONTEXT_CONTRACT.md`: minimal declared
+  monthly gross income; deterministic three-distinct-months-in-six recurring
+  candidates; no amount confidence gate; explicit human decisions; strict
+  provenance, ownership, privacy, and feature-specific composition.
+- Added `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` with B1–B8 gates.
+  `10.R2-A = CONTRACT LOCKED / IMPLEMENTATION READY`; `10.R2-B1 = READY / NOT
+  STARTED`. Documentation only; no code, test, migration, staging, commit, or
+  push action.
+
+---
+
 ## [PHASE-10.R1] — 2026-10-02 — Wealth OS architecture and documentation lock
 
 - Locked FINANALYTICS as a personal Wealth OS and adopted the incremental

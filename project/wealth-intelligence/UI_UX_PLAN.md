@@ -52,6 +52,16 @@ The UI must distinguish:
 Every smart value should answer: where did it come from, when was it observed
 or published, what does it represent, and can it be overridden?
 
+### R2 declared and observed income states
+
+The R2 UI must never merge declared salary with recurring transaction evidence.
+Declared monthly gross income is an editable Profile fact. A recurring-income
+candidate shows its signature meaning, evidence months, occurrence counts,
+typical/minimum/maximum amounts, latest observation, freshness, and risk flags;
+it offers explicit confirm, reject, and reset actions. Confirmation changes the
+decision state, not the source transaction and not Profile. A stale confirmed
+source remains visibly stale rather than disappearing or reverting silently.
+
 ### Form behavior
 
 - Preserve the complete API/domain contract even when Advanced options are

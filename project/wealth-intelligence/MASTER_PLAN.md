@@ -2,7 +2,7 @@
 
 **Status:** `ARCHITECTURE LOCKED / IMPLEMENTATION NEXT`
 
-**Updated:** 2026-10-02 — Phase 10.R1
+**Updated:** 2026-10-03 — Phase 10.R2-A contract lock
 
 ## Product vision
 
@@ -116,7 +116,7 @@ migrates them. Deep links must not be broken incidentally.
 |---|---|---|
 | 10.R0 | Product and documentation audit | `AUDIT COMPLETE` |
 | 10.R1 | Product architecture and documentation consolidation | `ARCHITECTURE / DOCUMENTATION LOCKED` |
-| 10.R2 | Smart Financial Context | `READY / NOT STARTED` |
+| 10.R2 | Smart Financial Context | `CONTRACT LOCKED / IMPLEMENTATION READY` |
 | 10.R3 | External Context Layer | `NOT STARTED` |
 | 10.R4 | AI Runtime Foundation | `NOT STARTED` |
 | 10.R5 | Design, navigation, and System/Light/Dark | `NOT STARTED` |

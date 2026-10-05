@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-02 — Phase 10.R1 documentation lock
+**Updated:** 2026-10-03 — Phase 10.R2-A contract lock
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -17,7 +17,8 @@ This document describes what exists now. Future product architecture belongs to
 | 10.5-B Portfolio Intelligence contract lock | `PAUSED / PENDING WEALTH OS REALIGNMENT` |
 | 10.R0 realignment audit | `AUDIT COMPLETE` |
 | 10.R1 architecture/docs | `ARCHITECTURE / DOCUMENTATION LOCKED` |
-| 10.R2 Smart Financial Context | `READY / NOT STARTED` |
+| 10.R2-A Smart Financial Context contract | `CONTRACT LOCKED / IMPLEMENTATION READY` |
+| 10.R2-B1 implementation | `READY / NOT STARTED` |
 | Wealth OS Realignment | `ARCHITECTURE LOCKED / IMPLEMENTATION NEXT` |
 
 ## Implemented and validated capabilities
@@ -125,6 +126,14 @@ common context layer.
 The ledger contains enough historical incoming-transaction evidence to make a
 deterministic recurring-income candidate detector feasible. No detector,
 algorithm, schema, confirmation workflow, or automatic Profile mutation exists.
+
+ADR-028 and `SMART_FINANCIAL_CONTEXT_CONTRACT.md` now lock the future R2
+semantics: Profile-owned declared monthly gross income; deterministic
+three-distinct-months-in-six recurring candidates without an amount-similarity
+score; explicit confirm/reject/reset decisions; and feature-specific context
+composition. `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` decomposes the
+work, but none of those models, services, endpoints, migrations, or UI flows is
+implemented yet.
 
 ## Portfolio Intelligence state
 

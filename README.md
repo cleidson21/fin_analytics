@@ -15,13 +15,14 @@ consume those capabilities without replacing their financial authority.
 - Portfolio Intelligence 10.5-B: `PAUSED / PENDING WEALTH OS REALIGNMENT`
 - Wealth OS 10.R0: `AUDIT COMPLETE`
 - Wealth OS 10.R1: `ARCHITECTURE / DOCUMENTATION LOCKED`
-- Wealth OS 10.R2: `READY / NOT STARTED`
+- Wealth OS 10.R2-A: `CONTRACT LOCKED / IMPLEMENTATION READY`
+- Wealth OS 10.R2-B1: `READY / NOT STARTED`
 
 The realignment is an incremental composition refactor. It preserves validated
 financial engines while adding Smart Context, normalized external context, a
 provider-aware AI runtime, coherent navigation/design foundations, and composed
-product journeys in later phases. No R2 implementation is included in the R1
-checkpoint.
+product journeys in later phases. R2-A locks the Smart Financial Context
+contract; no R2 production implementation exists yet.
 
 ## What exists today
 

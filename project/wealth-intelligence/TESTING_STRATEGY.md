@@ -1,6 +1,6 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; 10.R1 architecture/docs locked; 10.R2 ready/not started; 10.5-B paused pending R7
-**Date:** 2026-10-02
+**Status:** ACTIVE; 10.R2-A contract locked; 10.R2-B1 ready/not started; 10.5-B paused pending R7
+**Date:** 2026-10-03
 
 ---
 
@@ -218,13 +218,25 @@ tests/
   fallback/browser financial authority.
 
 ### Phase 10.R2 — Smart Financial Context
-- Contract declared versus observed context, feature-specific source choice,
-  eligibility, provenance, freshness, confirmation, and override semantics.
-- Test Profile purpose limitation, ownership, persistence, and no automatic
+- Contract-test declared versus observed context, feature-specific source
+  choice, strict Decimal strings, provenance, freshness, confirmation, reset,
+  and override semantics against `SMART_FINANCIAL_CONTEXT_CONTRACT.md`.
+- Test declared monthly gross income validation, nullable/delete behavior,
+  timestamps, purpose limitation, ownership, persistence, and no automatic
   mutation from transactions.
-- Recurring-income candidates require deterministic evidence, transfer/investment
-  exclusions, cadence/calendar cases, human confirmation, and insufficient-data
-  behavior.
+- Test the versioned exact signature, six-month window, three-distinct-month
+  threshold, same-month duplicates, partial current month, Unicode/whitespace
+  normalization, no fuzzy/digit stripping, and deterministic ordering.
+- Test exclusions for non-classified, outgoing, ignored, same-titularity, and
+  investment evidence; absence of an amount-similarity gate or confidence
+  score; bounded evidence; stale confirmed sources; reject/reset lifecycle; and
+  signature-version reconciliation behavior.
+- Integration coverage must authenticate every endpoint and prove the
+  exact-single-user/current-user guard, ambiguity failure, non-enumeration,
+  minimum exposure, and no Profile/transaction/Health/Goal/Planning/FIRE writes.
+- Composition tests must prove feature allowlists and reuse certified Health,
+  Goal, Planning/ADR-023, and FIRE boundaries without duplicating their math or
+  source resolvers.
 
 ### Phase 10.R3 — External Context
 - Test provider adapters behind one normalization boundary, semantic distinction

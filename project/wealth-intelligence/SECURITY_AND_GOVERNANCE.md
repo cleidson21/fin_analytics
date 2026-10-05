@@ -50,6 +50,19 @@ AI context excludes by default:
 Profile is declared user context, not a ledger or AI memory. Observed income
 candidates never mutate it automatically.
 
+R2 implementation may persist only the approved declared-income fact and
+recurring-source decision metadata. It must not add CPF, phone, birthdate, employment start,
+employer, occupation, tax-regime authority, raw transaction copies, or AI
+memory. Candidate APIs must return bounded evidence and opaque identifiers, not
+unnecessary counterpart/account detail. Logs and audit events exclude raw
+descriptions and financial payloads unless a separately approved diagnostic
+policy requires them.
+
+The active ledger lacks per-transaction `user_id`; therefore R2 may reuse only
+the explicit exact-single-user/current-user guard. Ambiguity or a later
+multi-user state fails closed until an ownership migration is separately
+contracted. Authentication alone is not ownership proof.
+
 ## 4. Secret policy
 
 `JWT_SECRET`, Pierre/MyProfit credentials, and any Gemini/OpenAI/Ollama or other

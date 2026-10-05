@@ -1,6 +1,6 @@
 # Data Lineage & Source of Truth Matrix
-**Status:** `CONTRACT LOCKED — 10.R1` plus accepted domain contracts
-**Date:** 2026-10-02
+**Status:** `CONTRACT LOCKED — 10.R1 + 10.R2-A` plus accepted domain contracts
+**Date:** 2026-10-03
 
 **Canonical responsibility:** data classifications, source authority,
 provenance, freshness, scope, and the boundary between internal facts,
@@ -65,12 +65,24 @@ observed/published/retrieved time, freshness/status, and completeness.
 
 ## Profile and observed income boundary
 
-Profile owns `DECLARED` income context. Transactions may later support
-`OBSERVED` recurring-income candidates. Neither silently overwrites the other,
-and observed candidates do not mutate Profile. R2 owns the exact persistence,
-candidate-detection, confirmation, eligibility, and reconciliation contracts.
-The locked direction is deterministic candidate detection plus human
-confirmation, not AI-only detection as authority.
+Profile owns nullable `declared_monthly_gross_income`: a positive, cent-scale
+BRL `Decimal` with `GROSS`/`MONTHLY` meaning and declaration timestamps. It is
+`DECLARED`, editable, and never silently overwritten by transactions.
+
+Transactions may produce `OBSERVED` recurring-income candidates. R2 locks a
+versioned exact-signature detector over eligible governed incoming rows, using
+at least three distinct calendar months inside a six-month evidence window.
+Multiple occurrences in one month count once; no amount-similarity threshold or
+numeric confidence score is authoritative. Candidates require explicit
+confirm/reject decisions and remain distinct from Profile and Health aggregates.
+
+Candidate lists must be computed from current governed evidence; user decisions
+must be persisted separately. Because the active ledger has no per-row user ownership,
+R2 must fail closed unless the authenticated user matches the exact-single-user
+local invariant. Feature-specific composition exposes the minimum approved
+context and preserves source, meaning, scope, dates/freshness, and override
+semantics. `SMART_FINANCIAL_CONTEXT_CONTRACT.md` is authoritative for the exact
+contract.
 
 ## Legacy four-bucket framing
 

@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R1 ARCHITECTURE / DOCUMENTATION LOCKED`
+**Status:** `10.R2-A SMART FINANCIAL CONTEXT CONTRACT LOCKED`
 
-**Next:** `10.R2 — READY / NOT STARTED`
+**Next:** `10.R2-B1 — READY / NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -14,8 +14,10 @@ Goals, Financial Health, Planning, and FIRE are validated. The 10.5-A Portfolio
 Intelligence audit and its user decisions remain valid. Phase 10.5-B is paused
 until the Wealth OS realignment closes at R7.
 
-R1 changed documentation and agent guidance only. It created no backend,
-frontend, test, migration, dependency, provider, runtime, or route behavior.
+R2-A locks declared financial context, deterministic recurring-income
+candidates, human decisions, ownership, provenance, and feature-specific
+composition. It changes documentation only and creates no backend, frontend,
+test, migration, dependency, provider, runtime, or route behavior.
 
 ## Read in this order
 
@@ -44,6 +46,8 @@ frontend, test, migration, dependency, provider, runtime, or route behavior.
 | Accepted architectural/product decisions | `DECISION_LOG.md` |
 | Historical change evidence | `CHANGELOG.md` |
 | External product inspiration | `PRODUCT_REFERENCES.md` |
+| R2 Smart Financial Context contract | [SMART_FINANCIAL_CONTEXT_CONTRACT.md](SMART_FINANCIAL_CONTEXT_CONTRACT.md) |
+| R2 implementation decomposition | [SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md](SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md) |
 | R0 evidence | `WEALTH_OS_REALIGNMENT_AUDIT.md` |
 | 10.5-A evidence | `PORTFOLIO_INTELLIGENCE_CONTRACT_AUDIT.md` |
 
@@ -86,7 +90,7 @@ Portfolio Intelligence remains paused.
 ## Active phase sequence
 
 ```text
-R2 Smart Financial Context
+R2-B1 through R2-B8 Smart Financial Context implementation
  -> R3 External Context
  -> R4 AI Runtime Foundation
  -> R5 Design / Navigation / System-Light-Dark

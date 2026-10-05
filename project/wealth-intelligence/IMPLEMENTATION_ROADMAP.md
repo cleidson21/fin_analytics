@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R2 READY / NOT STARTED`
-**Date:** 2026-10-02
+**Status:** `ACTIVE QUEUE — 10.R2-B1 READY / NOT STARTED`
+**Date:** 2026-10-03
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
-| 1 | 10.R2 | Smart Financial Context: Profile persistence contract, declared context, observed recurring-income candidates, feature-specific source choice, smart values, provenance, override | `READY / NOT STARTED` | R1 locked |
+| 1 | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `R2-A CONTRACT LOCKED / B1 READY` | R1 locked; ADR-028 and R2 contract |
 | 2 | 10.R3 | External Context Layer: adapters, normalization, cache/observation, semantic class, freshness/status, macro/reference provider foundations | `NOT STARTED` | R2 taxonomy and context boundary |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
@@ -25,6 +25,14 @@ realignment closure.
 The main implementation path remains sequential. R3 provider research and R5
 token/visual audits may run in parallel after their inputs are stable, but no
 parallel activity changes the official dependency gates.
+
+R2 implementation is decomposed in
+`SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` as B1 declared-context
+persistence/ownership, B2 declared Profile API, B3 recurrence evidence engine,
+B4 decision state/API, B5 feature-specific composition, B6 Profile experience,
+B7 consumer foundations, and B8 stabilization/independent validation. The
+active next task is exactly `10.R2-B1 — DECLARED CONTEXT PERSISTENCE & OWNERSHIP
+FOUNDATION`; no later microprocess is implicitly authorized.
 
 ## Closed and preserved baseline
 
@@ -53,7 +61,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 READY / NOT STARTED; R3–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2-A CONTRACT LOCKED / B1 READY; R3–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |

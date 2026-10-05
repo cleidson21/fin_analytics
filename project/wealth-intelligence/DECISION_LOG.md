@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-10-02
+**Updated:** 2026-10-03
 
 ---
 
@@ -35,6 +35,7 @@
 | ADR-025 | FIRE Deterministic Contract and Planning Composition | ACCEPTED | 10.4-B |
 | ADR-026 | Wealth OS Product Realignment Gate | APPROVED | 10.R0 |
 | ADR-027 | Wealth OS Product Architecture & Documentation Ownership | ACCEPTED | 10.R1 |
+| ADR-028 | Smart Financial Context and Declared/Observed Income Boundary | ACCEPTED | 10.R2-A |
 
 ---
 
@@ -636,3 +637,85 @@ an explicit later decision changes the gate.
 **ADR packaging:** This single consolidated ADR is sufficient under the current
 repository convention. Separate ADRs for each product-area bullet would
 duplicate canonical owners and are not required.
+
+---
+
+## ADR-028: Smart Financial Context and Declared/Observed Income Boundary
+
+**Status:** ACCEPTED
+
+**Date locked:** 2026-10-03
+
+**Authoritative specification:** `SMART_FINANCIAL_CONTEXT_CONTRACT.md`
+
+**Context:** R1 established the seven Smart Context classes and assigned
+Profile as the Declared User Context surface, but it did not define persistence,
+recurrence evidence, human decisions, ownership, API semantics, or composition.
+The current Profile has no backend model and keeps only four non-sensitive
+extended fields in browser storage; gross income is transient. The governed
+ledger has enough incoming history for deterministic recurrence evidence but no
+transaction-level user ownership and substantial transfer ambiguity. Health,
+Goals, Planning, and FIRE already own certified domain semantics that R2 must
+reuse rather than recalculate.
+
+**Declared-context decision:** R2 persists only nullable
+`declared_monthly_gross_income`, a positive cent-scale BRL Decimal with explicit
+`GROSS` and `MONTHLY` meaning, source, declaration/as-of time, and update time.
+It is Profile-owned, editable, and never inferred or overwritten from the
+ledger. CPF, phone, birthdate, employment start, and authoritative employer,
+occupation, or tax-regime data are not added. Existing authenticated identity
+remains in `users`; decorative display name does not become a second identity
+authority.
+
+**Observed-candidate decision:** A recurring-income candidate is computed from
+eligible governed `CLASSIFIED` incoming transaction evidence with exact
+`CREDIT` transaction type and valid
+provider/account/description/currency/date/amount.
+The versioned signature is provider, account scope, currency, normalized exact
+description, and direction. Normalization is limited to Unicode NFKC,
+case-folding, trim, and whitespace collapse; fuzzy matching and digit stripping
+are prohibited. A candidate requires evidence in at least three distinct
+calendar months inside the six most recent calendar months. Multiple events in
+one month count once and months need not be consecutive. The current partial
+month may contribute but must be identified.
+
+**Evidence and decision semantics:** Amount similarity is not an eligibility
+gate and there is no authoritative numeric confidence score. The response may
+show occurrence/month counts, first/latest dates, typical median amount,
+minimum, maximum, median absolute deviation, freshness, and deterministic risk
+flags. Candidate state is `DETECTED_CANDIDATE`, `CONFIRMED_AS_INCOME`, or
+`REJECTED`; `STALE` is freshness, not a fourth classification. Confirm, reject,
+and reset are explicit authenticated user actions. A decision never edits the
+transactions, Profile, or Health aggregates, and confirmed sources are not
+silently aggregated into a single income amount.
+
+**Persistence and ownership decision:** Candidate evidence is computed on
+read. R2 may add one user-owned declared-context record and one user-owned,
+signature-versioned recurring-income decision record. Because current ledger
+rows have no `user_id`, access must fail closed unless the authenticated user
+matches the exact-single-user local invariant; a general multi-user ownership
+migration requires a separate contract. APIs expose opaque candidate IDs and
+minimum necessary evidence.
+
+**Composition decision:** Smart Context is an internal feature-specific service,
+not a global context dump, arbitrary query layer, financial engine, or AI
+memory. Each consumer receives an explicit allowlist of typed values with
+source, meaning, scope, time/freshness, and override semantics. Health retains
+aggregate observed cashflow authority. Goals retains objective lifecycle.
+Planning retains ADR-023 source resolution and all projection mathematics. FIRE
+retains explicit spending, withdrawal, return, inflation, contribution, and
+date assumptions; R2 does not silently prefill them. R3 external context, R4
+AI, R5 design/navigation, R6 recomposition, and 10.5-B remain out of scope.
+
+**API and precision decision:** The approved conceptual surface is authenticated
+Profile context GET/PATCH, income-candidate GET, and candidate confirm/reject/
+decision-delete actions. There is no generic context endpoint. Financial values
+remain Decimal in authority and serialize as strings; dates are ISO values;
+floats are not accepted as financial truth.
+
+**Implementation decision:** `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md`
+decomposes R2 into B1 persistence/ownership, B2 Profile context API, B3
+recurrence evidence, B4 decisions/API, B5 feature-specific composition, B6
+Profile experience, B7 consumer foundations, and B8 stabilization/independent
+validation. The next authorized implementation gate is B1 only. This ADR and
+its contract create no production code, schema, endpoint, UI, or test behavior.

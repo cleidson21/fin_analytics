@@ -1,8 +1,8 @@
 # Architecture — FINANALYTICS Wealth OS
 
-**Status:** `CONTRACT LOCKED — 10.R1`
+**Status:** `10.R1 ARCHITECTURE LOCKED / 10.R2-A CONTEXT BOUNDARY LOCKED`
 
-**Date:** 2026-10-02
+**Date:** 2026-10-03
 
 **Canonical responsibility:** cross-cutting system architecture, target product
 information architecture, capability placement, and migration boundaries.
@@ -81,6 +81,21 @@ core. It does not collapse the layers into one service.
    not mutate portfolio reality or goals implicitly.
 7. **Routes migrate deliberately.** R1 locks concepts, not URLs. Existing routes
    and deep links remain until a later implementation contract changes them.
+
+### Smart Financial Context placement (ADR-028)
+
+R2 implementation will introduce one internal, feature-specific composition boundary between
+governed sources and consumers. It exposes only context approved for the named
+feature and authenticated user; it is not a global user dump, a second
+financial engine, an AI memory, or an arbitrary database facade.
+
+Declared monthly gross income remains owned by Profile. Recurring-income
+candidates are deterministic observations and require an explicit user
+decision before they become confirmed context. Health retains authority over
+certified aggregate cashflow, Goals over objective lifecycle, Planning over
+projection mathematics and source resolution, and FIRE over its explicit
+assumptions composed through Planning. Exact semantics are locked in
+`SMART_FINANCIAL_CONTEXT_CONTRACT.md`.
 
 ## 4. Target information architecture
 
