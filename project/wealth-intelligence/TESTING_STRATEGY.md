@@ -1,5 +1,6 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; 10.R2-B1/B2 validated; 10.R2-B3 ready/not started; 10.5-B paused pending R7
+**Status:** ACTIVE; 10.R2-B1/B2/B3/B4 validated; 10.R2-B5 ready/not started;
+10.5-B paused pending R7
 **Date:** 2026-10-05
 
 ---
@@ -235,6 +236,29 @@ tests/
   remained `23 passed`; authentication/Goals/API-foundation regressions were
   `69 passed`; the complete backend unit directory returned `736 passed, 2
   failed`, limited to the same historical Investments failures.
+- B3 recurring-evidence evidence: 35 focused tests cover NFKC/case-fold/space
+  normalization, a fixed SHA-256 signature vector, provider/account/currency
+  separation, six civil months, 3-of-6 non-consecutive coverage, partial month,
+  end/start-month shifts, exact Decimal median/MAD, amount variability, stable
+  ordering, structured transfer ambiguity, bounded SQL, and zero/one/many or
+  wrong-user ownership. B1+B2 remained `55 passed`; focused Health/Pierre/
+  transaction regressions were `101 passed`; complete units returned `771
+  passed, 2 failed`, limited to the unchanged historical Investments failures.
+  A read-only active-database smoke returned aggregate counts only and left the
+  session with no new, dirty, or deleted objects.
+- B4 income-decision API evidence: 32 focused tests cover authenticated empty
+  and populated reads, privacy allowlisting, exact Decimal strings, current
+  decision overlay, confirm/reject replacement and idempotence, reset,
+  persisted stale decisions, signature-version isolation, forged/disappeared
+  candidates, strict request fields, evidence-fingerprint `409`, fail-closed
+  ownership, decision-only writes, rollback after mapping failure, and exact
+  OpenAPI scope. The combined B1–B4 suite returned `122 passed`; focused
+  Health/Pierre/transaction regressions returned `103 passed`; auth/Profile/
+  Goals/API-foundation regressions returned `138 passed`; complete units
+  returned `803 passed, 2 failed`, limited to the unchanged historical
+  Investments asset-detail failures. A read-only active-database composition
+  smoke returned four views with transaction/decision counts unchanged and no
+  new, dirty, or deleted session objects.
 - Contract-test declared versus observed context, feature-specific source
   choice, strict Decimal strings, provenance, freshness, confirmation, reset,
   and override semantics against `SMART_FINANCIAL_CONTEXT_CONTRACT.md`.

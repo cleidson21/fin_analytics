@@ -1,5 +1,50 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R2-B4] — 2026-10-05 — Income decision state and authenticated API
+
+- Added the four contract-locked authenticated income-candidate routes for
+  deterministic review and explicit confirm/reject/reset actions.
+- Composed B3 current evidence with B1 durable decisions without persisting
+  candidates. Exact-version overlay, visible stale decisions, reversible state
+  replacement, and deterministic current-first ordering are enforced.
+- Added strict fingerprint-only decision requests. Every confirm/reject
+  recomputes the current server-owned candidate; changed evidence returns `409`
+  and forged, absent, or disappeared candidates return a non-enumerating `404`.
+- Public responses use exact Decimal strings and omit raw descriptions,
+  transaction identifiers, account scope, source signatures, internal user
+  identity, and unapproved labels. Only `recurring_income_decisions` may change;
+  Profile, transactions, governance, Health, financial engines, and frontend
+  remain untouched.
+- Validated `32` focused B4 tests, `122` combined B1–B4 tests, `103`
+  Health/Pierre/transaction regressions, `138` auth/Profile/Goals/API-foundation
+  regressions, and complete units at `803 passed, 2` unchanged historical
+  Investments failures. A read-only active-database smoke left transaction and
+  decision counts unchanged with no pending ORM mutations.
+- `10.R2-B1/B2/B3/B4 = IMPLEMENTED / VALIDATED`; `10.R2-B5 — FEATURE-SPECIFIC
+  SMART CONTEXT COMPOSITION = READY / NOT STARTED`. No B5 composition,
+  frontend, migration, AI, external provider, commit, or push was added.
+
+---
+
+## [PHASE-10.R2-B3] — 2026-10-05 — Deterministic recurring-income evidence engine
+
+- Added a bounded read-only adapter over eligible governed
+  `CLASSIFIED`/`ENTRADA`/`CREDIT` ledger rows after the exact-single-user guard.
+- Added version-1 NFKC/case-fold/whitespace normalization, an explicit canonical
+  SHA-256 signature payload, opaque candidate identity, six-calendar-month
+  selection, and the three-distinct-month recurrence gate.
+- Added exact Decimal latest/min/max/median/MAD evidence, monthly occurrence
+  counts, partial-current-month semantics, deterministic ordering, structured
+  same-titularity/investment exclusions, and transfer-ambiguity flags.
+- Validated `35` focused B3 tests, the unchanged `55` B1+B2 tests, `101`
+  Health/Pierre/transaction regressions, a read-only aggregate live smoke, and
+  complete units at `771 passed, 2` unchanged historical Investments failures.
+- `10.R2-B1/B2/B3 = IMPLEMENTED / VALIDATED`; `10.R2-B4 — INCOME DECISION STATE
+  & API = READY / NOT STARTED`. No decision write/API, candidate persistence,
+  frontend, migration, AI, external provider, commit, or push was added.
+
+---
+
 ## [PHASE-10.R2-B2] — 2026-10-05 — Authenticated declared Profile context API
 
 - Added authenticated `GET` and `PATCH /api/v1/profile/context` for only the

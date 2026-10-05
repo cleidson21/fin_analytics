@@ -15,6 +15,7 @@ from backend.api.routers.financial_health import router as financial_health_rout
 from backend.api.routers.planning import router as planning_router
 from backend.api.routers.fire import router as fire_router
 from backend.api.routers.profile import router as profile_router
+from backend.api.routers.financial_context import router as financial_context_router
 
 # Ensure all V3 tables exist on startup (including GovernanceAuditLog from Sprint 2.8)
 # Structural migrations (ALTER TABLE) are managed via versioned SQL scripts in database/migrations/
@@ -68,3 +69,6 @@ app.include_router(fire_router, prefix="/api/v1")
 
 # Declared Profile context API (Phase 10.R2-B2).
 app.include_router(profile_router, prefix="/api/v1")
+
+# Recurring-income candidate decision API (Phase 10.R2-B4).
+app.include_router(financial_context_router, prefix="/api/v1")

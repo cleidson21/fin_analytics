@@ -18,15 +18,20 @@ consume those capabilities without replacing their financial authority.
 - Wealth OS 10.R2-A: `CONTRACT LOCKED / IMPLEMENTATION READY`
 - Wealth OS 10.R2-B1: `IMPLEMENTED / VALIDATED`
 - Wealth OS 10.R2-B2: `IMPLEMENTED / VALIDATED`
-- Wealth OS 10.R2-B3: `READY / NOT STARTED`
+- Wealth OS 10.R2-B3: `IMPLEMENTED / VALIDATED`
+- Wealth OS 10.R2-B4: `IMPLEMENTED / VALIDATED`
+- Wealth OS 10.R2-B5: `READY / NOT STARTED`
 
 The realignment is an incremental composition refactor. It preserves validated
 financial engines while adding Smart Context, normalized external context, a
 provider-aware AI runtime, coherent navigation/design foundations, and composed
 product journeys in later phases. R2-A locks the Smart Financial Context
 contract. R2-B1 adds only its persistence and fail-closed ownership foundation;
-R2-B2 adds the authenticated declared Profile context API. No recurring-income
-detector, composition service, or frontend integration exists yet.
+R2-B2 adds the authenticated declared Profile context API; R2-B3 adds the
+read-only deterministic recurring-income evidence engine; R2-B4 exposes only
+authenticated candidate review and reversible confirm/reject/reset decisions
+with evidence-conflict protection. No composition service or frontend
+integration exists yet.
 
 ## What exists today
 
@@ -43,9 +48,9 @@ Important current limitations:
 - the existing Investments UI is not a certified Portfolio Intelligence or
   portfolio-performance engine;
 - Profile is partly browser-local and Settings is mostly placeholder behavior;
-- there is no Smart Context service, normalized External Context Layer,
-  production Advisor/Insights/Copilot, OpenAI/Ollama runtime, working Gemini
-  runtime, or AI scheduler;
+- there is no shared Smart Context composition service, normalized External
+  Context Layer, production Advisor/Insights/Copilot, OpenAI/Ollama runtime,
+  working Gemini runtime, or AI scheduler;
 - the live UI is dark-specific despite light/dark CSS tokens.
 
 See the verified current-state owner for exact detail.

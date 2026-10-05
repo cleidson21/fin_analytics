@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1/B2 VALIDATED`
+**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1/B2/B3/B4 VALIDATED`
 
-**Next:** `10.R2-B3 — RECURRING INCOME EVIDENCE ENGINE — READY / NOT STARTED`
+**Next:** `10.R2-B5 — FEATURE-SPECIFIC SMART CONTEXT COMPOSITION — READY / NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -26,8 +26,20 @@ unstarted.
 
 R2-B2 exposes only authenticated declared Profile context through `GET` and
 `PATCH /api/v1/profile/context`, with strict Decimal-string input, explicit
-null clearing, safe ownership failure, and purpose-limited provenance. Income
-detection, decisions API, composition, and frontend work remain unstarted.
+null clearing, safe ownership failure, and purpose-limited provenance. B2 itself
+added no income detection, decisions API, composition, or frontend work.
+
+R2-B3 adds the read-only governed-ledger adapter and pure recurring-evidence
+engine. It emits only deterministic 3-of-6 candidates with opaque versioned
+identity, exact Decimal evidence, and structured risk flags. It persists no
+candidate, exposes no API, and does not classify any candidate as income.
+
+R2-B4 composes that current evidence with durable B1 decisions and exposes the
+four authenticated candidate review/confirm/reject/reset routes locked by the
+contract. Confirm/reject revalidate an opaque evidence fingerprint, stale
+decisions remain visible and reversible, and only decision rows are written.
+No candidate evidence, Profile fact, transaction, frontend, or new schema is
+mutated.
 
 ## Read in this order
 

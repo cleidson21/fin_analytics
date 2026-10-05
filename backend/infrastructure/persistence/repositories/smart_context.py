@@ -134,6 +134,18 @@ class RecurringIncomeDecisionRepository:
         ).mappings().one_or_none()
         return self._to_domain(row) if row is not None else None
 
+    def list_all(self) -> tuple[RecurringIncomeDecision, ...]:
+        rows = self._db.execute(
+            select(RecurringIncomeDecisionModel.__table__)
+            .where(RecurringIncomeDecisionModel.user_id == self._owner.user_id)
+            .order_by(
+                RecurringIncomeDecisionModel.updated_at.desc(),
+                RecurringIncomeDecisionModel.source_signature.asc(),
+                RecurringIncomeDecisionModel.signature_version.asc(),
+            )
+        ).mappings()
+        return tuple(self._to_domain(row) for row in rows)
+
     def save(
         self,
         *,

@@ -371,7 +371,7 @@ def test_mapping_failure_rolls_back_the_request_transaction(profile_api, monkeyp
         ).scalar_one() == 0
 
 
-def test_openapi_exposes_only_the_authenticated_b2_profile_surface():
+def test_openapi_keeps_the_authenticated_profile_surface_purpose_limited():
     schema = app.openapi()
     profile_paths = {
         path: sorted(operations)
@@ -382,10 +382,18 @@ def test_openapi_exposes_only_the_authenticated_b2_profile_surface():
     assert profile_paths == {"/api/v1/profile/context": ["get", "patch"]}
     for operation in schema["paths"]["/api/v1/profile/context"].values():
         assert operation["security"]
-    assert not any(
-        path.startswith("/api/v1/financial-context")
+    financial_context_paths = {
+        path
         for path in schema["paths"]
-    )
+        if path.startswith("/api/v1/financial-context")
+    }
+    assert financial_context_paths == {
+        "/api/v1/financial-context/income-candidates",
+        "/api/v1/financial-context/income-candidates/{candidate_id}/confirm",
+        "/api/v1/financial-context/income-candidates/{candidate_id}/reject",
+        "/api/v1/financial-context/income-candidates/{candidate_id}/decision",
+    }
+    assert "/api/v1/financial-context" not in schema["paths"]
 
     patch = schema["paths"]["/api/v1/profile/context"]["patch"]
     request_ref = patch["requestBody"]["content"]["application/json"]["schema"]["$ref"]
