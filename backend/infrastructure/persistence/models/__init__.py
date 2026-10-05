@@ -10,6 +10,7 @@ from .wealth.position_snapshot import PositionSnapshotModel
 from .wealth.portfolio_snapshot import PortfolioSnapshotModel
 from .wealth.income_event import IncomeEventModel
 from .goal import GoalModel
+from .smart_context import DeclaredFinancialContextModel, RecurringIncomeDecisionModel
 
 __all__ = [
     "UserModel",
@@ -24,4 +25,6 @@ __all__ = [
     "PortfolioSnapshotModel",
     "IncomeEventModel",
     "GoalModel",
+    "DeclaredFinancialContextModel",
+    "RecurringIncomeDecisionModel",
 ]

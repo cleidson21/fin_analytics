@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R2-A SMART FINANCIAL CONTEXT CONTRACT LOCKED`
+**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1/B2 VALIDATED`
 
-**Next:** `10.R2-B1 — READY / NOT STARTED`
+**Next:** `10.R2-B3 — RECURRING INCOME EVIDENCE ENGINE — READY / NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -18,6 +18,16 @@ R2-A locks declared financial context, deterministic recurring-income
 candidates, human decisions, ownership, provenance, and feature-specific
 composition. It changes documentation only and creates no backend, frontend,
 test, migration, dependency, provider, runtime, or route behavior.
+
+R2-B1 implements only the two approved persistence owners, user-scoped
+repositories, a fail-closed local ownership guard, one migration, and focused
+structural tests. APIs, detection, composition, and frontend work remain
+unstarted.
+
+R2-B2 exposes only authenticated declared Profile context through `GET` and
+`PATCH /api/v1/profile/context`, with strict Decimal-string input, explicit
+null clearing, safe ownership failure, and purpose-limited provenance. Income
+detection, decisions API, composition, and frontend work remain unstarted.
 
 ## Read in this order
 

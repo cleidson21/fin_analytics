@@ -1,6 +1,6 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; 10.R2-A contract locked; 10.R2-B1 ready/not started; 10.5-B paused pending R7
-**Date:** 2026-10-03
+**Status:** ACTIVE; 10.R2-B1/B2 validated; 10.R2-B3 ready/not started; 10.5-B paused pending R7
+**Date:** 2026-10-05
 
 ---
 
@@ -218,6 +218,23 @@ tests/
   fallback/browser financial authority.
 
 ### Phase 10.R2 — Smart Financial Context
+- B1 persistence/ownership evidence: 23 focused tests cover migration
+  upgrade/downgrade/re-upgrade, metadata parity, table/FK/check/unique/index
+  constraints, exact Decimal roundtrip, null/zero/clear semantics, caller-owned
+  transactions, decision update/reset, privacy-by-schema, and zero/one/many or
+  wrong-user ownership. A copied real database also passed
+  `f2915371d283 -> 2d6b4f8a9c1e -> f2915371d283 -> 2d6b4f8a9c1e` with empty
+  backfill. Focused Planning/Goals/authentication regressions passed 30 tests.
+  The complete backend unit directory returned `704 passed, 2 failed`; both
+  failures are the unchanged historical Investments asset-detail/MagicMock
+  timeline debt documented in `CURRENT_STATE.md`.
+- B2 declared Profile API evidence: 32 focused tests cover real route auth,
+  strict Decimal-string/date parsing, exact string serialization, empty state,
+  set/update/null-clear idempotence, forged owner fields, wrong/multiple-user
+  failure, purpose-limited responses, request rollback, and OpenAPI scope. B1
+  remained `23 passed`; authentication/Goals/API-foundation regressions were
+  `69 passed`; the complete backend unit directory returned `736 passed, 2
+  failed`, limited to the same historical Investments failures.
 - Contract-test declared versus observed context, feature-specific source
   choice, strict Decimal strings, provenance, freshness, confirmation, reset,
   and override semantics against `SMART_FINANCIAL_CONTEXT_CONTRACT.md`.

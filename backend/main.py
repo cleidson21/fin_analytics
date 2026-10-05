@@ -14,6 +14,7 @@ from backend.api.routers.investments import router as investments_router
 from backend.api.routers.financial_health import router as financial_health_router
 from backend.api.routers.planning import router as planning_router
 from backend.api.routers.fire import router as fire_router
+from backend.api.routers.profile import router as profile_router
 
 # Ensure all V3 tables exist on startup (including GovernanceAuditLog from Sprint 2.8)
 # Structural migrations (ALTER TABLE) are managed via versioned SQL scripts in database/migrations/
@@ -64,3 +65,6 @@ app.include_router(planning_router, prefix="/api/v1")
 
 # FIRE API (Phase 10.4-D3): one authenticated transient analysis endpoint.
 app.include_router(fire_router, prefix="/api/v1")
+
+# Declared Profile context API (Phase 10.R2-B2).
+app.include_router(profile_router, prefix="/api/v1")

@@ -1,5 +1,45 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R2-B2] — 2026-10-05 — Authenticated declared Profile context API
+
+- Added authenticated `GET` and `PATCH /api/v1/profile/context` for only the
+  approved declared monthly gross income and authenticated read-only name/email.
+- Reused the B1 exact-single-user guard and declared-context repository; requests
+  accept only positive cent-scale Decimal strings or explicit null and expose no
+  public owner/account selector.
+- Added purpose-limited declared provenance, safe ownership/error translation,
+  and a request dependency that owns commit/rollback while B1 repositories
+  remain commit-free.
+- Validated `32` focused B2 tests, the unchanged `23` B1 tests, `69` relevant
+  auth/Goals/API-foundation regressions, OpenAPI route preservation, and the
+  complete unit result `736 passed, 2` unchanged historical Investments
+  failures.
+- `10.R2-B1/B2 = IMPLEMENTED / VALIDATED`; `10.R2-B3 — RECURRING INCOME
+  EVIDENCE ENGINE = READY / NOT STARTED`. No detector, recurring-decision API,
+  frontend, migration, external provider, AI, commit, or push was added.
+
+---
+
+## [PHASE-10.R2-B1] — 2026-10-05 — Declared context persistence and ownership foundation
+
+- Added one Alembic revision with only `user_declared_financial_context` and
+  `recurring_income_decisions`; no candidate/evidence table and no backfill.
+- Added exact Decimal/BRL/monthly/gross declaration invariants, versioned
+  confirm/reject decision identity, reversible repository operations, and
+  caller-controlled transaction semantics.
+- Added a reusable fail-closed exact-single-user ownership guard without
+  coupling Smart Context to Planning's portfolio resolver.
+- Validated 23 focused B1 tests, 30 relevant ownership/Planning/Goals/auth
+  regressions, a single Alembic head, and upgrade/downgrade/re-upgrade against a
+  disposable copy of the real database. The complete backend unit directory
+  returned `704 passed, 2 failed`, with only the two unchanged historical
+  Investments/MagicMock failures.
+- `10.R2 = IMPLEMENTATION IN PROGRESS`; `10.R2-B1 = IMPLEMENTED / VALIDATED`;
+  `10.R2-B2 = READY / NOT STARTED`. No API, frontend, detector, AI, external
+  provider, financial engine, commit, or push change was made.
+
+---
+
 ## [PHASE-10.R2-A] — 2026-10-03 — Smart Financial Context contract lock
 
 - Audited the real Profile/browser boundary, active transaction model and
