@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1/B2/B3/B4/B5 VALIDATED`
+**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1–B5 VALIDATED / B6 VALIDATED — INDEPENDENTLY APPROVED`
 
-**Next:** `10.R2-B6 — PROFILE CONTEXT EXPERIENCE & BROWSER TRANSITION — READY / NOT STARTED`
+**Next:** `10.R2-B7 — CONSUMER INTEGRATION FOUNDATIONS — READY / NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -48,6 +48,23 @@ and ADR-023 portfolio authorities. Composition is read-only and preserves
 provenance, exact Decimal values, source-specific time/freshness, unavailable
 states, and explicit assumptions. It adds no public API, frontend, migration,
 provider, AI behavior, or financial formula.
+
+R2-B6 connects the existing `/profile` route to the declared-context and
+recurring-income review APIs. Declared and observed facts remain visually and
+semantically separate; saves, clears, confirmations, rejections, and resets are
+explicit. No eligible legacy declared-income value exists in the historical
+browser record, so initial load never uploads local data. The four approved
+presentation/professional fields remain browser-local and are never sent to the
+financial-context APIs.
+
+The five material findings from the first independent B6 review are remediated:
+candidate mutations and retries share a fail-safe interaction lock; stale
+confirmed and rejected decisions remain distinguishable without presenting old
+money as current; action feedback survives empty-list refreshes and reports
+refresh failures accurately; offset-less repository timestamps are interpreted
+as UTC separately from civil dates; and rendered Profile tests cover the page
+orchestration. Independent delta re-review approved the remediation: M1–M5 are
+closed, with no blocking or material findings. B7 remains ready but unstarted.
 
 ## Read in this order
 

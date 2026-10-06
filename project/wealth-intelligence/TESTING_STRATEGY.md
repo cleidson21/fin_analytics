@@ -1,7 +1,7 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; 10.R2-B1/B2/B3/B4/B5 validated; 10.R2-B6 ready/not started;
+**Status:** ACTIVE; 10.R2-B1–B6 validated; B6 independently approved; B7 ready/not started;
 10.5-B paused pending R7
-**Date:** 2026-10-05
+**Date:** 2026-10-06
 
 ---
 
@@ -269,6 +269,18 @@ tests/
   Planning/FIRE source and boundary regressions returned `128 passed`; complete
   units returned `824 passed, 2 failed`, limited to the unchanged historical
   Investments asset-detail failures.
+- B6 Profile context experience evidence after material-findings remediation:
+  `30` helper/client tests and `14` rendered Profile tests (`44 passed` focused)
+  cover purpose-limited browser persistence, GET-only initial load, exact
+  Decimal-string save/null-clear, candidate confirm/reject/reset, synchronous
+  global candidate mutation/retry locking and release on every result, accurate
+  `404`/`409` refresh feedback, empty-list message retention, distinct stale
+  confirmed/rejected decisions without current money, hidden fingerprint use,
+  and naïve-UTC timestamp normalization separate from civil dates. The complete
+  frontend suite returned `121 passed`; TypeScript, targeted B6 lint, and the
+  production build passed. Project-wide lint remains at the unchanged baseline
+  of `53 errors / 46 warnings`, with none in a B6 file. Independent B6 delta
+  re-review approved M1–M5 with no blocking or material findings.
 - Contract-test declared versus observed context, feature-specific source
   choice, strict Decimal strings, provenance, freshness, confirmation, reset,
   and override semantics against `SMART_FINANCIAL_CONTEXT_CONTRACT.md`.

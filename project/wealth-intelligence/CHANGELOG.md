@@ -1,5 +1,35 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R2-B6] — 2026-10-06 — Profile context experience and browser transition
+
+- Connected the existing `/profile` experience to authenticated declared
+  context GET/PATCH and recurring-income list/confirm/reject/reset APIs without
+  adding a route, backend behavior, schema, or migration.
+- Separated declared monthly gross income from observed recurring evidence,
+  preserved exact Decimal strings, exposed bounded provenance and evidence,
+  and added explicit save, clear, confirm, reject, reset, stale, ambiguity,
+  unavailable, and evidence-change states.
+- Confirmed that `fin_profile_extended` has no persisted declared-income field
+  eligible for transition. Initial load is GET-only, sends no browser object,
+  and preserves only the existing four local presentation/professional fields.
+- Remediated all five material findings from the first independent review:
+  serialized candidate mutations/retries, distinct stale confirmed/rejected
+  presentation, persistent and truthful action feedback, naïve-UTC timestamp
+  normalization, and rendered Profile behavior coverage. Added only the minimal
+  compatible test dependencies `@testing-library/react@16.3.3` and
+  `jsdom@30.1.2`.
+- Validated `44` focused B6 tests (`30` helper/client plus `14` rendered page),
+  `121` complete frontend tests, TypeScript, targeted lint, and the production
+  build. Global lint remains at the unchanged `53 errors / 46 warnings`, with
+  no finding in a B6 file.
+- Independent delta re-review approved the M1–M5 remediation with `0` blocking
+  and `0` material findings; each material finding is closed.
+- `10.R2-B1–B6 = IMPLEMENTED / VALIDATED`; `10.R2-B6 = INDEPENDENTLY APPROVED`;
+  `10.R2-B7 — CONSUMER INTEGRATION FOUNDATIONS = READY / NOT STARTED`. No
+  commit or push was created before this checkpoint.
+
+---
+
 ## [PHASE-10.R2-B5] — 2026-10-05 — Feature-specific Smart Context composition
 
 - Added an internal authenticated `SmartFinancialContextService` with immutable

@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-05 — Phase 10.R2-B5 feature-specific composition validation
+**Updated:** 2026-10-06 — Phase 10.R2-B6 material-findings remediation
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -24,7 +24,8 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R2-B3 recurring income evidence engine | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B4 income decision state/API | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B5 feature-specific Smart Context composition | `IMPLEMENTED / VALIDATED` |
-| 10.R2-B6 Profile context experience/browser transition | `READY / NOT STARTED` |
+| 10.R2-B6 Profile context experience/browser transition | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED` |
+| 10.R2-B7 consumer integration foundations | `READY / NOT STARTED` |
 | Wealth OS Realignment | `ARCHITECTURE LOCKED / IMPLEMENTATION IN PROGRESS` |
 
 ## Implemented and validated capabilities
@@ -38,7 +39,7 @@ This document describes what exists now. Future product architecture belongs to
 | Financial Health | Certified cashflow, history, categories, anomaly, and trend services/API/UI | Health domain, router, and UI |
 | Planning | Five authenticated transient capabilities using certified Decimal engines and explicit sources | ADRs 019–024, Planning domain/API/UI |
 | FIRE | One authenticated deterministic analysis capability composed over Planning | ADR-025, FIRE contract/domain/API/UI |
-| Smart Context B1-B5 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, authenticated review/confirm/reject/reset decision API, and internal feature-specific composition | migration `2d6b4f8a9c1e`, Smart Context persistence/API/evidence/decision/composition tests |
+| Smart Context B1-B6 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, authenticated review/confirm/reject/reset decision API, internal feature-specific composition, and the Profile declared/observed review experience | migration `2d6b4f8a9c1e`, Smart Context backend tests, B6 frontend tests/typecheck/build |
 | Market data | yfinance adapter/service with provider-specific cache behavior | market-data protocol and yfinance integration |
 
 The existing Investments product surfaces are real, but their mixed valuation,
@@ -58,12 +59,14 @@ links remain operational until R5/R6 explicitly implement migration.
 
 ## Profile
 
-`GET` and `PATCH /api/v1/profile/context` now expose the approved declared
-monthly gross income for the authenticated exact-single-user owner. The API
-accepts only strict Decimal strings or explicit null, returns exact strings and
-minimal declared provenance, and exposes authenticated name/e-mail without an
-internal user identifier. The `/profile` frontend is not connected to this API
-yet. Only these extended fields persist in the browser key
+`GET` and `PATCH /api/v1/profile/context` expose the approved declared monthly
+gross income for the authenticated exact-single-user owner. The `/profile`
+experience now reads, explicitly saves, and explicitly clears that fact using
+exact Decimal strings and displays its declared/monthly/gross/BRL provenance.
+The same page separately presents bounded recurring-income evidence and the
+authenticated confirm/reject/reset actions without treating detection or a
+confirmed recurring source as salary. Only these presentation/professional
+fields persist in the browser key
 `fin_profile_extended`:
 
 - `display_name`;
@@ -71,11 +74,20 @@ yet. Only these extended fields persist in the browser key
 - `company`;
 - `tax_regime`.
 
-Phone, birthdate, CPF, gross monthly income, and employment start appear in the
-form, but the current frontend still treats gross income as transient and
-removes sensitive values from old browser records. B1/B2 added no browser
-upload or backfill. Goals, Health, Planning, and FIRE do not consume extended
-Profile data today.
+No persisted legacy declared-income value exists in that browser record, so B6
+does not invent a migration prompt or issue an automatic upload. Initial load
+performs GET requests only. Old unapproved fields are removed from the local
+record while the four approved local-only fields remain local; no local object
+is sent through the declared-context API. Goals, Health, Planning, and FIRE do
+not consume these local Profile fields today.
+
+After the first independent review, B6 now also prevents overlapping candidate
+mutations and candidate retries, preserves confirmed-versus-rejected decision
+meaning when evidence is stale, keeps action feedback visible after an empty
+canonical refresh, reports refresh failure without false success, and treats
+offset-less repository timestamps as UTC without changing civil-date handling.
+Rendered Profile tests cover these behaviors. The independent delta re-review
+approved M1–M5 with no blocking or material findings.
 
 ## Settings
 
@@ -172,8 +184,9 @@ receive certified investment wealth plus explicit assumption-required states;
 income, savings, expenses, returns, inflation, contribution, retirement
 spending, and withdrawal rate are not silently substituted. Transactions,
 governance, Health, declared Profile context, candidate evidence, and financial
-engines are unchanged. Frontend Profile integration and automatic
-observed-income mutation do not exist yet.
+engines are unchanged. B6 adds only the Profile presentation and explicit
+human actions over the existing B2/B4 APIs; it does not automatically mutate
+declared or observed income, and it adds no generic Smart Context route.
 
 ADR-028 and `SMART_FINANCIAL_CONTEXT_CONTRACT.md` now lock the future R2
 semantics: Profile-owned declared monthly gross income; deterministic
@@ -181,9 +194,10 @@ three-distinct-months-in-six recurring candidates without an amount-similarity
 score; explicit confirm/reject/reset decisions; and feature-specific context
 composition. `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` decomposes the
 work. B1 implements persistence/ownership, B2 the declared Profile context API,
-B3 deterministic recurring evidence, B4 decision state/API, and B5 internal
-feature-specific composition. B6 Profile context experience and explicit
-browser transition is the next unstarted gate.
+B3 deterministic recurring evidence, B4 decision state/API, B5 internal
+feature-specific composition, and B6 the Profile context experience with a
+safe no-upload browser transition. B6 is independently approved; B7 Consumer
+Integration Foundations remains ready but unstarted.
 
 ## Portfolio Intelligence state
 
