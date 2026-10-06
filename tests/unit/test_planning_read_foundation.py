@@ -173,6 +173,29 @@ def test_goal_read_enforces_ownership(planning_db):
     assert reader.get_goal(planning_db, uuid4(), owner_id) is None
 
 
+def test_goal_list_is_owned_ordered_and_decimal_safe(planning_db):
+    owner_id = uuid4()
+    other_user_id = uuid4()
+    later = datetime(2026, 9, 17, 12, 0, 0)
+    priority_two = _goal(owner_id, priority=2, name="Priority two")
+    priority_one = _goal(
+        owner_id,
+        priority=1,
+        name="Priority one",
+        created_at=later,
+        updated_at=later,
+    )
+    foreign = _goal(other_user_id, priority=1, name="Foreign")
+    planning_db.add_all([priority_two, priority_one, foreign])
+    planning_db.commit()
+
+    facts = PlanningGoalReadQuery().list_goals(planning_db, owner_id)
+
+    assert [fact.name for fact in facts] == ["Priority one", "Priority two"]
+    assert all(fact.user_id == owner_id for fact in facts)
+    assert all(type(fact.target_amount) is Decimal for fact in facts)
+
+
 def test_goal_initial_wealth_requires_present_current_amount(planning_db):
     user_id = uuid4()
     missing = _goal(user_id, current_amount=None)

@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-05 — Phase 10.R2-B4 income-decision API validation
+**Updated:** 2026-10-05 — Phase 10.R2-B5 feature-specific composition validation
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -23,7 +23,8 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R2-B2 declared Profile API | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B3 recurring income evidence engine | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B4 income decision state/API | `IMPLEMENTED / VALIDATED` |
-| 10.R2-B5 feature-specific Smart Context composition | `READY / NOT STARTED` |
+| 10.R2-B5 feature-specific Smart Context composition | `IMPLEMENTED / VALIDATED` |
+| 10.R2-B6 Profile context experience/browser transition | `READY / NOT STARTED` |
 | Wealth OS Realignment | `ARCHITECTURE LOCKED / IMPLEMENTATION IN PROGRESS` |
 
 ## Implemented and validated capabilities
@@ -37,7 +38,7 @@ This document describes what exists now. Future product architecture belongs to
 | Financial Health | Certified cashflow, history, categories, anomaly, and trend services/API/UI | Health domain, router, and UI |
 | Planning | Five authenticated transient capabilities using certified Decimal engines and explicit sources | ADRs 019–024, Planning domain/API/UI |
 | FIRE | One authenticated deterministic analysis capability composed over Planning | ADR-025, FIRE contract/domain/API/UI |
-| Smart Context B1-B4 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, and authenticated review/confirm/reject/reset decision API | migration `2d6b4f8a9c1e`, Smart Context persistence/API/evidence/decision tests |
+| Smart Context B1-B5 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, authenticated review/confirm/reject/reset decision API, and internal feature-specific composition | migration `2d6b4f8a9c1e`, Smart Context persistence/API/evidence/decision/composition tests |
 | Market data | yfinance adapter/service with provider-specific cache behavior | market-data protocol and yfinance integration |
 
 The existing Investments product surfaces are real, but their mixed valuation,
@@ -128,8 +129,13 @@ future R5 target, not current behavior.
 
 ## Smart Context current state
 
-There is no shared Smart Context composition service yet. B1 now provides two
-empty-by-migration, user-owned persistence owners:
+The internal `SmartFinancialContextService` now composes purpose-limited context
+for `PROFILE`, `HOME`, `PLANNING`, `GOAL`, and `FIRE`. It resolves the
+authenticated exact-single-user guard before reading approved sources, applies
+an explicit allowlist per feature, and returns immutable provenance-aware Smart
+Values. It has no public route, write path, internal HTTP, provider/AI call, or
+financial formula. B1 provides two empty-by-migration, user-owned persistence
+owners:
 
 - `user_declared_financial_context`, with nullable positive cent-scale
   `NUMERIC(18,2)` declared monthly gross income and explicit BRL/monthly/gross
@@ -159,10 +165,15 @@ evidence is reported as `STALE` without changing the stored decision. The API
 returns exact Decimal strings and bounded evidence without raw descriptions,
 transaction IDs, account scope, signatures, or internal user identity.
 
-Only `recurring_income_decisions` is written by B4. Transactions, governance,
-Health, declared Profile context, candidate evidence, and financial engines are
-unchanged. No Smart Context composition service, frontend Profile integration,
-or automatic observed-income mutation exists yet.
+Only `recurring_income_decisions` is written by B4. B5 is read-only and delegates
+to Profile, B3/B4 recurring evidence, certified Health facts, the Decimal-safe
+owned Goal reader, and `PlanningPortfolioSourceResolver`. Planning and FIRE
+receive certified investment wealth plus explicit assumption-required states;
+income, savings, expenses, returns, inflation, contribution, retirement
+spending, and withdrawal rate are not silently substituted. Transactions,
+governance, Health, declared Profile context, candidate evidence, and financial
+engines are unchanged. Frontend Profile integration and automatic
+observed-income mutation do not exist yet.
 
 ADR-028 and `SMART_FINANCIAL_CONTEXT_CONTRACT.md` now lock the future R2
 semantics: Profile-owned declared monthly gross income; deterministic
@@ -170,8 +181,9 @@ three-distinct-months-in-six recurring candidates without an amount-similarity
 score; explicit confirm/reject/reset decisions; and feature-specific context
 composition. `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` decomposes the
 work. B1 implements persistence/ownership, B2 the declared Profile context API,
-B3 deterministic recurring evidence, and B4 decision state/API. B5
-feature-specific Smart Context composition is the next unstarted gate.
+B3 deterministic recurring evidence, B4 decision state/API, and B5 internal
+feature-specific composition. B6 Profile context experience and explicit
+browser transition is the next unstarted gate.
 
 ## Portfolio Intelligence state
 

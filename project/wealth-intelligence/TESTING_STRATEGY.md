@@ -1,5 +1,5 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; 10.R2-B1/B2/B3/B4 validated; 10.R2-B5 ready/not started;
+**Status:** ACTIVE; 10.R2-B1/B2/B3/B4/B5 validated; 10.R2-B6 ready/not started;
 10.5-B paused pending R7
 **Date:** 2026-10-05
 
@@ -259,6 +259,16 @@ tests/
   Investments asset-detail failures. A read-only active-database composition
   smoke returned four views with transaction/decision counts unchanged and no
   new, dirty, or deleted session objects.
+- B5 feature-specific composition evidence: 20 focused tests cover the locked
+  feature enum and allowlists, immutable Smart Values, exact Decimal and
+  provenance, declared/confirmed/detected/rejected/stale income separation,
+  no aggregation, source-specific unavailable and freshness states, explicit
+  Planning/FIRE assumptions, Goal/Health references, override preservation,
+  cross-feature exclusion, and fail-closed ownership. The combined B1–B5 suite
+  returned `142 passed`; Goals/Health regressions returned `272 passed`;
+  Planning/FIRE source and boundary regressions returned `128 passed`; complete
+  units returned `824 passed, 2 failed`, limited to the unchanged historical
+  Investments asset-detail failures.
 - Contract-test declared versus observed context, feature-specific source
   choice, strict Decimal strings, provenance, freshness, confirmation, reset,
   and override semantics against `SMART_FINANCIAL_CONTEXT_CONTRACT.md`.

@@ -141,8 +141,22 @@ class IncomeCandidateService:
         db: Session,
         current_user_id: UUID,
     ) -> IncomeCandidateCollection:
+        return self.list_candidates_as_of(
+            db,
+            current_user_id,
+            as_of_date=self._today(),
+        )
+
+    def list_candidates_as_of(
+        self,
+        db: Session,
+        current_user_id: UUID,
+        *,
+        as_of_date: date,
+    ) -> IncomeCandidateCollection:
+        """Internal deterministic read used by purpose-bound context composition."""
+
         owner = self._ownership_guard.resolve(db, current_user_id)
-        as_of_date = self._today()
         current = self._current_candidates(db, owner, as_of_date=as_of_date)
         decisions = RecurringIncomeDecisionRepository(db, owner).list_all()
         return self._compose(as_of_date, current, decisions)

@@ -42,20 +42,8 @@ def _optional_decimal(value: object, field_name: str) -> Optional[Decimal]:
 class PlanningGoalReadQuery:
     """Read Goals directly from Numeric columns without the legacy float entity path."""
 
-    def get_goal(
-        self,
-        db: Session,
-        goal_id: UUID,
-        user_id: UUID,
-    ) -> Optional[GoalPlanningFact]:
-        statement = select(GoalModel).where(
-            GoalModel.id == goal_id,
-            GoalModel.user_id == user_id,
-        )
-        model = db.execute(statement).scalar_one_or_none()
-        if model is None:
-            return None
-
+    @staticmethod
+    def _to_fact(model: GoalModel) -> GoalPlanningFact:
         return GoalPlanningFact(
             goal_id=model.id,
             user_id=model.user_id,
@@ -75,6 +63,41 @@ class PlanningGoalReadQuery:
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+
+    def get_goal(
+        self,
+        db: Session,
+        goal_id: UUID,
+        user_id: UUID,
+    ) -> Optional[GoalPlanningFact]:
+        statement = select(GoalModel).where(
+            GoalModel.id == goal_id,
+            GoalModel.user_id == user_id,
+        )
+        model = db.execute(statement).scalar_one_or_none()
+        if model is None:
+            return None
+
+        return self._to_fact(model)
+
+    def list_goals(
+        self,
+        db: Session,
+        user_id: UUID,
+    ) -> tuple[GoalPlanningFact, ...]:
+        """List only owned Goals through the existing Decimal-safe read boundary."""
+
+        statement = (
+            select(GoalModel)
+            .where(GoalModel.user_id == user_id)
+            .order_by(
+                GoalModel.priority.asc().nulls_last(),
+                GoalModel.created_at.desc(),
+                GoalModel.id.asc(),
+            )
+        )
+        models = db.execute(statement).scalars()
+        return tuple(self._to_fact(model) for model in models)
 
     @staticmethod
     def current_amount_as_initial_wealth(

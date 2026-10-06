@@ -1,5 +1,32 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R2-B5] — 2026-10-05 — Feature-specific Smart Context composition
+
+- Added an internal authenticated `SmartFinancialContextService` with immutable
+  Smart Values and explicit allowlists for Profile, Home, Planning, Goal, and
+  FIRE. Unknown/free-form features fail instead of receiving generic context.
+- Added thin read adapters over declared Profile context, B3/B4 recurring
+  evidence/decisions, certified Health monthly facts, the Decimal-safe owned
+  Goal reader, and the ADR-023 portfolio resolver. The composer contains no SQL,
+  financial formula, internal HTTP, write, provider, or AI path.
+- Preserved declared versus observed versus derived meaning, current versus
+  stale evidence, source-specific periods/freshness, explicit unavailable
+  reasons, exact Decimal values, multiple recurring sources without aggregation,
+  and offered/effective override metadata without persistence.
+- Planning and FIRE receive only eligible investment wealth and explicit
+  assumption-required states. Health realized savings remains a labeled
+  historical reference, not contribution capacity; current expenses do not
+  become retirement spending.
+- Validated `20` focused B5 tests, `142` combined B1–B5 tests, `272`
+  Goals/Health regressions, `128` Planning/FIRE regressions, and complete units
+  at `824 passed, 2` unchanged historical Investments failures. OpenAPI is
+  unchanged and contains no generic Smart Context route.
+- `10.R2-B1/B2/B3/B4/B5 = IMPLEMENTED / VALIDATED`; `10.R2-B6 — PROFILE
+  CONTEXT EXPERIENCE & BROWSER TRANSITION = READY / NOT STARTED`. No frontend,
+  migration, public API, financial-engine change, commit, or push was added.
+
+---
+
 ## [PHASE-10.R2-B4] — 2026-10-05 — Income decision state and authenticated API
 
 - Added the four contract-locked authenticated income-candidate routes for

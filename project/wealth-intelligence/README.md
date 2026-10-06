@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1/B2/B3/B4 VALIDATED`
+**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1/B2/B3/B4/B5 VALIDATED`
 
-**Next:** `10.R2-B5 — FEATURE-SPECIFIC SMART CONTEXT COMPOSITION — READY / NOT STARTED`
+**Next:** `10.R2-B6 — PROFILE CONTEXT EXPERIENCE & BROWSER TRANSITION — READY / NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -40,6 +40,14 @@ contract. Confirm/reject revalidate an opaque evidence fingerprint, stale
 decisions remain visible and reversible, and only decision rows are written.
 No candidate evidence, Profile fact, transaction, frontend, or new schema is
 mutated.
+
+R2-B5 adds the internal authenticated `SmartFinancialContextService`, immutable
+Smart Values, explicit allowlists for Profile, Home, Planning, Goal, and FIRE,
+and thin adapters over the existing Profile, recurring-income, Health, Goals,
+and ADR-023 portfolio authorities. Composition is read-only and preserves
+provenance, exact Decimal values, source-specific time/freshness, unavailable
+states, and explicit assumptions. It adds no public API, frontend, migration,
+provider, AI behavior, or financial formula.
 
 ## Read in this order
 

@@ -24,6 +24,22 @@ from .recurring_income import (
     evidence_window_start,
     normalize_recurring_description,
 )
+from .composition import (
+    SmartContextFeature,
+    SmartDefaultState,
+    SmartFeatureContext,
+    SmartFreshness,
+    SmartOverridePolicy,
+    SmartSemanticType,
+    SmartUnavailableReason,
+    SmartValue,
+    SmartValueEvidence,
+    SmartValueKey,
+    SmartValueOwner,
+    SmartValueScope,
+    SmartValueSource,
+    SmartValueType,
+)
 
 __all__ = [
     "DeclaredFinancialContext",
@@ -48,4 +64,18 @@ __all__ = [
     "canonical_signature_payload",
     "evidence_window_start",
     "normalize_recurring_description",
+    "SmartContextFeature",
+    "SmartDefaultState",
+    "SmartFeatureContext",
+    "SmartFreshness",
+    "SmartOverridePolicy",
+    "SmartSemanticType",
+    "SmartUnavailableReason",
+    "SmartValue",
+    "SmartValueEvidence",
+    "SmartValueKey",
+    "SmartValueOwner",
+    "SmartValueScope",
+    "SmartValueSource",
+    "SmartValueType",
 ]
