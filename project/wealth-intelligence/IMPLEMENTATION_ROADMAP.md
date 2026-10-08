@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R2-B7 READY / NOT STARTED`
-**Date:** 2026-10-06
+**Status:** `ACTIVE QUEUE — 10.R3 READY / NOT STARTED`
+**Date:** 2026-10-08
 
 ---
 
@@ -8,8 +8,8 @@
 
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
-| 1 | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTATION IN PROGRESS / B1–B6 VALIDATED / B6 INDEPENDENTLY APPROVED / B7 READY NOT STARTED` | R1 locked; ADR-028 and R2 contract |
-| 2 | 10.R3 | External Context Layer: adapters, normalization, cache/observation, semantic class, freshness/status, macro/reference provider foundations | `NOT STARTED` | R2 taxonomy and context boundary |
+| — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
+| 1 | 10.R3 | External Context Layer: adapters, normalization, cache/observation, semantic class, freshness/status, macro/reference provider foundations | `READY / NOT STARTED` | R2 taxonomy and context boundary |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
@@ -31,10 +31,17 @@ R2 implementation is decomposed in
 persistence/ownership, B2 declared Profile API, B3 recurrence evidence engine,
 B4 decision state/API, B5 feature-specific composition, B6 Profile experience,
 B7 consumer foundations, and B8 stabilization/independent validation. B1 through
-B6 are `IMPLEMENTED / VALIDATED`; B6 remediation is independently approved
-with M1–M5 closed and no blocking or material findings. The active next task is
-exactly `10.R2-B7 — CONSUMER INTEGRATION FOUNDATIONS`, which remains `READY /
-NOT STARTED`. No later microprocess is implicitly authorized.
+B7 are `IMPLEMENTED / VALIDATED`; B6 remediation is independently approved
+with M1–M5 closed and no blocking or material findings. B7 adds only typed,
+read-only consumer boundaries that delegate to B5 and leave effective inputs,
+engines, public APIs, and product experiences unchanged. The active next task
+was `10.R2-B8 — Stabilization & Independent Validation`, which is independently
+approved. MR1 diagnosed the physical-schema/Alembic-version drift; MR2 removed
+the runtime `create_all` root cause, made Alembic authoritative, and isolated
+tests from the active database, then passed independent review. MR3 reconciled
+the active Alembic bookkeeping to `2d6b4f8a9c1e`, verified `upgrade head` as a
+no-op, and preserved schema and financial data. R2 is closed. R3 is ready but
+not started, and no later microprocess is implicitly authorized.
 
 ## Closed and preserved baseline
 
@@ -48,6 +55,7 @@ NOT STARTED`. No later microprocess is implicitly authorized.
 | 10.5-A Portfolio audit | `AUDIT COMPLETE / USER DECISIONS RESOLVED` |
 | 10.R0 | `AUDIT COMPLETE` |
 | 10.R1 | `ARCHITECTURE / DOCUMENTATION LOCKED` |
+| 10.R2 | `IMPLEMENTED / VALIDATED / CLOSED` |
 
 The former 10.6–10.12 sequence is `SUPERSEDED / HISTORICAL` as an active queue.
 Its useful intentions are represented by R2–R7 or remain post-10.5 candidates;
@@ -63,7 +71,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTATION IN PROGRESS, B1–B6 VALIDATED / B6 INDEPENDENTLY APPROVED / B7 READY NOT STARTED; R3–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3 READY / NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |

@@ -10,6 +10,12 @@
 - No Ollama installation
 - Application runs natively: `uvicorn backend.main:app` (backend) + `npm run dev` (frontend)
 - Database: local SQLite file at `database/fin_analytics.db`
+- `settings.DATABASE_URL` is the single runtime database authority; the sync and
+  async SQLite engines are derived explicitly from it.
+- Alembic is the schema-evolution authority. Importing or starting the
+  application performs no `create_all`, migration, or other schema DDL.
+- Pytest installs a repository-wide disposable SQLite URL before collection and
+  refuses the active `database/fin_analytics.db` as `TEST_DATABASE_URL`.
 
 ---
 

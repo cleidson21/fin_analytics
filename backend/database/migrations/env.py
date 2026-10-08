@@ -22,10 +22,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from backend.core.config import settings
 from backend.database.base import Base
+from backend.database.url import sync_database_url
 import backend.infrastructure.persistence.models  # registra todos os models no metadata
 
-sync_url = settings.DATABASE_URL.replace("+aiosqlite", "")
-config.set_main_option("sqlalchemy.url", sync_url)
+sync_url = sync_database_url(settings.DATABASE_URL)
+config.set_main_option(
+    "sqlalchemy.url",
+    sync_url.render_as_string(hide_password=False),
+)
 
 target_metadata = Base.metadata
 

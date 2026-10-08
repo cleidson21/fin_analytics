@@ -1,5 +1,64 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R2-CLOSURE] — 2026-10-08 — Smart Financial Context closure
+
+- Closed B1–B7 after B8 independent validation and MR2 independent approval;
+  no blocking or material findings remain in the R2 foundation.
+- Recorded MR1 diagnosis and MR2 removal of runtime schema bootstrap: Alembic
+  is the schema authority, configured database URLs are authoritative, and
+  pytest refuses the active database while using isolated storage.
+- Recorded MR3 operational reconciliation of the already-equivalent active
+  Smart Context schema to revision `2d6b4f8a9c1e`. `upgrade head` was a no-op,
+  SQLite integrity remained `ok`, and schema plus financial data were
+  preserved with validated pre/post backups.
+- Final focused database-bootstrap, migration, and B7 regression returned
+  `19 passed`. B8 evidence remains `153` Smart Context, `497` Planning, `67`
+  FIRE, `133` Goals/Health, and `121` frontend tests; MR2 complete units remain
+  `842 passed, 2` unchanged historical Investments failures.
+- `10.R2 = IMPLEMENTED / VALIDATED / CLOSED`; `10.R3 = READY / NOT STARTED`.
+  R6 retains product recomposition and smart-prefill ownership.
+
+---
+
+## [PHASE-10.R2-MR2] — 2026-10-07 — Runtime schema-authority remediation
+
+- Removed application-import `create_all`; runtime and startup are now DDL-inert
+  and Alembic remains the explicit schema authority.
+- Derived synchronous and asynchronous SQLite engines from the canonical
+  configured `DATABASE_URL`; Alembic reuses the same typed normalization.
+- Added repository-wide pytest database isolation, fail-closed active-database
+  refusal, and fresh-process import/configuration regression coverage. Removed
+  the remaining metadata creation from the account seed utility.
+- Validated copy-only old-defect reproduction, stamp/no-op upgrade, migration
+  round-trip, and Smart Context FK integrity. The active DB remained byte-for-
+  byte unchanged at revision `f2915371d283` with zero Smart Context rows.
+- `10.R2-MR2 = IMPLEMENTED / VALIDATED`; R2 remains open until a separate,
+  explicitly authorized active-database Alembic reconciliation is executed.
+
+---
+
+## [PHASE-10.R2-B7] — 2026-10-06 — Consumer integration foundations
+
+- Added a typed, read-only internal foundation for future Home, Planning, Goal,
+  and FIRE consumers. Each method fixes its B5 feature and delegates exactly
+  once with the authenticated owner and explicit `as_of_date`.
+- Preserved B5 Smart Values without flattening provenance or converting
+  references into effective engine inputs. Planning contribution/return/
+  inflation and FIRE spending/withdrawal/return/inflation/contribution remain
+  explicit `ASSUMPTION_REQUIRED` outcomes.
+- Added no SQL, source-domain reader, internal HTTP, write path, migration,
+  frontend, financial formula, public route, AI, external provider, or R6 smart
+  prefill. Relevant OpenAPI operations are byte-identical before and after B7.
+- Validated `31` B5+B7 focused tests, `153` B1–B7 Smart Context tests, `497`
+  Planning regressions, `67` FIRE regressions, `133` Goals/Health regressions,
+  and complete units at `835 passed, 2` unchanged historical Investments
+  failures.
+- `10.R2-B1–B7 = IMPLEMENTED / VALIDATED`; `10.R2-B6 = INDEPENDENTLY
+  APPROVED`; `10.R2-B8 — Stabilization & Independent Validation = READY / NOT
+  STARTED`. No staging, commit, push, or B8 work was performed.
+
+---
+
 ## [PHASE-10.R2-B6] — 2026-10-06 — Profile context experience and browser transition
 
 - Connected the existing `/profile` experience to authenticated declared

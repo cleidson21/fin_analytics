@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-06 — Phase 10.R2-B6 material-findings remediation
+**Updated:** 2026-10-08 — Phase 10.R2 Smart Financial Context closure
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -18,15 +18,20 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R0 realignment audit | `AUDIT COMPLETE` |
 | 10.R1 architecture/docs | `ARCHITECTURE / DOCUMENTATION LOCKED` |
 | 10.R2-A Smart Financial Context contract | `CONTRACT LOCKED / IMPLEMENTATION READY` |
-| 10.R2 Smart Financial Context | `IMPLEMENTATION IN PROGRESS` |
+| 10.R2 Smart Financial Context | `IMPLEMENTED / VALIDATED / CLOSED` |
 | 10.R2-B1 persistence/ownership | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B2 declared Profile API | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B3 recurring income evidence engine | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B4 income decision state/API | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B5 feature-specific Smart Context composition | `IMPLEMENTED / VALIDATED` |
 | 10.R2-B6 Profile context experience/browser transition | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED` |
-| 10.R2-B7 consumer integration foundations | `READY / NOT STARTED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / IMPLEMENTATION IN PROGRESS` |
+| 10.R2-B7 consumer integration foundations | `IMPLEMENTED / VALIDATED` |
+| 10.R2-B8 stabilization and independent validation | `INDEPENDENTLY APPROVED` |
+| 10.R2-MR1 migration reconciliation audit | `ROOT CAUSE DIAGNOSED` |
+| 10.R2-MR2 runtime bootstrap/test isolation remediation | `IMPLEMENTED / INDEPENDENTLY APPROVED` |
+| 10.R2-MR3 active-database Alembic reconciliation | `COMPLETED / VALIDATED` |
+| 10.R3 External Context | `READY / NOT STARTED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED; R3 READY` |
 
 ## Implemented and validated capabilities
 
@@ -39,7 +44,7 @@ This document describes what exists now. Future product architecture belongs to
 | Financial Health | Certified cashflow, history, categories, anomaly, and trend services/API/UI | Health domain, router, and UI |
 | Planning | Five authenticated transient capabilities using certified Decimal engines and explicit sources | ADRs 019–024, Planning domain/API/UI |
 | FIRE | One authenticated deterministic analysis capability composed over Planning | ADR-025, FIRE contract/domain/API/UI |
-| Smart Context B1-B6 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, authenticated review/confirm/reject/reset decision API, internal feature-specific composition, and the Profile declared/observed review experience | migration `2d6b4f8a9c1e`, Smart Context backend tests, B6 frontend tests/typecheck/build |
+| Smart Context B1-B7 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, authenticated review/confirm/reject/reset decision API, internal feature-specific composition, the Profile declared/observed review experience, and typed read-only future-consumer boundaries | migration `2d6b4f8a9c1e`, Smart Context backend tests, B6 frontend tests/typecheck/build |
 | Market data | yfinance adapter/service with provider-specific cache behavior | market-data protocol and yfinance integration |
 
 The existing Investments product surfaces are real, but their mixed valuation,
@@ -187,6 +192,22 @@ governance, Health, declared Profile context, candidate evidence, and financial
 engines are unchanged. B6 adds only the Profile presentation and explicit
 human actions over the existing B2/B4 APIs; it does not automatically mutate
 declared or observed income, and it adds no generic Smart Context route.
+B7 adds typed, read-only internal boundaries for future Home, Planning, Goal,
+and FIRE consumers. Each boundary delegates once to B5 with an explicit feature,
+authenticated owner, and `as_of_date`; it does not query source domains, create
+effective engine inputs, resolve assumptions, change public APIs, or implement
+R6 smart-prefill behavior.
+
+MR1 diagnosed the migration drift: runtime `create_all` had created the physical
+Smart Context tables without advancing Alembic bookkeeping. MR2 removes that
+recurring cause: application import/startup is DDL-inert, both database engines
+honor the canonical configured URL, Alembic is the schema authority, and pytest
+defaults to a disposable database while refusing the active SQLite file. MR2
+was independently approved with no blocking or material findings. MR3 then
+reconciled the already-equivalent active schema to revision `2d6b4f8a9c1e` by
+bookkeeping stamp and verified `upgrade head` as a no-op. The schema and
+financial data were preserved, SQLite integrity remained `ok`, and pre/post
+backups were retained.
 
 ADR-028 and `SMART_FINANCIAL_CONTEXT_CONTRACT.md` now lock the future R2
 semantics: Profile-owned declared monthly gross income; deterministic
@@ -196,8 +217,11 @@ composition. `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` decomposes the
 work. B1 implements persistence/ownership, B2 the declared Profile context API,
 B3 deterministic recurring evidence, B4 decision state/API, B5 internal
 feature-specific composition, and B6 the Profile context experience with a
-safe no-upload browser transition. B6 is independently approved; B7 Consumer
-Integration Foundations remains ready but unstarted.
+safe no-upload browser transition. B6 is independently approved; B7 implements
+and validates the consumer-integration foundations; B8 independently approved
+the complete R2 foundation. R2 is closed. External Context remains
+`10.R3 = READY / NOT STARTED`, while product recomposition and smart-prefill
+behavior remain reserved for R6.
 
 ## Portfolio Intelligence state
 

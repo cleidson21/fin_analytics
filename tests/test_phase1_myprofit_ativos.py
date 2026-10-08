@@ -169,9 +169,14 @@ async def test_persistence():
     from backend.infrastructure.persistence.models.sync_log import SyncLogModel, SyncStatus
     from backend.application.use_cases.confirm_myprofit_ativos import ConfirmMyProfitAtivosSyncUseCase
     from backend.domain.enums.provider_type import ProviderType
+    from backend.database.url import async_database_url
 
-    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "database", "fin_analytics.db")
-    engine = create_async_engine(f"sqlite+aiosqlite:///{DB_PATH}", echo=False)
+    test_database_url = os.environ.get("TEST_DATABASE_URL")
+    if not test_database_url:
+        raise RuntimeError(
+            "TEST_DATABASE_URL must identify a provisioned disposable database"
+        )
+    engine = create_async_engine(async_database_url(test_database_url), echo=False)
     AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     # Limpar dados de teste anteriores

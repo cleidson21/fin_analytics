@@ -97,7 +97,7 @@ fin_analytics_v2/
 
 ### API (Routers)
 - **Contém:** FastAPI routers, request/response schemas Pydantic, middlewares
-- **Lifespan:** Em `main.py`, o FastAPI gerencia a criação de tabelas (`Base.metadata.create_all`) e a execução do `BootstrapAdmin.execute()` durante o startup.
+- **Schema lifecycle:** `backend.main` é inerte para DDL. Alembic é a autoridade exclusiva para evolução do schema e deve ser executado explicitamente antes do runtime; import/startup não cria nem repara tabelas.
 - **Depende de:** Application (Commands, Queries, Use Cases via DI)
 - **Nunca importa:** Infrastructure diretamente (apenas via DI Container)
 - **Nunca retorna:** Entidades do Domain — apenas DTOs

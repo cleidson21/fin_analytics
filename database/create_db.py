@@ -1,8 +1,10 @@
 """
 FinAnalytics — Database Bootstrap
 =====================================
-Executes all migrations in order to build the SQLite database from scratch.
-Replaces any prior SQLAlchemy ORM setup. The database IS the source of truth.
+Legacy-only bootstrap for the historical Pierre/Core SQL migrations 001-012.
+It is not the current application-schema bootstrap, is never called by runtime
+startup, and must not create Alembic-managed tables. Current schema evolution
+is an explicit ``alembic upgrade head`` operation.
 
 Migration history:
     001 — Core Identity (users, institutions, accounts)
@@ -19,7 +21,7 @@ Migration history:
     011 — AI Prompt Versioning (ai_prompt_versions + ALTER ai_runs)
     012 — Freeze Fixes (fixed_income_events CORRECTION, benchmark_prices REAL, installments CANCELLED, installment_plans status)
 
-Usage:
+Legacy usage:
     python database/create_db.py [--db-path PATH]
 
 Default DB path: database/fin_analytics.db

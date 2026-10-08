@@ -49,7 +49,7 @@ Uma **Vertical Slice** está **CONCLUÍDA** somente quando TODOS os itens abaixo
 
 ### 4. Infrastructure
 - [ ] ORM Model criado em `infrastructure/persistence/models/`
-- [ ] Tabelas criadas automaticamente no Lifespan (ou migration Alembic aplicada)
+- [ ] Migration Alembic revisada e aplicada explicitamente; runtime/lifespan não executa DDL
 - [ ] Repository concreto implementando o Port correspondente
 - [ ] Repository converte ORM Model → Domain Entity antes de retornar
 

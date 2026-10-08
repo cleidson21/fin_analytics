@@ -1,17 +1,23 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "database", "fin_analytics.db")
-DATABASE_URL = f"sqlite:///{DB_PATH}"
-ASYNC_DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH}"
+from backend.core.config import settings
+from backend.database.url import async_database_url, sync_database_url
+
+
+_sync_url = sync_database_url(settings.DATABASE_URL)
+_async_url = async_database_url(settings.DATABASE_URL)
+
+# Retained as public module constants for existing infrastructure callers.
+DATABASE_URL = _sync_url.render_as_string(hide_password=False)
+ASYNC_DATABASE_URL = _async_url.render_as_string(hide_password=False)
 
 engine = create_engine(
-    DATABASE_URL,
+    _sync_url,
     connect_args={"check_same_thread": False}
 )
 
 async_engine = create_async_engine(
-    ASYNC_DATABASE_URL,
+    _async_url,
     connect_args={"check_same_thread": False}
 )

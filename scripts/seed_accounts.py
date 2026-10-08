@@ -5,15 +5,12 @@ import sys
 # Add backend to path so we can import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from decimal import Decimal
 import uuid
 from datetime import datetime
 
-from backend.database.session import SessionLocal
-from backend.database.engine import engine
-from backend.database.base import Base
+from backend.database.session import AsyncSessionLocal
 from backend.infrastructure.persistence.models.user import UserModel
 from backend.domain.entities.institution import Institution
 from backend.domain.entities.account import Account
@@ -25,10 +22,9 @@ from backend.infrastructure.persistence.repositories.account import SQLAlchemyAc
 from backend.application.queries.get_accounts import GetAccountsQuery
 
 async def seed_accounts():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    async with SessionLocal() as session:
+    # Schema creation is an explicit Alembic operation. This utility only seeds
+    # a database that has already been migrated.
+    async with AsyncSessionLocal() as session:
         # Bootstrap admin if needed
         from backend.core.container import get_bootstrap_admin
         await get_bootstrap_admin(session).execute()

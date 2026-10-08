@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.database.base import Base
-from backend.database.engine import engine
 from backend.domains.pierre.router import router as pierre_router
 from backend.domains.pierre.read_router import router as read_router
 from backend.domains.pierre.governance_router import router as governance_router
@@ -16,10 +14,6 @@ from backend.api.routers.planning import router as planning_router
 from backend.api.routers.fire import router as fire_router
 from backend.api.routers.profile import router as profile_router
 from backend.api.routers.financial_context import router as financial_context_router
-
-# Ensure all V3 tables exist on startup (including GovernanceAuditLog from Sprint 2.8)
-# Structural migrations (ALTER TABLE) are managed via versioned SQL scripts in database/migrations/
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Fin Analytics")
 

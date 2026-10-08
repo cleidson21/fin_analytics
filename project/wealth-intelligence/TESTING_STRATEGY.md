@@ -1,7 +1,7 @@
 # Testing Strategy — Wealth Intelligence
-**Status:** ACTIVE; 10.R2-B1–B6 validated; B6 independently approved; B7 ready/not started;
-10.5-B paused pending R7
-**Date:** 2026-10-06
+**Status:** ACTIVE; 10.R2 implemented, validated, independently approved, and closed;
+10.R3 ready / not started; 10.5-B paused pending R7
+**Date:** 2026-10-08
 
 ---
 
@@ -22,6 +22,31 @@ status prose is never sufficient evidence. For documentation-only locks, verify
 canonical ownership, link/path validity, current-vs-future labeling, scope of
 the diff, and an empty Git index. Do not run production test suites merely to
 create noise when no code or contract behavior changed.
+
+Current B7 validation proves that the typed Home, Planning, Goal, and FIRE
+consumer foundations delegate once to B5 with explicit authenticated owner and
+`as_of_date`, preserve immutable Smart Values, do not resolve required
+assumptions, and do not alter public APIs or engines. Evidence: `31` B5+B7
+focused tests, `153` B1–B7 Smart Context tests, `497` Planning regressions, `67`
+FIRE regressions, `133` Goals/Health regressions, and the complete backend unit
+result `835 passed, 2` unchanged historical Investments failures.
+
+MR2 validates schema-authority and test-isolation boundaries. Seven focused
+tests prove canonical sync/async URL derivation, configured-engine targeting,
+fresh-process `backend.main` import with no DDL, unchanged behind-head schema,
+and fail-closed refusal of the active database by pytest. Smart Context plus
+MR2 passed `160`; Planning/FIRE passed `564`; Goals/Health passed `133`; complete
+units passed `842` with only the same two historical Investments failures.
+Copy-only testing reproduced the former drift setup without automatic table
+creation and passed stamp, no-op upgrade, downgrade/re-upgrade, and Smart
+Context FK checks. Independent MR2 review reported zero blocking and zero
+material findings. MR3 then reconciled the active Alembic revision to
+`2d6b4f8a9c1e`, verified `upgrade head` as a no-op, preserved the physical
+schema and financial row counts, and returned `integrity_check = ok`. Its
+post-operation isolated regression returned `19 passed`; validated pre/post
+backups remain retained. B8 evidence remains `153` Smart Context, `497`
+Planning, `67` FIRE, `133` Goals/Health, and `121` frontend tests, with
+compatible OpenAPI and only the two unchanged historical Investments failures.
 
 ---
 

@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R2 IMPLEMENTATION IN PROGRESS — B1–B5 VALIDATED / B6 VALIDATED — INDEPENDENTLY APPROVED`
+**Status:** `10.R2 IMPLEMENTED / VALIDATED / CLOSED`
 
-**Next:** `10.R2-B7 — CONSUMER INTEGRATION FOUNDATIONS — READY / NOT STARTED`
+**Next:** `10.R3 EXTERNAL CONTEXT — READY / NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -64,7 +64,20 @@ money as current; action feedback survives empty-list refreshes and reports
 refresh failures accurately; offset-less repository timestamps are interpreted
 as UTC separately from civil dates; and rendered Profile tests cover the page
 orchestration. Independent delta re-review approved the remediation: M1–M5 are
-closed, with no blocking or material findings. B7 remains ready but unstarted.
+closed, with no blocking or material findings.
+
+R2-B7 adds typed, read-only internal foundations for future Home, Planning,
+Goal, and FIRE consumers. They delegate to B5 with an explicit authenticated
+owner, feature, and `as_of_date`; they preserve provenance and assumption states
+without producing effective engine inputs, changing public APIs, or activating
+R6 smart-prefill behavior. B8 independently approved the complete R2
+foundation. MR1 diagnosed the physical-schema/Alembic-version drift; MR2 makes
+runtime imports/startup DDL-inert, makes the configured database URL
+authoritative, keeps Alembic as schema authority, and isolates pytest from the
+active database. MR3 reconciled active Alembic bookkeeping to migration
+`2d6b4f8a9c1e`; the subsequent upgrade was a no-op and preserved schema and
+financial data. R2 is closed. R3 is ready but not started, and product
+recomposition/smart prefills remain reserved for R6.
 
 ## Read in this order
 
