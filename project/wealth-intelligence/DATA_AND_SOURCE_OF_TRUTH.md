@@ -1,6 +1,6 @@
 # Data Lineage & Source of Truth Matrix
 **Status:** `CONTRACT LOCKED — 10.R1 + 10.R2-A` plus accepted domain contracts
-**Date:** 2026-10-03
+**Date:** 2026-10-09
 
 **Canonical responsibility:** data classifications, source authority,
 provenance, freshness, scope, and the boundary between internal facts,
@@ -62,6 +62,25 @@ fact such as an imported portfolio snapshot.
 Every external context record must be able to carry the smallest relevant set
 of provider/source, semantic class, value and unit/currency, scope/horizon,
 observed/published/retrieved time, freshness/status, and completeness.
+
+R3-B locks the detailed model in `EXTERNAL_CONTEXT_CONTRACT.md` and the
+allowlisted BCB/SGS catalog in `EXTERNAL_SERIES_REGISTRY.md` under accepted
+ADR-029. The contract is `APPROVED / LOCKED`, while implementation remains not
+started; it adds no current runtime data authority or behavior. The contract
+separates economic reference time from committed local knowledge time so
+historical `as_of` queries cannot use observations learned later. It also
+separates operational refresh age, economic freshness, acquisition health, and
+availability.
+
+The locked SQLite observation-store contract represents normalized values as
+canonical fixed-scale `TEXT`, validated and converted explicitly to Python
+`Decimal`. The registry owns each scale; provider unit and declared precision
+remain separate metadata. This preserves exact digits without relying on
+SQLite `NUMERIC` affinity. Because text collation is not numeric ordering, R3
+repositories may not use SQL value ordering, range predicates, casts,
+aggregates, or arithmetic as financial authority. Knowledge-event identity is
+separate from content identity, preserving a true `A -> B -> A` history while
+deduplicating only consecutive identical retransmissions.
 
 ## Profile and observed income boundary
 
@@ -415,11 +434,11 @@ The validated 10.3.6-B comparison engine applies the locked 10.3.6-A boundary: a
 
 ---
 
-## Future External Data Sources [PROPOSED]
+## Future External Data Sources [CONTRACTED / PROPOSED]
 
 | Source | Data | Coverage | Status |
 |--------|------|----------|--------|
-| BCB/SGS API | CDI, SELIC, IPCA, IPGM | Macro BR | Free, reliable |
+| BCB/SGS API | SGS 432 Selic target; 11 effective Selic; 12 daily CDI; 433 monthly IPCA; 1 USD selling reference | Macro BR | Official registry locked in R3-B; implementation not started |
 | python-bcb | BCB wrapper for Pandas | Macro BR | PyPI package |
 | brFinance (eudesrodrigo) | CVM financial statements | BR stocks | Async, CVM official |
 | Google News RSS | News articles | Global/BR | Free, no API key |

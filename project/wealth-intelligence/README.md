@@ -2,7 +2,7 @@
 
 **Status:** `10.R2 IMPLEMENTED / VALIDATED / CLOSED`
 
-**Next:** `10.R3 EXTERNAL CONTEXT — READY / NOT STARTED`
+**Next:** `10.R3-C DOMAIN, NORMALIZATION & EXECUTABLE REGISTRY — READY / NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -79,6 +79,16 @@ active database. MR3 reconciled active Alembic bookkeeping to migration
 financial data. R2 is closed. R3 is ready but not started, and product
 recomposition/smart prefills remain reserved for R6.
 
+R3-A completed and approved the External Context architecture/source audit.
+R3-B now provides a locked External Context contract, official BCB/SGS series
+registry, accepted ADR-029, and a locked implementation plan. R3-B.1 replaced the
+unsafe SQLite `NUMERIC(38,18)` exactness assumption with canonical fixed-scale
+text and explicit `Decimal`, preserves `A -> B -> A` knowledge history, and
+separates refresh, economic freshness, and acquisition health. Independent
+review reported no findings and the user explicitly approved all ten material
+decisions on 2026-10-09. R3-C is ready but not started; no R3 implementation
+exists from this documentation checkpoint.
+
 ## Read in this order
 
 1. [CURRENT_STATE.md](CURRENT_STATE.md) — verified present reality;
@@ -108,6 +118,9 @@ recomposition/smart prefills remain reserved for R6.
 | External product inspiration | `PRODUCT_REFERENCES.md` |
 | R2 Smart Financial Context contract | [SMART_FINANCIAL_CONTEXT_CONTRACT.md](SMART_FINANCIAL_CONTEXT_CONTRACT.md) |
 | R2 implementation decomposition | [SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md](SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md) |
+| R3 External Context locked contract | [EXTERNAL_CONTEXT_CONTRACT.md](EXTERNAL_CONTEXT_CONTRACT.md) |
+| R3 official locked series registry | [EXTERNAL_SERIES_REGISTRY.md](EXTERNAL_SERIES_REGISTRY.md) |
+| R3 locked implementation decomposition | [EXTERNAL_CONTEXT_IMPLEMENTATION_PLAN.md](EXTERNAL_CONTEXT_IMPLEMENTATION_PLAN.md) |
 | R0 evidence | `WEALTH_OS_REALIGNMENT_AUDIT.md` |
 | 10.5-A evidence | `PORTFOLIO_INTELLIGENCE_CONTRACT_AUDIT.md` |
 

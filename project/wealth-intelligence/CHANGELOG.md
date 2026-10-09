@@ -1,5 +1,70 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-B-LOCK] — 2026-10-09 — External Context contract lock
+
+- Recorded explicit user approval of all ten R3-B material decisions after the
+  independent R3-B.1 review returned 0 blocking, 0 material, and 0 minor
+  findings. Promoted ADR-029, the External Context contract, official series
+  registry, and implementation plan to `ACCEPTED/APPROVED / LOCKED`.
+- Locked the five-series BCB-only MVP, Focus deferral, two-structure bitemporal
+  store, canonical SQLite decimal text, `A -> B -> A` event history, orthogonal
+  availability/freshness/acquisition states, 6h/24h refresh policy, and
+  R3-C/D/E/F/I execution path. R3-G remains separately gated and R3-H remains
+  deferred/not implemented.
+- Added R3-D future test gates for ingestion concurrency, atomic sequence
+  allocation, simultaneous deduplication/conflict handling, rollback, replay,
+  and exact TEXT-to-Decimal persistence. No runtime behavior was implemented.
+- Preserved the user-updated root `ESPECIFICACAO_PRODUTO_METAS.md` as aligned
+  personal product vision, subordinate to canonical plans, contracts, and ADRs.
+- R3-C is `READY / NOT STARTED`. No code, migration, database, dependency,
+  provider, frontend, API, engine, R4, R5, R6, or Portfolio change was made.
+
+---
+
+## [PHASE-10.R3-B.1] — 2026-10-09 — External Context contract remediation (pre-lock record)
+
+- Replaced the draft `NUMERIC(38,18)` SQLite exactness assumption with a
+  proposed canonical fixed-scale `TEXT` representation, registry-owned scales,
+  explicit Python `Decimal` conversion, no rounding, and an explicit ban on
+  SQL lexical ordering/casts/arithmetic as numeric authority.
+- Separated economic identity, content identity, and committed knowledge-event
+  identity. The revised model preserves `A -> B -> A` as three events while
+  deduplicating only consecutive identical retransmissions.
+- Separated operational refresh age, economic freshness, acquisition health,
+  and availability. Provider failure no longer forces an eligible
+  last-known-good observation to `STALE`; insufficient evidence remains
+  `UNKNOWN` with a structured cause.
+- Clarified that R3-C/D/E/F/I form the proposed BCB-only closure path, R3-G
+  requires separate legacy-impact approval and is mandatory only before
+  yfinance admission, and R3-H remains deferred and not implemented.
+- Added no code, migration, database mutation, dependency, provider, API,
+  frontend, engine, or runtime behavior. At this pre-lock checkpoint R3-B and
+  proposed ADR-029 remained unlocked; the lock entry above supersedes that
+  then-current status.
+
+---
+
+## [PHASE-10.R3-B] — 2026-10-08 — External Context contract and series registry draft (historical)
+
+- Added a documentation-only External Context contract, five-series official
+  BCB/SGS registry, and implementation plan with immutable Decimal observations,
+  economic/knowledge time, revision history, availability/freshness, governed
+  cache, typed provider failures, and purpose-limited reference context.
+- Proposed ADR-029 without accepting it. Material choices—including the SGS
+  MVP, Focus deferral, persistent bitemporal store, `NUMERIC(38,18)`, refresh
+  policies, and revised microphase order—remained pending explicit approval.
+  The `NUMERIC(38,18)` proposal is superseded by the R3-B.1 remediation above.
+- Revalidated SGS 432, 11, 12, 433, and 1 against official metadata. Corrected
+  the proposed daily CDI identity to SGS 12; historical SGS 4389 guidance is not
+  used as an alias. SGS 1 remains reference-only and is not labeled PTAX or used
+  for portfolio valuation.
+- Added no code, migration, database mutation, dependency, provider, API,
+  frontend, engine, AI, R4, or R6 behavior. `10.R3-B = CONTRACT DRAFT COMPLETE /
+  READY FOR APPROVAL` was the historical status; the lock entry above
+  supersedes it. R3 implementation remains not started.
+
+---
+
 ## [PHASE-10.R2-CLOSURE] — 2026-10-08 — Smart Financial Context closure
 
 - Closed B1–B7 after B8 independent validation and MR2 independent approval;

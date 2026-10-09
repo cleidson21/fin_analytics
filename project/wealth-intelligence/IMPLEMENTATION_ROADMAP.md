@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R3 READY / NOT STARTED`
-**Date:** 2026-10-08
+**Status:** `ACTIVE QUEUE — 10.R3-C READY / NOT STARTED`
+**Date:** 2026-10-09
 
 ---
 
@@ -9,7 +9,7 @@
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
-| 1 | 10.R3 | External Context Layer: adapters, normalization, cache/observation, semantic class, freshness/status, macro/reference provider foundations | `READY / NOT STARTED` | R2 taxonomy and context boundary |
+| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `CONTRACT LOCKED / IMPLEMENTATION NOT STARTED` | R2 taxonomy and context boundary; ADR-029 |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
@@ -41,7 +41,36 @@ the runtime `create_all` root cause, made Alembic authoritative, and isolated
 tests from the active database, then passed independent review. MR3 reconciled
 the active Alembic bookkeeping to `2d6b4f8a9c1e`, verified `upgrade head` as a
 no-op, and preserved schema and financial data. R2 is closed. R3 is ready but
-not started, and no later microprocess is implicitly authorized.
+not implemented. R3-A completed the source/architecture audit. R3-B produced
+`EXTERNAL_CONTEXT_CONTRACT.md`, `EXTERNAL_SERIES_REGISTRY.md`,
+`EXTERNAL_CONTEXT_IMPLEMENTATION_PLAN.md`, and accepted ADR-029. R3-B.1
+remediated SQLite decimal storage, revision/reversion identity, bitemporal
+commit semantics, and refresh/freshness/acquisition separation. They are
+approved and locked after independent review and explicit user approval on
+2026-10-09. R3-C is ready but not started; later microprocesses remain gated.
+
+### 10.R3 locked microphase sequence
+
+| Task | Outcome | Status | Dependency |
+|---|---|---|---|
+| R3-A | External Context architecture/source audit | `AUDIT COMPLETE / APPROVED` | R2 closed |
+| R3-B | Contract, official series registry, temporal/persistence decisions, implementation plan | `CONTRACT APPROVED / LOCKED` | R3-A |
+| R3-B.1 | Pre-lock Decimal/revision/freshness contract remediation | `REMEDIATED / INDEPENDENTLY APPROVED` | R3-B remediated contract |
+| R3-C | Domain, strict normalization, executable allowlisted registry | `READY / NOT STARTED` | R3-B approved/locked |
+| R3-D | Bitemporal observation store, sync state, cache/freshness | `PLANNED / NOT STARTED` | R3-C |
+| R3-E | BCB/SGS adapter and governed ingestion | `PLANNED / NOT STARTED` | R3-C + R3-D |
+| R3-F | Purpose-limited External Reference Context | `PLANNED / NOT STARTED` | R3-D + R3-E |
+| R3-G | Existing market/yfinance boundary remediation under ADR-006 | `SEPARATELY GATED / NOT STARTED` | focused impact approval + R3 foundations; required before yfinance admission |
+| R3-H | Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` | separate activation decision |
+| R3-I | Independent stabilization | `PLANNED / NOT STARTED` | activated BCB-only tasks C–F; plus G/H only if activated |
+
+The reordering from the R3-A draft places persistence/freshness before live
+provider ingestion so knowledge-time, revision, deduplication, and
+last-known-good semantics exist before network data becomes operational. This
+order is locked by ADR-029. Mandatory BCB-only closure scope is R3-C/D/E/F/I.
+R3-G requires separate legacy-impact approval and is
+mandatory before yfinance admission, not before a BCB-only closure. R3-H stays
+deferred and cannot be reported as implemented.
 
 ## Closed and preserved baseline
 
@@ -71,7 +100,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3 READY / NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3-B CONTRACT APPROVED / LOCKED; R3-C READY / NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |

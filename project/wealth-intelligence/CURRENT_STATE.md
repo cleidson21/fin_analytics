@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-08 — Phase 10.R2 Smart Financial Context closure
+**Updated:** 2026-10-09 — Phase 10.R3-B contract lock and ADR-029 acceptance
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -30,8 +30,26 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R2-MR1 migration reconciliation audit | `ROOT CAUSE DIAGNOSED` |
 | 10.R2-MR2 runtime bootstrap/test isolation remediation | `IMPLEMENTED / INDEPENDENTLY APPROVED` |
 | 10.R2-MR3 active-database Alembic reconciliation | `COMPLETED / VALIDATED` |
-| 10.R3 External Context | `READY / NOT STARTED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED; R3 READY` |
+| 10.R3-A External Context audit | `AUDIT COMPLETE / APPROVED` |
+| 10.R3-B External Context contract/registry | `CONTRACT APPROVED / LOCKED` |
+| 10.R3-B.1 contract remediation | `REMEDIATED / INDEPENDENTLY APPROVED` |
+| 10.R3-C domain/normalization/executable registry | `READY / NOT STARTED` |
+| 10.R3-D/E/F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
+| 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
+| 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
+| 10.R3 External Context | `CONTRACT LOCKED / IMPLEMENTATION NOT STARTED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED; R3-C READY` |
+
+R3-B now has an approved and locked contract, official five-series BCB/SGS
+registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
+the unsafe assumption that SQLite
+`NUMERIC(38,18)` guarantees exact persistence with canonical fixed-scale text
+and explicit `Decimal` conversion; preserves `A -> B -> A` as three knowledge
+events; and separates refresh age, economic freshness, and acquisition health.
+Independent review reported 0 blocking, 0 material, and 0 minor findings; the
+user explicitly approved all ten material decisions on 2026-10-09. R3-C is
+ready but not started. No R3 production code, migration, provider, dependency,
+API, frontend, database, or engine behavior exists from this checkpoint.
 
 ## Implemented and validated capabilities
 
@@ -219,9 +237,10 @@ B3 deterministic recurring evidence, B4 decision state/API, B5 internal
 feature-specific composition, and B6 the Profile context experience with a
 safe no-upload browser transition. B6 is independently approved; B7 implements
 and validates the consumer-integration foundations; B8 independently approved
-the complete R2 foundation. R2 is closed. External Context remains
-`10.R3 = READY / NOT STARTED`, while product recomposition and smart-prefill
-behavior remain reserved for R6.
+the complete R2 foundation. R2 is closed. External Context is
+`10.R3-B = CONTRACT APPROVED / LOCKED`, with implementation beginning only when
+the separately scoped `10.R3-C = READY / NOT STARTED` task is authorized;
+product recomposition and smart-prefill behavior remain reserved for R6.
 
 ## Portfolio Intelligence state
 

@@ -1,7 +1,7 @@
 # Testing Strategy — Wealth Intelligence
 **Status:** ACTIVE; 10.R2 implemented, validated, independently approved, and closed;
-10.R3 ready / not started; 10.5-B paused pending R7
-**Date:** 2026-10-08
+10.R3-B contract approved/locked; R3-C ready/not started; 10.5-B paused pending R7
+**Date:** 2026-10-09
 
 ---
 
@@ -327,9 +327,39 @@ tests/
   source resolvers.
 
 ### Phase 10.R3 — External Context
-- Test provider adapters behind one normalization boundary, semantic distinction
-  between observation and expectation, unit/currency/horizon, cache/freshness,
-  timeout/error/stale behavior, and no silent replacement of internal facts.
+- R3-C owns registry, immutable domain types, strict Decimal parsing, exact
+  units/frequencies, daily/monthly reference periods, provenance requirements,
+  observation/expectation separation, fixed-scale canonicalization without
+  rounding, over-scale rejection, and explicit separation of source unit,
+  provider precision, normalization scale, and internal precision.
+- R3-D owns migration/metadata parity and exact canonical-`TEXT` roundtrip
+  through the real SQLite/SQLAlchemy path after close/reopen. Test small
+  percentages, approved lexical extremes, storage class, no float, and the
+  prohibition on SQL lexical ordering/ranges/casts/arithmetic as numeric
+  authority. It also owns economic/content/knowledge-event identity,
+  `A -> B -> A`, consecutive retransmission deduplication, immutable history,
+  concurrent ingestion atomicity, simultaneous deduplication/conflict handling,
+  sequence allocation, deterministic tie-breaking, rollback cleanliness,
+  exact `consumer_as_of` replay, late ingestion/no look-ahead, absent
+  `published_at`, sync state, negative cache, separate refresh/economic
+  freshness/acquisition health, partial/unavailable reasons, and
+  last-known-good without failure-forced staleness.
+- R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
+  daily ten-year partitioning, monthly normalization, response limits,
+  malformed payloads, unit conflicts, timeout/DNS/429/4xx/5xx, bounded retry,
+  partial chunks, SSRF prevention, privacy, and safe logging.
+- R3-F owns explicit purpose and `as_of`, historical replay, provenance/status
+  preservation, cross-purpose isolation, no hidden defaults, no SQL in the
+  composer, no internal HTTP, no financial writes, and OpenAPI/engine
+  compatibility.
+- R3-G, only if separately activated, owns focused existing-yfinance
+  regression, Decimal/provenance/error remediation, removal of invented FX
+  fallback only after impact approval, and ADR-023 protection. R3-H owns Focus
+  expectation tests only if separately activated and is otherwise deferred,
+  not implemented. R3-I independently repeats contract/code, migration, provider,
+  security, authority, no-float, no-default, and regression gates.
+- Automated suites use deterministic fixtures and mocks; internet availability
+  is never a pass condition.
 
 ### Phase 10.R4 — AI Runtime Foundation
 - Test provider abstraction without financial-domain coupling, approved tool

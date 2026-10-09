@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-10-03
+**Updated:** 2026-10-09
 
 ---
 
@@ -36,6 +36,7 @@
 | ADR-026 | Wealth OS Product Realignment Gate | APPROVED | 10.R0 |
 | ADR-027 | Wealth OS Product Architecture & Documentation Ownership | ACCEPTED | 10.R1 |
 | ADR-028 | Smart Financial Context and Declared/Observed Income Boundary | ACCEPTED | 10.R2-A |
+| ADR-029 | External Context Observation, Temporal, and Provider Boundary | ACCEPTED / LOCKED | 10.R3-B |
 
 ---
 
@@ -719,3 +720,111 @@ recurrence evidence, B4 decisions/API, B5 feature-specific composition, B6
 Profile experience, B7 consumer foundations, and B8 stabilization/independent
 validation. The next authorized implementation gate is B1 only. This ADR and
 its contract create no production code, schema, endpoint, UI, or test behavior.
+
+---
+
+## ADR-029: External Context Observation, Temporal, and Provider Boundary
+
+**Status:** ACCEPTED / LOCKED
+
+**Date proposed:** 2026-10-08
+
+**Remediated:** 2026-10-09
+
+**Date accepted:** 2026-10-09
+
+**Approval:** Explicit user approval — “Sim, aprovo. Vamos prosseguir.”
+
+**Independent review:** APPROVED; 0 BLOCKING, 0 MATERIAL, 0 MINOR.
+
+**Authoritative contract:** `EXTERNAL_CONTEXT_CONTRACT.md`
+
+**Locked series catalog:** `EXTERNAL_SERIES_REGISTRY.md`
+
+**Context:** R3-A found an existing yfinance market-data boundary but no
+normalized official macro provider, durable observation store, bitemporal
+knowledge model, or purpose-limited external reference service. R2 already
+reserves `EXTERNAL_OBSERVATION` and `EXTERNAL_EXPECTATION`, while ADR-006,
+ADR-023, and ADR-028 prohibit a second market-data system, replacement of
+aggregate portfolio authority, or silent context defaults.
+
+**Decision:** R3 uses an allowlisted provider/series registry and a
+provider-neutral immutable observation model with exact Decimal values,
+economic reference periods, local knowledge time, provenance, availability,
+and freshness. Provider adapters normalize into that model; consumers use an
+internal purpose-limited reference service and never call providers directly.
+
+**Persistence decision:** Store immutable observation versions and
+separate operational series sync state in new Alembic-owned SQLite structures.
+The store preserves revisions, deduplication, late-ingestion knowledge time,
+historical `as_of`, and last-known-good. It does not store user financial data,
+raw provider payloads, credentials, or values in `REAL`/float columns.
+
+The locked SQLite value representation is canonical fixed-scale `TEXT`, with
+the scale owned by the series registry and explicit conversion to and from
+Python `Decimal`. SQLite `NUMERIC` affinity and SQLAlchemy `Numeric` do not, by
+themselves, prove an exact fixed-precision roundtrip through the real SQLite
+driver. SQL lexical ordering is not numeric ordering, so database-side value
+ordering, ranges, casts, aggregates, and arithmetic are prohibited in this
+contract. Stored value, provider unit, provider precision, normalization scale,
+and internal Decimal precision remain separate concepts.
+
+**Revision decision:** Economic identity, semantic content identity,
+and local knowledge-event identity are distinct. A consecutive identical
+retransmission creates no new event; a content transition does. `A -> B -> A`
+therefore produces three immutable knowledge events even though the first and
+third share a content fingerprint. Historical resolution selects the latest
+committed event eligible at explicit `consumer_as_of`.
+
+**Status decision:** Operational refresh age, economic freshness, and
+acquisition health are evaluated independently. A failed refresh does not make
+an otherwise valid last-known-good economically `STALE`; insufficient evidence
+is `UNKNOWN`, with a structured acquisition-failure reason. Six-hour daily and
+twenty-four-hour monthly intervals are locked call-suppression policies,
+not publication calendars or proof of economic recency.
+
+**MVP decision:** Start with the five documented BCB/SGS observation
+series 432, 11, 12, 433, and 1. SGS 1 is reference-only, uses the locked
+real-era ingestion floor, and cannot value a portfolio. Focus remains
+contract-ready but implementation-deferred and, when activated, remains
+`EXTERNAL_EXPECTATION` rather than observation.
+
+**Authority decision:** External references never become effective Planning,
+FIRE, Goals, Health, Portfolio, or Smart Context inputs automatically. ADR-023
+and ADR-028 remain unchanged. Product integration and smart prefill stay in R6.
+
+**Existing market-data decision:** ADR-006 remains controlling. R3 may later
+remediate the current yfinance boundary only through a focused, independently
+reviewed task. The hard-coded FX fallback `5.0` is priority debt but this ADR
+does not authorize changing it.
+
+**Accepted material decisions:**
+
+1. Lock the five-series BCB/SGS registry: 432, 11, 12, 433, and reference-only
+   SGS 1, with its 1994-07-01 MVP floor and no PTAX/valuation authority.
+2. Keep Focus `CONTRACT_READY / IMPLEMENTATION_DEFERRED / NOT IMPLEMENTED` and
+   semantically `EXTERNAL_EXPECTATION`.
+3. Use the conceptual `external_observation_versions` and
+   `external_series_sync_state` bitemporal persistence structures; R3-D owns
+   their migration.
+4. Use Python `Decimal` plus canonical fixed-scale SQLite `TEXT`, registry
+   scales, preserved provider lexical text, no silent rounding/float, and no
+   uncertified SQL numeric authority.
+5. Separate economic identity, content identity, and knowledge-event identity;
+   preserve `A -> B -> A` while deduplicating consecutive `A -> A`.
+6. Keep availability, economic freshness, and acquisition health orthogonal;
+   network failure does not automatically mean economic `STALE`.
+7. Use six-hour daily and twenty-four-hour monthly refresh intervals only as
+   call-suppression policy.
+8. Execute the BCB-only implementation in order R3-C, R3-D, R3-E, R3-F, R3-I.
+9. Keep R3-G separately gated and required only before yfinance admission;
+   keep R3-H deferred and never report it as implemented.
+10. Accept ADR-029 as the canonical architectural authority for these choices.
+
+**Consequences and exclusions:** R3-C is `READY / NOT STARTED`; R3-D/E/F/I are
+planned and not started. This acceptance creates no code, schema, provider,
+dependency, public API, frontend, scheduler, or engine change. ADR-006,
+ADR-023, ADR-027, and ADR-028 remain unchanged. External references cannot
+replace `portfolio_snapshots.patrimonio`, user assumptions, Goal state, Health
+facts, Planning/FIRE inputs, or R2 feature allowlists. R3-G and R3-H require
+their explicit future gates.

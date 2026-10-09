@@ -1,710 +1,79 @@
+# VISÃO PESSOAL DO PRODUTO — FINANALYTICS WEALTH INTELLIGENCE
 
-# VISÃO DO PRODUTO — WEALTH INTELIGENCE
-
-> **Status:** `SUPERSEDED / HISTORICAL PRODUCT INPUT` (2026-10-02).
-> `project/wealth-intelligence/MASTER_PLAN.md` is the canonical product-vision
-> owner; `ARCHITECTURE.md` owns the product map and
-> `IMPLEMENTATION_ROADMAP.md` owns the active queue. The content below is
-> preserved as original product intent and must not be read as current status,
-> approved methodology, route contract, or implementation promise.
-
-> **Papel histórico deste documento:** preservar a visão inicial que alimentou
-> os owners canônicos em `project/wealth-intelligence/`.
-
-## O que a aba deve ser ao final do Lote 10
-
-**Status atual:** Goals 10.1 e Financial Health 10.2 concluídos; Planning 10.3 ainda não iniciado.
-**Baseline:** FINANALYTICS V3.1.0 — Investments estabilizado
-**Objetivo:** Transformar a área de patrimônio em um **centro inteligente de planejamento, acompanhamento e orientação financeira pessoal**, conectando patrimônio, metas, aposentadoria, carteira, mercado, oportunidades e inteligência artificial.
-
-> **Regra principal:** o Wealth Intelligence não deve ser apenas um CRUD de metas. Deve funcionar como um **Wealth OS pessoal**, capaz de entender a situação financeira do usuário, acompanhar objetivos, projetar cenários, identificar oportunidades e riscos e utilizar IA para interpretar essas informações.
-
----
-
-# 1. VISÃO DO PRODUTO FINAL
-
-Ao final do Lote 10, o usuário deverá conseguir entrar em uma única área e responder:
-
-* Quanto tenho hoje?
-* Como está minha saúde financeira?
-* Estou evoluindo ou regredindo?
-* Minhas metas estão no caminho certo?
-* Quanto preciso investir por mês?
-* Quando poderei atingir determinado objetivo?
-* Quando poderei atingir independência financeira?
-* Como será minha aposentadoria?
-* Minha carteira está adequada aos meus objetivos?
-* Quais ativos estão contribuindo mais ou menos para meu patrimônio?
-* O que aconteceu recentemente com minha carteira?
-* Algum ativo caiu significativamente?
-* Existe alguma oportunidade que atende aos critérios que defini?
-* Há notícias relevantes sobre meus ativos?
-* O mercado está mudando de alguma forma que merece minha atenção?
-* O que o sistema recomenda que eu acompanhe?
-* O que o Ollama/LLM consegue interpretar sobre minha situação?
-
----
-
-# 2. ESTRUTURA FUNCIONAL DA ABA
-
-A área deverá evoluir para aproximadamente os seguintes módulos:
-
-### 🏠 Dashboard / Visão Geral
-
-Painel principal com:
-
-* patrimônio atual;
-* patrimônio líquido;
-* evolução patrimonial;
-* rentabilidade;
-* aportes;
-* proventos;
-* situação das metas;
-* saúde financeira;
-* progresso para independência financeira;
-* principais acontecimentos;
-* alertas;
-* oportunidades;
-* briefing inteligente.
-
----
-
-# 3. METAS
-
-As metas serão o núcleo de planejamento do Wealth Intelligence.
-
-O usuário deverá poder criar, visualizar, editar, pausar, concluir ou cancelar objetivos.
-
-Exemplos:
-
-* Reserva de emergência;
-* Compra de imóvel;
-* Compra de veículo;
-* Viagem;
-* Patrimônio-alvo;
-* Investimento específico;
-* Renda de dividendos;
-* Independência financeira;
-* Aposentadoria;
-* Meta personalizada.
-
-Cada meta deverá possuir, conforme aplicável:
-
-* nome;
-* tipo;
-* valor-alvo;
-* valor atual;
-* prazo;
-* prioridade;
-* aporte mensal planejado;
-* conta/ativo relacionado;
-* premissas;
-* progresso;
-* projeção;
-* status.
-
-### Evolução esperada
-
-**10.1 — Fundação das metas**
-→ cadastro, edição, exclusão, progresso básico.
-
-**10.3 — Inteligência das metas**
-→ cálculos, projeções, cenários e aporte necessário.
-
----
-
-# 4. PLANEJAMENTO FINANCEIRO
-
-O sistema deverá deixar de apenas mostrar o patrimônio e passar a responder:
-
-> **“O que preciso fazer para chegar onde quero?”**
-
-Deverá permitir:
-
-* calcular aporte mensal necessário;
-* calcular prazo estimado;
-* calcular patrimônio futuro;
-* comparar diferentes níveis de aporte;
-* simular rentabilidades;
-* considerar inflação;
-* comparar cenários conservador/base/otimista;
-* visualizar impacto de aumentar ou reduzir aportes;
-* identificar metas atrasadas ou adiantadas.
-
----
-
-# 5. APOSENTADORIA
-
-Deverá existir um módulo específico de planejamento de aposentadoria.
-
-O usuário poderá informar:
-
-* idade atual;
-* idade desejada para aposentadoria;
-* patrimônio atual;
-* renda mensal desejada;
-* gastos mensais;
-* aportes;
-* rentabilidade esperada;
-* inflação;
-* outros parâmetros relevantes.
-
-O sistema deverá projetar:
-
-* patrimônio futuro;
-* renda potencial;
-* patrimônio necessário;
-* aporte necessário;
-* idade estimada para atingir o objetivo;
-* diferentes cenários;
-* distância até a independência financeira.
-
----
-
-# 6. INDEPENDÊNCIA FINANCEIRA / FIRE
-
-O Wealth Intelligence deverá possuir uma visão específica de independência financeira.
-
-Deverá relacionar:
-
-**Patrimônio + despesas + aportes + rentabilidade + renda passiva + tempo.**
-
-O sistema deverá mostrar:
-
-* patrimônio atual;
-* patrimônio necessário;
-* percentual alcançado;
-* renda passiva atual;
-* renda desejada;
-* distância até a independência;
-* estimativa de quando poderá atingir o objetivo;
-* evolução histórica;
-* cenários.
-
-A ideia não é apenas mostrar uma calculadora FIRE, mas acompanhar a **trajetória financeira do usuário**.
-
----
-
-# 7. SAÚDE FINANCEIRA
-
-O sistema deverá analisar a vida financeira como um todo.
-
-Indicadores esperados:
-
-* receitas;
-* despesas;
-* taxa de poupança;
-* capacidade de aporte;
-* evolução dos gastos;
-* concentração de despesas;
-* tendências por categoria;
-* anomalias;
-* estabilidade financeira;
-* capacidade de investimento.
-
-Deverá responder perguntas como:
-
-> “Estou gastando mais que nos meses anteriores?”
-
-> “Minha capacidade de aporte está aumentando?”
-
-> “Qual categoria está pressionando meu orçamento?”
-
-> “Minha taxa de poupança está melhorando?”
-
----
-
-# 8. INTELIGÊNCIA DA CARTEIRA
-
-A área deverá analisar o patrimônio investido sem substituir a área Investments existente.
-
-Deverá identificar:
-
-* maiores posições;
-* melhores e piores desempenhos;
-* contribuição de cada ativo para o patrimônio;
-* contribuição para rentabilidade;
-* concentração;
-* exposição por classe;
-* evolução dos investimentos;
-* dividendos;
-* comportamento histórico.
-
-Também deverá responder:
-
-> “O que está fazendo meu patrimônio subir?”
-
-e
-
-> “O que está prejudicando minha carteira?”
-
----
-
-# 9. RADAR DE QUEDAS E EVENTOS
-
-O sistema deverá identificar acontecimentos relevantes.
-
-Exemplos:
-
-* queda expressiva de um ativo;
-* alta expressiva;
-* mudança relevante de preço;
-* alteração de fundamentos;
-* notícia importante;
-* divulgação de resultados;
-* eventos corporativos;
-* mudanças macroeconômicas.
-
-Quando possível, deverá buscar informações externas para explicar o movimento.
-
-**Importante:** o sistema não deverá inventar uma explicação.
-
-Deverá trabalhar com:
-
-**evento → dados → fonte → interpretação.**
-
----
-
-# 10. OPORTUNIDADES
-
-O Wealth Intelligence deverá possuir uma área de oportunidades/watchlist.
-
-O usuário poderá acompanhar ativos ou oportunidades que deseja monitorar.
-
-Exemplos de critérios:
-
-* preço;
-* queda percentual;
-* valuation;
-* dividend yield;
-* indicadores fundamentalistas;
-* indicadores técnicos;
-* notícias;
-* determinados eventos;
-* preço-alvo definido pelo usuário;
-* condições personalizadas.
-
-O sistema deverá identificar quando uma condição previamente definida for atingida.
-
-### Exemplo
-
-> “Avisar quando determinado ativo cair 10%.”
-
-ou
-
-> “Avisar quando o DY atingir determinado nível.”
-
-ou
-
-> “Monitorar ativos que atendam aos meus critérios de valuation.”
-
----
-
-# 11. WATCHLIST
-
-Deverá existir uma lista de ativos acompanhados pelo usuário.
-
-Cada ativo poderá possuir:
-
-* preço atual;
-* variação;
-* histórico;
-* fundamentos;
-* notícias;
-* eventos;
-* indicadores;
-* critérios configurados;
-* alertas;
-* situação perante os critérios definidos.
-
-A watchlist será uma das fontes do **Radar de Oportunidades**.
-
----
-
-# 12. INTELIGÊNCIA DE MERCADO
-
-O sistema deverá integrar fontes externas para enriquecer as informações.
-
-Possíveis fontes:
-
-* preços de mercado;
-* histórico;
-* indicadores;
-* BCB;
-* notícias;
-* dados fundamentalistas;
-* CVM/B3;
-* provedores externos;
-* consenso de mercado quando disponível.
-
-A arquitetura deverá manter claramente a distinção entre:
-
-**dados internos governados**
-e
-**dados externos/enriquecimento.**
-
----
-
-# 13. NOTÍCIAS E CONTEXTO
-
-O sistema deverá buscar notícias relevantes para:
-
-* ativos da carteira;
-* ativos da watchlist;
-* mercado;
-* economia;
-* indicadores macroeconômicos.
-
-As informações deverão possuir:
-
-* fonte;
-* data;
-* ativo/assunto relacionado;
-* grau de relevância;
-* contexto.
-
-A prioridade é apresentar **informação útil**, e não simplesmente uma lista de notícias.
-
----
-
-# 14. OLLAMA / INTELIGÊNCIA ARTIFICIAL
-
-O Ollama deverá ser utilizado como camada de inteligência local, sempre que possível.
-
-A arquitetura deverá permitir posteriormente outros providers, como:
-
-* Ollama;
-* Gemini;
-* OpenAI;
-* outros providers compatíveis.
-
-### Papel da IA
-
-A IA deverá:
-
-* interpretar dados;
-* resumir;
-* explicar;
-* cruzar informações;
-* identificar padrões;
-* contextualizar acontecimentos;
-* produzir briefing;
-* responder perguntas;
-* apresentar cenários;
-* explicar indicadores;
-* auxiliar na tomada de decisão.
-
-### A IA NÃO deverá:
-
-* inventar dados;
-* inventar notícias;
-* inventar consenso;
-* alterar patrimônio;
-* alterar transações;
-* alterar posições;
-* calcular a verdade financeira por conta própria;
-* executar operações de compra/venda.
-
-**Princípio:**
-
-> **Backend calcula. Banco governa. IA interpreta.**
-
----
-
-# 15. WEALTH COPILOT
-
-Em estágio posterior, o usuário deverá poder conversar com seu patrimônio.
-
-Exemplos:
-
-> “Como está minha situação financeira?”
-
-> “Como estão minhas metas?”
-
-> “Estou evoluindo para minha aposentadoria?”
-
-> “O que aconteceu com minha carteira esta semana?”
-
-> “Quais ativos tiveram maior impacto no meu patrimônio?”
-
-> “Existe alguma oportunidade na minha watchlist?”
-
-> “Por que meu patrimônio caiu?”
-
-> “O que preciso fazer para atingir minha meta em 10 anos?”
-
-A resposta deverá ser baseada no **contexto financeiro real do usuário**, fornecido pelo backend.
-
----
-
-# 16. BRIEFING FINANCEIRO INTELIGENTE
-
-O sistema deverá produzir periodicamente um resumo personalizado.
-
-Exemplo:
-
-### Seu resumo financeiro
-
-**Patrimônio**
-
-* evolução do patrimônio;
-* principais variações.
-
-**Carteira**
-
-* maiores altas;
-* maiores quedas;
-* contribuição dos ativos.
-
-**Metas**
-
-* metas avançando;
-* metas atrasadas;
-* necessidade de aporte.
-
-**Saúde financeira**
-
-* evolução dos gastos;
-* taxa de poupança.
-
-**Mercado**
-
-* eventos relevantes.
-
-**Oportunidades**
-
-* condições atingidas na watchlist.
-
-**Atenção**
-
-* situações que merecem acompanhamento.
-
----
-
-# 17. ALERTAS
-
-O sistema deverá possuir uma camada de alertas inteligentes.
-
-Exemplos:
-
-* meta atrasada;
-* aporte abaixo do planejado;
-* queda relevante;
-* mudança de patrimônio;
-* alteração significativa de gastos;
-* oportunidade atingida;
-* notícia relevante;
-* evento de ativo;
-* mudança macroeconômica.
-
-Os alertas deverão ser classificados por relevância/severidade.
-
----
-
-# 18. SIMULAÇÕES
-
-O usuário deverá poder testar cenários sem alterar seus dados reais.
-
-Exemplos:
-
-> “E se eu investir R$ 1.000 por mês?”
-
-> “E se aumentar para R$ 2.000?”
-
-> “E se a rentabilidade for menor?”
-
-> “E se eu me aposentar aos 50?”
-
-> “E se reduzir meus gastos?”
-
-> “Quanto tempo ganho aumentando meus aportes?”
-
-As simulações devem ser **isoladas**, determinísticas e nunca modificar os dados financeiros reais.
-
----
-
-# 19. PRINCÍPIO DE INTEGRAÇÃO
-
-O Wealth Intelligence deverá utilizar os dados que já existem no FINANALYTICS.
-
-Fluxo conceitual:
-
-**Transações / Investimentos / Mercado / Despesas / Metas**
-
-↓
-
-**Read Models certificados**
-
-↓
-
-**Serviços determinísticos**
-
-↓
-
-**Contexto financeiro**
-
-↓
-
-**Ollama / LLM**
-
-↓
-
-**Insights / Explicações / Briefings / Cenários**
-
-O LLM nunca deverá ser a fonte primária dos dados financeiros.
-
----
-
-# 20. EXPERIÊNCIA FINAL ESPERADA
-
-A experiência deverá evoluir de:
-
-> **“Aqui estão meus investimentos.”**
-
-para:
-
-> **“Aqui está minha situação financeira, onde estou, para onde estou indo, o que pode acontecer e quais pontos merecem minha atenção.”**
-
-E posteriormente:
-
-> **“Converse com seu patrimônio e tome decisões melhores com base nos seus próprios dados.”**
-
----
-
-# 21. ROADMAP PARA CHEGAR AO PRODUTO FINAL
-
-| Fase            | Objetivo                                      | Situação    |
-| --------------- | --------------------------------------------- | ------------- |
-| **10.0**  | Auditoria, arquitetura e estabilização      | ✅ Concluído |
-| **10.1**  | Fundação das Metas                          | 🔜 Próxima   |
-| **10.2**  | Saúde Financeira                             | ⏳            |
-| **10.3**  | Cálculos, projeções e simulações         | ⏳            |
-| **10.4**  | Aposentadoria / FIRE                          | ⏳            |
-| **10.5**  | Inteligência da Carteira                     | ⏳            |
-| **10.6**  | Alocação, rebalanceamento e Watchlist       | ⏳            |
-| **10.7**  | Mercado, notícias e oportunidades            | ⏳            |
-| **10.8**  | Ollama / LLM / IA                             | ⏳            |
-| **10.9**  | Wealth Copilot / Briefing                     | ⏳            |
-| **10.10** | Multi-Agent avançado, somente se justificado | ⏳            |
-| **10.11** | Docker / operação / infraestrutura          | ⏳            |
-| **10.12** | UX global / acabamento final                  | ⏳            |
-
----
-
-# 22. ONDE ESTAMOS AGORA
-
-### Já consolidado
-
-✅ Investments V3 estabilizado
-✅ Importação e governança MyProfit
-✅ Patrimônio e posições
-✅ Evolução patrimonial
-✅ Proventos
-✅ Allocation
-✅ Histórico de dividendos
-✅ Market Data / yfinance
-✅ Asset Detail
-✅ APIs de Wealth
-✅ Baseline `v3.1.0-investments`
-✅ Auditoria arquitetural do Lote 10
-✅ Conflito de `position_snapshots` investigado e resolvido
-✅ Dependências principais corrigidas
-✅ Documentação-base do Wealth Intelligence criada
-✅ Decisões arquiteturais principais registradas
-
-### Situação atual
-
-🟡 **Lote 10.0-A concluído — READY FOR 10.1**
-
-A próxima entrega é a **fundação das Metas**.
-
-Ainda **não** estamos na fase de:
-
-* aposentadoria;
-* FIRE;
-* oportunidades;
-* watchlist;
-* notícias;
-* Ollama;
-* Copilot;
-* agentes.
-
-Esses componentes dependem das fases seguintes.
-
----
-
-# 23. COMO SABER SE O PROJETO ESTÁ NO CAMINHO CERTO
-
-A cada nova etapa, a pergunta principal deve ser:
-
-> **“Esta implementação aproxima o sistema do Wealth Intelligence descrito aqui ou está apenas adicionando funcionalidades isoladas?”**
-
-### Sinais de que está no caminho certo
-
-✅ Cada módulo utiliza dados reais e governados.
-✅ Cálculos financeiros são determinísticos.
-✅ IA interpreta dados, não inventa a verdade.
-✅ Metas se conectam posteriormente às finanças reais.
-✅ Projeções utilizam premissas explícitas.
-✅ Watchlist gera oportunidades baseadas em critérios.
-✅ Notícias possuem fonte e data.
-✅ Alertas possuem motivo verificável.
-✅ O usuário consegue entender de onde cada informação veio.
-✅ Os módulos conversam entre si.
-✅ A interface evolui sem destruir o `/wealth` existente.
-✅ Segurança e isolamento por usuário permanecem obrigatórios.
-
-### 🚨 Sinais de desvio
-
-❌ Criar apenas um CRUD de metas e chamar isso de Wealth Intelligence.
-❌ IA calculando patrimônio.
-❌ IA inventando notícias ou dados.
-❌ Dados externos substituindo dados governados.
-❌ Criar módulos isolados que não conversam entre si.
-❌ Criar funcionalidades sem fonte de dados definida.
-❌ Alterar Investments sem necessidade.
-❌ Criar uma segunda arquitetura de mercado/yfinance.
-❌ Adicionar LangGraph/CrewAI apenas para dizer que existe “multi-agent”.
-❌ Criar telas bonitas sem backend determinístico.
-❌ Criar cálculos sem explicar suas premissas.
-❌ Mostrar projeções como se fossem certezas.
-
----
-
-# 24. DEFINIÇÃO DE PRONTO DO WEALTH INTELLIGENCE
-
-O produto poderá ser considerado **funcionalmente completo** quando o usuário conseguir:
-
-**1. Conhecer sua situação financeira**
-↓
-**2. Definir objetivos**
-↓
-**3. Saber quanto precisa investir**
-↓
-**4. Projetar seu futuro**
-↓
-**5. Planejar aposentadoria/FIRE**
-↓
-**6. Acompanhar sua carteira**
-↓
-**7. Monitorar ativos e oportunidades**
-↓
-**8. Receber contexto de mercado e notícias**
-↓
-**9. Receber alertas relevantes**
-↓
-**10. Conversar com uma IA que conhece seus dados financeiros**
-↓
-**11. Simular decisões sem alterar sua realidade**
-↓
-**12. Acompanhar continuamente se está mais perto ou mais longe dos seus objetivos.**
-
----
-
-## PRINCÍPIO FINAL
-
-> **O Wealth Intelligence não deve ser uma coleção de telas financeiras.**
+> **Natureza:** visão resumida do produto final, organizada pela ordem de evolução do projeto. Este documento expressa a experiência desejada; **não** é checklist, cronograma, status de implementação, contrato técnico ou autorização para desenvolver funcionalidades.
 >
-> Deve ser uma camada inteligente sobre o FINANALYTICS capaz de transformar **dados → diagnóstico → planejamento → projeção → monitoramento → contexto → inteligência**, mantendo os dados financeiros sob governança determinística e utilizando o LLM como **copiloto**, não como fonte da verdade.
+> **Governança:** `project/wealth-intelligence/MASTER_PLAN.md` permanece como referência canônica da visão; `ARCHITECTURE.md` define o mapa do produto e `IMPLEMENTATION_ROADMAP.md` define a sequência e o estado oficial das fases. Em caso de divergência, prevalecem os documentos e ADRs aprovados.
 
-**Progresso geral:** a fundação técnica e os investimentos estão estabilizados; o **Lote 10.0-A está concluído** e o projeto está agora no ponto de iniciar a **fundação das Metas (10.1)**. A partir daí, as fases 10.2–10.9 constroem progressivamente a visão completa acima.
+## O produto que desejo construir
+
+Quero que o FinAnalytics evolua de um sistema que registra transações e acompanha investimentos para um **Wealth OS pessoal**: um lugar onde eu consiga compreender minha situação financeira, estabelecer objetivos, projetar caminhos possíveis, acompanhar o patrimônio, identificar riscos e receber explicações úteis sobre o que está acontecendo.
+
+A experiência final deverá responder, de forma integrada: **onde estou, para onde quero ir, quanto preciso investir, como estou evoluindo e o que merece minha atenção**. Não quero uma coleção de telas independentes, mas um sistema em que os módulos utilizem as mesmas informações confiáveis e se complementem.
+
+## 1. Base financeira e investimentos
+
+A evolução começa com os dados já presentes no FinAnalytics: transações, contas, classificação de receitas e despesas, importações, investimentos, posições, proventos e evolução patrimonial. Quero visualizar o patrimônio investido, seu histórico, minha alocação e os rendimentos, com clareza sobre a origem e as limitações de cada informação.
+
+O patrimônio agregado de investimentos deve respeitar a fonte certificada já definida pelo projeto. Cotações ou posições parciais não podem ser somadas para produzir uma nova verdade patrimonial; patrimônio investido e patrimônio líquido pessoal também não devem ser confundidos.
+
+## 2. Metas e saúde financeira
+
+A partir dessa base, quero **definir e acompanhar metas** como reserva de emergência, imóvel, viagem, patrimônio-alvo, renda de dividendos e independência financeira. Cada objetivo deve mostrar seu progresso, prazo e necessidades de planejamento, sem transformar estimativas em fatos.
+
+Quero também entender **quanto recebo, quanto gasto, quanto consigo poupar e como esses padrões mudam**. A saúde financeira deve destacar tendências, concentração de despesas e anomalias, permitindo relacionar hábitos financeiros aos objetivos. Uma sobra observada não deve ser tratada automaticamente como aporte futuro garantido.
+
+## 3. Planejamento, simulações e independência financeira
+
+Com as metas e a saúde financeira conectadas, quero responder a perguntas como: **quanto preciso investir por mês, em quanto tempo alcançarei um objetivo e como o resultado muda se eu alterar meus aportes?**
+
+Quero comparar cenários de patrimônio futuro, inflação e rentabilidade, incluindo planejamento de aposentadoria e independência financeira (FIRE). Gastos desejados, taxa de retirada, aportes e retornos projetados devem ser premissas explícitas, escolhidas ou confirmadas por mim. As simulações são hipóteses; não devem modificar transações, posições nem valores reais.
+
+## 4. Contexto financeiro pessoal inteligente — R2
+
+O sistema deve reunir, de maneira controlada, **o que declarei, o que foi observado e o que foi calculado**. Quero poder informar dados pessoais financeiros relevantes, revisar possíveis rendas recorrentes identificadas nas transações e confirmar ou rejeitar essas interpretações.
+
+Esse contexto deverá ajudar outras áreas a entender minha realidade, sem preencher automaticamente informações ausentes ou impor uma única regra de precedência para todos os módulos. A ausência de um dado precisa continuar visível como ausência.
+
+## 5. Referências econômicas e de mercado — R3
+
+Quero compreender meus objetivos também à luz do ambiente econômico: **Selic, CDI, IPCA, câmbio e, futuramente, expectativas e informações de mercado**, sempre com fonte, unidade, período, data de obtenção e indicação de atualidade ou indisponibilidade.
+
+Essas informações servem para contextualizar decisões, não para substituir meus dados financeiros nem escolher sozinhas a inflação, o retorno ou qualquer outra premissa de uma simulação. Informações históricas devem poder ser consultadas respeitando o que o sistema efetivamente conhecia em cada momento. Cotações externas e notícias exigem cuidados próprios com qualidade e direito de uso.
+
+## 6. Inteligência artificial como camada consultiva — R4 e evolução posterior
+
+Quero conversar com o FinAnalytics sobre minha situação financeira, metas e carteira, perguntando, por exemplo: **“Por que meu patrimônio mudou?”, “Como estão minhas metas?” ou “Que riscos merecem minha atenção?”**
+
+A IA deverá interpretar informações entregues pelos serviços confiáveis do backend, explicar resultados, resumir tendências e ajudar a comparar cenários. Quero flexibilidade para utilizar **Gemini ou modelos locais via Ollama**, conforme disponibilidade, custo e adequação técnica; outros provedores poderão ser considerados, sem se tornarem obrigatórios.
+
+O princípio é simples: **o backend calcula, os dados governados sustentam a resposta e a IA interpreta**. Ela não deve inventar fatos, notícias, rendimentos ou recomendações com aparência de certeza, alterar registros financeiros nem executar compras ou vendas.
+
+## 7. Experiência integrada e orientação prática — R6 e demais etapas previstas
+
+Quando as foundations estiverem prontas, quero uma experiência unificada: visão geral do patrimônio, saúde financeira, metas, planejamento, FIRE e contexto econômico trabalhando juntos. O sistema poderá **sugerir informações para preenchimento**, mas deverá mostrar sua origem e exigir minha escolha quando forem premissas ou decisões pessoais.
+
+O painel principal deve permitir identificar rapidamente o que mudou, o progresso dos objetivos e os pontos que merecem atenção. As etapas intermediárias e seus limites são os definidos pelo roadmap canônico, sem antecipar funcionalidades de fases ainda não autorizadas.
+
+## 8. Inteligência da carteira — após as foundations previstas
+
+Quero compreender a composição e a evolução dos meus investimentos sem substituir a área Investments já existente. A análise deverá ajudar a visualizar concentração, exposição por classe, renda distribuída, evolução e, **quando houver dados suficientes e certificados**, contribuição dos ativos para resultados e riscos.
+
+A inteligência da carteira só deve apresentar desempenho, causalidade e valuations quando existir base verificável para calculá-los. Se a granularidade necessária não estiver disponível, prefiro que o sistema explique a limitação a receber uma estimativa inventada.
+
+## 9. Monitoramento, watchlist, oportunidades e notícias — expansão futura
+
+Quero acompanhar ativos de interesse e configurar condições pessoais, como mudanças relevantes de preço, metas de dividendos ou outros critérios verificáveis. Com fontes adequadas, o FinAnalytics poderá apresentar **alertas, eventos corporativos, contexto macroeconômico, notícias relevantes e oportunidades que atendam às regras que eu defini**.
+
+Esses recursos devem explicar **qual condição foi atendida, quando, com quais dados e de qual fonte**. Notícias não devem ser usadas para inventar causas de oscilações. Um radar de oportunidades deve apoiar meu julgamento, não funcionar como ordem automática de investimento.
+
+## 10. Copiloto, briefings e acompanhamento contínuo — experiência final
+
+O resultado desejado é um **copiloto financeiro pessoal** capaz de reunir periodicamente os acontecimentos mais importantes: evolução do patrimônio, metas, despesas, rendimentos, carteira, mercado e alertas relevantes. Quero poder aprofundar cada informação, compreender suas premissas e formular novas perguntas.
+
+A experiência final deve permitir perceber se estou **mais perto ou mais longe dos meus objetivos**, o que está contribuindo para isso e quais decisões posso avaliar. Briefings, automações e recursos avançados só deverão existir quando houver dados, fontes, segurança e utilidade comprovada; não são fins em si mesmos.
+
+## Princípios que não quero perder
+
+A evolução precisa preservar **dados confiáveis, cálculos determinísticos, proveniência, privacidade, segurança, transparência de premissas e distinção entre realidade e simulação**. Dados externos enriquecem o contexto; não substituem fatos internos certificados. A IA interpreta; não governa patrimônio. Novas funcionalidades devem aproveitar o sistema existente sem criar arquiteturas paralelas desnecessárias.
+
+> **Minha visão final:** abrir o FinAnalytics e entender minha vida financeira em conjunto — **o que tenho, o que gasto, onde quero chegar, quais caminhos posso seguir e o que vale acompanhar** — com explicações claras, informações rastreáveis e controle sobre minhas próprias decisões.
