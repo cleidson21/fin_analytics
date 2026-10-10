@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R2 IMPLEMENTED / VALIDATED / CLOSED`
+**Status:** `10.R3-C IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`
 
-**Next:** `10.R3-C DOMAIN, NORMALIZATION & EXECUTABLE REGISTRY — READY / NOT STARTED`
+**Next:** `PREPARE R3-D OBSERVATION STORE & FRESHNESS IMPLEMENTATION PREFLIGHT`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -76,8 +76,8 @@ runtime imports/startup DDL-inert, makes the configured database URL
 authoritative, keeps Alembic as schema authority, and isolates pytest from the
 active database. MR3 reconciled active Alembic bookkeeping to migration
 `2d6b4f8a9c1e`; the subsequent upgrade was a no-op and preserved schema and
-financial data. R2 is closed. R3 is ready but not started, and product
-recomposition/smart prefills remain reserved for R6.
+financial data. R2 is closed. R3-C is closed and R3-D is ready but not started;
+product recomposition/smart prefills remain reserved for R6.
 
 R3-A completed and approved the External Context architecture/source audit.
 R3-B now provides a locked External Context contract, official BCB/SGS series
@@ -86,8 +86,15 @@ unsafe SQLite `NUMERIC(38,18)` exactness assumption with canonical fixed-scale
 text and explicit `Decimal`, preserves `A -> B -> A` knowledge history, and
 separates refresh, economic freshness, and acquisition health. Independent
 review reported no findings and the user explicitly approved all ten material
-decisions on 2026-10-09. R3-C is ready but not started; no R3 implementation
-exists from this documentation checkpoint.
+decisions on 2026-10-09. R3-B.2 subsequently locked Content Fingerprint V1.
+R3-C now implements and validates the pure immutable domain, five-series
+executable registry, strict Decimal/civil-period normalization, economic
+identity, structured errors, and fingerprint boundary without network,
+persistence, API, frontend, or engine changes. Independent implementation
+review approved R3-C with 0 blocking, 0 material, 0 minor, and 2 informational
+findings. Its status is
+`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D is
+`READY / NOT STARTED`.
 
 ## Read in this order
 

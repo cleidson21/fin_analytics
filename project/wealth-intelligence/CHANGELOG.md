@@ -1,5 +1,50 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-C] — 2026-10-10 — Domain, normalization, and executable registry
+
+- Added the pure immutable `backend.domains.external_context` domain with typed
+  observation/content/provenance/economic-identity models, independent
+  availability/freshness/acquisition-health enums, and structured domain
+  errors. No clock value is generated implicitly.
+- Added the immutable executable allowlist for exactly SGS 432, 11, 12, 433,
+  and reference-only SGS 1, preserving official concept, provider identity,
+  frequency, unit, scope, currency, precision, historical bounds, eligibility,
+  source URL, attribution, and license metadata. SGS 1 enforces the
+  `1994-07-01` normalized floor and is not renamed PTAX.
+- Added strict ASCII lexical Decimal parsing directly to `Decimal`, fixed-scale
+  canonical text without rounding, trailing-zero fill, negative-zero
+  normalization, global representation limits, registry-scale enforcement,
+  and context-independent digit preservation.
+- Added deterministic daily/monthly civil-period validation, including leap
+  years, month ends, inverted/incompatible periods, official coverage limits,
+  and the SGS 1 real-era floor.
+- Implemented the locked Content Fingerprint V1 boundary: exact eleven-field
+  payload, registry validation before hashing, compact sorted UTF-8 JSON,
+  53-byte NUL-terminated domain prefix, SHA-256, lowercase output, and separate
+  version `1`. All three normative hashes reproduce exactly.
+- Added `127` focused R3-C tests covering registry, immutability, Decimal,
+  periods, identity, provenance, prefix/JSON/hash vectors, complementary cases,
+  strict rejection including Python booleans as integers, and `A -> B -> A`.
+  Implementation validation recorded `159` R2/bootstrap regressions; independent
+  review confirmed `160` R2 regressions, Planning `497`, and FIRE `67`.
+  Complete units report `969 passed, 2 failed`, limited to the unchanged
+  historical Investments/MagicMock timeline failures.
+- Backend import and OpenAPI smoke passed against an explicit disposable
+  database URL without creating a database: 55 paths, five unchanged Planning
+  paths, one unchanged FIRE path, and no External Context public path.
+- Independent implementation review with Gemini 3.8 Flash High returned 0
+  blocking, 0 material, 0 minor, and 2 informational findings; it distinguished
+  55 OpenAPI paths from 59 HTTP operations and approved all three normative
+  SHA-256 vectors.
+- `INF-01` requires future R3-D repositories/services to use certified
+  registry-validation paths rather than treating directly constructed value
+  objects as automatically registry-valid. `INF-02` preserves the separate
+  OpenAPI path and operation counts. Neither finding changes R3-C code.
+- Added no database access, migration, provider/network call, dependency,
+  scheduler, API, frontend, engine, Investments, or locked-contract change.
+  `R3-C = IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D is
+  `READY / NOT STARTED`.
+
 ## [PHASE-10.R3-B.2] — 2026-10-10 — Content Fingerprint V1 contract amendment lock
 
 - Recorded the user's explicit approval of the controlled ADR-029 amendment

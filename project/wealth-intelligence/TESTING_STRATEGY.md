@@ -1,8 +1,8 @@
 # Testing Strategy — Wealth Intelligence
 **Status:** ACTIVE; 10.R2 implemented, validated, independently approved, and closed;
-10.R3-B contract approved/locked/versioned; R3-B.2 independently verified and
-locked; R3-C ready/not started; 10.5-B paused pending R7
-**Date:** 2026-10-09
+10.R3-B contract approved/locked; R3-B.2 approved/locked/versioned; R3-C
+implemented/validated/independently approved/closed; 10.5-B paused pending R7
+**Date:** 2026-10-10
 
 ---
 
@@ -328,6 +328,29 @@ tests/
   source resolvers.
 
 ### Phase 10.R3 — External Context
+- **R3-C implementation evidence (2026-10-10):** `127` focused pure-domain
+  tests pass across the exact five-series immutable registry, strict lexical
+  Decimal normalization and bounds, daily/monthly civil periods, economic
+  identity, provenance, independent status enums, the three normative V1 hash
+  vectors, complementary equivalence/difference cases, exact prefix/JSON/null,
+  structured rejection, and `A -> B -> A`. R2/bootstrap regressions pass `159`,
+  Planning `497`, and FIRE `67`. Complete units report `969 passed, 2 failed`;
+  both failures are the unchanged Investments asset-detail MagicMock/string
+  timeline sorting baseline. Backend import/OpenAPI smoke passed with 55 paths,
+  five unchanged Planning paths, one unchanged FIRE path, zero External Context
+  paths, and no disposable database file created. Static scans found no network,
+  SQL/ORM, migration, application bootstrap, clock, yfinance, router, or engine
+  dependency in the R3-C package.
+- **R3-C independent implementation review (2026-10-10):** Gemini 3.8 Flash
+  High returned 0 blocking, 0 material, 0 minor, and 2 informational findings.
+  It confirmed `127` R3-C tests, `160` R2 regressions, `497` Planning tests,
+  `67` FIRE tests, the three normative SHA-256 vectors, and OpenAPI compatibility
+  at 55 paths and 59 HTTP operations without an External Context endpoint.
+  `INF-01` records that direct construction of value objects does not replace
+  the certified registry-validation functions; R3-D repositories and services
+  must accept observations only through certified validation paths. `INF-02`
+  records the distinct OpenAPI path and operation counts. Neither finding
+  changes R3-C implementation or reopens ADR-029/fingerprint V1.
 - R3-C owns registry, immutable domain types, strict Decimal parsing, exact
   units/frequencies, daily/monthly reference periods, provenance requirements,
   observation/expectation separation, fixed-scale canonicalization without

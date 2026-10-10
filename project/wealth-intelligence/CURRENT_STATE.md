@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-10 — Phase 10.R3-B.2 independent verification and checkpoint
+**Updated:** 2026-10-10 — Phase 10.R3-C independent approval and closure
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -31,15 +31,16 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R2-MR2 runtime bootstrap/test isolation remediation | `IMPLEMENTED / INDEPENDENTLY APPROVED` |
 | 10.R2-MR3 active-database Alembic reconciliation | `COMPLETED / VALIDATED` |
 | 10.R3-A External Context audit | `AUDIT COMPLETE / APPROVED` |
-| 10.R3-B External Context contract/registry | `CONTRACT APPROVED / LOCKED / VERSIONED` |
+| 10.R3-B External Context contract/registry | `CONTRACT APPROVED / LOCKED` |
 | 10.R3-B.1 contract remediation | `REMEDIATED / INDEPENDENTLY APPROVED` |
-| 10.R3-B.2 content fingerprint V1 amendment | `APPROVED / INDEPENDENTLY VERIFIED / LOCKED` |
-| 10.R3-C domain/normalization/executable registry | `READY / NOT STARTED` |
-| 10.R3-D/E/F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
+| 10.R3-B.2 content fingerprint V1 amendment | `APPROVED / LOCKED / VERSIONED` |
+| 10.R3-C domain/normalization/executable registry | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED` |
+| 10.R3-D observation store/cache/freshness | `READY / NOT STARTED` |
+| 10.R3-E/F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
-| 10.R3 External Context | `CONTRACT LOCKED / IMPLEMENTATION NOT STARTED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED; R3-C READY` |
+| 10.R3 External Context | `CONTRACT LOCKED / R3-C CLOSED / R3-D READY` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-C CLOSED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -51,13 +52,26 @@ Independent review reported 0 blocking, 0 material, and 0 minor findings; the
 user explicitly approved all ten material decisions on 2026-10-09. Independent
 delta review of R3-B.2 on 2026-10-10 returned 0 blocking, 0 material, 0 minor,
 and 2 informational findings; it reproduced all three normative hashes and the
-V1 binary prefix. R3-C is ready but not started. R3-B.2 normatively closes
+V1 binary prefix. R3-B.2 normatively closes
 `content_fingerprint_v1` with a versioned eleven-field payload, registry-first
 validation and normalization, deterministic JSON, a V1 domain prefix, SHA-256,
 three independently verified vectors, and version-aware comparison. The
 amendment preserves all ten prior decisions and is independently verified and
-locked. No R3 production code, migration, provider, dependency, API, frontend,
-database, or engine behavior exists from this checkpoint.
+locked. R3-C now implements the pure immutable Python domain, the exact
+five-series executable registry, strict Decimal and civil-period normalization,
+economic identity, structured errors, orthogonal status enums, canonical V1
+JSON, and the locked SHA-256 fingerprint boundary. It adds no migration,
+provider/network path, dependency, API, frontend, database, scheduler, or
+engine behavior. Independent implementation review approved R3-C with 0
+blocking, 0 material, 0 minor, and 2 informational findings. It confirmed
+`127` focused R3-C tests, `160` R2 regressions, `497` Planning tests, `67` FIRE
+tests, all three normative SHA-256 vectors, and OpenAPI compatibility at 55
+paths and 59 HTTP operations with no External Context endpoint. The two
+informational findings record that direct value-object construction is not a
+substitute for certified registry-validation paths in future R3-D services,
+and that OpenAPI paths and operations must remain distinct counts. Complete
+units still expose the two unchanged historical Investments/MagicMock timeline
+failures. R3-C is closed; R3-D is `READY / NOT STARTED`.
 
 ## Implemented and validated capabilities
 
@@ -158,10 +172,12 @@ is placeholder/future-facing copy, not implemented capability.
 | Pierre Finance | Active import/API | Governed after ingestion under existing rules |
 | MyProfit CSV | Active import for positions, portfolio history, and income events | Provider facts with grain/provenance limitations |
 | yfinance | Active quote/history/fundamental adapter with memory cache | Provider-specific reference; not a shared external-context layer |
-| BCB/SGS | Research/proposal only | No active normalized adapter or read model |
+| BCB/SGS | Pure R3-C domain, normalization, executable registry, and fingerprint implemented | No network adapter, persistence, ingestion, public API, or read model |
 | News | Absent | No provider, provenance, or relevance contract |
 
-There is no normalized External Context Layer today.
+The pure R3-C foundation exists, but there is no operational External Context
+Layer: R3-D persistence/freshness, R3-E provider/ingestion, and R3-F reference
+context remain not started.
 
 ## Theme and design current state
 
@@ -246,9 +262,10 @@ feature-specific composition, and B6 the Profile context experience with a
 safe no-upload browser transition. B6 is independently approved; B7 implements
 and validates the consumer-integration foundations; B8 independently approved
 the complete R2 foundation. R2 is closed. External Context is
-`10.R3-B = CONTRACT APPROVED / LOCKED / VERSIONED`; R3-B.2 is independently
-verified and locked. R3-C is `READY / NOT STARTED` and may begin only through a
-separately scoped R3-C implementation task. Product
+`10.R3-B = CONTRACT APPROVED / LOCKED`; R3-B.2 is approved, locked, and
+versioned. R3-C is
+`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D is
+`READY / NOT STARTED`. Product
 recomposition and smart-prefill behavior remain reserved for R6.
 
 ## Portfolio Intelligence state
