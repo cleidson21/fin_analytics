@@ -28,6 +28,42 @@ or engine changes. Official metadata and identities were revalidated on
 - A series is not callable unless its registry status is `MVP_ELIGIBLE` and the
   contract has been approved.
 
+### 1.1 Normative registry version
+
+The published catalog and its governed rules have the explicit normative
+version:
+
+```python
+EXTERNAL_SERIES_REGISTRY_VERSION = 1
+```
+
+The version is a positive strict integer; Python `bool` is forbidden. V1 is
+immutable after publication. It is independent of Content Fingerprint V1,
+Alembic revision, application version, and deployment. R3-D will add the
+executable constant and persist the governed value; this documentary amendment
+does not modify `registry.py`.
+
+An approved normative revision increments the version when it changes series
+membership, provider or official identifier, governed economic concept,
+semantic class, frequency, unit, currency, scope, declared scale or precision,
+normalized historical limit, normative provenance, eligibility, permitted use
+including `REFERENCE_ONLY`, an operational policy owned by this registry, or
+validation behavior that changes accepted values, periods, or combinations.
+
+Spelling corrections, Markdown formatting, non-normative comments,
+behavior-preserving refactors, test improvements, equivalent optimizations,
+Alembic changes, application-version changes, and isolated fingerprint-formula
+changes do not increment the registry version. Editing this file is not by
+itself a normative catalog revision.
+
+Historical events retain the registry version under which they were accepted.
+Sync state retains the version under which its evidence was produced or
+explicitly reconciled; startup under a newer version does not rewrite it. The
+complete persistence, mismatch, cache-identity, historical-compatibility, and
+reconciliation rules are owned by the controlled R3-D.1 amendment in
+`EXTERNAL_CONTEXT_CONTRACT.md`. No V2 support or reconciliation mechanism is
+authorized here.
+
 ## 2. Locked MVP catalog
 
 | Registry key | Provider ID | Official concept | Frequency | Unit | Scope | Semantic class | Contract status |

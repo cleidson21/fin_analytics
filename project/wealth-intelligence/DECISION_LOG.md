@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-10-09
+**Updated:** 2026-10-10
 
 ---
 
@@ -875,3 +875,150 @@ ADR-023, ADR-027, and ADR-028 remain unchanged. External references cannot
 replace `portfolio_snapshots.patrimonio`, user assumptions, Goal state, Health
 facts, Planning/FIRE inputs, or R2 feature allowlists. R3-G and R3-H require
 their explicit future gates.
+
+### ADR-029 — Amendment R3-D.1: Registry Version & UTC Knowledge-Time V1
+
+**ADR status:** `ACCEPTED / LOCKED` (unchanged)
+
+**Amendment status:** `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`
+
+**Date approved:** 2026-10-10
+
+**Approval:** The user explicitly approved all material D-1 and D-2 decisions
+in the controlled R3-D.1 task.
+
+**Independent review:** `PHASE 10.R3-D.1 — INDEPENDENT CONTRACT DELTA REVIEW
+APPROVED`. Gemini 3.8 Flash High reviewed eight documentation files and the
+657-insertion/48-removal delta: 0 blocking, 0 material, 0 minor, and 2
+informational findings. It confirmed Registry Version V1, UTC Persistence V1,
+the documented physical-commit limitation, preservation of ADR-029/R3-B.2/
+Content Fingerprint V1, and all five SGS series. No runtime test was executed
+by this documentary review.
+
+**Origin and gaps:** The R3-D preflight found two material contract gaps before
+persistence implementation could begin: the registry had no explicit normative
+version/evolution contract, and the UTC/knowledge-time wording did not close
+the canonical SQLite representation, assignment order, clock coherence, or the
+distinction between logical knowledge time and physical commit completion.
+
+**D-1 — Registry version decision:** The normative registry version is the
+positive strict integer `EXTERNAL_SERIES_REGISTRY_VERSION = 1`; Python `bool`
+is rejected and V1 is immutable after publication. It versions the catalog and
+its governed rules independently of the fingerprint version, Alembic revision,
+application version, and deployment. An approved normative change increments
+it when series membership, provider/identifier, economic concept, semantic
+class, frequency, unit, currency, scope, precision/scale, normalized historical
+limit, provenance, eligibility, permitted use, registry-owned operational
+policy, or accepted validation behavior changes. Spelling, formatting,
+non-normative comments, behavior-preserving refactors, tests, equivalent
+optimization, Alembic/application changes, and an isolated fingerprint-formula
+change do not increment it.
+
+R3-D will persist `registry_contract_version INTEGER NOT NULL` in both
+`external_observation_versions` and `external_series_sync_state`, with strict
+positive-integer validation and server ownership. An event keeps the version
+under which it was validated and accepted. Sync state keeps the version under
+which its operational evidence was produced or explicitly reconciled; startup
+alone cannot rewrite it. Certified acquisition under the current version or a
+future governed deterministic reconciliation is required to update it.
+
+Registry version is excluded from the eleven-field Content Fingerprint V1
+payload, prefix, JSON bytes, SHA-256 input, digest, and locked economic
+identity. Head-only deduplication, identical retransmission behavior, and
+`A -> B -> A` remain unchanged. Append-only events, original fingerprints and
+versions, registry version, economic identity, `knowledge_sequence`,
+`known_from`, and supersession are preserved. Registry V2 requires a separate
+contract for V1 definition retention, reconstruction, read compatibility,
+typed rejection, reconciliation, and eligibility/semantic tests.
+
+A sync-state version mismatch yields `acquisition_health = UNKNOWN`,
+`economic_freshness = UNKNOWN`, and
+`reason_code = REGISTRY_VERSION_MISMATCH` until certified acquisition or
+governed reconciliation. Mismatch alone does not delete observations or
+last-known-good, change fingerprints/history, create an event or zero, imply
+`STALE`/`UNAVAILABLE`, trigger refresh, or collapse independent availability.
+Series removal or eligibility change uses its specific policy while preserving
+history. Registry-dependent cache identities include provider, registry key,
+interval, request semantics, and the server-resolved registry version; the
+observation store never becomes a disposable cache.
+
+**D-2 — UTC and logical knowledge-time decision:** Every persisted R3-D UTC
+timestamp uses SQLite `TEXT` in exact 27-character ASCII form
+`YYYY-MM-DDTHH:MM:SS.ffffffZ`, with fixed separators, zero padding, six
+microsecond digits, and literal `Z`. Variable offsets, local representation,
+Unix timestamp authority, floats, omitted precision, and silent rounding are
+forbidden. Economic dates remain ISO civil dates.
+
+The governed codec accepts only UTC-aware zero-offset Python `datetime`
+objects, writes canonical text, and on read validates shape, real calendar
+values, microseconds, UTC, and a byte-identical reserialization before
+returning `timezone.utc`. Naive/non-zero-offset datetimes, unvalidated strings,
+incompatible types, and non-canonical persisted data fail with typed errors;
+`DateTime(timezone=True)` is not sufficient proof on SQLite. Lexicographic
+ordering is chronological only for codec-certified timestamps and never grants
+SQL numeric authority over financial text.
+
+`retrieved_at` is assigned by the R3-E adapter after complete provider-response
+receipt and remains acquisition provenance. R3-D's application service, after
+obtaining the SQLite write reservation, captures one injected
+`transaction_time_utc` per attempt as late as practical and assigns
+`ingested_at = known_from = transaction_time_utc`. The equal value represents
+two concepts: logical governed ingestion and logical replay eligibility. It is
+not backdated to economic time, derived from publication time, generated by a
+hidden default, or claimed to equal physical commit or first visibility.
+
+The normative order is certified R3-C validation, Content Fingerprint V1,
+write unit of work, `BEGIN IMMEDIATE`, current-head read, one time capture,
+clock validation, deduplication or per-identity sequence allocation, optional
+event insert, sync-state update, and one commit. Repositories neither create
+clock values nor commit. Coherence requires transaction time not earlier than
+`retrieved_at` or the current head's `known_from`; failure is typed and never
+clamped or silently repaired. Equal timestamps use `knowledge_sequence`. Retry
+rereads the head and obtains a new explicit timestamp.
+
+SQLite atomicity and isolation do not provide an application-visible physical
+commit instant that can be stored atomically inside the event before commit.
+An event assigned `known_from` before commit is invisible until commit, yet a
+later retrospective logical cut between those instants can select it. V1
+therefore guarantees logical knowledge-time replay, not exact physical
+commit-time reconstruction or zero physical retroactivity inside the
+transaction window. It does not promise first visibility equal to
+`known_from`, global causal order, absolute host-clock accuracy, or physically
+perfect microsecond replay.
+
+R3-D must use `BEGIN IMMEDIATE` before head read, one transactional unit of
+work, commit-free repositories, atomic event/sync-state updates, bounded
+timeout/retry, and head reread after retry. `knowledge_sequence` begins at 1
+per economic identity, increments only for a committed transition, does not
+advance for retransmission or rollback, and is not global. Bitemporal reads
+retain both explicit cuts and order eligible versions by
+`known_from DESC, knowledge_sequence DESC` within the identity.
+
+**Compatibility gate:** The declared authority remains
+`SQLAlchemy==2.0.21`; the preflight observed local `2.0.51`. R3-D must use APIs
+present in 2.0.21, prove actual `BEGIN IMMEDIATE` behavior with independent
+connections, and verify both compatible environments without silently changing
+the dependency pin.
+
+**Informational implementation findings:** `INF-R3D1-01` requires R3-D tests
+on disposable SQLite to prove physical `BEGIN IMMEDIATE` before head read with
+two independent connections, writer serialization, atomicity, rollback,
+bounded retry, and no `knowledge_sequence` race; `Session.begin()` is not
+equivalent proof. `INF-R3D1-02` requires first sync-state initialization to
+set `registry_contract_version = EXTERNAL_SERIES_REGISTRY_VERSION` without
+implying acquisition success or fabricating last-success, last-attempt,
+last-valid-observation, coverage, healthy, or current evidence.
+
+**Preservation and impact:** Content Fingerprint V1, its eleven fields, binary
+prefix, normative vectors, identity, and R3-B.2 amendment remain unchanged.
+All ten original ADR-029 decisions remain accepted. Financial authority is not
+transferred. R3-D gains the future executable constant, dual persistence,
+codec, logical-time, serialized unit-of-work, mismatch, replay, concurrency,
+and normative-test responsibilities; R3-E owns `retrieved_at`; R3-F consumes
+logical `known_from` and exposes conservative mismatch state.
+
+**Gate and exclusions:** This amendment adds documentation only. It creates no
+code, executable test, migration, table, database access, dependency change,
+provider, API, frontend, scheduler, or engine behavior. The independent
+contract-delta review passed; R3-D is `READY / NOT STARTED` and still requires
+its separately authorized implementation task.

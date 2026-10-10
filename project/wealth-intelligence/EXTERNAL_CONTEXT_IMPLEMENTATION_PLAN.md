@@ -4,12 +4,18 @@
 
 **Status:** `CONTRACT APPROVED / LOCKED / VERSIONED`
 
-**Implementation:** `NOT STARTED`; R3-C `READY / NOT STARTED`
+**Implementation:** R3-C `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED /
+CLOSED`; R3-D.1 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED /
+VERSIONED`; R3-D `READY / NOT STARTED`
 
 This plan decomposes the locked External Context contract into independently
 reviewable increments. The contract, registry, and ADR-029 were explicitly
 approved and locked on 2026-10-09. The approved R3-B.2 amendment was
-independently verified on 2026-10-10, so R3-C is `READY / NOT STARTED`. Every
+independently verified on 2026-10-10. R3-C is implemented, validated,
+independently approved, and closed. The user explicitly approved the R3-D.1
+registry-version and UTC logical knowledge-time decisions on 2026-10-10; Gemini
+3.8 Flash High independently approved the eight-document contract delta with 0
+blocking, 0 material, 0 minor, and 2 informational findings. Every
 implementation microphase still requires its own task and gate.
 
 ## 1. Dependency order
@@ -20,6 +26,7 @@ provider ingestion:
 ```text
 R3-B contract and registry approval
   -> R3-C domain, normalization, and executable registry
+  -> R3-D.1 registry-version and UTC knowledge-time contract delta review
   -> R3-D observation store, cache state, and freshness
   -> R3-E BCB/SGS provider and ingestion
   -> R3-F external reference context boundary
@@ -171,13 +178,19 @@ GPT-5.6 Sol High; high reasoning.
 
 Implement immutable bitemporal persistence, revision/deduplication semantics,
 series sync state, repository boundaries, last-known-good, and deterministic
-availability/freshness evaluation.
+availability/freshness evaluation. Implement the locked
+`EXTERNAL_SERIES_REGISTRY_VERSION = 1`, persist
+`registry_contract_version` in both R3-D structures, and apply the UTC codec,
+logical transaction-time, serialized unit-of-work, and mismatch rules from the
+R3-D.1 amendment.
 
 ### Candidate files
 
 - `backend/infrastructure/persistence/models/external_context.py`;
 - `backend/infrastructure/persistence/repositories/external_context.py`;
 - `backend/application/services/external_context_freshness.py`;
+- a governed UTC timestamp codec at the domain/persistence boundary;
+- an application-owned R3-D transactional unit of work;
 - one Alembic migration from the then-current sole head;
 - `tests/unit/test_external_context_persistence.py`;
 - `tests/unit/test_external_context_freshness.py`;
@@ -187,6 +200,19 @@ availability/freshness evaluation.
 
 - upgrade/downgrade/re-upgrade on disposable DB;
 - migration/metadata parity;
+- executable registry version exactly `1`, positive strict-integer validation,
+  Python-bool rejection, and no implicit V2 support;
+- `registry_contract_version INTEGER NOT NULL` in observation versions and sync
+  state, with immutable event history and sync version changing only after
+  certified acquisition or governed reconciliation;
+- first sync-state initialization setting
+  `registry_contract_version = EXTERNAL_SERIES_REGISTRY_VERSION` without
+  manufacturing acquisition success, attempt, observation, coverage, health,
+  or current evidence for a never-acquired series;
+- registry/fingerprint version independence, unchanged eleven-field V1 payload,
+  last-known-good preservation, and `REGISTRY_VERSION_MISMATCH` producing
+  `UNKNOWN` freshness/health without changing availability or manufacturing an
+  event, zero, `STALE`, or `UNAVAILABLE`;
 - canonical fixed-scale `TEXT` roundtrip through the real SQLite/SQLAlchemy
   dialect after close/reopen, including `typeof(value) = 'text'`, small
   percentage values, scale extremes, and no float;
@@ -210,6 +236,26 @@ availability/freshness evaluation.
   cross-version deduplication without a separately approved transition policy;
 - late ingestion and no look-ahead;
 - exact `consumer_as_of` selection before A, at A, at B, and at reverted A;
+- canonical 27-character ASCII UTC `TEXT` codec
+  (`YYYY-MM-DDTHH:MM:SS.ffffffZ`) with exact byte roundtrip, close/reopen,
+  real-date validation, fixed microseconds, UTC-only aware datetimes, extreme
+  dates, and rejection of naive/non-zero-offset/non-canonical inputs;
+- lexicographic/chronological equivalence only for codec-certified timestamps;
+- injected `transaction_time_utc` captured once per attempt after the
+  `BEGIN IMMEDIATE` reservation, with `ingested_at = known_from`, comparison to
+  `retrieved_at` and the current head, and typed failure without clamping;
+- `BEGIN IMMEDIATE` as the first relevant transaction operation, two independent
+  connections, bounded timeout/retry, new time and head reread after retry,
+  event/sync atomicity, rollback, equal-microsecond sequence ordering, and no
+  repository-owned clock or commit;
+- direct SQL/transaction evidence that `BEGIN IMMEDIATE`, rather than an
+  assumption about `Session.begin()`, precedes the head read and prevents a
+  `knowledge_sequence` allocation race;
+- an adversarial proof of the logical retroactivity window between assigned
+  `known_from` and physical commit, with no claim that either timestamp is the
+  physical commit or first-visibility instant;
+- compatibility using APIs available in declared `SQLAlchemy==2.0.21`, plus
+  verification in the locally observed `2.0.51`, without dependency changes;
 - repeated identical retrieval preserving the original event `known_from` and
   updating only bounded sync telemetry;
 - optional publication/revision fields remaining null when absent;
@@ -240,6 +286,9 @@ constraints require reconciliation.
 
 Implement the first official provider adapter, safe HTTP transport, deterministic
 interval partitioning, normalization, and ingestion into the R3-D store.
+The adapter assigns `retrieved_at` after the complete provider response is
+received and passes that acquisition-provenance instant through the governed
+persistence boundary; it does not assign `ingested_at` or `known_from`.
 
 ### Candidate files
 
@@ -287,6 +336,9 @@ GPT-5.6 Sol High; high reasoning.
 Implement the internal purpose-limited `ExternalReferenceContextService` over
 R3-C/D/E boundaries, with explicit `as_of`, provenance, availability,
 freshness, and absence.
+Historical reads use the logical `known_from` cut and expose conservative
+`REGISTRY_VERSION_MISMATCH` results without treating mismatch as automatic
+unavailability or discarding last-known-good.
 
 ### Candidate files
 
@@ -469,6 +521,9 @@ but still requires regression evidence and must not silently weaken safety.
 | Canonical scales, no rounding, unit/precision separation | R3-C |
 | V1 typed payload, canonical JSON, domain prefix, SHA-256, normative vectors, invalid-input rejection | R3-C |
 | Fingerprint version/fingerprint persistence and head-only version-aware deduplication | R3-D |
+| Registry V1 constant, dual-structure persistence, mismatch and history preservation | R3-D |
+| Canonical UTC codec, logical transaction/knowledge time, and physical-commit limitation | R3-D |
+| `BEGIN IMMEDIATE`, per-attempt clock, sequence, atomicity, retry, and concurrency proof | R3-D |
 | Bitemporal identity/no look-ahead | R3-D |
 | Revision/deduplication/history including `A -> B -> A` | R3-D |
 | Exact SQLite text roundtrip and lexical-order prohibition | R3-D |
@@ -490,11 +545,17 @@ locked on 2026-10-09 after independent review. The user explicitly approved
 the R3-B.2 `content_fingerprint_v1` amendment on 2026-10-09; independent delta
 review on 2026-10-10 reported 0 blocking, 0 material, 0 minor, and 2
 informational findings while reproducing the three normative vectors and V1
-prefix. Therefore:
+prefix. R3-C subsequently closed after independent implementation approval.
+The user explicitly approved the R3-D.1 decisions on 2026-10-10; Gemini 3.8
+Flash High independently approved its eight-document contract delta (0
+blocking, 0 material, 0 minor, 2 informational).
+Therefore:
 
-`10.R3-C — Domain, Normalization & Executable Registry`
+`10.R3-D.1 — Registry Version & UTC Knowledge-Time V1`
 
-`READY / NOT STARTED`.
+`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`.
 
-R3-C requires a separate implementation prompt. Do not start it in this
-documentation checkpoint.
+R3-D is `READY / NOT STARTED`. It still requires a separate authorized
+implementation task; do not implement the registry constant, codec,
+persistence, transaction mechanism, migration, or tests in this documentation
+checkpoint.

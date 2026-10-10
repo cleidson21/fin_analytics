@@ -1,7 +1,9 @@
 # Testing Strategy — Wealth Intelligence
 **Status:** ACTIVE; 10.R2 implemented, validated, independently approved, and closed;
 10.R3-B contract approved/locked; R3-B.2 approved/locked/versioned; R3-C
-implemented/validated/independently approved/closed; 10.5-B paused pending R7
+implemented/validated/independently approved/closed; R3-D.1 contract
+approved/independently verified/locked/versioned; R3-D ready/not started;
+10.5-B paused pending R7
 **Date:** 2026-10-10
 
 ---
@@ -393,6 +395,85 @@ tests/
   the same economic identity, has no global fingerprint uniqueness, and proves
   consecutive deduplication plus `A -> B -> A` replay. Future versions cannot
   be deduplicated across V1 without an approved transition policy.
+
+#### R3-D.1 normative test gates
+
+The following are future R3-D executable requirements. This documentary
+amendment creates no test code.
+
+`PHASE 10.R3-D.1 — INDEPENDENT CONTRACT DELTA REVIEW APPROVED`: Gemini 3.8
+Flash High reviewed eight documentation files (657 insertions/48 removals) and
+reported 0 blocking, 0 material, 0 minor, and 2 informational findings. This
+was a documentary review, not runtime-test execution.
+
+**Registry version V1:**
+
+- assert `EXTERNAL_SERIES_REGISTRY_VERSION == 1`, positive strict-integer type,
+  Python-bool rejection, and no implicit V2 behavior;
+- persist `registry_contract_version INTEGER NOT NULL` in both observation
+  versions and sync state, with backend-owned assignment and immutable event
+  history;
+- prove first sync-state initialization sets
+  `registry_contract_version = EXTERNAL_SERIES_REGISTRY_VERSION` but preserves
+  an absence-consistent never-acquired state, without fabricated success,
+  attempt, valid observation, coverage, healthy, or current evidence;
+- preserve historical events, fingerprints, fingerprint versions,
+  last-known-good, economic identity, sequence, logical time, and supersession
+  across version mismatch;
+- prove Content Fingerprint V1 and its eleven-field payload are independent of
+  registry version;
+- prove `REGISTRY_VERSION_MISMATCH` yields `UNKNOWN` acquisition health and
+  economic freshness while availability remains independent, with no forced
+  `STALE`, `UNAVAILABLE`, zero, refresh, deletion, or synthetic event;
+- prove a post-reconciliation identical retransmission may update bounded sync
+  telemetry without creating an event, and that no future-version support is
+  inferred.
+
+**UTC codec V1:**
+
+- exact `YYYY-MM-DDTHH:MM:SS.ffffffZ`, 27 ASCII characters, fixed zero padding,
+  six microsecond digits, literal `Z`, byte-identical roundtrip, real SQLite
+  `TEXT`, close/reopen, and valid lexicographic/chronological ordering;
+- cover extreme and invalid civil dates, exact microseconds, aware UTC output,
+  and rejection of naive datetimes, non-zero offsets, strings at the governed
+  Python write boundary, missing microseconds, variable offsets, non-canonical
+  text, and incompatible types;
+- verify invalid stored text fails with a typed integrity error and is never
+  silently normalized or repaired.
+
+**Logical knowledge time and transactionality:**
+
+- use an injected clock and capture `transaction_time_utc` exactly once per
+  attempt after SQLite write reservation; assign
+  `ingested_at = known_from = transaction_time_utc`;
+- enforce transaction time not earlier than `retrieved_at` or the current
+  head's `known_from`, including equal-microsecond sequence tie-breaking and
+  typed failure without clamping;
+- prove per-identity sequence starts at 1, advances only on committed content
+  transitions, is not consumed by rollback or retransmission, is not global,
+  and produces sequences 1/2/3 for `A -> B -> A`;
+- cover commit, rollback, lock timeout, bounded retry with a new timestamp and
+  head reread, and exact as-of behavior before, at, and after each logical cut;
+- use two independent connections to prove `BEGIN IMMEDIATE` is the first
+  relevant transaction operation, event/sync-state atomicity, uncommitted
+  invisibility, and serialized conflicting writers;
+- capture actual SQLite SQL/transaction evidence rather than assuming
+  `Session.begin()` emits `BEGIN IMMEDIATE`, and prove no concurrent
+  `knowledge_sequence` allocation race;
+- include an adversarial case where a retrospective cut between logical
+  `known_from` and physical commit can select the event after commit. The test
+  must document the logical retroactivity window and must not claim a physical
+  commit or first-visibility timestamp;
+- run on a disposable database only, never the active SQLite file.
+
+**SQLAlchemy compatibility:**
+
+- use only APIs available in the declared `SQLAlchemy==2.0.21` and prove the
+  actual SQL/transaction boundary there;
+- also verify the locally observed `2.0.51` behavior;
+- do not change, install, upgrade, or downgrade dependencies without a separate
+  authorization.
+
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,
   malformed payloads, unit conflicts, timeout/DNS/429/4xx/5xx, bounded retry,

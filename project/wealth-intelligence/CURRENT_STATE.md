@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-10 — Phase 10.R3-C independent approval and closure
+**Updated:** 2026-10-10 — Phase 10.R3-D.1 final contract checkpoint
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -35,11 +35,12 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-B.1 contract remediation | `REMEDIATED / INDEPENDENTLY APPROVED` |
 | 10.R3-B.2 content fingerprint V1 amendment | `APPROVED / LOCKED / VERSIONED` |
 | 10.R3-C domain/normalization/executable registry | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED` |
+| 10.R3-D.1 registry version and UTC knowledge-time amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED` |
 | 10.R3-D observation store/cache/freshness | `READY / NOT STARTED` |
 | 10.R3-E/F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
-| 10.R3 External Context | `CONTRACT LOCKED / R3-C CLOSED / R3-D READY` |
+| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D READY` |
 | Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-C CLOSED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
@@ -71,7 +72,18 @@ informational findings record that direct value-object construction is not a
 substitute for certified registry-validation paths in future R3-D services,
 and that OpenAPI paths and operations must remain distinct counts. Complete
 units still expose the two unchanged historical Investments/MagicMock timeline
-failures. R3-C is closed; R3-D is `READY / NOT STARTED`.
+failures. R3-C is closed. The user explicitly approved the R3-D.1
+registry-version and UTC logical knowledge-time decisions on 2026-10-10. The
+controlled amendment now defines `EXTERNAL_SERIES_REGISTRY_VERSION = 1`,
+dual-structure registry-version persistence, mismatch behavior, canonical
+27-character UTC text, injected per-attempt logical transaction time,
+`BEGIN IMMEDIATE` ordering, and the explicit limitation that `known_from` is
+not a physical commit timestamp. Gemini 3.8 Flash High independently approved
+the eight-document delta (0 blocking, 0 material, 0 minor, 2 informational);
+no runtime test was executed in that documentary review. R3-D.1 is `CONTRACT
+APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D is `READY / NOT
+STARTED` and has no operational persistence, codec, transaction, table, or
+migration implementation.
 
 ## Implemented and validated capabilities
 
@@ -176,8 +188,10 @@ is placeholder/future-facing copy, not implemented capability.
 | News | Absent | No provider, provenance, or relevance contract |
 
 The pure R3-C foundation exists, but there is no operational External Context
-Layer: R3-D persistence/freshness, R3-E provider/ingestion, and R3-F reference
-context remain not started.
+Layer: R3-D persistence/freshness remains unimplemented and ready only for its
+separately authorized implementation task; R3-E provider/ingestion and R3-F
+reference context remain not started. No registry-version constant, UTC codec,
+R3-D table, migration, or transactional unit of work exists yet.
 
 ## Theme and design current state
 
@@ -264,7 +278,8 @@ and validates the consumer-integration foundations; B8 independently approved
 the complete R2 foundation. R2 is closed. External Context is
 `10.R3-B = CONTRACT APPROVED / LOCKED`; R3-B.2 is approved, locked, and
 versioned. R3-C is
-`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D is
+`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D.1 is
+`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D is
 `READY / NOT STARTED`. Product
 recomposition and smart-prefill behavior remain reserved for R6.
 

@@ -4,8 +4,11 @@
 
 **Status:** `CONTRACT APPROVED / LOCKED / VERSIONED`
 
-**Implementation status:** `R3-B.2 APPROVED / INDEPENDENTLY VERIFIED / LOCKED`;
-R3-C `READY / NOT STARTED`; R3 runtime `NOT STARTED`
+**Implementation status:** `R3-B.2 APPROVED / INDEPENDENTLY VERIFIED / LOCKED /
+VERSIONED`;
+R3-C `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D.1
+`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D
+`READY / NOT STARTED`
 
 **Authority:** this contract derives from the approved R3-A audit, the accepted
 Wealth OS architecture, the independently approved R3-B.1 remediation, and
@@ -14,6 +17,10 @@ accepted ADR-029. The user explicitly approved all ten material decisions on
 `content_fingerprint_v1` amendment on 2026-10-09; independent delta review
 approved it on 2026-10-10. Contract lock does not mean implementation
 completion.
+
+The user explicitly approved the R3-D.1 registry-version and UTC logical
+knowledge-time decisions on 2026-10-10. Section 8.4 is the controlled
+normative amendment for those decisions. It does not implement R3-D.
 
 ## 1. Purpose
 
@@ -128,10 +135,11 @@ does not define the domain authority.
 | `reference_period_start` | Start of the economic period |
 | `reference_period_end` | End of the economic period |
 | `retrieved_at` | UTC timestamp of the provider response |
-| `known_from` | UTC knowledge boundary of this committed event |
-| `ingested_at` | UTC timestamp when persistence completed |
+| `known_from` | UTC logical knowledge boundary of this committed event |
+| `ingested_at` | UTC logical transaction time at which the application service accepts the content transition |
 | `content_fingerprint_version` | Version of the immutable content-fingerprint formula, initially `1` |
 | `content_fingerprint` | Deterministic digest of canonical semantic content; non-unique across non-consecutive historical events |
+| `registry_contract_version` | Registry version under which the event was validated and accepted |
 | `knowledge_sequence` | Monotonic event order inside one economic identity |
 | `source_url` | Governed provider endpoint or metadata URL |
 | `license_id` | Registry-owned license identifier |
@@ -181,17 +189,19 @@ R3 separates economic time from knowledge time.
 
 - `observed_at`, when supplied, records the provider event timestamp and does
   not replace the economic reference period;
-- `retrieved_at` records, in UTC, when the complete provider response was
-  received by the adapter;
-- `ingested_at` is the UTC transaction timestamp assigned when a validated
-  knowledge event is written to the observation store;
-- `known_from` is the knowledge boundary of that committed event. It is set in
-  the same transaction as `ingested_at`, is never earlier than `retrieved_at`,
-  and becomes eligible only after that transaction commits;
+- `retrieved_at` records, in UTC, the instant assigned by the adapter after the
+  complete provider response has been received;
+- `ingested_at` is the logical UTC transaction time captured once by the
+  application service after the SQLite write reservation and before final
+  persistence; it is not the physical commit-completion time;
+- `known_from` is the logical knowledge boundary of that committed event and
+  equals `ingested_at` in V1. It is never earlier than `retrieved_at`. The event
+  exists and becomes visible to other connections only after commit, but the
+  stored boundary is not a physical first-visibility timestamp;
 - `published_at` and `revised_at` remain null when not supplied by the source.
 
-For the initial SGS API, `known_from` is the successful local persistence time
-of each accepted content transition. A rollback creates no knowledge event.
+For the initial SGS API, `known_from` is the logical transaction time of each
+accepted content transition. A rollback creates no eligible knowledge event.
 An older economic reference date does not backdate local knowledge. An
 identical consecutive retransmission updates sync telemetry but does not create
 another observation event or alter the existing event's `known_from`.
@@ -513,6 +523,7 @@ Conceptual minimum:
   ingested UTC timestamps;
 - content-fingerprint version, non-unique content fingerprint, monotonic
   knowledge sequence, and optional immediate supersedes reference;
+- registry contract version under which the event was validated and accepted;
 - source URL and license identifier.
 
 Required database guarantees:
@@ -616,7 +627,8 @@ One operational row per registry series records only:
 - bounded typed error code and HTTP status when safe;
 - retry eligibility time;
 - partial-coverage marker;
-- current registry contract version.
+- registry contract version under which the operational evidence was produced
+  or explicitly reconciled;
 - consecutive-retransmission and accepted-transition counters when useful for
   bounded operations evidence.
 
@@ -641,6 +653,278 @@ overloading observation history.
 - Existing legacy `asset_prices`, benchmark, or `macro_indicators` SQL is not
   reused merely by name; the repository audit found no active Alembic-owned
   table that satisfies this contract.
+
+### 8.4 Amendment R3-D.1: Registry Version & UTC Knowledge-Time V1
+
+`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`: this
+controlled amendment closes two material R3-D preflight gaps without changing the five-series
+catalog, Content Fingerprint V1, the ten accepted ADR-029 decisions, or any
+financial-authority boundary.
+
+**Independent contract-delta review (2026-10-10):**
+`PHASE 10.R3-D.1 — INDEPENDENT CONTRACT DELTA REVIEW APPROVED`. Reviewer:
+Gemini 3.8 Flash High. The review reported 0 blocking, 0 material, 0 minor,
+and 2 informational findings across eight documentation files and the reviewed
+657-insertion/48-removal delta. It confirmed Registry Version V1, UTC
+Persistence V1, the physical-commit limitation, ADR-029, R3-B.2, Content
+Fingerprint V1, and the unchanged five SGS series. The two informational
+implementation obligations are preserved below; no runtime test was executed
+by this documentary review.
+
+#### 8.4.1 External Series Registry Version V1
+
+The normative registry version is:
+
+```python
+EXTERNAL_SERIES_REGISTRY_VERSION = 1
+```
+
+It is a positive strict integer; Python `bool` is not accepted as an integer.
+V1 is immutable after publication. The value identifies the normative revision
+of the catalog and its governed rules. It is independent of
+`content_fingerprint_version`, Alembic revision, application version, and
+deployment. R3-D must implement the executable constant; this documentation
+amendment does not change `registry.py`.
+
+An approved normative change increments the registry version when it changes
+any of the following: series membership; provider or official identifier;
+governed economic concept; semantic class; frequency; unit; currency; scope;
+declared scale or precision; normalized historical limit; normative
+provenance; eligibility; permitted use including `REFERENCE_ONLY`; an
+operational policy owned by the registry; or validation behavior that changes
+accepted values, periods, or field combinations.
+
+The version does not increment for spelling correction, Markdown reformatting,
+non-normative commentary, behavior-preserving refactor, test improvement,
+equivalent optimization, Alembic change, application-version change, or an
+isolated change to the fingerprint formula. A file edit alone is not a
+normative registry revision.
+
+R3-D must persist `registry_contract_version INTEGER NOT NULL` in both
+conceptual structures. The Python boundary rejects non-integers, booleans, and
+values less than one; the governed backend assigns the value, never an
+external consumer.
+
+- In `external_observation_versions`, it is the immutable version under which
+  the event was validated and accepted. A later registry revision never
+  overwrites the event's historical version.
+- In `external_series_sync_state`, it is the version under which the
+  operational evidence was produced or explicitly reconciled. Application
+  startup under a newer version does not update it. Only certified acquisition
+  under the current version or a future governed deterministic reconciliation
+  may update it; reconciliation is not implemented by this amendment.
+
+The registry version does not participate in the eleven-field fingerprint
+payload, binary prefix, V1 JSON serialization, SHA-256 input, digest, or locked
+economic identity. A registry-only version change therefore does not by itself
+change a fingerprint. A change to one of the eleven semantic fields naturally
+does. Provenance or operational-policy changes without a semantic payload
+change do not manufacture a new economic event. Head-only deduplication and
+`A -> B -> A` remain unchanged; after governed reconciliation, an identical
+retransmission may update bounded telemetry without creating an event.
+
+Current registry state never replaces the version used to accept historical
+records. Append-only events, original fingerprints and fingerprint versions,
+event registry versions, economic identity, `knowledge_sequence`,
+`known_from`, and supersession remain preserved. Before registry V2 can be
+approved, a separate contract must define retention and consultation of the V1
+definition, reconstruction of V1 observations, read compatibility, typed
+rejection, operational reconciliation, and tests for eligibility and semantic
+changes. This amendment authorizes no future-version implementation.
+
+If:
+
+```text
+sync_state.registry_contract_version
+!= EXTERNAL_SERIES_REGISTRY_VERSION
+```
+
+then evaluation returns `acquisition_health = UNKNOWN`,
+`economic_freshness = UNKNOWN`, and
+`reason_code = REGISTRY_VERSION_MISMATCH` until a certified acquisition under
+the current version or a governed reconciliation. The mismatch alone does not
+delete observations or last-known-good, alter fingerprints or history, create
+an event or zero, imply `STALE` or `UNAVAILABLE`, or trigger refresh.
+Availability remains independent. If the current registry removed the series
+or changed its eligibility, the specific eligibility policy applies while
+history remains preserved; that condition must not be reduced to a generic
+version mismatch.
+
+Future caches whose meaning depends on the current registry definition must
+include the server-resolved version in their conceptual identity:
+
+```text
+provider
+registry_key
+interval_start
+interval_end
+request_semantics
+registry_contract_version
+```
+
+This applies to request coalescing, negative cache, validated-payload cache,
+and an applicable R3-F reference context. Consumer-supplied versions are not
+authoritative, and the observation store is not a disposable cache. No cache
+is implemented by this amendment.
+
+#### 8.4.2 UTC Persistence & Logical Knowledge-Time V1
+
+Every persisted R3-D UTC timestamp, subject to approved field nullability, uses
+SQLite `TEXT` in exactly this 27-character ASCII form:
+
+```text
+YYYY-MM-DDTHH:MM:SS.ffffffZ
+```
+
+For example, `2026-10-10T14:05:07.000123Z`. All numeric components are
+zero-padded; separators occupy fixed positions; the suffix is literal `Z`; and
+six microsecond digits are mandatory. Variable offsets, local time, Unix
+timestamps as authority, floats, omitted precision, and silent rounding are
+forbidden. Economic civil dates remain `YYYY-MM-DD` and are not converted into
+timestamps.
+
+The future Python-to-SQLite codec accepts only real `datetime` objects that are
+timezone-aware with zero UTC offset. Naive datetimes, non-zero offsets, direct
+unvalidated strings, incompatible types, and non-canonical representations are
+rejected. External timezone conversion occurs explicitly before the governed
+boundary. Persistence writes the canonical text and does not treat
+`DateTime(timezone=True)` as sufficient proof on SQLite. Reading validates the
+text shape, real date/time, six-digit microseconds, and UTC marker, then
+reserializes and compares byte-for-byte before returning a
+`datetime` in `timezone.utc`. Integrity failure produces a typed error; no
+silent repair is allowed.
+
+Lexicographic order equals chronological order only for strings previously
+certified by this codec. Unknown timestamp text cannot enter temporal
+comparison. This property does not apply to financial values stored as text;
+those remain under Python `Decimal` authority.
+
+`retrieved_at` is acquisition provenance: the adapter assigns it after fully
+receiving the provider response. It is not an economic date, official
+publication time, necessarily a provider-supplied timestamp, ingestion time,
+or commit time. R3-E supplies it in the operational flow.
+
+The application service captures `transaction_time_utc` once per transaction
+attempt, as late as practical after acquiring the SQLite write reservation.
+The injected clock supplies an aware UTC value and the codec validates it. V1
+assigns:
+
+```text
+ingested_at = transaction_time_utc
+known_from = transaction_time_utc
+known_from = ingested_at
+```
+
+`ingested_at` means logical governed acceptance of a content transition into
+the atomic batch. `known_from` means the logical knowledge boundary used by
+bitemporal replay. They share one value but retain distinct meanings. Neither
+is backdated to the economic date, derived from `published_at`, generated by a
+hidden default, or asserted to equal physical commit completion or first reader
+visibility.
+
+The normative write sequence is:
+
+```text
+1. Validate the observation through the certified R3-C path.
+2. Calculate Content Fingerprint V1.
+3. Open the write unit of work.
+4. Obtain the SQLite BEGIN IMMEDIATE reservation.
+5. Read the current head for the economic identity.
+6. Capture transaction_time_utc once, as late as practical.
+7. Validate clock and timestamp coherence.
+8. Deduplicate or allocate knowledge_sequence.
+9. Insert the event when a content transition exists.
+10. Update sync state.
+11. Perform one commit.
+```
+
+Operational refinement may reduce the interval between time assignment and
+commit without changing these invariants. Time is assigned after write
+reservation and before final persistence. Repositories neither generate clock
+values nor commit.
+
+Clock coherence requires `transaction_time_utc >= retrieved_at` and, for the
+same economic identity, `transaction_time_utc >= head.known_from`. Failure
+produces a typed temporal-consistency error and, where applicable, rollback;
+there is no clamp, provenance rewrite, silent adjustment, or accepted event.
+Equal timestamps are ordered by `knowledge_sequence`; no global sequence is
+required. A transaction retry rereads the head, obtains a newly assigned time,
+and repeats deduplication. It never automatically reuses the aborted attempt's
+timestamp.
+
+SQLite provides transaction atomicity and isolation of uncommitted changes
+under the approved configuration, but it does not expose to the application
+service a physical commit instant that can be stored atomically in the event
+before commit confirmation. For example:
+
+```text
+10:00:00  BEGIN IMMEDIATE
+10:00:01  known_from assigned
+10:00:02  INSERT
+10:00:05  COMMIT completes
+```
+
+The event is invisible to other connections before commit. After commit, a
+retrospective query with `consumer_as_of = 10:00:03` may select it because its
+logical `known_from` is not later than the cut. V1 therefore represents
+governed logical knowledge time, not exact physical commit time. It makes no
+claim of zero physical retroactivity inside the transaction window, exact
+first-visibility time, global causal order across series, absolute host-clock
+accuracy, or physically perfect microsecond replay.
+
+The contract can guarantee event/sync-state atomicity; existence only after
+successful commit; no eligible event from rollback; SQLite writer
+serialization through the approved strategy; sequence order per economic
+identity; no version for a consecutive retransmission; preservation of
+`A -> B -> A`; canonical UTC timestamps; logical replay; and exclusion of
+events whose `known_from` is after the requested logical cut.
+
+Bitemporal eligibility remains:
+
+```text
+reference_period_end <= consumer_as_of_date
+AND known_from <= consumer_as_of_timestamp
+```
+
+Within one economic identity, selection uses
+`ORDER BY known_from DESC, knowledge_sequence DESC`. Queries must define both
+the identity/period head semantics and the latest eligible economic period.
+They do not substitute `retrieved_at`, `today()`, or implicit `now()` for an
+explicit knowledge cut.
+
+`knowledge_sequence` starts at 1 per economic identity and increments only for
+a newly committed content transition inside the serialized transaction.
+Consecutive retransmission does not increment it; rollback consumes no
+sequence; equal microseconds use it as the tie-breaker; and no global sequence
+is created. `A -> B -> A` yields sequences 1, 2, and 3 without changing
+ADR-029 deduplication.
+
+R3-D must obtain `BEGIN IMMEDIATE` before reading the head, use one unit of
+work, keep repositories commit-free, and update event plus sync state
+atomically. It must prove the actual SQL/transaction behavior rather than
+assuming `Session.begin()` implies `BEGIN IMMEDIATE`, use bounded timeout and
+retry, reread the head after retry, and preserve history under concurrency.
+
+The declared compatibility authority is `SQLAlchemy==2.0.21`; the R3-D.1
+preflight observed `2.0.51` locally. R3-D must use APIs available in 2.0.21,
+prove `BEGIN IMMEDIATE`, test in an environment compatible with the declared
+pin and also the local 2.0.51 environment, and never change dependencies
+silently. Inability to prove the gate blocks that implementation step or
+requires explicit approval to change the pin.
+
+**INF-R3D1-01 — SQLAlchemy / `BEGIN IMMEDIATE`:** Future R3-D executable tests
+against a disposable SQLite database must prove that `BEGIN IMMEDIATE` is
+physically emitted before the head read, with two independent connections,
+writer serialization, one atomic transaction, rollback, bounded retry, and no
+race in `knowledge_sequence` allocation. `Session.begin()` alone is not proof
+that SQLite physically received `BEGIN IMMEDIATE`.
+
+**INF-R3D1-02 — sync-state initialization:** The future first sync-state row
+must set `registry_contract_version = EXTERNAL_SERIES_REGISTRY_VERSION`.
+Initialization is not a successful acquisition: a never-acquired series must
+retain absence-consistent evidence and must not fabricate last success, last
+attempt, last valid observation, coverage, healthy, or current state. This
+amendment authorizes no seed.
 
 ## 9. Refresh, economic freshness, acquisition health, and availability
 
@@ -921,14 +1205,20 @@ This document, the series registry, the implementation plan, and ADR-029 are
 approved and locked as of 2026-10-09. The R3-B.2 amendment fixes
 `content_fingerprint_v1` normatively and was independently verified on
 2026-10-10 with 0 blocking, 0 material, 0 minor, and 2 informational findings;
-the three normative vectors and V1 binary prefix were reproduced. It does not
-implement any R3 runtime capability. Therefore:
+the three normative vectors and V1 binary prefix were reproduced. R3-C was
+subsequently implemented, validated, independently approved, and closed. The
+user approved the R3-D.1 decisions on 2026-10-10; Gemini 3.8 Flash High
+independently approved the eight-document contract delta. Section 8.4 is the
+locked/versioned documentation-only amendment.
+Therefore:
 
-- R3 implementation is `NOT STARTED`;
-- no schema, provider, dependency, API, frontend, or engine change is
-  present in this checkpoint;
+- R3-C is `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`;
+- no R3-D schema, migration, codec, registry-version constant, transactional
+  unit of work, provider, API, frontend, or engine behavior is implemented by
+  this amendment;
 - R3-B is `CONTRACT APPROVED / LOCKED / VERSIONED` and ADR-029 remains
   `ACCEPTED / LOCKED`;
 - R3-B.2 is `APPROVED / INDEPENDENTLY VERIFIED / LOCKED`;
-- R3-C is `READY / NOT STARTED` and requires its own implementation prompt,
-  tests, independent implementation review, and checkpoint.
+- R3-D.1 is `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`;
+- R3-D is `READY / NOT STARTED` and still requires separate implementation
+  authorization.

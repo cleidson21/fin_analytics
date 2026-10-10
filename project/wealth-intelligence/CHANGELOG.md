@@ -1,5 +1,57 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-D.1] — 2026-10-10 — Final Registry Version & UTC Knowledge-Time Checkpoint
+
+- Recorded the user's explicit approval of the two material R3-D preflight
+  decisions without reopening the ten original ADR-029 decisions. ADR-029
+  remains `ACCEPTED / LOCKED`; R3-B.2 and Content Fingerprint V1 remain intact.
+- Defined normative `EXTERNAL_SERIES_REGISTRY_VERSION = 1`, strict positive
+  integer/no-bool rules, immutable V1 evolution policy, and independence from
+  fingerprint, Alembic, application, and deployment versions.
+- Required future `registry_contract_version INTEGER NOT NULL` persistence in
+  observation versions and sync state, immutable historical event versions,
+  certified-acquisition/reconciliation-only sync updates, explicit mismatch
+  `UNKNOWN` states, last-known-good preservation, and registry-version-aware
+  cache identity.
+- Confirmed that registry version is outside the eleven-field fingerprint
+  payload, prefix, canonical JSON, SHA-256 input/digest, and economic identity;
+  head-only deduplication and `A -> B -> A` are unchanged.
+- Defined canonical persisted UTC text as exactly
+  `YYYY-MM-DDTHH:MM:SS.ffffffZ` in 27 ASCII characters, plus a strict future
+  Python/SQLite codec with byte-identical validation and typed integrity
+  failure. Economic civil dates remain separate.
+- Defined `retrieved_at` as R3-E acquisition provenance and
+  `ingested_at = known_from = transaction_time_utc` as the single injected
+  logical time captured per R3-D transaction attempt after the SQLite write
+  reservation. Clock regressions fail without clamping or silent repair.
+- Locked the future order around `BEGIN IMMEDIATE`, head read, one clock
+  capture, deduplication/sequence, atomic event plus sync update, and one commit;
+  repositories neither own the clock nor commit. Retry rereads the head and
+  receives a new explicit timestamp.
+- Explicitly documented SQLite's limitation: `known_from` is governed logical
+  knowledge time, not physical commit completion or first visibility. Replay
+  can be logically retrospective inside the transaction window; no physical
+  microsecond-perfect claim is made.
+- Added future R3-D normative tests for registry version, mismatch, UTC codec,
+  bitemporal cuts, per-identity sequence, rollback, concurrency, two-connection
+  `BEGIN IMMEDIATE`, logical retroactivity, and compatibility with declared
+  `SQLAlchemy==2.0.21` plus locally observed `2.0.51`.
+- Recorded `PHASE 10.R3-D.1 — INDEPENDENT CONTRACT DELTA REVIEW APPROVED`:
+  Gemini 3.8 Flash High audited eight documentation files and the reviewed
+  657-insertion/48-removal delta, reporting 0 blocking, 0 material, 0 minor,
+  and 2 informational findings. Registry V1, UTC Persistence V1, the physical
+  commit limitation, ADR-029, R3-B.2, Content Fingerprint V1, and the five SGS
+  series were preserved. No runtime test was run by the documentary review.
+- Carried the two informational implementation obligations forward: prove actual
+  `BEGIN IMMEDIATE` before head read with independent SQLite connections and no
+  sequence race; initialize sync state with the registry version without
+  fabricating successful-acquisition evidence.
+- Updated the R3-D/E/F responsibility split and current roadmap state. R3-D.1
+  is `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D is
+  `READY / NOT STARTED` and still needs its own authorized implementation task.
+- Documentation only: no Python, executable test, migration, table, database,
+  dependency, provider, API, frontend, scheduler, or engine behavior changed.
+
 ## [PHASE-10.R3-C] — 2026-10-10 — Domain, normalization, and executable registry
 
 - Added the pure immutable `backend.domains.external_context` domain with typed
