@@ -2,14 +2,18 @@
 
 **Phase:** `10.R3-B`
 
-**Status:** `CONTRACT APPROVED / LOCKED`
+**Status:** `CONTRACT APPROVED / LOCKED / VERSIONED`
 
-**Implementation status:** `NOT STARTED`
+**Implementation status:** `R3-B.2 APPROVED / INDEPENDENTLY VERIFIED / LOCKED`;
+R3-C `READY / NOT STARTED`; R3 runtime `NOT STARTED`
 
 **Authority:** this contract derives from the approved R3-A audit, the accepted
 Wealth OS architecture, the independently approved R3-B.1 remediation, and
 accepted ADR-029. The user explicitly approved all ten material decisions on
-2026-10-09. Contract lock does not mean implementation completion.
+2026-10-09. The user also explicitly approved the normative
+`content_fingerprint_v1` amendment on 2026-10-09; independent delta review
+approved it on 2026-10-10. Contract lock does not mean implementation
+completion.
 
 ## 1. Purpose
 
@@ -126,6 +130,7 @@ does not define the domain authority.
 | `retrieved_at` | UTC timestamp of the provider response |
 | `known_from` | UTC knowledge boundary of this committed event |
 | `ingested_at` | UTC timestamp when persistence completed |
+| `content_fingerprint_version` | Version of the immutable content-fingerprint formula, initially `1` |
 | `content_fingerprint` | Deterministic digest of canonical semantic content; non-unique across non-consecutive historical events |
 | `knowledge_sequence` | Monotonic event order inside one economic identity |
 | `source_url` | Governed provider endpoint or metadata URL |
@@ -253,6 +258,239 @@ Rules:
 6. Historical resolution selects the latest eligible knowledge event, not the
    latest distinct content hash.
 
+### 7.1 Normative `content_fingerprint_v1` amendment
+
+`APPROVED BY USER / LOCKED`: content fingerprint version 1 closes the content
+serialization gap identified at the start of R3-C without reopening any of the
+ten material R3-B decisions. The hashing algorithm is:
+
+```text
+content_fingerprint_version = 1
+
+validated = validate_against_registry(input)
+normalized = normalize_decimal_and_period(validated)
+canonical_json = canonical_json_v1(normalized)
+hash_input = DOMAIN_PREFIX_V1 || UTF8(canonical_json)
+digest = SHA256(hash_input)
+content_fingerprint = "sha256:" || lowercase_hex(digest)
+```
+
+Validation against the executable series registry and normalization both occur
+before hashing. Bytes from an invalid payload may have a mathematical SHA-256
+digest, but that digest is never a valid domain content fingerprint.
+
+The persisted and compared identity is the pair
+`(content_fingerprint_version, content_fingerprint)`. A digest from another
+version must not be compared as if it used the V1 formula.
+
+### 7.2 Closed V1 payload
+
+The canonical payload has exactly these eleven keys:
+
+| Field | JSON type | Nullable |
+|---|---|---|
+| `provider` | string | no |
+| `series_id` | string | no |
+| `reference_period_start` | string | no |
+| `reference_period_end` | string | no |
+| `semantic_class` | string | no |
+| `frequency` | string | no |
+| `value_text` | string | no |
+| `value_scale` | integer | no |
+| `unit` | string | no |
+| `currency` | string or null | yes |
+| `scope` | string | no |
+
+No required key may be omitted and no additional key is accepted. `currency`
+is always present, including when its JSON value is `null`. Booleans are not
+accepted as integers. Arrays, nested objects, and floats are prohibited.
+
+The stable V1 identifiers are:
+
+- provider: `BCB_SGS`;
+- frequency: `DAILY` or `MONTHLY`;
+- unit: `PERCENT_PER_YEAR`, `PERCENT_PER_DAY`,
+  `PERCENT_MONTHLY_CHANGE`, or `BRL_PER_USD` as fixed by the registry series;
+- scope: `BR`;
+- currency: `BRL/USD` for SGS 1 in the approved real-era scope and JSON `null`
+  for the other four MVP series;
+- semantic class: `EXTERNAL_OBSERVATION` for all five SGS MVP series.
+
+These values are stable identifiers, not editable labels. Unknown or
+series-incompatible codes are rejected rather than silently normalized. Focus
+is not part of the executable registry authorized by this amendment.
+
+### 7.3 Decimal and period normalization
+
+V1 uses the registry scales already locked by this contract:
+
+| SGS series | `value_scale` |
+|---:|---:|
+| 432 | 2 |
+| 11 | 6 |
+| 12 | 6 |
+| 433 | 2 |
+| 1 | 4 |
+
+Input is strict lexical text parsed directly to Python `Decimal`, never through
+float. It permits no external whitespace, exponent, locale-dependent
+separator, `NaN`, or infinity. Normalization adds trailing zeroes to the fixed
+registry scale, converts negative zero to positive zero, and performs no
+rounding. Non-zero digits beyond the registry scale are rejected. Therefore
+`10.5` and `10.50` both normalize to `10.50`, while `-0.00` normalizes to
+`0.00`. `value_text` in the hash is this canonical result, never the original
+provider lexical representation.
+
+Economic dates are ISO civil dates in `YYYY-MM-DD` form. A daily observation
+has equal period start and end. A monthly observation has the first and last
+civil day of its economic month. These dates are not converted to timestamps;
+no execution clock, timezone, or timestamp enters the payload.
+
+### 7.4 Canonical JSON and hash bytes
+
+The normative serialization reference is:
+
+```python
+json.dumps(
+    payload,
+    sort_keys=True,
+    ensure_ascii=False,
+    separators=(",", ":"),
+    allow_nan=False,
+)
+```
+
+The resulting JSON has exactly the eleven keys, alphabetically ordered, with
+no extra spaces, newline, or BOM. It is encoded directly as UTF-8. Financial
+values remain strings, `value_scale` is a JSON integer, and non-applicable
+currency is the literal JSON `null`.
+
+`DOMAIN_PREFIX_V1` is the following byte sequence, including one final NUL
+byte:
+
+```text
+FINANALYTICS/EXTERNAL_CONTEXT/CONTENT_FINGERPRINT/V1\x00
+```
+
+The four visible characters `\`, `x`, `0`, `0` do not replace the final NUL.
+The normative hexadecimal bytes are:
+
+```text
+46494e414e414c59544943532f45585445524e414c5f434f4e544558542f434f4e54454e545f46494e4745525052494e542f563100
+```
+
+The prefix bytes are concatenated directly with the canonical UTF-8 JSON
+bytes. There is no additional separator, newline, salt, or secret. Output is
+exactly `sha256:` followed by 64 lowercase hexadecimal digits.
+
+### 7.5 Explicitly excluded fields
+
+The V1 hash excludes `registry_key`, `series_concept`, `provider_value_text`,
+`provider_decimal_places`, `retrieved_at`, `ingested_at`, `known_from`,
+`published_at`, `revised_at`, `observed_at`, `observation_event_id`,
+`knowledge_sequence`, `supersedes_event_id`, `provider_revision_id`, URLs,
+license, availability, economic freshness, acquisition health, execution
+clock, and random identifiers. These governed facts may exist elsewhere in the
+observation and provenance model; this exclusion does not remove them from the
+future model.
+
+The economic identity remains `(provider, series_id, reference_period_start,
+reference_period_end, semantic_class)`, and all five fields participate in the
+V1 payload. Consequently different series, periods, or normalized content have
+different content fingerprints, while equivalent normalized content has the
+same fingerprint inside V1. A content fingerprint is not a knowledge-event ID.
+
+### 7.6 Normative test vectors
+
+These are synthetic contract vectors, not claims about historical BCB values.
+Each payload shown is the complete canonical JSON submitted after the V1 domain
+prefix.
+
+**Vector 1 — Selic target**
+
+```json
+{"currency":null,"frequency":"DAILY","provider":"BCB_SGS","reference_period_end":"2026-10-09","reference_period_start":"2026-10-09","scope":"BR","semantic_class":"EXTERNAL_OBSERVATION","series_id":"432","unit":"PERCENT_PER_YEAR","value_scale":2,"value_text":"10.50"}
+```
+
+```text
+sha256:c6b9708c32eb552fa60322d16b793adc48d8b03b7757e975952a526d536e9022
+```
+
+**Vector 2 — negative IPCA**
+
+```json
+{"currency":null,"frequency":"MONTHLY","provider":"BCB_SGS","reference_period_end":"2026-09-30","reference_period_start":"2026-09-01","scope":"BR","semantic_class":"EXTERNAL_OBSERVATION","series_id":"433","unit":"PERCENT_MONTHLY_CHANGE","value_scale":2,"value_text":"-0.40"}
+```
+
+```text
+sha256:4105c9c3f1139a0676688d53b21973a1905345e328347a5abed43a77a333a351
+```
+
+**Vector 3 — USD selling exchange reference**
+
+```json
+{"currency":"BRL/USD","frequency":"DAILY","provider":"BCB_SGS","reference_period_end":"2026-10-09","reference_period_start":"2026-10-09","scope":"BR","semantic_class":"EXTERNAL_OBSERVATION","series_id":"1","unit":"BRL_PER_USD","value_scale":4,"value_text":"5.4321"}
+```
+
+```text
+sha256:71f700aeb716ea7396a2ab595ff12470858095115595fd146975852dd5f0c83d
+```
+
+The expected hashes are normative and must not be silently changed to match a
+different payload. An implementation mismatch blocks R3-C as
+`BLOCKED — FINGERPRINT TEST VECTOR MISMATCH` pending investigation.
+
+### 7.7 Complementary valid and rejection vectors
+
+Every valid complementary vector must show the complete final payload or an
+unambiguous delta from a fully stated payload. Valid cases use only coherent
+registry combinations. The following deltas refer unambiguously to the complete
+Selic payload in normative vector 1 unless a complete payload is shown:
+
+| Valid case | Exact input/final payload rule | Expected relation |
+|---|---|---|
+| construction order | construct the same eleven key/value pairs from vector 1 in reverse insertion order; the final canonical payload is exactly vector 1 | same V1 fingerprint as vector 1 |
+| lexical equivalence | provider lexical input `10.5`; final normalized payload is exactly vector 1 with `value_text = "10.50"` | same V1 fingerprint as vector 1 and as lexical input `10.50` |
+| different value | vector 1 with the sole delta `value_text = "10.51"` after valid normalization | valid V1 fingerprint different from vector 1 |
+| different period | vector 1 with exactly `reference_period_start = "2026-10-08"` and `reference_period_end = "2026-10-08"` | valid V1 fingerprint different from vector 1 |
+| negative zero | provider lexical input `-0.00`; final payload is vector 1 with the sole delta `value_text = "0.00"` | same V1 fingerprint as provider lexical input `0.00` normalized into that final payload |
+
+The coherent different-series case uses this complete normalized payload:
+
+```json
+{"currency":null,"frequency":"DAILY","provider":"BCB_SGS","reference_period_end":"2026-10-09","reference_period_start":"2026-10-09","scope":"BR","semantic_class":"EXTERNAL_OBSERVATION","series_id":"11","unit":"PERCENT_PER_DAY","value_scale":6,"value_text":"0.052788"}
+```
+
+It is accepted as a valid V1 payload and is distinct from all three normative
+payloads. No complementary hash literal becomes normative merely by being used
+in implementation tests.
+
+Rejection cases include SGS 432 with `PERCENT_PER_DAY`, SGS 432 classified as
+`EXTERNAL_EXPECTATION`, SGS 11 with scale 2, incompatible currency, unknown
+series, missing or extra fields, float values, and invalid scale. They expect a
+structured validation exception and have no valid domain fingerprint.
+
+### 7.8 Revision history, deduplication, and versioning
+
+The existing historical rule remains:
+
+```text
+Event 1: A -> fingerprint A
+Event 2: B -> fingerprint B
+Event 3: A -> fingerprint A
+```
+
+Events 1 and 3 may share `(version, fingerprint)` but remain distinct by event
+ID, knowledge sequence, `known_from`, and predecessor. Deduplication compares
+only the current head of the same economic identity and uses the version plus
+fingerprint pair. There is no global unique constraint on the fingerprint.
+Persistence and concurrency remain R3-D responsibilities.
+
+V1 is immutable after publication. A future V2 requires its own specification
+and distinct domain prefix, persists alongside rather than overwriting V1, and
+cannot participate in cross-version deduplication without an approved
+transition policy. No V2 behavior is authorized here.
+
 ## 8. Persistence proposal
 
 `APPROVED BY USER / LOCKED`: use a persistent SQLite observation store rather
@@ -273,16 +511,16 @@ Conceptual minimum:
 - optional publication/revision metadata;
 - optional provider-observed timestamp plus required retrieved, known-from, and
   ingested UTC timestamps;
-- non-unique content fingerprint, monotonic knowledge sequence, and optional
-  immediate supersedes reference;
+- content-fingerprint version, non-unique content fingerprint, monotonic
+  knowledge sequence, and optional immediate supersedes reference;
 - source URL and license identifier.
 
 Required database guarantees:
 
 - unique `(provider, series, economic identity, knowledge_sequence)` and
   opaque event ID;
-- content fingerprint indexed but deliberately not unique, so `A -> B -> A`
-  remains reproducible;
+- `(content_fingerprint_version, content_fingerprint)` indexed but deliberately
+  not unique, so `A -> B -> A` remains reproducible;
 - checks for valid period ordering and non-empty provider/series/unit;
 - checks that stored value has SQLite `TEXT` storage class, has no surrounding
   whitespace, stays within the approved lexical length, and declares the
@@ -654,6 +892,11 @@ independent review reported zero blocking, material, or minor findings:
 Before implementation can be accepted, deterministic tests with no live
 internet dependency must prove:
 
+- all three complete normative V1 vectors through production code; deterministic
+  construction order; `10.5`/`10.50` and negative-zero equivalence; valid
+  value/period/series differences; exclusion of operational fields; strict
+  missing/extra/float/registry-mismatch rejection; exact prefix/UTF-8/null/output
+  representation; and `content_fingerprint_version = 1`;
 - exact canonical decimal text roundtrip through SQLite 3.50.4 and SQLAlchemy
   2.0.51 (or the then-pinned real runtime), including close/reopen;
 - registry-scale extremes, very small daily percentage values, sign and zero,
@@ -675,11 +918,17 @@ internet dependency must prove:
 ## 20. Lock status
 
 This document, the series registry, the implementation plan, and ADR-029 are
-approved and locked as of 2026-10-09. The lock authorizes the separately
-scoped R3-C task; it does not implement any R3 runtime capability. Therefore:
+approved and locked as of 2026-10-09. The R3-B.2 amendment fixes
+`content_fingerprint_v1` normatively and was independently verified on
+2026-10-10 with 0 blocking, 0 material, 0 minor, and 2 informational findings;
+the three normative vectors and V1 binary prefix were reproduced. It does not
+implement any R3 runtime capability. Therefore:
 
 - R3 implementation is `NOT STARTED`;
 - no schema, provider, dependency, API, frontend, or engine change is
   present in this checkpoint;
+- R3-B is `CONTRACT APPROVED / LOCKED / VERSIONED` and ADR-029 remains
+  `ACCEPTED / LOCKED`;
+- R3-B.2 is `APPROVED / INDEPENDENTLY VERIFIED / LOCKED`;
 - R3-C is `READY / NOT STARTED` and requires its own implementation prompt,
-  tests, independent review, and checkpoint.
+  tests, independent implementation review, and checkpoint.

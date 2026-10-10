@@ -1,6 +1,7 @@
 # Testing Strategy — Wealth Intelligence
 **Status:** ACTIVE; 10.R2 implemented, validated, independently approved, and closed;
-10.R3-B contract approved/locked; R3-C ready/not started; 10.5-B paused pending R7
+10.R3-B contract approved/locked/versioned; R3-B.2 independently verified and
+locked; R3-C ready/not started; 10.5-B paused pending R7
 **Date:** 2026-10-09
 
 ---
@@ -332,6 +333,26 @@ tests/
   observation/expectation separation, fixed-scale canonicalization without
   rounding, over-scale rejection, and explicit separation of source unit,
   provider precision, normalization scale, and internal precision.
+- R3-C also owns `content_fingerprint_v1`: a typed closed eleven-field payload,
+  registry validation before hashing, canonical Decimal and civil-period
+  normalization, deterministic sorted compact UTF-8 JSON, the exact
+  NUL-terminated V1 domain prefix, SHA-256, version `1`, and lowercase
+  `sha256:<64 hex>` output. The three complete Selic, negative-IPCA, and USD
+  vectors in `EXTERNAL_CONTEXT_CONTRACT.md` are normative and must execute
+  through production code rather than reproducing the implementation in the
+  test oracle.
+- Complementary valid tests cover dictionary-construction-order independence,
+  `10.5`/`10.50` equivalence, negative-zero normalization, different valid
+  value and period, and another series with coherent registry metadata. Every
+  valid case states its complete payload or an unambiguous delta. Tests also
+  prove that `retrieved_at` and all other excluded operational/provenance fields
+  cannot enter the closed hash payload.
+- Structured rejection tests cover incompatible unit, semantic class,
+  currency, and scale; unknown series; missing or extra keys; float values;
+  booleans masquerading as integers; and other registry-invalid payloads.
+  Rejected input has no expected valid domain fingerprint. Tests independently
+  assert prefix bytes, no BOM/newline/salt, stable key order, exact null, and no
+  Decimal-to-float conversion.
 - R3-D owns migration/metadata parity and exact canonical-`TEXT` roundtrip
   through the real SQLite/SQLAlchemy path after close/reopen. Test small
   percentages, approved lexical extremes, storage class, no float, and the
@@ -344,6 +365,11 @@ tests/
   `published_at`, sync state, negative cache, separate refresh/economic
   freshness/acquisition health, partial/unavailable reasons, and
   last-known-good without failure-forced staleness.
+- R3-D persists `content_fingerprint_version` separately from
+  `content_fingerprint`, compares their pair only against the current head of
+  the same economic identity, has no global fingerprint uniqueness, and proves
+  consecutive deduplication plus `A -> B -> A` replay. Future versions cannot
+  be deduplicated across V1 without an approved transition policy.
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,
   malformed payloads, unit conflicts, timeout/DNS/429/4xx/5xx, bounded retry,

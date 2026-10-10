@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-09 — Phase 10.R3-B contract lock and ADR-029 acceptance
+**Updated:** 2026-10-10 — Phase 10.R3-B.2 independent verification and checkpoint
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -31,8 +31,9 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R2-MR2 runtime bootstrap/test isolation remediation | `IMPLEMENTED / INDEPENDENTLY APPROVED` |
 | 10.R2-MR3 active-database Alembic reconciliation | `COMPLETED / VALIDATED` |
 | 10.R3-A External Context audit | `AUDIT COMPLETE / APPROVED` |
-| 10.R3-B External Context contract/registry | `CONTRACT APPROVED / LOCKED` |
+| 10.R3-B External Context contract/registry | `CONTRACT APPROVED / LOCKED / VERSIONED` |
 | 10.R3-B.1 contract remediation | `REMEDIATED / INDEPENDENTLY APPROVED` |
+| 10.R3-B.2 content fingerprint V1 amendment | `APPROVED / INDEPENDENTLY VERIFIED / LOCKED` |
 | 10.R3-C domain/normalization/executable registry | `READY / NOT STARTED` |
 | 10.R3-D/E/F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
@@ -47,9 +48,16 @@ the unsafe assumption that SQLite
 and explicit `Decimal` conversion; preserves `A -> B -> A` as three knowledge
 events; and separates refresh age, economic freshness, and acquisition health.
 Independent review reported 0 blocking, 0 material, and 0 minor findings; the
-user explicitly approved all ten material decisions on 2026-10-09. R3-C is
-ready but not started. No R3 production code, migration, provider, dependency,
-API, frontend, database, or engine behavior exists from this checkpoint.
+user explicitly approved all ten material decisions on 2026-10-09. Independent
+delta review of R3-B.2 on 2026-10-10 returned 0 blocking, 0 material, 0 minor,
+and 2 informational findings; it reproduced all three normative hashes and the
+V1 binary prefix. R3-C is ready but not started. R3-B.2 normatively closes
+`content_fingerprint_v1` with a versioned eleven-field payload, registry-first
+validation and normalization, deterministic JSON, a V1 domain prefix, SHA-256,
+three independently verified vectors, and version-aware comparison. The
+amendment preserves all ten prior decisions and is independently verified and
+locked. No R3 production code, migration, provider, dependency, API, frontend,
+database, or engine behavior exists from this checkpoint.
 
 ## Implemented and validated capabilities
 
@@ -238,9 +246,10 @@ feature-specific composition, and B6 the Profile context experience with a
 safe no-upload browser transition. B6 is independently approved; B7 implements
 and validates the consumer-integration foundations; B8 independently approved
 the complete R2 foundation. R2 is closed. External Context is
-`10.R3-B = CONTRACT APPROVED / LOCKED`, with implementation beginning only when
-the separately scoped `10.R3-C = READY / NOT STARTED` task is authorized;
-product recomposition and smart-prefill behavior remain reserved for R6.
+`10.R3-B = CONTRACT APPROVED / LOCKED / VERSIONED`; R3-B.2 is independently
+verified and locked. R3-C is `READY / NOT STARTED` and may begin only through a
+separately scoped R3-C implementation task. Product
+recomposition and smart-prefill behavior remain reserved for R6.
 
 ## Portfolio Intelligence state
 

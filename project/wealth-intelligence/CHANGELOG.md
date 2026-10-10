@@ -1,5 +1,30 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-B.2] — 2026-10-10 — Content Fingerprint V1 contract amendment lock
+
+- Recorded the user's explicit approval of the controlled ADR-029 amendment
+  without reopening the ten previously accepted R3-B decisions. ADR-029 remains
+  `ACCEPTED / LOCKED`.
+- Fixed `content_fingerprint_version = 1`, the closed eleven-field payload,
+  registry-first validation and normalization, deterministic compact sorted-key
+  UTF-8 JSON, the NUL-terminated V1 domain prefix, SHA-256, lowercase output,
+  and version/fingerprint pair comparison.
+- Added the three complete normative Selic, negative-IPCA, and USD vectors and
+  independently reproduced all three expected hashes. Separated coherent valid
+  complementary vectors from structured registry/domain rejection cases.
+- Independent delta review approved the amendment with 0 blocking, 0 material,
+  0 minor, and 2 informational findings; it confirmed the V1 binary prefix,
+  eleven-field payload, ADR-029 preservation, financial-authority boundaries,
+  and absence of code-file changes.
+- Preserved content versus event identity, head-only consecutive
+  deduplication, `A -> B -> A`, and the absence of a global fingerprint unique
+  constraint. R3-C owns calculation/tests; R3-D retains persistence,
+  concurrency, knowledge time, predecessor, and replay.
+- Added no code, test implementation, migration, database mutation, dependency,
+  provider, API, frontend, engine, or registry change. R3-B.2 is
+  `APPROVED / INDEPENDENTLY VERIFIED / LOCKED`; R3-C is
+  `READY / NOT STARTED`.
+
 ## [PHASE-10.R3-B-LOCK] — 2026-10-09 — External Context contract lock
 
 - Recorded explicit user approval of all ten R3-B material decisions after the

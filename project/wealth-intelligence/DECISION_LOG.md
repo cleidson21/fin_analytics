@@ -821,8 +821,55 @@ does not authorize changing it.
    keep R3-H deferred and never report it as implemented.
 10. Accept ADR-029 as the canonical architectural authority for these choices.
 
+### ADR-029 — Amendment R3-B.2: Content Fingerprint V1
+
+**ADR status:** `ACCEPTED / LOCKED` (unchanged)
+
+**Amendment status:** `APPROVED / INDEPENDENTLY VERIFIED / LOCKED`
+
+**Date approved:** 2026-10-09
+
+**Approval:** Explicit user approval in the controlled R3-B.2 amendment task.
+
+**Independent delta review:** APPROVED on 2026-10-10; 0 BLOCKING, 0 MATERIAL,
+0 MINOR, and 2 INFORMATIONAL. It reproduced the three normative hashes,
+validated the V1 binary prefix and eleven-field payload, confirmed ADR-029 and
+financial-authority boundaries, and found no code-file change.
+
+**Problem:** At the start of R3-C, the locked contract's content-identity rule
+was found to be architecturally sound but incomplete as an executable formula:
+it did not close the version, exact payload, canonical serialization, domain
+prefix, output representation, or normative test vectors.
+
+**Limited amendment decision:** Keep all ten accepted R3-B decisions unchanged
+and normatively define `content_fingerprint_version = 1` in
+`EXTERNAL_CONTEXT_CONTRACT.md`. V1 hashes exactly eleven registry-validated and
+normalized semantic fields using deterministic compact, sorted-key UTF-8 JSON,
+the version-specific NUL-terminated domain prefix, and SHA-256. Version and
+fingerprint are compared as a pair. Invalid inputs are rejected before hashing
+and do not acquire a valid domain fingerprint.
+
+**Revision protection:** Content identity remains separate from economic and
+knowledge-event identity. `A -> B -> A` still creates three knowledge events;
+the first and third may share the V1 fingerprint. Deduplication is only against
+the current head of the same economic identity, and no global unique
+fingerprint constraint is authorized.
+
+**Consequences:** R3-C owns the typed V1 payload, executable registry
+validation, Decimal/civil-period normalization, canonical serialization,
+prefix, SHA-256 calculation, version, three normative vectors, complementary
+valid cases, and structured invalid-input tests. R3-D continues to own separate
+version/fingerprint persistence, head deduplication, concurrency, knowledge
+sequence, `known_from`, predecessor linkage, and historical replay. No
+production code, schema, provider, database, API, frontend, or engine behavior
+is created by this amendment.
+
+**Gate:** R3-B is `CONTRACT APPROVED / LOCKED / VERSIONED`. R3-B.2 is
+`APPROVED / INDEPENDENTLY VERIFIED / LOCKED`; R3-C is `READY / NOT STARTED`
+and still requires its own implementation task.
+
 **Consequences and exclusions:** R3-C is `READY / NOT STARTED`; R3-D/E/F/I are
-planned and not started. This acceptance creates no code, schema, provider,
+planned and not started. This acceptance and its amendment create no code, schema, provider,
 dependency, public API, frontend, scheduler, or engine change. ADR-006,
 ADR-023, ADR-027, and ADR-028 remain unchanged. External references cannot
 replace `portfolio_snapshots.patrimonio`, user assumptions, Goal state, Health

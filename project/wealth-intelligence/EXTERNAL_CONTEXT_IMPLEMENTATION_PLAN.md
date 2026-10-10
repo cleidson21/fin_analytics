@@ -2,14 +2,15 @@
 
 **Phase:** `10.R3`
 
-**Status:** `CONTRACT APPROVED / LOCKED`
+**Status:** `CONTRACT APPROVED / LOCKED / VERSIONED`
 
-**Implementation:** `NOT STARTED`
+**Implementation:** `NOT STARTED`; R3-C `READY / NOT STARTED`
 
 This plan decomposes the locked External Context contract into independently
 reviewable increments. The contract, registry, and ADR-029 were explicitly
-approved and locked on 2026-10-09. Only R3-C is now `READY / NOT STARTED`;
-every implementation microphase still requires its own task and gate.
+approved and locked on 2026-10-09. The approved R3-B.2 amendment was
+independently verified on 2026-10-10, so R3-C is `READY / NOT STARTED`. Every
+implementation microphase still requires its own task and gate.
 
 ## 1. Dependency order
 
@@ -98,7 +99,13 @@ a fresh context before lock.
 ### Objective
 
 Implement provider-neutral immutable domain types, strict normalization, typed
-errors, and the executable allowlisted registry without network or persistence.
+errors, the executable allowlisted registry, and the complete
+`content_fingerprint_v1` calculation boundary without network or persistence.
+
+R3-C implements a typed V1 payload with exactly the eleven contracted fields,
+registry validation, Decimal and civil-period normalization, canonical JSON,
+the V1 domain prefix, SHA-256 output, and the separately exposed fingerprint
+version. It does not persist either fingerprint field.
 
 ### Candidate files
 
@@ -129,7 +136,21 @@ preflight.
 - observation versus expectation separation;
 - malformed, NaN, Infinity, exponent, locale separator, and excessive-size
   rejection according to the locked parser contract;
-- no defaults for missing values.
+- no defaults for missing values;
+- all three complete normative V1 payload/hash vectors through the production
+  fingerprint implementation, not a copy of that implementation in tests;
+- deterministic key ordering independent of dictionary construction order;
+- normalized fingerprint equivalence for `10.5` and `10.50`, plus negative
+  zero normalization;
+- different valid values and periods producing different fingerprints;
+- another allowlisted series using only its own coherent registry metadata;
+- exclusion of `retrieved_at` and every other operational/provenance field from
+  the closed eleven-field payload;
+- rejection with structured validation errors for unknown/incompatible series
+  metadata, missing or extra fields, floats, booleans-as-integers, and invalid
+  scale, with no valid domain fingerprint;
+- exact prefix bytes, UTF-8 compact JSON without BOM/newline/salt, lowercase
+  hexadecimal output, and `content_fingerprint_version = 1`.
 
 ### Acceptance
 
@@ -172,6 +193,10 @@ availability/freshness evaluation.
 - proof that SQL lexical ordering/range/arithmetic is not used as numeric
   authority;
 - economic, content, and knowledge-event identity with immutable history;
+- separate persistence of `content_fingerprint_version` and
+  `content_fingerprint`, with deduplication comparing their pair only against
+  the current head of the same economic identity and no global fingerprint
+  uniqueness;
 - concurrent ingestion atomicity for the same economic identity;
 - simultaneous identical ingestion deduplicating to one committed event;
 - simultaneous conflicting transitions producing a deterministic serialized
@@ -181,6 +206,8 @@ availability/freshness evaluation.
   eligible `known_from`;
 - `A -> B -> A` producing three events while consecutive identical
   retransmission creates no new event;
+- version-aware replay and compatibility with the immutable V1 formula; no
+  cross-version deduplication without a separately approved transition policy;
 - late ingestion and no look-ahead;
 - exact `consumer_as_of` selection before A, at A, at B, and at reverted A;
 - repeated identical retrieval preserving the original event `known_from` and
@@ -440,6 +467,8 @@ but still requires regression evidence and must not silently weaken safety.
 | Registry, units, semantic classes | R3-C |
 | Decimal and civil-date normalization | R3-C |
 | Canonical scales, no rounding, unit/precision separation | R3-C |
+| V1 typed payload, canonical JSON, domain prefix, SHA-256, normative vectors, invalid-input rejection | R3-C |
+| Fingerprint version/fingerprint persistence and head-only version-aware deduplication | R3-D |
 | Bitemporal identity/no look-ahead | R3-D |
 | Revision/deduplication/history including `A -> B -> A` | R3-D |
 | Exact SQLite text roundtrip and lexical-order prohibition | R3-D |
@@ -457,7 +486,11 @@ but still requires regression evidence and must not silently weaken safety.
 ## 13. Lock record and next task
 
 R3-B, its three contract documents, and ADR-029 were explicitly approved and
-locked on 2026-10-09 after independent review. Therefore:
+locked on 2026-10-09 after independent review. The user explicitly approved
+the R3-B.2 `content_fingerprint_v1` amendment on 2026-10-09; independent delta
+review on 2026-10-10 reported 0 blocking, 0 material, 0 minor, and 2
+informational findings while reproducing the three normative vectors and V1
+prefix. Therefore:
 
 `10.R3-C — Domain, Normalization & Executable Registry`
 

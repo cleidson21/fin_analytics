@@ -47,16 +47,20 @@ not implemented. R3-A completed the source/architecture audit. R3-B produced
 remediated SQLite decimal storage, revision/reversion identity, bitemporal
 commit semantics, and refresh/freshness/acquisition separation. They are
 approved and locked after independent review and explicit user approval on
-2026-10-09. R3-C is ready but not started; later microprocesses remain gated.
+2026-10-09. R3-B.2 closes the normative `content_fingerprint_v1` formula and
+was independently verified on 2026-10-10 with 0 blocking, 0 material, 0 minor,
+and 2 informational findings. R3-C is ready but not started; later
+microprocesses remain gated.
 
 ### 10.R3 locked microphase sequence
 
 | Task | Outcome | Status | Dependency |
 |---|---|---|---|
 | R3-A | External Context architecture/source audit | `AUDIT COMPLETE / APPROVED` | R2 closed |
-| R3-B | Contract, official series registry, temporal/persistence decisions, implementation plan | `CONTRACT APPROVED / LOCKED` | R3-A |
+| R3-B | Contract, official series registry, temporal/persistence decisions, implementation plan | `CONTRACT APPROVED / LOCKED / VERSIONED` | R3-A |
 | R3-B.1 | Pre-lock Decimal/revision/freshness contract remediation | `REMEDIATED / INDEPENDENTLY APPROVED` | R3-B remediated contract |
-| R3-C | Domain, strict normalization, executable allowlisted registry | `READY / NOT STARTED` | R3-B approved/locked |
+| R3-B.2 | Content Fingerprint V1 contract amendment | `APPROVED / INDEPENDENTLY VERIFIED / LOCKED` | explicit user approval and independent delta review |
+| R3-C | Domain, strict normalization, executable allowlisted registry, Content Fingerprint V1 | `READY / NOT STARTED` | R3-B.2 locked |
 | R3-D | Bitemporal observation store, sync state, cache/freshness | `PLANNED / NOT STARTED` | R3-C |
 | R3-E | BCB/SGS adapter and governed ingestion | `PLANNED / NOT STARTED` | R3-C + R3-D |
 | R3-F | Purpose-limited External Reference Context | `PLANNED / NOT STARTED` | R3-D + R3-E |
@@ -100,7 +104,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3-B CONTRACT APPROVED / LOCKED; R3-C READY / NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3-B CONTRACT APPROVED / LOCKED / VERSIONED; R3-B.2 INDEPENDENTLY VERIFIED / LOCKED; R3-C READY / NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
