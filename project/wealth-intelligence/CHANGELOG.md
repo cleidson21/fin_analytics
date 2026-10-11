@@ -1,5 +1,56 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-D] — 2026-10-10 — Governed Observation Store Implementation
+
+- Implemented executable Registry Version V1 and a strict 27-character UTC
+  persistence codec without changing the five-series registry or Content
+  Fingerprint V1.
+- Added the two approved Alembic-owned structures only:
+  `external_observation_versions` and `external_series_sync_state`, with exact
+  Decimal/UTC text, identity/sequence constraints, self/sync FKs, head/as-of
+  indexes, and defensive append-only update/delete triggers. Revision
+  `4f9c2d7e1a6b` descends from `2d6b4f8a9c1e` and passed disposable
+  upgrade/downgrade/re-upgrade validation.
+- Added caller-transactional Core repositories and an application-owned unit of
+  work that emits real `BEGIN IMMEDIATE` before head reads, captures one
+  injected logical time after reservation, commits event plus sync state
+  atomically, retries only bounded busy failures, and treats ambiguous commit
+  outcomes conservatively without blind replay.
+- Implemented certified R3-C revalidation before writes and after reads,
+  fingerprint comparison, head-only retransmission deduplication, immutable
+  A→B→A history, per-identity knowledge sequence, supersession, explicit
+  two-cut as-of reads, no-look-ahead, and the approved logical retroactivity
+  window between `known_from` and physical commit.
+- Implemented safe sync-state initialization, last-known-good preservation,
+  empty/partial/failed attempt state, independent availability/economic
+  freshness/acquisition health, conservative registry mismatch, and 6h/24h
+  operational refresh evaluation without provider, scheduler, or endpoint.
+- Focused R3-C/R3-D/bootstrap validation: `180 passed`. R2/bootstrap:
+  `161 passed` (the prior 160 plus the new runtime FK check); Planning:
+  `497 passed`; FIRE: `67 passed`; complete units: `1015 passed, 2 failed`,
+  limited to the two unchanged Investments/MagicMock timeline failures.
+  Backend import/OpenAPI remains 55 paths, 59 operations, and zero External
+  Context endpoints; import created no database file.
+- All SQLite migrations/tests used disposable databases under `C:\tmp`; the
+  active `database/fin_analytics.db` was neither opened nor migrated. No HTTP
+  provider, BCB call, scheduler, frontend, financial engine, portfolio source,
+  public API, dependency, commit, or push was added.
+- Gemini 3.8 Flash High independently approved R3-D: 0 blocking, 0 material,
+  0 minor, and 2 informational findings. SQLAlchemy 2.0.21 independently
+  reproduced R3-D `45 passed` and R3-C `127 passed`; SQLAlchemy 2.0.51
+  reproduced R3-D `45 passed`, R3-C `127 passed`, and bootstrap `8 passed`.
+  R3-D is `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT
+  AUTHORIZED`; R3-E is `READY / NOT STARTED`.
+- `INF-R3D-01`: SQLite foreign keys are enabled globally for sync and async
+  connections and work in validated environments, but deployment remains
+  separately gated by legacy referential-integrity assessment, backup/rollback,
+  startup validation, and explicit authorization. The active database was not
+  inspected or migrated.
+- `INF-R3D-02`: the declared Pydantic pins are incompatible in a clean install,
+  and `pytest-asyncio` is required by existing tests but not declared. This
+  remains a separate `DEPENDENCY REPRODUCIBILITY & PACKAGING REMEDIATION` task;
+  requirements and installed project dependencies were not changed.
+
 ## [PHASE-10.R3-D.1] — 2026-10-10 — Final Registry Version & UTC Knowledge-Time Checkpoint
 
 - Recorded the user's explicit approval of the two material R3-D preflight

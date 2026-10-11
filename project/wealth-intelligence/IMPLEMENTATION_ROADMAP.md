@@ -1,5 +1,5 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R3-D READY / NOT STARTED`
+**Status:** `ACTIVE QUEUE — 10.R3-D FINAL CHECKPOINT AUTHORIZED`
 **Date:** 2026-10-10
 
 ---
@@ -9,7 +9,7 @@
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
-| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D.1 LOCKED / R3-D READY` | R2 taxonomy and context boundary; ADR-029 |
+| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CHECKPOINT AUTHORIZED` | R2 taxonomy and context boundary; ADR-029 |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
@@ -59,8 +59,13 @@ explicitly approved the R3-D.1 registry-version and UTC logical knowledge-time
 decisions on 2026-10-10. Gemini 3.8 Flash High independently approved the
 eight-document amendment delta (0 blocking, 0 material, 0 minor, 2
 informational). R3-D.1 is `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED
-/ VERSIONED`; R3-D is `READY / NOT STARTED`, and later microprocesses remain
-gated and not started.
+/ VERSIONED`. R3-D is implemented, validated on SQLAlchemy 2.0.21 and 2.0.51,
+and independently approved by Gemini 3.8 Flash High (0 blocking, 0 material,
+0 minor, 2 informational). Its migration, transaction, concurrency, and
+regression gates used only disposable SQLite databases; the active database was
+untouched. R3-D is `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED /
+CHECKPOINT AUTHORIZED`. R3-E is ready but not started; later microprocesses
+remain not started.
 
 ### 10.R3 locked microphase sequence
 
@@ -72,8 +77,8 @@ gated and not started.
 | R3-B.2 | Content Fingerprint V1 contract amendment | `APPROVED / LOCKED / VERSIONED` | explicit user approval and independent delta review |
 | R3-C | Domain, strict normalization, executable allowlisted registry, Content Fingerprint V1 | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED` | R3-B.2 locked; independent implementation review approved |
 | R3-D.1 | Registry Version V1 and UTC logical knowledge-time contract amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED` | explicit user approval and independent delta review on 2026-10-10 |
-| R3-D | Bitemporal observation store, sync state, cache/freshness | `READY / NOT STARTED` | R3-D.1 locked/versioned; separate implementation authorization required |
-| R3-E | BCB/SGS adapter and governed ingestion | `PLANNED / NOT STARTED` | R3-C + R3-D |
+| R3-D | Bitemporal observation store, sync state, cache/freshness | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` | final Git checkpoint; deployment remains separately gated |
+| R3-E | BCB/SGS adapter and governed ingestion | `READY / NOT STARTED` | R3-C + R3-D checkpoint |
 | R3-F | Purpose-limited External Reference Context | `PLANNED / NOT STARTED` | R3-D + R3-E |
 | R3-G | Existing market/yfinance boundary remediation under ADR-006 | `SEPARATELY GATED / NOT STARTED` | focused impact approval + R3 foundations; required before yfinance admission |
 | R3-H | Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` | separate activation decision |
@@ -115,7 +120,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3-B CONTRACT APPROVED / LOCKED; R3-B.2 APPROVED / LOCKED / VERSIONED; R3-C IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED; R3-D.1 CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED; R3-D READY / NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3-B CONTRACT APPROVED / LOCKED; R3-B.2 APPROVED / LOCKED / VERSIONED; R3-C IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED; R3-D.1 CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED; R3-D IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |

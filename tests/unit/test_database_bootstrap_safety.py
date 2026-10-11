@@ -104,6 +104,20 @@ def test_engine_uses_canonical_configured_database_url(tmp_path: Path) -> None:
     assert not database_path.exists()
 
 
+def test_runtime_engines_enable_sqlite_foreign_keys(tmp_path: Path) -> None:
+    database_path = tmp_path / "foreign-keys.db"
+    result = _run_python(
+        "from sqlalchemy import text; from backend.database.engine import engine; "
+        "connection = engine.connect(); "
+        "print(connection.execute(text('PRAGMA foreign_keys')).scalar_one()); "
+        "connection.close(); engine.dispose()",
+        database_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "1"
+
+
 def test_pytest_configuration_never_targets_active_database() -> None:
     configured_path = Path(sync_database_url(settings.DATABASE_URL).database).resolve()
     active_path = (PROJECT_ROOT / "database" / "fin_analytics.db").resolve()

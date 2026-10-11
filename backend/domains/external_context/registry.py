@@ -26,6 +26,7 @@ from .models import ExternalSeriesDefinition, StaticSeriesProvenance
 
 _ATTRIBUTION = "Banco Central do Brasil / SGS"
 _LICENSE_ID = "ODbL"
+EXTERNAL_SERIES_REGISTRY_VERSION = 1
 
 
 def _provenance(series_id: str, source_name: str) -> StaticSeriesProvenance:

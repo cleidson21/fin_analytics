@@ -2,7 +2,8 @@
 **Status:** ACTIVE; 10.R2 implemented, validated, independently approved, and closed;
 10.R3-B contract approved/locked; R3-B.2 approved/locked/versioned; R3-C
 implemented/validated/independently approved/closed; R3-D.1 contract
-approved/independently verified/locked/versioned; R3-D ready/not started;
+approved/independently verified/locked/versioned; R3-D implemented/validated/
+independently approved/checkpoint authorized;
 10.5-B paused pending R7
 **Date:** 2026-10-10
 
@@ -395,6 +396,35 @@ tests/
   the same economic identity, has no global fingerprint uniqueness, and proves
   consecutive deduplication plus `A -> B -> A` replay. Future versions cannot
   be deduplicated across V1 without an approved transition policy.
+
+- **R3-D final independent implementation review (2026-10-10):** Gemini 3.8
+  Flash High approved R3-D with 0 blocking, 0 material, 0 minor, and 2
+  informational findings. SQLAlchemy 2.0.21 independently reproduced `45`
+  R3-D and `127` R3-C tests; SQLAlchemy 2.0.51 reproduced `45` R3-D, `127`
+  R3-C, and `8` bootstrap tests. The `180` focused R3-C/R3-D/bootstrap tests
+  pass on SQLAlchemy 2.0.51. They cover Registry
+  Version V1, UTC codec extremes and rejection, the two-table migration,
+  metadata/schema/constraint/index/FK parity, append-only triggers, exact
+  Decimal/UTC `TEXT`, close/reopen, certified read/write revalidation,
+  fingerprint mismatch before transaction, real `BEGIN IMMEDIATE`, two
+  independent writers, busy retry, rollback, ambiguous commit, atomic
+  event/sync state, A→A, A→B→A, per-identity sequence, supersession, two-cut
+  as-of/no-look-ahead, the logical commit window, LKG, safe initialization,
+  empty/partial/failed attempts, mismatch, and independent availability,
+  freshness, health, and refresh policy. R2/bootstrap is `161 passed`, Planning
+  `497`, FIRE `67`, and complete units `1015 passed, 2 failed`; the failures are
+  the unchanged Investments/MagicMock timeline baseline. Import/OpenAPI remains
+  55 paths, 59 operations, and zero External Context paths, and creates no DB.
+  Every migration/integration/concurrency test used disposable SQLite storage
+  under `C:\tmp`; the active DB was not opened. R3-D is
+  `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED`.
+  `INF-R3D-01`: the global SQLite foreign-key listener is verified in tested
+  environments but deployment remains separately gated by legacy referential
+  integrity, backup/rollback, startup, and explicit deployment authorization.
+  `INF-R3D-02`: clean installation cannot resolve the declared Pydantic pins
+  (`pydantic==2.4.2` with `pydantic-settings==2.14.2`), and `pytest-asyncio`
+  is required by tests but undeclared; this is a separate Dependency
+  Reproducibility & Packaging Remediation task, not an R3-D code change.
 
 #### R3-D.1 normative test gates
 

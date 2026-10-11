@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from backend.core.config import settings
@@ -21,3 +21,15 @@ async_engine = create_async_engine(
     _async_url,
     connect_args={"check_same_thread": False}
 )
+
+
+def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("PRAGMA foreign_keys=ON")
+    finally:
+        cursor.close()
+
+
+event.listen(engine, "connect", _enable_sqlite_foreign_keys)
+event.listen(async_engine.sync_engine, "connect", _enable_sqlite_foreign_keys)

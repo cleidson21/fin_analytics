@@ -11,6 +11,7 @@ from .wealth.portfolio_snapshot import PortfolioSnapshotModel
 from .wealth.income_event import IncomeEventModel
 from .goal import GoalModel
 from .smart_context import DeclaredFinancialContextModel, RecurringIncomeDecisionModel
+from .external_context import ExternalObservationVersionModel, ExternalSeriesSyncStateModel
 
 __all__ = [
     "UserModel",
@@ -27,4 +28,6 @@ __all__ = [
     "GoalModel",
     "DeclaredFinancialContextModel",
     "RecurringIncomeDecisionModel",
+    "ExternalObservationVersionModel",
+    "ExternalSeriesSyncStateModel",
 ]

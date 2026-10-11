@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-10 — Phase 10.R3-D.1 final contract checkpoint
+**Updated:** 2026-10-10 — Phase 10.R3-D final checkpoint authorized
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -36,11 +36,12 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-B.2 content fingerprint V1 amendment | `APPROVED / LOCKED / VERSIONED` |
 | 10.R3-C domain/normalization/executable registry | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED` |
 | 10.R3-D.1 registry version and UTC knowledge-time amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED` |
-| 10.R3-D observation store/cache/freshness | `READY / NOT STARTED` |
-| 10.R3-E/F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
+| 10.R3-D observation store/cache/freshness | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` |
+| 10.R3-E BCB/SGS adapter and governed ingestion | `READY / NOT STARTED` |
+| 10.R3-F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
-| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D READY` |
+| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CHECKPOINT AUTHORIZED` |
 | Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-C CLOSED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
@@ -81,9 +82,13 @@ dual-structure registry-version persistence, mismatch behavior, canonical
 not a physical commit timestamp. Gemini 3.8 Flash High independently approved
 the eight-document delta (0 blocking, 0 material, 0 minor, 2 informational);
 no runtime test was executed in that documentary review. R3-D.1 is `CONTRACT
-APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D is `READY / NOT
-STARTED` and has no operational persistence, codec, transaction, table, or
-migration implementation.
+APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`. R3-D now implements
+the governed registry version, canonical UTC codec, two-table observation/sync
+store, explicit SQLite `BEGIN IMMEDIATE` unit of work, immutable version
+history, head-only deduplication, bitemporal reads, and independent operational
+state evaluation. Gemini 3.8 Flash High independently approved the
+implementation with 0 blocking, 0 material, 0 minor, and 2 informational
+findings; SQLAlchemy 2.0.21 and 2.0.51 both passed the approved gates.
 
 ## Implemented and validated capabilities
 
@@ -184,14 +189,19 @@ is placeholder/future-facing copy, not implemented capability.
 | Pierre Finance | Active import/API | Governed after ingestion under existing rules |
 | MyProfit CSV | Active import for positions, portfolio history, and income events | Provider facts with grain/provenance limitations |
 | yfinance | Active quote/history/fundamental adapter with memory cache | Provider-specific reference; not a shared external-context layer |
-| BCB/SGS | Pure R3-C domain, normalization, executable registry, and fingerprint implemented | No network adapter, persistence, ingestion, public API, or read model |
+| BCB/SGS | R3-C domain/registry plus R3-D governed persistence implemented | No network adapter, ingestion, public API, or consumer read model |
 | News | Absent | No provider, provenance, or relevance contract |
 
-The pure R3-C foundation exists, but there is no operational External Context
-Layer: R3-D persistence/freshness remains unimplemented and ready only for its
-separately authorized implementation task; R3-E provider/ingestion and R3-F
-reference context remain not started. No registry-version constant, UTC codec,
-R3-D table, migration, or transactional unit of work exists yet.
+The R3-C foundation and R3-D persistence implementation now exist. R3-D adds
+the executable registry-version constant, canonical UTC codec, Alembic revision
+`4f9c2d7e1a6b`, the two approved tables, caller-session repositories, explicit
+writer serialization, immutable event history, sync state, as-of reads, and
+state evaluators. No provider, scheduler, endpoint, or consumer context was
+added. Gemini 3.8 Flash High independently approved R3-D with 0 blocking, 0
+material, 0 minor, and 2 informational findings. SQLAlchemy 2.0.21 and 2.0.51
+both passed the R3-D/R3-C gates; every migration and persistence test used a
+disposable SQLite database and the active database was untouched. R3-E is
+ready but not started; R3-F remains planned and not started.
 
 ## Theme and design current state
 
@@ -280,7 +290,8 @@ the complete R2 foundation. R2 is closed. External Context is
 versioned. R3-C is
 `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D.1 is
 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D is
-`READY / NOT STARTED`. Product
+`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED`.
+Product
 recomposition and smart-prefill behavior remain reserved for R6.
 
 ## Portfolio Intelligence state
