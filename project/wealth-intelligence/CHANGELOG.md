@@ -1,5 +1,48 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-E1] — 2026-10-12 — Store Compatibility Adapter
+
+- Extended the existing `ExternalObservationStoreService` with a typed
+  default-compatible `immediate` mode and an opt-in `deferred` mode. Immediate
+  ingestion preserves the complete R3-D success, refresh, coverage, event,
+  fingerprint, registry-version, and UTC behavior.
+- Deferred ingestion reuses the certified R3-C/R3-D event transaction and may
+  update immutable history, supersession, sequence, LKG, and existing event
+  counters without publishing global success, advancing successful refresh,
+  clearing partial state, or expanding coverage from economic extrema.
+- Added a strictly read-only `get_sync_state(...)` and typed
+  `finalize_acquisition(...)` evidence/result DTOs. Finalization validates an
+  exact ordered gap-free chunk partition, derives rather than trusts the global
+  result, rejects stale/conflicting conclusions, leaves event counters and LKG
+  unchanged, and publishes `SUCCESS`, `EMPTY`, `PARTIAL`, or `FAILED` under
+  `BEGIN IMMEDIATE`.
+- Adopted the R3-E.0-permitted conservative scalar-coverage policy: a complete
+  `SUCCESS`/`EMPTY` replaces the two coverage fields with the newly certified
+  continuous requested interval; it is never unioned with legacy or
+  disconnected evidence. `PARTIAL`/`FAILED` preserve prior coverage without
+  expansion, and valid empty chunks create no economic observation or zero.
+- Added regression and integration coverage for legacy immediate calls,
+  deferred transition/retransmission/A→B→A behavior, crash-before-finalization,
+  counters, LKG, sequence, fingerprint, registry mismatch, read-only lookup,
+  all four outcomes, invalid/gapped evidence, stale and repeated finalization,
+  rollback, and independent SQLite writers.
+- Validation on disposable SQLite only: R3-D/R3-E1 `61 passed`; R3-C `127
+  passed`; bootstrap `8 passed`; SQLAlchemy 2.0.21 combined R3-C/R3-D/R3-E1
+  `188 passed`; R2/bootstrap `161 passed`; Planning `503 passed`; FIRE `71
+  passed`; complete units `1031 passed, 2 failed`, limited to the unchanged
+  Investments/MagicMock timeline failures.
+- Gemini 3.8 Flash High independently reproduced the approved evidence and
+  approved the adversarial code review with 0 blocking, 0 material, 0 minor,
+  and 3 informational findings: `INF-R3E1-01` scalar durable coverage,
+  `INF-R3E1-02` no persistent journal/distributed idempotency, and
+  `INF-R3E1-03` the unchanged Investments/MagicMock baseline. `INF-R3D-01` and
+  `INF-R3D-02` remain preserved, not resolved.
+- No provider, HTTP/BCB request, scheduler, migration, dependency, public API,
+  frontend, financial engine, or active-database access was added. The user
+  authorized the controlled Git checkpoint. R3-E1 is `IMPLEMENTED / VALIDATED /
+  INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED`; R3-E2 is `READY / NOT
+  STARTED`; R3-E3 and R3-E4 remain `NOT STARTED`.
+
 ## [PHASE-10.R3-E.0] — 2026-10-11/12 — Historical Revision Windows & Deferred Ingestion Finalization V1
 
 - Recorded the user's explicit approval of the R3-E.0 material decisions as a
@@ -71,9 +114,10 @@
   Governed Ingestion, and Manual Refresh, plus 32 future remediation tests with
   mocked HTTP and disposable SQLite. Timeout, exact retries/backoff, response
   caps, call rate, workers, and automatic execution remain undecided.
-- Status: R3-C `CLOSED / LOCKED`; R3-D.1 `APPROVED / LOCKED / VERSIONED`;
-  R3-D `CLOSED / PUSHED`; R3-E.0 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED /
-  LOCKED / CHECKPOINT AUTHORIZED`; R3-E `READY / NOT STARTED`;
+- Status at the R3-E.0 checkpoint: R3-C `CLOSED / LOCKED`; R3-D.1
+  `APPROVED / LOCKED / VERSIONED`; R3-D `CLOSED / PUSHED`; R3-E.0
+  `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED / PUSHED`;
+  R3-E `READY / NOT STARTED`;
   R3-F `PLANNED / NOT STARTED`.
 - Next gate: controlled Git checkpoint, then separately authorized R3-E implementation.
 - Documentation only. No Python, executable test, migration, dependency,

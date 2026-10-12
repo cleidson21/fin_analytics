@@ -12,7 +12,11 @@ from sqlalchemy import create_engine, event, func, select, text
 from sqlalchemy.orm import sessionmaker
 
 from backend.application.services.external_observation_store import (
+    AcquisitionChunkEvidence,
+    AcquisitionFinalizationRequest,
+    AcquisitionInterval,
     ExternalObservationStoreService,
+    ObservationIngestionMode,
     SQLiteImmediateUnitOfWork,
 )
 from backend.core.config import settings
@@ -21,10 +25,12 @@ from backend.domains.external_context import (
     EXTERNAL_SERIES_REGISTRY_VERSION,
     ExternalContextPersistenceError,
     ExternalContextPersistenceErrorCode,
+    ExternalSeriesSyncState,
     ObservationWriteDisposition,
     PersistedObservationEvent,
     Provider,
     RegistryKey,
+    SyncAttemptResult,
     build_content_fingerprint_v1,
     normalize_external_observation,
 )
@@ -563,3 +569,561 @@ def test_two_writers_for_different_identities_are_serialized_without_cross_ident
     assert all(result.disposition is ObservationWriteDisposition.INSERTED for result in results)
     assert [result.event.knowledge_sequence for result in results] == [1, 1]
     assert len({result.event.observation_event_id for result in results}) == 2
+
+
+def _interval(start_day: int, end_day: int) -> AcquisitionInterval:
+    return AcquisitionInterval(
+        start=date(2026, 10, start_day),
+        end=date(2026, 10, end_day),
+    )
+
+
+def _complete_chunk(
+    start_day: int,
+    end_day: int,
+    *,
+    observations: int = 1,
+) -> AcquisitionChunkEvidence:
+    return AcquisitionChunkEvidence(
+        interval=_interval(start_day, end_day),
+        response_received=True,
+        payload_validated=True,
+        persistence_completed=True,
+        observations_received=observations,
+        empty_response=observations == 0,
+    )
+
+
+def _failed_chunk(
+    start_day: int,
+    end_day: int,
+    *,
+    error_code: str = "PROVIDER_TIMEOUT",
+) -> AcquisitionChunkEvidence:
+    return AcquisitionChunkEvidence(
+        interval=_interval(start_day, end_day),
+        response_received=False,
+        payload_validated=False,
+        persistence_completed=False,
+        observations_received=0,
+        error_code=error_code,
+    )
+
+
+def _finalization_request(
+    *,
+    acquisition_id: str,
+    operational_at: datetime,
+    chunks: tuple[AcquisitionChunkEvidence, ...],
+    result: SyncAttemptResult,
+    error_code: str | None = None,
+) -> AcquisitionFinalizationRequest:
+    return AcquisitionFinalizationRequest(
+        acquisition_id=acquisition_id,
+        registry_key=RegistryKey.BCB_SGS_SELIC_TARGET,
+        requested_interval=AcquisitionInterval(
+            start=chunks[0].interval.start,
+            end=chunks[-1].interval.end,
+        ),
+        operational_at=operational_at,
+        planned_chunks=chunks,
+        declared_result=result,
+        error_code=error_code,
+    )
+
+
+def test_deferred_ingestion_preserves_a_b_a_counters_lkg_and_fingerprint_without_success(store_db):
+    _engine, factory = store_db
+    retrieved = datetime(2026, 10, 10, 10, tzinfo=timezone.utc)
+    times = tuple(retrieved + timedelta(seconds=value) for value in (1, 2, 3, 4))
+    session = factory()
+    service = ExternalObservationStoreService(session, utc_clock=_Clock(*times))
+
+    a1 = service.ingest(
+        _observation("10.50", retrieved_at=retrieved),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    repeated = service.ingest(
+        _observation("10.5", retrieved_at=retrieved),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    b2 = service.ingest(
+        _observation("10.75", retrieved_at=retrieved),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    a3 = service.ingest(
+        _observation("10.50", retrieved_at=retrieved),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+
+    state = ExternalSeriesSyncStateRepository(session).get(
+        RegistryKey.BCB_SGS_SELIC_TARGET
+    )
+    events = ExternalObservationRepository(session).list_identity(
+        a1.event.observation.economic_identity
+    )
+    assert [event.knowledge_sequence for event in events] == [1, 2, 3]
+    assert repeated.disposition is ObservationWriteDisposition.RETRANSMISSION
+    assert b2.event.supersedes_event_id == a1.event.observation_event_id
+    assert a3.event.supersedes_event_id == b2.event.observation_event_id
+    assert a3.event.content_fingerprint == a1.event.content_fingerprint
+    assert a3.event.content_fingerprint == build_content_fingerprint_v1(
+        a3.event.observation.content.as_payload_v1()
+    ).content_fingerprint
+    assert state.last_valid_observation_event_id == a3.event.observation_event_id
+    assert state.observations_received == 4
+    assert state.accepted_transitions == 3
+    assert state.consecutive_retransmissions == 0
+    assert state.last_attempt_at is None
+    assert state.last_success_at is None
+    assert state.next_refresh_eligible_at is None
+    assert state.last_attempt_result is None
+    assert state.coverage_start is None
+    assert state.coverage_end is None
+    session.close()
+
+
+def test_deferred_chunk_then_crash_preserves_prior_global_conclusion(store_db):
+    _engine, factory = store_db
+    retrieved = datetime(2026, 10, 10, 10, tzinfo=timezone.utc)
+    t1, t2 = retrieved + timedelta(seconds=1), retrieved + timedelta(seconds=2)
+    session = factory()
+    service = ExternalObservationStoreService(session, utc_clock=_Clock(t1, t2))
+    previous = service.ingest(
+        _observation("10.50", retrieved_at=retrieved, day="2026-10-08")
+    )
+    prior = ExternalSeriesSyncStateRepository(session).get(
+        RegistryKey.BCB_SGS_SELIC_TARGET
+    )
+    session.rollback()
+
+    chunk_a = service.ingest(
+        _observation("10.75", retrieved_at=retrieved, day="2026-10-09"),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    crashed_state = ExternalSeriesSyncStateRepository(session).get(
+        RegistryKey.BCB_SGS_SELIC_TARGET
+    )
+
+    assert crashed_state.last_attempt_at == prior.last_attempt_at
+    assert crashed_state.last_success_at == prior.last_success_at
+    assert crashed_state.next_refresh_eligible_at == prior.next_refresh_eligible_at
+    assert crashed_state.last_attempt_result is SyncAttemptResult.SUCCESS
+    assert (crashed_state.coverage_start, crashed_state.coverage_end) == (
+        prior.coverage_start,
+        prior.coverage_end,
+    )
+    assert crashed_state.last_valid_observation_event_id == chunk_a.event.observation_event_id
+    assert crashed_state.last_valid_observation_event_id != previous.event.observation_event_id
+    assert crashed_state.observations_received == prior.observations_received + 1
+    assert crashed_state.accepted_transitions == prior.accepted_transitions + 1
+    session.close()
+
+
+def test_get_sync_state_is_read_only_for_missing_and_existing_rows(store_db):
+    engine, factory = store_db
+    statements: list[str] = []
+
+    @event.listens_for(engine, "before_cursor_execute")
+    def _capture(_connection, _cursor, statement, _parameters, _context, _executemany):
+        statements.append(statement.strip().upper())
+
+    session = factory()
+    service = ExternalObservationStoreService(
+        session,
+        utc_clock=lambda: datetime(2026, 10, 10, tzinfo=timezone.utc),
+    )
+    assert service.get_sync_state(RegistryKey.BCB_SGS_CDI) is None
+    assert session.scalar(select(func.count()).select_from(ExternalSeriesSyncStateModel)) == 0
+    assert not any(statement.startswith(("INSERT", "UPDATE")) for statement in statements)
+    session.close()
+
+    writer = factory()
+    retrieved = datetime(2026, 10, 10, 10, tzinfo=timezone.utc)
+    service = ExternalObservationStoreService(
+        writer,
+        utc_clock=lambda: retrieved + timedelta(seconds=1),
+    )
+    service.ingest(
+        _observation("10.50", retrieved_at=retrieved),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    writer.close()
+
+    statements.clear()
+    reader = factory()
+    loaded = ExternalObservationStoreService(
+        reader,
+        utc_clock=lambda: retrieved,
+    ).get_sync_state(RegistryKey.BCB_SGS_SELIC_TARGET)
+    assert loaded is not None
+    assert loaded.observations_received == 1
+    assert not any(statement.startswith(("INSERT", "UPDATE")) for statement in statements)
+    reader.close()
+
+
+def test_finalize_success_uses_complete_chunk_proof_and_replaces_scalar_coverage(store_db):
+    engine, factory = store_db
+    statements: list[str] = []
+
+    @event.listens_for(engine, "before_cursor_execute")
+    def _capture(_connection, _cursor, statement, _parameters, _context, _executemany):
+        statements.append(statement.strip().upper())
+
+    retrieved = datetime(2026, 10, 10, 10, tzinfo=timezone.utc)
+    operational = retrieved + timedelta(hours=1)
+    session = factory()
+    service = ExternalObservationStoreService(
+        session,
+        utc_clock=lambda: retrieved + timedelta(seconds=1),
+    )
+    service.ingest(_observation("10.50", retrieved_at=retrieved, day="2026-09-30"))
+    counters_before = service.get_sync_state(RegistryKey.BCB_SGS_SELIC_TARGET)
+    session.rollback()
+    statements.clear()
+    request = _finalization_request(
+        acquisition_id="success-1",
+        operational_at=operational,
+        chunks=(_complete_chunk(1, 10), _complete_chunk(11, 20, observations=0)),
+        result=SyncAttemptResult.SUCCESS,
+    )
+    result = service.finalize_acquisition(request)
+
+    state = result.sync_state
+    assert result.global_result is SyncAttemptResult.SUCCESS
+    assert result.queried_intervals == (_interval(1, 10), _interval(11, 20))
+    assert result.uncompleted_intervals == ()
+    assert (state.coverage_start, state.coverage_end) == (date(2026, 10, 1), date(2026, 10, 20))
+    assert state.last_success_at == operational
+    assert state.next_refresh_eligible_at == operational + timedelta(hours=6)
+    assert state.partial_coverage is False
+    assert state.last_error_code is None
+    assert state.observations_received == counters_before.observations_received
+    assert state.accepted_transitions == counters_before.accepted_transitions
+    begin = statements.index("BEGIN IMMEDIATE")
+    first_select = next(index for index, statement in enumerate(statements) if statement.startswith("SELECT"))
+    assert begin < first_select
+    session.close()
+
+
+def test_finalize_empty_proves_continuous_query_without_observation_or_zero(store_db):
+    _engine, factory = store_db
+    operational = datetime(2026, 10, 10, 11, tzinfo=timezone.utc)
+    session = factory()
+    service = ExternalObservationStoreService(session, utc_clock=lambda: operational)
+    request = _finalization_request(
+        acquisition_id="empty-1",
+        operational_at=operational,
+        chunks=(_complete_chunk(1, 10, observations=0), _complete_chunk(11, 20, observations=0)),
+        result=SyncAttemptResult.EMPTY,
+    )
+    result = service.finalize_acquisition(request)
+    state = result.sync_state
+    assert state.last_attempt_result is SyncAttemptResult.EMPTY
+    assert state.last_success_at == operational
+    assert (state.coverage_start, state.coverage_end) == (date(2026, 10, 1), date(2026, 10, 20))
+    assert state.last_valid_observation_event_id is None
+    assert state.observations_received == 0
+    assert state.accepted_transitions == 0
+    assert session.scalar(select(func.count()).select_from(ExternalObservationVersionModel)) == 0
+    session.close()
+
+
+def test_finalize_partial_reports_failed_middle_chunk_without_fictitious_coverage(store_db):
+    _engine, factory = store_db
+    retrieved = datetime(2026, 11, 1, 10, tzinfo=timezone.utc)
+    operational = retrieved + timedelta(hours=1)
+    session = factory()
+    service = ExternalObservationStoreService(
+        session,
+        utc_clock=_Clock(
+            retrieved + timedelta(seconds=1),
+            retrieved + timedelta(seconds=2),
+        ),
+    )
+    first = service.ingest(
+        _observation("10.50", retrieved_at=retrieved, day="2026-10-01"),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    last = service.ingest(
+        _observation("10.75", retrieved_at=retrieved, day="2026-10-21"),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    request = _finalization_request(
+        acquisition_id="partial-1",
+        operational_at=operational,
+        chunks=(
+            _complete_chunk(1, 10),
+            _failed_chunk(11, 20),
+            _complete_chunk(21, 30),
+        ),
+        result=SyncAttemptResult.PARTIAL,
+        error_code="PROVIDER_TIMEOUT",
+    )
+    result = service.finalize_acquisition(request)
+    state = result.sync_state
+    assert result.queried_intervals == (_interval(1, 10), _interval(21, 30))
+    assert result.uncompleted_intervals == (_interval(11, 20),)
+    assert state.last_attempt_result is SyncAttemptResult.PARTIAL
+    assert state.partial_coverage is True
+    assert state.last_success_at is None
+    assert state.next_refresh_eligible_at is None
+    assert state.coverage_start is None
+    assert state.coverage_end is None
+    assert state.last_error_code == "PROVIDER_TIMEOUT"
+    assert state.last_valid_observation_event_id == last.event.observation_event_id
+    assert state.observations_received == 2
+    assert state.accepted_transitions == 2
+    assert session.scalar(select(func.count()).select_from(ExternalObservationVersionModel)) == 2
+    assert first.event.observation_event_id != last.event.observation_event_id
+    session.close()
+
+
+def test_finalize_partial_preserves_prior_success_coverage_refresh_lkg_and_counters(store_db):
+    _engine, factory = store_db
+    retrieved = datetime(2026, 10, 10, 10, tzinfo=timezone.utc)
+    session = factory()
+    service = ExternalObservationStoreService(
+        session,
+        utc_clock=lambda: retrieved + timedelta(seconds=1),
+    )
+    inserted = service.ingest(_observation("10.50", retrieved_at=retrieved))
+    prior = ExternalSeriesSyncStateRepository(session).get(RegistryKey.BCB_SGS_SELIC_TARGET)
+    session.rollback()
+    request = _finalization_request(
+        acquisition_id="partial-prior",
+        operational_at=retrieved + timedelta(hours=1),
+        chunks=(_complete_chunk(1, 10), _failed_chunk(11, 20)),
+        result=SyncAttemptResult.PARTIAL,
+    )
+    result = service.finalize_acquisition(request)
+    state = result.sync_state
+    assert (state.coverage_start, state.coverage_end) == (
+        prior.coverage_start,
+        prior.coverage_end,
+    )
+    assert state.last_success_at == prior.last_success_at
+    assert state.next_refresh_eligible_at == prior.next_refresh_eligible_at
+    assert state.last_valid_observation_event_id == inserted.event.observation_event_id
+    assert state.observations_received == prior.observations_received
+    assert state.accepted_transitions == prior.accepted_transitions
+    session.close()
+
+
+def test_finalize_failed_preserves_history_and_does_not_publish_success(store_db):
+    _engine, factory = store_db
+    operational = datetime(2026, 10, 10, 11, tzinfo=timezone.utc)
+    session = factory()
+    service = ExternalObservationStoreService(session, utc_clock=lambda: operational)
+    request = _finalization_request(
+        acquisition_id="failed-1",
+        operational_at=operational,
+        chunks=(_failed_chunk(1, 10), _failed_chunk(11, 20, error_code="HTTP_500")),
+        result=SyncAttemptResult.FAILED,
+        error_code="ACQUISITION_FAILED",
+    )
+    state = service.finalize_acquisition(request).sync_state
+    assert state.last_attempt_result is SyncAttemptResult.FAILED
+    assert state.partial_coverage is False
+    assert state.last_success_at is None
+    assert state.next_refresh_eligible_at is None
+    assert state.coverage_start is None
+    assert state.last_valid_observation_event_id is None
+    assert state.observations_received == 0
+    session.close()
+
+
+def test_finalization_rejects_declared_success_with_incomplete_evidence():
+    with pytest.raises(ExternalContextPersistenceError) as failure:
+        _finalization_request(
+            acquisition_id="inconsistent",
+            operational_at=datetime(2026, 10, 10, 11, tzinfo=timezone.utc),
+            chunks=(_complete_chunk(1, 10), _failed_chunk(11, 20)),
+            result=SyncAttemptResult.SUCCESS,
+        )
+    assert failure.value.code is ExternalContextPersistenceErrorCode.ACQUISITION_EVIDENCE_INVALID
+
+
+def test_finalization_rejects_gapped_or_overlapping_chunk_plan():
+    with pytest.raises(ExternalContextPersistenceError) as failure:
+        AcquisitionFinalizationRequest(
+            acquisition_id="gapped",
+            registry_key=RegistryKey.BCB_SGS_SELIC_TARGET,
+            requested_interval=_interval(1, 30),
+            operational_at=datetime(2026, 10, 10, 11, tzinfo=timezone.utc),
+            planned_chunks=(_complete_chunk(1, 10), _complete_chunk(21, 30)),
+            declared_result=SyncAttemptResult.SUCCESS,
+        )
+    assert failure.value.code is ExternalContextPersistenceErrorCode.ACQUISITION_EVIDENCE_INVALID
+
+
+def test_repeated_finalization_is_counter_idempotent(store_db):
+    _engine, factory = store_db
+    operational = datetime(2026, 10, 10, 11, tzinfo=timezone.utc)
+    session = factory()
+    service = ExternalObservationStoreService(session, utc_clock=lambda: operational)
+    request = _finalization_request(
+        acquisition_id="repeat-1",
+        operational_at=operational,
+        chunks=(_complete_chunk(1, 10, observations=0),),
+        result=SyncAttemptResult.EMPTY,
+    )
+    first = service.finalize_acquisition(request)
+    repeated = service.finalize_acquisition(request)
+    assert first.repeated_finalization is False
+    assert repeated.repeated_finalization is True
+    assert repeated.sync_state == first.sync_state
+    assert repeated.sync_state.observations_received == 0
+    assert repeated.sync_state.accepted_transitions == 0
+    session.close()
+
+
+def test_temporally_regressive_finalization_is_rejected_without_overwrite(store_db):
+    _engine, factory = store_db
+    newer_at = datetime(2026, 10, 10, 12, tzinfo=timezone.utc)
+    session = factory()
+    service = ExternalObservationStoreService(session, utc_clock=lambda: newer_at)
+    newer = _finalization_request(
+        acquisition_id="newer",
+        operational_at=newer_at,
+        chunks=(_complete_chunk(1, 10, observations=0),),
+        result=SyncAttemptResult.EMPTY,
+    )
+    expected = service.finalize_acquisition(newer).sync_state
+    older = _finalization_request(
+        acquisition_id="older",
+        operational_at=newer_at - timedelta(seconds=1),
+        chunks=(_failed_chunk(1, 10),),
+        result=SyncAttemptResult.FAILED,
+    )
+    with pytest.raises(ExternalContextPersistenceError) as failure:
+        service.finalize_acquisition(older)
+    assert failure.value.code is ExternalContextPersistenceErrorCode.STALE_ACQUISITION_FINALIZATION
+    session.rollback()
+    assert ExternalSeriesSyncStateRepository(session).get(
+        RegistryKey.BCB_SGS_SELIC_TARGET
+    ) == expected
+    session.close()
+
+
+def test_finalization_failure_rolls_back_sync_initialization(store_db, monkeypatch):
+    _engine, factory = store_db
+    operational = datetime(2026, 10, 10, 11, tzinfo=timezone.utc)
+    session = factory()
+    service = ExternalObservationStoreService(session, utc_clock=lambda: operational)
+    request = _finalization_request(
+        acquisition_id="rollback",
+        operational_at=operational,
+        chunks=(_complete_chunk(1, 10, observations=0),),
+        result=SyncAttemptResult.EMPTY,
+    )
+
+    def _fail_save(_self, _state):
+        raise RuntimeError("injected finalization failure")
+
+    monkeypatch.setattr(ExternalSeriesSyncStateRepository, "save", _fail_save)
+    with pytest.raises(RuntimeError, match="injected finalization failure"):
+        service.finalize_acquisition(request)
+    assert session.scalar(select(func.count()).select_from(ExternalSeriesSyncStateModel)) == 0
+    session.close()
+
+
+def test_independent_finalizers_serialize_and_newer_conclusion_wins(store_db):
+    _engine, factory = store_db
+    older_at = datetime(2026, 10, 10, 11, tzinfo=timezone.utc)
+    newer_at = older_at + timedelta(seconds=1)
+    barrier = Barrier(2)
+
+    def _finalize(acquisition_id: str, operational_at: datetime):
+        session = factory()
+        try:
+            barrier.wait(timeout=5)
+            service = ExternalObservationStoreService(
+                session,
+                utc_clock=lambda: operational_at,
+                busy_timeout_ms=1000,
+            )
+            request = _finalization_request(
+                acquisition_id=acquisition_id,
+                operational_at=operational_at,
+                chunks=(_complete_chunk(1, 10, observations=0),),
+                result=SyncAttemptResult.EMPTY,
+            )
+            try:
+                return service.finalize_acquisition(request)
+            except ExternalContextPersistenceError as exc:
+                return exc
+        finally:
+            session.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        outcomes = tuple(
+            executor.map(
+                lambda args: _finalize(*args),
+                (("older-writer", older_at), ("newer-writer", newer_at)),
+            )
+        )
+
+    assert any(
+        not isinstance(outcome, ExternalContextPersistenceError)
+        and outcome.sync_state.last_attempt_at == newer_at
+        for outcome in outcomes
+    )
+    verify = factory()
+    state = ExternalSeriesSyncStateRepository(verify).get(
+        RegistryKey.BCB_SGS_SELIC_TARGET
+    )
+    assert state.last_attempt_at == newer_at
+    assert state.last_success_at == newer_at
+    assert state.last_attempt_result is SyncAttemptResult.EMPTY
+    verify.close()
+
+
+def test_deferred_ingestion_preserves_registry_mismatch_until_global_finalization(store_db):
+    _engine, factory = store_db
+    retrieved = datetime(2026, 10, 10, 10, tzinfo=timezone.utc)
+    session = factory()
+    uow = SQLiteImmediateUnitOfWork(session, busy_timeout_ms=250)
+    uow.begin_immediate()
+    definition_state = ExternalSeriesSyncState(
+        registry_key=RegistryKey.BCB_SGS_SELIC_TARGET.value,
+        provider=Provider.BCB_SGS.value,
+        series_id="432",
+        registry_contract_version=2,
+    )
+    ExternalSeriesSyncStateRepository(session).save(definition_state)
+    uow.commit()
+
+    inserted = ExternalObservationStoreService(
+        session,
+        utc_clock=lambda: retrieved + timedelta(seconds=1),
+    ).ingest(
+        _observation("10.50", retrieved_at=retrieved),
+        acquisition_mode=ObservationIngestionMode.DEFERRED,
+    )
+    state = ExternalSeriesSyncStateRepository(session).get(
+        RegistryKey.BCB_SGS_SELIC_TARGET
+    )
+    assert inserted.event.registry_contract_version == EXTERNAL_SERIES_REGISTRY_VERSION
+    assert state.registry_contract_version == 2
+    assert state.last_attempt_result is None
+    assert state.last_valid_observation_event_id == inserted.event.observation_event_id
+    session.close()
+
+
+def test_deferred_mode_requires_the_typed_enum_before_any_write(store_db):
+    _engine, factory = store_db
+    retrieved = datetime(2026, 10, 10, 10, tzinfo=timezone.utc)
+    session = factory()
+    service = ExternalObservationStoreService(
+        session,
+        utc_clock=lambda: retrieved + timedelta(seconds=1),
+    )
+    with pytest.raises(TypeError, match="ObservationIngestionMode"):
+        service.ingest(
+            _observation("10.50", retrieved_at=retrieved),
+            acquisition_mode="deferred",  # type: ignore[arg-type]
+        )
+    assert session.scalar(select(func.count()).select_from(ExternalObservationVersionModel)) == 0
+    assert session.scalar(select(func.count()).select_from(ExternalSeriesSyncStateModel)) == 0
+    session.close()

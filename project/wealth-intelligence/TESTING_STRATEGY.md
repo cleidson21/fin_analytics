@@ -3,8 +3,9 @@
 10.R3-B contract approved/locked; R3-B.2 approved/locked/versioned; R3-C
 implemented/validated/independently approved/closed; R3-D.1 contract
 approved/independently verified/locked/versioned; R3-D closed/pushed; R3-E.0
-contract approved/independently verified/locked/checkpoint authorized; R3-E
-ready/not started;
+contract approved/independently verified/locked/versioned/pushed; R3-E1
+implemented/validated/independently approved/checkpoint authorized; R3-E2
+ready/not started; R3-E3–E4 not started;
 10.5-B paused pending R7
 **Date:** 2026-10-12
 
@@ -599,6 +600,35 @@ If the existing R3-D service, its two tables, and the approved
 the interrupted-acquisition and no-false-global-success gates, implementation
 stops for a material contract decision before an alternative mechanism is
 introduced.
+
+#### R3-E1 executable validation record
+
+R3-E1 implements only the approved store compatibility boundary. Its tests use
+disposable SQLite and no HTTP: default immediate compatibility; opt-in deferred
+transition, retransmission, and `A -> B -> A`; event counters, LKG, sequence,
+fingerprint, registry mismatch, and crash-before-finalization; read-only
+present/absent sync-state lookup; evidence-derived `SUCCESS`, `EMPTY`,
+`PARTIAL`, and `FAILED`; empty and failed middle chunks; null/prior/disconnected
+coverage; inconsistent or gapped evidence; stale/repeated finalization;
+rollback; and independent SQLite writers.
+
+Current evidence is R3-D/R3-E1 `61 passed`, R3-C `127 passed`, bootstrap `8
+passed`, and combined R3-C/R3-D/R3-E1 `188 passed` under the retained isolated
+SQLAlchemy 2.0.21 environment. Main SQLAlchemy 2.0.51 also passed the focused
+suites. Direct regressions are R2/bootstrap `161 passed`, Planning `503
+passed`, FIRE `71 passed`, and complete units `1031 passed, 2 failed`; the two
+failures are the unchanged Investments/MagicMock timeline baseline. All
+persistence fixtures refuse the active financial database.
+
+Gemini 3.8 Flash High independently reproduced the R3-E1 evidence above on
+SQLAlchemy 2.0.51 and the isolated 2.0.21 environment, approving the
+adversarial code review with 0 blocking, 0 material, 0 minor, and 3
+informational findings. `INF-R3E1-01` retains the scalar durable-coverage
+limitation; `INF-R3E1-02` retains the absence of a persistent acquisition
+journal and distributed idempotency; `INF-R3E1-03` retains the two historical
+Investments/MagicMock failures. `INF-R3D-01` and `INF-R3D-02` remain preserved.
+The user authorized the R3-E1 Git checkpoint; R3-E2 remains `READY / NOT
+STARTED`.
 
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,
