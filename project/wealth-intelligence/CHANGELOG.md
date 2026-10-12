@@ -1,5 +1,85 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-E.0] — 2026-10-11/12 — Historical Revision Windows & Deferred Ingestion Finalization V1
+
+- Recorded the user's explicit approval of the R3-E.0 material decisions as a
+  controlled documentation-only amendment to accepted/locked ADR-029.
+- Locked the ordinary DAILY inclusive revisit window to 90 civil days using
+  explicit stable `D`, bounded by the registry normalized floor, including the
+  unchanged SGS 1 floor `1994-07-01`.
+- Locked the ordinary MONTHLY inclusive revisit window to the current civil
+  month of `D` plus the 23 preceding civil months, using calendar-month
+  subtraction and the normalized floor. Missing, weekend, holiday, current-
+  month, or unpublished periods receive no manufactured observation.
+- Kept revision windows separate from 6h/24h call suppression and from
+  consumer `as_of` economic/knowledge cuts. Revisions outside the windows are
+  not presumed discovered.
+- Contracted explicit bounded manual deep reconciliation only: registry series,
+  start/end dates, reconciliation intent, governed chunks, R3-C certification,
+  and R3-D persistence. No startup backfill, scheduler, silent whole-history
+  fallback, public endpoint, screen, or reconciliation run is authorized.
+- Defined first acquisition conservatively: an ordinary first request may use
+  its moving window; missing history never authorizes automatic full backfill,
+  and first-request success never proves complete historical coverage.
+- Approved only the future minimal same-service R3-D responsibilities
+  `get_sync_state(...)` and `finalize_acquisition(...)`, following existing
+  backend types with no parallel store, third table, or migration.
+- Distinguished requested interval, fully received and validated queried
+  chunks, and observed economic periods. Current `coverage_start`/
+  `coverage_end` cannot bridge a failed chunk or claim an observation for every
+  intermediate date.
+- Defined EMPTY, PARTIAL, FAILED, and interrupted-before-finalization behavior;
+  preserved valid committed observations, prior certified coverage, and LKG;
+  prohibited false continuous coverage, `AVAILABLE`, `CURRENT`, zero, and
+  global `SUCCESS` before finalization.
+- Preserved atomicity per R3-D transaction without promising global atomicity
+  across chunks. If the approved minimal extension cannot keep intermediate
+  chunk success conservative after a crash, implementation must stop for a
+  material contract decision before adding another mechanism.
+- Preserved the five-series registry, Registry Contract Version V1,
+  `EXTERNAL_SERIES_REGISTRY_VERSION = 1`, Content Fingerprint V1, UTC V1,
+  immutable history, `A -> B -> A`, financial-authority boundaries, and both
+  R3-D informational findings.
+- Gemini 3.8 Flash High approved the targeted remediation review with 0
+  blocking, 0 material, 0 minor, and 2 informational findings. It resolved
+  `MAT-R3E0-01`, `MIN-R3E0-01`, `MIN-R3E0-02`, and `INF-R3E0-01`; the latter
+  remains governed by the conservative-coverage contract. `INF-R3E0-02`
+  (scalar discontinuous coverage) and `INF-R3E0-03` (no persistent acquisition
+  journal) remain explicit V1 risks. `INF-R3D-01` and `INF-R3D-02` remain
+  preserved R3-D findings.
+- Preserved conventional `ingest()` as default `immediate` behavior and
+  authorized an explicit typed `deferred` mode that commits certified events,
+  LKG, and existing event counters without publishing global success, moving
+  successful refresh eligibility, clearing partial state, or expanding
+  coverage from observation extrema.
+- Made `finalize_acquisition(...)` the exclusive global-result publisher for
+  `SUCCESS`, `EMPTY`, `PARTIAL`, and `FAILED`; it consumes typed chunk proof,
+  preserves already-counted event counters, rejects stale/regressive outcomes,
+  and inserts no observations.
+- Made `get_sync_state(registry_key)` strictly read-only, with `None` for no
+  persisted row and no call to sync-state initialization.
+- Locked conservative durable coverage: only a complete, gap-free, globally
+  finalized interval may be promoted; PARTIAL/FAILED never enlarge it;
+  disconnected chunks are never unioned; valid empty chunks prove queried
+  continuity without creating an economic observation; legacy extrema-based
+  coverage is not retroactively reinterpreted.
+- Recorded crash/retry limits: committed chunk events, counters, and LKG
+  survive a pre-finalization crash with no new global success or coverage;
+  finalization retries are counter-idempotent; V1 has no durable attempt
+  journal, `STARTED` state, persistent idempotency key, or exactly-once claim.
+- Updated the R3-E plan into Store Compatibility Adapter, BCB Provider,
+  Governed Ingestion, and Manual Refresh, plus 32 future remediation tests with
+  mocked HTTP and disposable SQLite. Timeout, exact retries/backoff, response
+  caps, call rate, workers, and automatic execution remain undecided.
+- Status: R3-C `CLOSED / LOCKED`; R3-D.1 `APPROVED / LOCKED / VERSIONED`;
+  R3-D `CLOSED / PUSHED`; R3-E.0 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED /
+  LOCKED / CHECKPOINT AUTHORIZED`; R3-E `READY / NOT STARTED`;
+  R3-F `PLANNED / NOT STARTED`.
+- Next gate: controlled Git checkpoint, then separately authorized R3-E implementation.
+- Documentation only. No Python, executable test, migration, dependency,
+  active-database access, HTTP/BCB call, provider, scheduler, public API,
+  frontend, engine, Pierre, staging, commit, or push action was performed.
+
 ## [PHASE-10.R3-D] — 2026-10-10 — Governed Observation Store Implementation
 
 - Implemented executable Registry Version V1 and a strict 27-character UTC

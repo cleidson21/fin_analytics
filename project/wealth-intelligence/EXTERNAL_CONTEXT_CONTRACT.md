@@ -8,7 +8,8 @@
 VERSIONED`;
 R3-C `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D.1
 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D
-`READY / NOT STARTED`
+`CLOSED / PUSHED`; R3-E.0 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED /
+LOCKED / CHECKPOINT AUTHORIZED`; R3-E `READY / NOT STARTED`
 
 **Authority:** this contract derives from the approved R3-A audit, the accepted
 Wealth OS architecture, the independently approved R3-B.1 remediation, and
@@ -20,7 +21,14 @@ completion.
 
 The user explicitly approved the R3-D.1 registry-version and UTC logical
 knowledge-time decisions on 2026-10-10. Section 8.4 is the controlled
-normative amendment for those decisions. It does not implement R3-D.
+normative amendment for those decisions.
+
+The user explicitly approved the R3-E.0 historical-revision-window and
+acquisition-finalization decisions on 2026-10-11 and the Deferred Ingestion &
+Acquisition Finalization V1 remediation on 2026-10-12. Section 12.1 is the
+controlled documentation-only amendment and remediation addendum. It does not
+implement an adapter, ingestion, provider call, scheduler, migration, or
+deployment.
 
 ## 1. Purpose
 
@@ -1042,6 +1050,342 @@ years. The R3 adapter must therefore:
 The exact ten-year boundary algorithm and inclusive semantics must be frozen by
 fixtures and contract tests before live provider implementation.
 
+### 12.1 Amendment R3-E.0: Historical Revision Windows & Acquisition Finalization V1
+
+`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / CHECKPOINT AUTHORIZED`:
+the user
+explicitly approved this controlled amendment on 2026-10-11 and its Deferred
+Ingestion & Acquisition Finalization V1 remediation on 2026-10-12. It closes
+only the ordinary historical-revisit windows, manual deep reconciliation,
+first-acquisition boundary, store compatibility adapter, and conservative
+acquisition-finalization contract. The remediation addresses `MAT-R3E0-01`,
+`MIN-R3E0-01`, `MIN-R3E0-02`, and `INF-R3E0-01`.
+Gemini 3.8 Flash High approved the targeted remediation review with 0 blocking,
+0 material, 0 minor, and 2 informational findings. `MAT-R3E0-01`,
+`MIN-R3E0-01`, `MIN-R3E0-02`, and `INF-R3E0-01` are resolved; the latter
+remains governed by the documented conservative-coverage limitation.
+`INF-R3E0-02` (scalar representation of discontinuous coverage) and
+`INF-R3E0-03` (no persistent acquisition journal) remain visible V1 limitations.
+It does not reopen the ten original ADR-029 decisions, R3-B.2, R3-D.1, or the
+implemented R3-D persistence contract.
+
+#### 12.1.1 Ordinary historical-revisit windows
+
+Every eligible ordinary refresh receives one explicit civil reference date
+`D`. `D` is stable for the complete acquisition and is never replaced by an
+implicit wall-clock read in a later request or chunk.
+
+For every DAILY registry series, the inclusive request window is:
+
+```text
+window_start = max(registry_normalized_floor, D - 89 days)
+window_end   = D
+```
+
+This is exactly 90 civil days when the registry floor does not truncate it.
+The request never precedes the normalized floor or extends after `D`. For SGS
+1, the normalized floor remains exactly `1994-07-01`. Weekends and holidays
+without observations remain absence, not manufactured rows. Consecutive
+retransmissions are deduplicated by R3-D, while changed known-period values
+create immutable historical versions. Revisions outside the window are not
+claimed to have been discovered automatically.
+
+For every MONTHLY registry series, the inclusive request window is:
+
+```text
+window_start = max(
+    registry_normalized_floor,
+    first_day_of_month(D - 23 calendar months),
+)
+window_end = D
+```
+
+Subtraction is by civil calendar months, never by a fixed day count. The window
+contains the civil month of `D` and the 23 preceding civil months. The current
+month's inclusion in the request does not assert that a value has been
+published. Valid monthly observations retain the R3-C first-through-last civil
+day economic period; missing months receive no artificial value, and monthly
+rates are not accumulated or annualized automatically.
+
+The effective final request date is explicit for every request. The requested
+provider period and the independent economic/knowledge cuts of a consumer
+`as_of` query are never substituted for one another. These 90-day and 24-month
+revision windows are orchestration policy, not the six-hour DAILY or
+twenty-four-hour MONTHLY call-suppression policy in section 9.
+
+#### 12.1.2 Acquisition modes and manual deep reconciliation
+
+R3-E distinguishes exactly:
+
+1. ordinary refresh through the applicable moving window;
+2. explicitly requested historical deep reconciliation; and
+3. first acquisition of a series never previously acquired.
+
+A first ordinary acquisition may use its moving window. Absence of prior
+history never authorizes an automatic full-series backfill, and one successful
+first request never proves complete historical coverage. A broader first
+acquisition is a manual deep reconciliation with an explicit interval.
+
+Deep reconciliation is manual, explicit, and bounded. Its request identifies
+the registry series, inclusive start date, inclusive end date, and explicit
+historical-reconciliation intent. It respects normalized registry floors and
+BCB request limits, partitions extensive ranges into governed chunks, applies
+R3-C certification, and persists only through R3-D. It preserves immutable
+events, head-only consecutive deduplication, `A -> A`, `A -> B`, `A -> B -> A`,
+fingerprints, and last-known-good. It is not financial authority.
+
+Deep reconciliation never runs automatically, at startup, from a scheduler,
+or as a silent whole-history fallback. Future implementation may expose only
+an explicitly invoked internal method in R3-E; this amendment authorizes no
+public endpoint, screen, scheduler, automatic execution, or reconciliation
+run.
+
+#### 12.1.3 Store compatibility adapter and ingestion modes
+
+R3-E may make the approved minimal adaptation of the existing R3-D
+`ExternalObservationStoreService`, without schema change or parallel store.
+The conceptual ingestion interface is:
+
+```python
+ingest(
+    observation,
+    ...,
+    acquisition_mode="immediate",
+)
+```
+
+The concrete Python name and type may follow project conventions, preferably a
+typed enum or `Literal`, but the only V1 meanings are `immediate` and
+`deferred`. The default is `immediate`; callers are never silently converted
+to deferred ingestion.
+
+**Immediate mode** preserves the complete current R3-D behavior and legacy
+consumer contract: R3-C recertification, Registry Contract Version V1,
+Content Fingerprint V1, `BEGIN IMMEDIATE`, head-only deduplication, immutable
+sequence and supersession, `A -> B -> A`, last-known-good, current operational
+success update, refresh eligibility, event counters, and current coverage
+behavior. This remediation does not modify that behavior. All 45 R3-D tests
+must remain green.
+
+**Deferred mode** is opt-in and reserved for R3-E governed acquisitions or a
+future explicitly compatible consumer. It performs, within the existing
+application-owned R3-D transaction: R3-C recertification; registry-version
+validation; Content Fingerprint V1 recalculation; head read; transition insert
+or consecutive retransmission deduplication; sequence, supersession, and LKG
+maintenance; and the existing event-counter mutations. Repositories neither
+commit nor create HTTP transactions.
+
+Acceptance of one deferred observation is not completion of the acquisition.
+Deferred ingestion therefore must not:
+
+- set `last_attempt_result = SUCCESS` because a chunk or observation succeeded;
+- advance `last_success_at` or `next_refresh_eligible_at` as global success;
+- clear `partial_coverage` in anticipation of finalization;
+- expand `coverage_start`/`coverage_end` from observation extrema;
+- manufacture continuity between chunks or report the acquisition complete;
+- perform HTTP, create a commit outside the application service, or change the
+  current immediate-mode default.
+
+`observations_received` continues to count observations actually processed
+under the existing R3-D semantics. `accepted_transitions` increments only for
+committed content transitions; consecutive identical retransmissions create no
+event and retain the existing `consecutive_retransmissions` semantics. LKG may
+advance atomically to a valid committed event. These event-level mutations do
+not authorize global `SUCCESS`. A small future application-service adaptation
+that performs them without `_record_success()` is approved; no such code is
+implemented by this amendment.
+
+#### 12.1.4 Read-only sync-state query
+
+The same application service may expose:
+
+```python
+get_sync_state(registry_key)
+```
+
+This is a read-only lookup of the existing row under registry and
+registry-version rules. It performs no HTTP, refresh, migration, `INSERT`,
+`UPDATE`, counter mutation, or automatic initialization. It must not call
+`ExternalSeriesSyncStateRepository.initialize()`. If no row exists, V1 returns
+`None`; consumers interpret that as no persisted operational state. Creation
+of a sync-state row belongs only to an authorized write transaction.
+
+#### 12.1.5 Governed acquisition finalization
+
+The same application service may also expose:
+
+```python
+finalize_acquisition(...)
+```
+
+Its typed request must contain enough evidence to determine the registry key,
+operation-attempt identity when applicable, operational instant, originally
+requested interval, completed and uncompleted chunks, intervals actually and
+fully queried, global result, whole-operation empty outcome, safe failure and
+HTTP metadata, and the continuous coverage that can be proved. Exact types
+follow existing backend conventions and add no persisted acquisition journal.
+The interface must not accept a free-form declaration of `SUCCESS` without
+the corresponding completed-chunk evidence.
+
+The finalizer exclusively publishes the global operational result:
+
+- `SUCCESS` only when every planned chunk and complete response was received,
+  every payload was validated, every accepted observation was committed or
+  deduplicated, no mandatory chunk failed or remained pending, and the
+  finalization transaction committed;
+- `EMPTY` only when the entire operation completed validly and returned no
+  economic observation; empty is not numeric zero;
+- `PARTIAL` when valid work was committed but another required part failed or
+  remained incomplete; valid events and LKG are preserved;
+- `FAILED` when no valid result sufficient for `PARTIAL` was obtained under the
+  contracted failure classification; history and LKG are preserved.
+
+A chunk result is never published as the global result. Under one
+application-owned `BEGIN IMMEDIATE` transaction, finalization may update
+`last_attempt_at`, `last_attempt_result`, `last_success_at` only for global
+`SUCCESS` or `EMPTY`, `partial_coverage`, permitted refresh eligibility, safe
+error/HTTP metadata, and proved durable coverage. `PARTIAL` and `FAILED`
+preserve the prior `last_success_at`, do not advance refresh as successful, and
+do not modify append-only events or historical knowledge timestamps.
+
+Event counters and LKG already committed by deferred ingestion are carried
+forward unchanged. `finalize_acquisition(...)` inserts no observation,
+increments neither `observations_received` nor `accepted_transitions`, and does
+not recalculate them from HTTP totals. Repeated finalization of the same
+operation must be counter-idempotent. Because V1 adds no persistent acquisition
+idempotency key or journal, it does not claim exactly-once HTTP attempts or
+cross-process finalization. A temporally regressive or stale finalization that
+could overwrite a more recent operational conclusion must be rejected.
+
+The persisted sync state intentionally remains bounded operational state, not
+a complete fetch-event ledger. Current-operation chunk evidence belongs in the
+typed finalization result. No third table, migration, or persistent attempt
+journal is authorized.
+
+#### 12.1.6 Requested, queried, observed, and durable coverage
+
+The following concepts are independent:
+
+- **requested interval:** civil dates the acquisition intended to request;
+- **proven queried interval:** dates in chunks whose complete response was
+  received and validated, including a valid empty response;
+- **observed economic coverage:** economic periods for which valid certified
+  observations exist.
+
+Neither observations at two endpoints nor successful outer chunks prove an
+uncompleted interval between them. If chunks A and C succeed while intervening
+chunk B fails, the acquisition must not persist or report the union as one
+continuous proven interval.
+
+`coverage_start` and `coverage_end` mean successfully queried durable coverage,
+not automatic economic-observation coverage. They are never expanded by
+`min/max` over observation dates. Promotion requires a globally `SUCCESS` or
+`EMPTY` operation whose entire declared interval is covered by fully received,
+validated, gap-free chunks. Valid empty chunks participate in queried
+continuity while producing no economic observation. Economic freshness remains
+independent and does not become `CURRENT` automatically.
+
+For V1, a `PARTIAL` or `FAILED` acquisition never enlarges durable coverage. If
+no prior durable coverage exists, both fields remain `None`. If prior coverage
+exists, it is preserved conservatively and is not treated as proof beyond its
+original evidence. V1 does not arbitrarily choose the first, last, or largest
+successful fragment, combine two disconnected ranges, or infer continuity from
+economic endpoints.
+
+When a globally complete operation proves one new continuous interval, that
+integral interval may become the operation's durable coverage. It is not
+automatically unioned with historical coverage merely because extrema touch or
+overlap economically. Because the two fields cannot represent disconnected
+ranges, the typed operation result preserves the additional detail. A
+conservative policy that replaces the fields with the newly certified integral
+interval may be adopted only if documented explicitly during implementation
+and consistent with locked contracts; it must not imply that earlier events or
+evidence ceased to exist.
+
+Durable coverage must not expand through an uncompleted chunk. Outer
+observations alone do not make a whole requested interval `AVAILABLE`; HTTP
+success alone does not make economic freshness `CURRENT`. Valid committed
+observations remain available under their own eligibility and knowledge-time
+rules. A later failed attempt preserves prior certified coverage and
+last-known-good without claiming the failed extension.
+
+Legacy R3-D values may have been produced from observation extrema. They are
+not retroactively reinterpreted as proof that every intermediate date was
+queried, are not automatically backfilled, erased, or corrected, and do not by
+themselves prove economic freshness. Deferred/finalized flows must not expand a
+legacy range without sufficient continuity evidence. If a future consumer must
+distinguish legacy from proved queried coverage and the existing fields are
+insufficient, that is a specific future contract gate; this amendment adds no
+table.
+
+#### 12.1.7 Discontinuous and empty chunks
+
+For requested `01/01` through `30/01`, if chunk A (`01/01`-`10/01`) succeeds,
+chunk B (`11/01`-`20/01`) fails, and chunk C (`21/01`-`30/01`) succeeds, the
+global result is `PARTIAL`. Valid A and C events remain, no event is fabricated
+for B, LKG is preserved, no `01/01`-`30/01` coverage or global `SUCCESS` is
+recorded, refresh is not advanced as successful, and the typed result identifies
+the failed chunk. Without prior proved coverage the stored coverage remains
+`None`; otherwise the prior range remains conservatively unchanged.
+
+If A and C contain observations while a completely received, validated B is
+the valid empty JSON array, all three chunks can support global `SUCCESS` and
+continuous successfully queried coverage. B creates no observation or zero and
+does not represent fictitious publication. Successfully queried coverage and
+observed economic coverage remain separate.
+
+#### 12.1.8 Crash, retry, and per-transaction atomicity
+
+A valid empty JSON response means that a completed query returned no
+observations in its window. It is neither zero, proof of permanent
+nonpublication, proof that the complete series is empty, authentication
+failure, loss of last-known-good, nor automatic `CURRENT` freshness.
+Operational success, proven queried coverage, and observed economic coverage
+are evaluated separately.
+
+Every chunk is validated completely before its first persistence. Invalid rows
+cannot be selectively ingested from an otherwise invalid chunk. In a
+multichunk acquisition, valid already-committed chunks remain valid if another
+chunk fails. Network failure is not economic unavailability, and failure is
+never converted to zero.
+
+Each R3-D persistence transaction remains atomic for the event and sync-state
+work it owns. A multichunk acquisition may span multiple such transactions;
+this contract does not promise global atomicity across all chunks. Ambiguous
+commit outcomes are not blindly repeated.
+
+If chunk A commits and the process stops before chunk B completes and before
+`finalize_acquisition(...)`, A's events, event counters, and valid LKG remain.
+That interrupted attempt records no new global success, coverage expansion, or
+successful refresh advancement. The previously finalized operational result
+may remain visible with its original timestamp, but it is not evidence that the
+interrupted attempt completed. Without a persisted acquisition journal, V1
+cannot reconstruct the complete in-flight attempt and promises no automatic
+recovery or durable `STARTED` state.
+
+Reprocessing preserves existing content semantics: `A -> A` is a
+retransmission, `A -> B` creates a version, and `A -> B -> A` preserves three
+events. A new acquisition may create new observation-processing telemetry but
+must not create false historical transitions. Finalization remains counter-
+idempotent and does not insert events.
+
+`PARTIAL` or `UNKNOWN` is returned for the applicable dimension whenever the
+available evidence cannot prove the stronger state. No global `SUCCESS`, full
+`AVAILABLE`, or `CURRENT` result is announced before effective finalization.
+
+#### 12.1.9 Preserved versions and unresolved operational values
+
+Historical-revisit windows are R3-E orchestration policy. They do not change
+the five-series catalog, SGS identifiers, economic metadata, units, scales,
+frequencies, permitted use, normalized floors, Content Fingerprint V1, or
+Registry Contract Version V1. `EXTERNAL_SERIES_REGISTRY_VERSION` remains `1`.
+
+This amendment does not select HTTP timeout, exact retries, backoff, payload or
+row limits, call rate, worker count, or automatic-execution policy. It
+authorizes no scheduler, deployment, migration, active-database access, live
+BCB request, public endpoint, frontend, financial engine, or financial-authority
+change.
+
 ## 13. Failure taxonomy
 
 | Failure | Retry | Result when eligible last-known-good exists | Result without it |
@@ -1171,6 +1515,10 @@ independent review reported zero blocking, material, or minor findings:
    separate legacy-impact activation decision.
 10. ADR-029 as the accepted canonical lock vehicle.
 
+The user-approved R3-E.0 amendment adds only the section 12.1 operational
+orchestration and finalization contract. It preserves these ten decisions and
+does not increment Registry Contract Version V1.
+
 ## 19. Mandatory future contract tests
 
 Before implementation can be accepted, deterministic tests with no live
@@ -1198,6 +1546,9 @@ internet dependency must prove:
   plus metadata parity and exact data reconstruction;
 - provider tests use fixtures/mocks only, while OpenAPI and Planning, FIRE,
   Goals, Health, Portfolio, and R2 engines/contracts remain unchanged.
+- R3-E window, manual-reconciliation, finalization, discontinuous-coverage,
+  empty/partial/failed/interrupted-acquisition, and no-false-state tests defined
+  in `TESTING_STRATEGY.md`, using mocked HTTP and disposable SQLite only.
 
 ## 20. Lock status
 
@@ -1209,16 +1560,27 @@ the three normative vectors and V1 binary prefix were reproduced. R3-C was
 subsequently implemented, validated, independently approved, and closed. The
 user approved the R3-D.1 decisions on 2026-10-10; Gemini 3.8 Flash High
 independently approved the eight-document contract delta. Section 8.4 is the
-locked/versioned documentation-only amendment.
+locked/versioned documentation-only amendment. R3-D was subsequently
+implemented, validated, independently approved, closed, and pushed at baseline
+`d62012413f7ec956b070c0fe21420be1f29403ff`.
+
+The user explicitly approved the R3-E.0 decisions on 2026-10-11 and its
+Deferred Ingestion & Acquisition Finalization V1 remediation on 2026-10-12.
+Section 12.1 is the implemented documentation-only remediation and awaits
+targeted independent re-review; it is not R3-E implementation.
 Therefore:
 
-- R3-C is `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`;
-- no R3-D schema, migration, codec, registry-version constant, transactional
-  unit of work, provider, API, frontend, or engine behavior is implemented by
-  this amendment;
+- R3-C is `CLOSED / LOCKED`;
+- R3-D.1 is `APPROVED / LOCKED / VERSIONED`;
+- R3-D is `CLOSED / PUSHED`;
+- R3-E.0 is `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / CHECKPOINT AUTHORIZED`;
+- R3-E is `READY / NOT STARTED`;
+- R3-F is `PLANNED / NOT STARTED`;
+- no schema, migration, provider, API, frontend, scheduler, engine behavior,
+  active-database access, or BCB acquisition is implemented by this amendment;
 - R3-B is `CONTRACT APPROVED / LOCKED / VERSIONED` and ADR-029 remains
   `ACCEPTED / LOCKED`;
 - R3-B.2 is `APPROVED / INDEPENDENTLY VERIFIED / LOCKED`;
-- R3-D.1 is `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`;
-- R3-D is `READY / NOT STARTED` and still requires separate implementation
-  authorization.
+- Registry Contract Version V1, Content Fingerprint V1, UTC V1, immutable
+  `A -> B -> A`, and R3-D last-known-good semantics remain unchanged.
+- the administrative checkpoint is authorized; R3-E implementation remains separately gated.

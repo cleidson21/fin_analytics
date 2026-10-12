@@ -6,7 +6,8 @@
 
 **Implementation:** R3-C `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED /
 CLOSED`; R3-D.1 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED /
-VERSIONED`; R3-D `READY / NOT STARTED`
+VERSIONED`; R3-D `CLOSED / PUSHED`; R3-E.0 `CONTRACT APPROVED / INDEPENDENTLY
+VERIFIED / LOCKED / CHECKPOINT AUTHORIZED`; R3-E `READY / NOT STARTED`
 
 This plan decomposes the locked External Context contract into independently
 reviewable increments. The contract, registry, and ADR-029 were explicitly
@@ -15,8 +16,13 @@ independently verified on 2026-10-10. R3-C is implemented, validated,
 independently approved, and closed. The user explicitly approved the R3-D.1
 registry-version and UTC logical knowledge-time decisions on 2026-10-10; Gemini
 3.8 Flash High independently approved the eight-document contract delta with 0
-blocking, 0 material, 0 minor, and 2 informational findings. Every
-implementation microphase still requires its own task and gate.
+blocking, 0 material, 0 minor, and 2 informational findings. R3-D is closed and
+pushed at baseline `d62012413f7ec956b070c0fe21420be1f29403ff`. The user
+explicitly approved the R3-E.0 decisions on 2026-10-11 and the Deferred
+Ingestion & Acquisition Finalization V1 remediation on 2026-10-12. The
+documentation-only amendment now awaits targeted independent remediation
+re-review. Every implementation microphase still requires its own task and
+gate.
 
 ## 1. Dependency order
 
@@ -282,48 +288,148 @@ constraints require reconciliation.
 
 ## 6. R3-E — BCB/SGS observations
 
-### Objective
+**Status:** `READY / NOT STARTED`
 
-Implement the first official provider adapter, safe HTTP transport, deterministic
-interval partitioning, normalization, and ingestion into the R3-D store.
-The adapter assigns `retrieved_at` after the complete provider response is
-received and passes that acquisition-provenance instant through the governed
-persistence boundary; it does not assign `ingested_at` or `known_from`.
+R3-E is divided into four bounded implementation increments. This amendment
+implements none of them.
 
-### Candidate files
+### R3-E — Store Compatibility Adapter
+
+Adapt only the existing `ExternalObservationStoreService` with an explicit
+typed `immediate`/`deferred` ingestion mode, defaulting to `immediate` so all
+legacy R3-D behavior and 45 tests remain unchanged. Deferred mode must preserve
+R3-C recertification, Registry Version V1, Content Fingerprint V1, event
+history, head-only deduplication, sequence/supersession, LKG, event counters,
+and application-owned `BEGIN IMMEDIATE` transactions while withholding global
+success, successful refresh advancement, partial-state clearing, and coverage
+expansion.
+
+Add only the same-service `get_sync_state(registry_key)` and
+`finalize_acquisition(...)` responsibilities. The query returns `None` for no
+row and never initializes or mutates state. The finalizer consumes typed chunk
+evidence, publishes the global result, rejects stale/regressive conclusions,
+updates only finalization-owned fields, preserves counters already changed by
+deferred ingestion, and is counter-idempotent on retry. No third table,
+migration, persistent attempt journal, or exactly-once claim is authorized.
+
+Candidate files:
+
+- the existing `backend/application/services/external_observation_store.py`;
+- existing R3-D domain types only where the approved typed interface requires
+  a minimal additive type;
+- focused store-compatibility tests extending the existing R3-D suite.
+
+### R3-E — BCB Provider
+
+Implement the first official BCB/SGS client and adapter, safe HTTP transport,
+response parsing, typed security/failure handling, deterministic interval
+partitioning, and R3-C certification. The adapter assigns `retrieved_at` only
+after the complete provider response is received and passes that acquisition
+provenance through the governed boundary; it does not assign `ingested_at` or
+`known_from`.
+
+This increment has no active-database access. It performs no R3-D persistence,
+migration, public API, frontend, scheduler, deployment, or financial-engine
+work.
+
+Candidate files remain:
 
 - `backend/infrastructure/external/bcb_sgs_client.py`;
 - `backend/infrastructure/external/bcb_sgs_adapter.py`;
-- `backend/application/services/external_observation_ingestion.py`;
-- `backend/core/config.py` only if governed provider timeout/base settings are
-  not already representable;
+- `backend/core/config.py` only if approved provider settings are not already
+  representable;
 - provider fixtures under `tests/fixtures/external_context/`;
 - `tests/unit/test_bcb_sgs_client.py`;
-- `tests/unit/test_bcb_sgs_adapter.py`;
+- `tests/unit/test_bcb_sgs_adapter.py`.
+
+### R3-E — Governed Ingestion
+
+Apply the approved ordinary windows using one explicit stable civil date `D`:
+
+- DAILY: inclusive `max(registry_normalized_floor, D - 89 days)` through `D`;
+- MONTHLY: inclusive maximum of the normalized floor and the first day of the
+  month 23 civil calendar months before `D`, through `D`.
+
+Implement explicit bounded historical deep reconciliation, with no automatic
+full backfill for a first acquisition. Certify each complete chunk through
+R3-C before first persistence, persist through R3-D, and finalize EMPTY,
+PARTIAL, FAILED, or successful acquisition outcomes conservatively. Requested
+interval, proven queried interval, and observed economic coverage remain
+distinct; discontinuous completed chunks cannot become one durable continuous
+coverage range.
+
+Every observation uses the explicit deferred store mode. Global finalization
+alone records `SUCCESS`, `EMPTY`, `PARTIAL`, or `FAILED`. It preserves immutable
+history, Content Fingerprint V1, Registry Version V1, UTC V1, `A -> B -> A`,
+coherent counters, last-known-good, and per-transaction atomicity. It does not
+promise global atomicity across chunks or reconstruct interrupted in-flight
+attempts without a journal.
+
+Durable coverage is promoted only for a globally complete, fully received,
+validated, gap-free requested interval, including valid empty chunks. PARTIAL
+and FAILED do not enlarge it; no prior coverage plus PARTIAL keeps both fields
+null. Legacy coverage is not retroactively treated as proof of queried
+continuity, and disconnected successful chunks are reported in the typed
+operation result without a fictitious union.
+
+Before multichunk persistence is implemented, tests must prove that an
+intermediate committed chunk cannot be reported as global acquisition success.
+If the current service, two tables, and approved minimal extension cannot
+provide that conservative crash state, implementation stops for a material
+decision before any alternative method, interface, table, or schema is added.
+
+Candidate files remain:
+
+- `backend/application/services/external_observation_ingestion.py`;
+- the existing R3-D application service only through the Store Compatibility
+  Adapter above;
 - `tests/unit/test_external_observation_ingestion.py`.
+
+### R3-E — Manual Refresh
+
+Expose only explicit internal invocation. Apply the existing six-hour DAILY
+and twenty-four-hour MONTHLY call-suppression policy independently from the
+revision windows. Provide no scheduler, startup backfill, silent full-history
+fallback, public endpoint, screen, or operational deployment.
+
+Historical deep reconciliation requires registry series, inclusive start/end
+dates, and explicit reconciliation intent. It is never scheduled or inferred
+from missing history.
 
 ### Tests owned
 
 - five allowlisted series and arbitrary-series rejection;
+- DAILY 90-day and MONTHLY 24-calendar-month inclusive window boundaries,
+  explicit `D`, leap day, year/month transitions, and normalized floors;
 - daily date filters and ten-year maximum chunking;
 - inclusive, non-overlapping boundaries and empty dates;
 - monthly reference-period normalization;
 - response byte/count caps and malformed payloads;
 - timeout, DNS, 429, transient 5xx, permanent 4xx, bounded retry/backoff;
-- partial chunk results and safe retry hints;
+- explicit manual reconciliation and no startup/scheduler/full-history
+  fallback;
+- side-effect-free `get_sync_state(...)` and conservative never-acquired state;
+- successful, EMPTY, PARTIAL, FAILED, discontinuous, and interrupted-before-
+  finalization acquisitions;
+- no false continuous coverage, `AVAILABLE`, `CURRENT`, or global `SUCCESS`;
+- LKG, idempotent counters where applicable, and observation deduplication;
 - Decimal precision, unit mismatch, and conflicting duplicates;
+- no additional migration and active database untouched;
 - no personal data in requests/logs;
-- deterministic mocks only; live internet is an optional manual smoke, never a
-  required automated test.
+- deterministic mocked HTTP and disposable SQLite only; no live internet is an
+  automated pass condition.
 
 ### Acceptance
 
-No consumer calls provider directly; no projection/default/valuation; no public
-API or frontend. Provider base URL is governed and not user-controlled.
+No consumer calls the provider directly; no projection/default/valuation; no
+public API or frontend. Provider base URL is governed and not user-controlled.
+No provider implementation begins until the R3-E.0 targeted independent
+remediation review passes and the contract is approved.
 
 ### Independent gate
 
-Provider-contract, failure, SSRF, privacy, and no-network-test review.
+Provider contract, failure, SSRF, privacy, windows, coverage/finalization,
+crash safety, no-network-test, and no-active-database review.
 
 ### Recommended execution
 
@@ -498,7 +604,9 @@ The following are contract artifacts:
 
 - domain types and registry semantics;
 - identity, Decimal, provenance, time, revision, freshness, and error rules;
-- authority and purpose limits.
+- authority and purpose limits;
+- R3-E ordinary revision windows, manual-reconciliation gate, acquisition
+  finalization, and conservative coverage semantics.
 
 The following are operational policy:
 
@@ -506,7 +614,7 @@ The following are operational policy:
 - retry count/backoff;
 - response byte/row caps;
 - process/negative-cache intervals;
-- provider refresh intervals.
+- call rate, worker count, and any future automatic-execution policy.
 
 Operational values must be centrally configured, bounded, tested, and recorded
 by registry/provider version. Changing them does not change economic meaning,
@@ -529,6 +637,9 @@ but still requires regression evidence and must not silently weaken safety.
 | Exact SQLite text roundtrip and lexical-order prohibition | R3-D |
 | Migration/schema parity | R3-D |
 | Refresh/freshness/acquisition separation, negative cache, last-known-good | R3-D |
+| DAILY 90-day and MONTHLY 24-calendar-month windows, floors, explicit `D` | R3-E |
+| Manual deep reconciliation and no automatic full backfill | R3-E |
+| Acquisition finalization, EMPTY/PARTIAL/FAILED, discontinuous coverage, crash safety | R3-E over the approved minimal R3-D service extension |
 | SGS limits, chunking, provider failures | R3-E |
 | Timeout/retry/rate-limit/response caps | R3-E |
 | Privacy and SSRF prevention | R3-E, rechecked R3-I |
@@ -548,14 +659,25 @@ informational findings while reproducing the three normative vectors and V1
 prefix. R3-C subsequently closed after independent implementation approval.
 The user explicitly approved the R3-D.1 decisions on 2026-10-10; Gemini 3.8
 Flash High independently approved its eight-document contract delta (0
-blocking, 0 material, 0 minor, 2 informational).
+blocking, 0 material, 0 minor, 2 informational). R3-D was subsequently
+implemented, validated, independently approved, closed, and pushed at baseline
+`d62012413f7ec956b070c0fe21420be1f29403ff`.
+
+The user explicitly approved the R3-E.0 decisions on 2026-10-11 and the
+Deferred Ingestion & Acquisition Finalization V1 remediation on 2026-10-12.
+The controlled documentation-only remediation is implemented and awaits
+targeted independent re-review.
 Therefore:
 
-`10.R3-D.1 — Registry Version & UTC Knowledge-Time V1`
+`10.R3-E.0 — Deferred Ingestion & Acquisition Finalization V1 remediation`
 
-`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`.
+`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / CHECKPOINT AUTHORIZED`.
 
-R3-D is `READY / NOT STARTED`. It still requires a separate authorized
-implementation task; do not implement the registry constant, codec,
-persistence, transaction mechanism, migration, or tests in this documentation
-checkpoint.
+Gemini 3.8 Flash High approved the targeted remediation review with 0 blocking,
+0 material, 0 minor, and 2 informational findings. The resolved findings are
+`MAT-R3E0-01`, `MIN-R3E0-01`, `MIN-R3E0-02`, and `INF-R3E0-01` (the latter as a
+governed limitation). `INF-R3E0-02` (scalar discontinuous coverage) and
+`INF-R3E0-03` (no persistent acquisition journal) remain explicit V1 risks.
+R3-E is `READY / NOT STARTED`. Do not implement a
+provider, ingestion, refresh, reconciliation, scheduler, migration, endpoint,
+or deployment in this documentation checkpoint.

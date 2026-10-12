@@ -2,10 +2,11 @@
 **Status:** ACTIVE; 10.R2 implemented, validated, independently approved, and closed;
 10.R3-B contract approved/locked; R3-B.2 approved/locked/versioned; R3-C
 implemented/validated/independently approved/closed; R3-D.1 contract
-approved/independently verified/locked/versioned; R3-D implemented/validated/
-independently approved/checkpoint authorized;
+approved/independently verified/locked/versioned; R3-D closed/pushed; R3-E.0
+contract approved/independently verified/locked/checkpoint authorized; R3-E
+ready/not started;
 10.5-B paused pending R7
-**Date:** 2026-10-10
+**Date:** 2026-10-12
 
 ---
 
@@ -503,6 +504,101 @@ was a documentary review, not runtime-test execution.
 - also verify the locally observed `2.0.51` behavior;
 - do not change, install, upgrade, or downgrade dependencies without a separate
   authorization.
+
+#### R3-E.0 normative future test gates
+
+This documentation-only amendment creates no executable test. Future R3-E
+automated tests use mocked HTTP responses and disposable SQLite only; they do
+not contact BCB and never open the active database.
+
+The targeted independent remediation review was approved by Gemini 3.8 Flash
+High with 0 blocking, 0 material, 0 minor, and 2 informational findings.
+`MAT-R3E0-01`, `MIN-R3E0-01`, `MIN-R3E0-02`, and `INF-R3E0-01` are resolved;
+the remaining V1 risks are `INF-R3E0-02` (scalar discontinuous coverage) and
+`INF-R3E0-03` (no persistent acquisition journal). This approval does not run
+or replace the future normative test matrix below.
+
+**Ordinary windows and reconciliation:**
+
+- DAILY is inclusive for exactly `D - 89 days` through explicit stable `D`,
+  truncated only by the series normalized floor;
+- MONTHLY begins on the first civil day of the month 23 calendar months before
+  `D`, includes the current month, and ends on explicit `D`;
+- cover civil month and year transitions, including 29 February and leap-year
+  boundaries, without replacing calendar-month arithmetic with fixed days;
+- preserve the exact `1994-07-01` normalized floor for SGS 1 and each other
+  series' registry floor;
+- prove no request ends after its explicit cut, creates weekend/holiday rows,
+  invents a missing monthly observation, or accumulates/annualizes a monthly
+  rate;
+- prove revisions outside ordinary windows are not presumed discovered;
+- require registry key, inclusive start/end, and explicit historical-
+  reconciliation intent for bounded manual deep reconciliation;
+- prove no automatic whole-history fallback, startup backfill, scheduler,
+  public endpoint, or first-acquisition full backfill.
+
+**Deferred ingestion, coverage, and finalization remediation matrix:**
+
+1. Calling `ingest()` without a mode preserves the complete R3-D immediate
+   behavior and result contract.
+2. Deferred ingestion never records global `SUCCESS`.
+3. Deferred ingestion never advances successful refresh eligibility.
+4. Deferred ingestion never expands `coverage_start`/`coverage_end`.
+5. Deferred ingestion preserves the certified event, fingerprint, sequence,
+   and supersession semantics.
+6. `observations_received`, `accepted_transitions`, and
+   `consecutive_retransmissions` change only under their existing event
+   semantics.
+7. LKG changes atomically with the valid committed event.
+8. `finalize_acquisition(...)` covers global `SUCCESS` only with complete chunk
+   proof and committed finalization.
+9. It covers whole-operation `EMPTY` without an observation or numeric zero.
+10. It covers `PARTIAL` while preserving committed events, prior success, and
+    LKG.
+11. It covers `FAILED` while preserving history, prior success, and LKG.
+12. Finalization never increments or recalculates event counters.
+13. `get_sync_state(...)` returns `None` for a missing row.
+14. The read-only query emits no `INSERT`, including no call to `initialize()`.
+15. Chunk A committed followed by a process crash records no global success,
+    coverage expansion, or successful refresh advancement.
+16. Chunk A success, chunk B failure, and chunk C success yields global
+    `PARTIAL` and reports B.
+17. Disconnected completed chunks never become a fictitious continuous range.
+18. With no prior durable coverage, `PARTIAL` keeps both coverage fields null.
+19. A fully received, validated empty chunk participates in successfully
+    queried continuity but creates no economic observation.
+20. Legacy R3-D coverage is not reclassified as proved queried continuity
+    without additional evidence.
+21. Retrying the same finalization is counter-idempotent and rejects stale or
+    temporally regressive overwrites.
+22. Reprocessing preserves content idempotence and `A -> A`, `A -> B`, and
+    `A -> B -> A` history without false transitions.
+23. Independent writers retain serialized, deterministic state transitions.
+24. `BEGIN IMMEDIATE` remains the first relevant writer operation.
+25. Any failure inside one owned transaction rolls back all its event/sync
+    mutations, without claiming global rollback across prior chunks.
+26. The store adapter and ingestion path run with declared
+    `SQLAlchemy==2.0.21`.
+27. The same gates run with observed SQLAlchemy `2.0.51`.
+28. All 45 existing R3-D tests pass without regression.
+29. All 127 existing R3-C tests pass without regression.
+30. Metadata/migration inspection proves no new migration or third table.
+31. A path guard proves the active financial database remains unopened and
+    unmodified.
+32. Static and behavioral checks prove no Planning, FIRE, Goals, Health,
+    Portfolio, or other financial authority changes.
+
+The scenario matrix also proves complete chunk validation before first
+persistence, safe ambiguous-commit handling without blind retry, explicit
+separation of successfully queried and observed economic coverage, preserved
+Registry Version V1, Content Fingerprint V1, UTC V1, and no claim of a durable
+`STARTED` state or cross-process exactly-once execution.
+
+If the existing R3-D service, its two tables, and the approved
+`get_sync_state(...)`/`finalize_acquisition(...)` responsibilities cannot pass
+the interrupted-acquisition and no-false-global-success gates, implementation
+stops for a material contract decision before an alternative mechanism is
+introduced.
 
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,

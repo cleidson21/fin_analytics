@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-10 — Phase 10.R3-D final checkpoint authorized
+**Updated:** 2026-10-12 — Phase 10.R3-E.0 contract remediation implemented
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -34,15 +34,17 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-B External Context contract/registry | `CONTRACT APPROVED / LOCKED` |
 | 10.R3-B.1 contract remediation | `REMEDIATED / INDEPENDENTLY APPROVED` |
 | 10.R3-B.2 content fingerprint V1 amendment | `APPROVED / LOCKED / VERSIONED` |
-| 10.R3-C domain/normalization/executable registry | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED` |
-| 10.R3-D.1 registry version and UTC knowledge-time amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED` |
-| 10.R3-D observation store/cache/freshness | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` |
+| 10.R3-C domain/normalization/executable registry | `CLOSED / LOCKED` |
+| 10.R3-D.1 registry version and UTC knowledge-time amendment | `APPROVED / LOCKED / VERSIONED` |
+| 10.R3-D observation store/cache/freshness | `CLOSED / PUSHED` |
+| 10.R3-E.0 historical revision windows/acquisition finalization amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / CHECKPOINT AUTHORIZED` |
 | 10.R3-E BCB/SGS adapter and governed ingestion | `READY / NOT STARTED` |
-| 10.R3-F/I BCB-only implementation path | `PLANNED / NOT STARTED` |
+| 10.R3-F External Reference Context | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
-| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CHECKPOINT AUTHORIZED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-C CLOSED` |
+| 10.R3-I independent stabilization | `PLANNED / NOT STARTED` |
+| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 LOCKED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E.0 CHECKPOINT AUTHORIZED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -88,7 +90,26 @@ store, explicit SQLite `BEGIN IMMEDIATE` unit of work, immutable version
 history, head-only deduplication, bitemporal reads, and independent operational
 state evaluation. Gemini 3.8 Flash High independently approved the
 implementation with 0 blocking, 0 material, 0 minor, and 2 informational
-findings; SQLAlchemy 2.0.21 and 2.0.51 both passed the approved gates.
+findings; SQLAlchemy 2.0.21 and 2.0.51 both passed the approved gates. R3-D is
+closed and pushed at Git baseline
+`d62012413f7ec956b070c0fe21420be1f29403ff`.
+
+The user explicitly approved the R3-E.0 decisions on 2026-10-11 and the
+Deferred Ingestion & Acquisition Finalization V1 remediation on 2026-10-12.
+The documentation-only amendment now fixes the DAILY inclusive 90-day and
+MONTHLY 24-civil-month revisit windows, manual bounded deep reconciliation, no
+automatic first-acquisition backfill, an explicit default-compatible
+`immediate`/`deferred` store adapter, read-only `get_sync_state(...)` returning
+`None` for an absent row, governed `finalize_acquisition(...)`, counter/LKG
+separation, and conservative requested/queried/observed coverage semantics.
+It remediates `MAT-R3E0-01`, `MIN-R3E0-01`, `MIN-R3E0-02`, and
+`INF-R3E0-01` at the contract level. Gemini 3.8 Flash High subsequently approved the
+targeted remediation review with 0 blocking, 0 material, 0 minor, and 2
+informational findings: the four findings are resolved, with `INF-R3E0-01`
+governed by the contract; `INF-R3E0-02` (scalar discontinuous coverage) and
+`INF-R3E0-03` (no persistent acquisition journal) remain visible V1 risks. It
+implements no provider, ingestion, migration, scheduler, endpoint, deployment,
+or BCB acquisition. R3-E is `READY / NOT STARTED`.
 
 ## Implemented and validated capabilities
 
@@ -189,7 +210,7 @@ is placeholder/future-facing copy, not implemented capability.
 | Pierre Finance | Active import/API | Governed after ingestion under existing rules |
 | MyProfit CSV | Active import for positions, portfolio history, and income events | Provider facts with grain/provenance limitations |
 | yfinance | Active quote/history/fundamental adapter with memory cache | Provider-specific reference; not a shared external-context layer |
-| BCB/SGS | R3-C domain/registry plus R3-D governed persistence implemented | No network adapter, ingestion, public API, or consumer read model |
+| BCB/SGS | R3-C domain/registry and R3-D governed persistence closed; R3-E.0 contract approved and locked | No acquired BCB data, network adapter, ingestion, public API, or consumer read model |
 | News | Absent | No provider, provenance, or relevance contract |
 
 The R3-C foundation and R3-D persistence implementation now exist. R3-D adds
@@ -201,7 +222,8 @@ added. Gemini 3.8 Flash High independently approved R3-D with 0 blocking, 0
 material, 0 minor, and 2 informational findings. SQLAlchemy 2.0.21 and 2.0.51
 both passed the R3-D/R3-C gates; every migration and persistence test used a
 disposable SQLite database and the active database was untouched. R3-E is
-ready but not started; R3-F remains planned and not started.
+ready but not started; R3-F remains planned and not started. No BCB observation
+has been acquired.
 
 ## Theme and design current state
 
@@ -289,8 +311,9 @@ the complete R2 foundation. R2 is closed. External Context is
 `10.R3-B = CONTRACT APPROVED / LOCKED`; R3-B.2 is approved, locked, and
 versioned. R3-C is
 `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D.1 is
-`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED`; R3-D is
-`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED`.
+`APPROVED / LOCKED / VERSIONED`; R3-D is `CLOSED / PUSHED`; R3-E.0 is
+`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / CHECKPOINT AUTHORIZED`;
+R3-E is `READY / NOT STARTED`.
 Product
 recomposition and smart-prefill behavior remain reserved for R6.
 
@@ -316,6 +339,13 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
 - Two Investments asset-detail unit tests have historical MagicMock/timeline
   sorting failures.
 - Repository-wide mobile, lint, and Recharts SSR warning debt remains.
+- `INF-R3D-01`: global SQLite foreign-key enablement passed tested
+  environments, but active-database deployment remains blocked pending legacy
+  referential-integrity assessment, backup/rollback, startup validation, and
+  explicit authorization.
+- `INF-R3D-02`: declared Pydantic pins are not clean-install reproducible and
+  existing tests require undeclared `pytest-asyncio`; dependency remediation
+  remains a separate unauthorized task.
 - There is no certified sustainable contribution-capacity engine, portfolio
   performance engine, rebalancing engine, watchlist, BCB/news integration,
   Docker deployment, or AI runtime.
