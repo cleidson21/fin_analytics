@@ -1,5 +1,42 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-E2] — 2026-10-12 — Contract-Aligned BCB/SGS Provider Foundation
+
+- Added a typed, persistence-free external-observation provider port with
+  immutable interval, per-chunk, aggregate-result, status, and safe-error
+  types. Provider `PARTIAL` remains external acquisition evidence and cannot
+  assert persisted sync success.
+- Added a fixed official BCB/SGS `httpx` client that executes one request per
+  call, derives the five allowed SGS IDs and metadata from Registry V1, keeps
+  TLS enabled and redirects disabled, and applies explicit timeout, retry,
+  `Retry-After`, elapsed-budget, response-byte, and record limits.
+- Added deterministic provider-owned DAILY partitioning using inclusive civil
+  intervals of at most ten years, with conservative 29-February handling,
+  exact gap-free/non-overlapping coverage, and no redundant boundary calls.
+  MONTHLY SGS 433 remains one explicitly bounded request and normalizes each
+  returned economic month to its first and last civil day.
+- Added the BCB/SGS adapter for sequential bounded multichunk execution, strict
+  JSON/schema/date/textual-Decimal validation, atomic chunk rejection,
+  deterministic ordering, identical-duplicate collapse, conflicting-duplicate
+  rejection, and canonical R3-C normalization with per-response UTC
+  `retrieved_at`.
+- Added `70` focused mocked-transport tests. Current regressions are R3-C `127
+  passed`, R3-D/R3-E1 `61 passed`, bootstrap `8 passed`, and complete units
+  `1101 passed, 2 failed`; the two failures are the unchanged
+  Investments/MagicMock timeline baseline.
+- No live HTTP, SQLite persistence, active-database access, migration,
+  scheduler, startup acquisition, endpoint, frontend, dependency, locked
+  contract, R3-E1 store, Pierre, or financial-engine change was made.
+- Gemini 3.8 Flash High independently approved the adversarial R3-E2 review:
+  0 blocking, 0 material, 0 minor, 2 new informational findings, and 5
+  preserved findings. `INF-R3E2-01` is aggregate in-memory observation
+  accumulation; `INF-R3E2-02` is future-test dependence on `MockTransport` or
+  equivalent injection. `INF-R3D-01`, `INF-R3D-02`, and `INF-R3E1-01` through
+  `INF-R3E1-03` remain unresolved.
+- R3-E2 is `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / CHECKPOINT
+  AUTHORIZED`. R3-E3 governed ingestion and R3-E4 manual refresh remain `NOT
+  STARTED`.
+
 ## [PHASE-10.R3-E1] — 2026-10-12 — Store Compatibility Adapter
 
 - Extended the existing `ExternalObservationStoreService` with a typed

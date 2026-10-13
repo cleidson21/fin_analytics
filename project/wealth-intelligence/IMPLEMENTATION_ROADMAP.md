@@ -1,5 +1,5 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R3-E1 CHECKPOINT AUTHORIZED`
+**Status:** `ACTIVE QUEUE — 10.R3-E2 CHECKPOINT AUTHORIZED`
 **Date:** 2026-10-12
 
 ---
@@ -9,7 +9,7 @@
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
-| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CHECKPOINT AUTHORIZED` | R2 taxonomy and context boundary; ADR-029 |
+| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CHECKPOINT AUTHORIZED` | R2 taxonomy and context boundary; ADR-029 |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
@@ -42,7 +42,8 @@ tests from the active database, then passed independent review. MR3 reconciled
 the active Alembic bookkeeping to `2d6b4f8a9c1e`, verified `upgrade head` as a
 no-op, and preserved schema and financial data. R2 is closed. R3 is in progress
 through the closed R3-C and R3-D foundations; operational R3 persistence exists,
-but no provider path is implemented. R3-A completed the source/architecture
+and R3-E2 now supplies a persistence-free provider path. R3-A completed the
+source/architecture
 audit. R3-B produced
 `EXTERNAL_CONTEXT_CONTRACT.md`, `EXTERNAL_SERIES_REGISTRY.md`,
 `EXTERNAL_CONTEXT_IMPLEMENTATION_PLAN.md`, and accepted ADR-029. R3-B.1
@@ -79,14 +80,17 @@ with 0 blocking, 0 material, 0 minor, and 3 informational findings:
 `INF-R3E1-01` scalar durable coverage, `INF-R3E1-02` no persistent
 journal/distributed idempotency, and `INF-R3E1-03` the unchanged
 Investments/MagicMock baseline. `INF-R3D-01` and `INF-R3D-02` remain preserved.
-R3-E1 is `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT
-AUTHORIZED`; R3-E2 is `READY / NOT STARTED`; R3-E3 and R3-E4 remain not
-started. No BCB data has been acquired.
+R3-E1 is `CLOSED / PUSHED`. R3-E2 is `IMPLEMENTED / TESTED / INDEPENDENTLY
+APPROVED / CHECKPOINT AUTHORIZED`: it owns deterministic DAILY multichunk planning,
+bounded sequential mocked-transport execution, strict SGS certification, and
+typed external partial results without persistence. R3-E3 and R3-E4 remain not
+started. No live BCB data has been acquired.
 
 The R3-E.0 approval checkpoint is preserved. R3-E1 implements only its approved
 store compatibility increment and its independent adversarial review is
-approved. The user authorized this controlled Git checkpoint only; provider,
-governed acquisition, and manual refresh remain separately gated.
+approved. Gemini 3.8 Flash High independently approved R3-E2 with 0 blocking,
+0 material, 0 minor, 2 new informational findings, and 5 preserved findings.
+Governed ingestion and manual refresh remain separately gated.
 
 ### 10.R3 locked microphase sequence
 
@@ -100,8 +104,8 @@ governed acquisition, and manual refresh remain separately gated.
 | R3-D.1 | Registry Version V1 and UTC logical knowledge-time contract amendment | `APPROVED / LOCKED / VERSIONED` | explicit user approval and independent delta review on 2026-10-10 |
 | R3-D | Bitemporal observation store, sync state, cache/freshness | `CLOSED / PUSHED` | baseline `d62012413f7ec956b070c0fe21420be1f29403ff`; deployment remains separately gated |
 | R3-E.0 | Deferred Ingestion & Acquisition Finalization V1 remediation of the pending amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED / PUSHED` | Gemini 3.8 Flash High targeted remediation approval; documentation only |
-| R3-E1 | Store Compatibility Adapter | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` | Gemini 3.8 Flash High: 0 blocking/material/minor; three informational findings preserved |
-| R3-E2 | BCB Provider | `READY / NOT STARTED` | R3-E1 independently approved |
+| R3-E1 | Store Compatibility Adapter | `CLOSED / PUSHED` | Gemini 3.8 Flash High: 0 blocking/material/minor; three informational findings preserved |
+| R3-E2 | BCB Provider | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` | Gemini 3.8 Flash High: 0 blocking/material/minor; `INF-R3E2-01` and `INF-R3E2-02` preserved |
 | R3-E3 | Governed Ingestion | `NOT STARTED` | R3-E1 + R3-E2 |
 | R3-E4 | Manual Refresh | `NOT STARTED` | R3-E3 |
 | R3-F | Purpose-limited External Reference Context | `PLANNED / NOT STARTED` | R3-D + R3-E |
@@ -145,7 +149,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 IMPLEMENTED / VALIDATED / CLOSED; R3-B CONTRACT APPROVED / LOCKED; R3-B.2 APPROVED / LOCKED / VERSIONED; R3-C CLOSED / LOCKED; R3-D.1 APPROVED / LOCKED / VERSIONED; R3-D CLOSED / PUSHED; R3-E.0 CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED / PUSHED; R3-E1 IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED; R3-E2 READY / NOT STARTED; R3-E3–E4 NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C CLOSED / LOCKED; R3-D CLOSED / PUSHED; R3-E.0 LOCKED / PUSHED; R3-E1 CLOSED / PUSHED; R3-E2 IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED; R3-E3–E4 NOT STARTED; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |

@@ -4,8 +4,8 @@
 implemented/validated/independently approved/closed; R3-D.1 contract
 approved/independently verified/locked/versioned; R3-D closed/pushed; R3-E.0
 contract approved/independently verified/locked/versioned/pushed; R3-E1
-implemented/validated/independently approved/checkpoint authorized; R3-E2
-ready/not started; R3-E3–E4 not started;
+closed/pushed; R3-E2 implemented/tested/independently approved/checkpoint authorized;
+R3-E3–E4 not started;
 10.5-B paused pending R7
 **Date:** 2026-10-12
 
@@ -627,7 +627,37 @@ informational findings. `INF-R3E1-01` retains the scalar durable-coverage
 limitation; `INF-R3E1-02` retains the absence of a persistent acquisition
 journal and distributed idempotency; `INF-R3E1-03` retains the two historical
 Investments/MagicMock failures. `INF-R3D-01` and `INF-R3D-02` remain preserved.
-The user authorized the R3-E1 Git checkpoint; R3-E2 remains `READY / NOT
+The user authorized and published the R3-E1 Git checkpoint; R3-E1 is `CLOSED /
+PUSHED`.
+
+#### R3-E2 executable validation record
+
+R3-E2 tests the provider boundary without live HTTP or SQLite. The `70` focused
+tests cover the five registry-owned SGS endpoints, exact safe query parameters,
+redirect and permanent/transient HTTP behavior, bounded retries and
+`Retry-After`, timeouts, streaming/body/record caps, strict content type and
+payload certification, deterministic inclusive civil-date partitioning beyond
+ten years, leap-day boundaries, MONTHLY normalization, duplicate handling,
+per-response UTC `retrieved_at`, all aggregate outcomes, adversarial
+`SUCCESS + FAILED + SUCCESS`, retry recovery, and explicit incomplete chunks
+for count or elapsed-budget exhaustion. Static isolation checks reject store,
+SQLAlchemy, scheduler, endpoint, and finalization dependencies.
+
+Current R3-E2 evidence is provider `70 passed`, R3-C `127 passed`, R3-D/R3-E1
+`61 passed`, and bootstrap `8 passed`. The complete unit suite is `1101 passed,
+2 failed`; both failures are the unchanged Investments/MagicMock timeline
+baseline. All provider HTTP was simulated with `httpx.MockTransport`; no live
+BCB request or active-database access occurred. Gemini 3.8 Flash High
+independently reproduced provider `70 passed`, R3-C `127 passed`, R3-D/R3-E1
+`61 passed`, bootstrap `8 passed`, FIRE/Goals/Planning `629 passed`, Smart
+Financial Context R2 `121 passed`, and complete units `1101 passed, 2 failed`.
+The two failures remain the named Investments/MagicMock baseline. The review
+returned 0 blocking, 0 material, 0 minor, 2 new informational findings, and 5
+preserved findings: `INF-R3E2-01` aggregate in-memory accumulation and
+`INF-R3E2-02` future-test dependence on `MockTransport` or equivalent
+injection; `INF-R3D-01`, `INF-R3D-02`, and `INF-R3E1-01` through
+`INF-R3E1-03` remain unresolved. R3-E2 is `IMPLEMENTED / TESTED /
+INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED`; R3-E3 and R3-E4 are `NOT
 STARTED`.
 
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,

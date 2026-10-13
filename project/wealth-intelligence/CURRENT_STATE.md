@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-12 — Phase 10.R3-E1 store compatibility implemented and tested
+**Updated:** 2026-10-12 — Phase 10.R3-E2 independently approved; checkpoint authorized
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -38,16 +38,16 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-D.1 registry version and UTC knowledge-time amendment | `APPROVED / LOCKED / VERSIONED` |
 | 10.R3-D observation store/cache/freshness | `CLOSED / PUSHED` |
 | 10.R3-E.0 historical revision windows/acquisition finalization amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED / PUSHED` |
-| 10.R3-E1 store compatibility adapter | `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` |
-| 10.R3-E2 BCB/SGS provider | `READY / NOT STARTED` |
+| 10.R3-E1 store compatibility adapter | `CLOSED / PUSHED` |
+| 10.R3-E2 BCB/SGS provider | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` |
 | 10.R3-E3 governed ingestion | `NOT STARTED` |
 | 10.R3-E4 manual refresh | `NOT STARTED` |
 | 10.R3-F External Reference Context | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
 | 10.R3-I independent stabilization | `PLANNED / NOT STARTED` |
-| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CHECKPOINT AUTHORIZED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E1 CHECKPOINT AUTHORIZED` |
+| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CHECKPOINT AUTHORIZED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E2 CHECKPOINT AUTHORIZED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -121,9 +121,19 @@ the independent adversarial code review with 0 blocking, 0 material, 0 minor,
 and 3 informational findings: `INF-R3E1-01` scalar durable coverage,
 `INF-R3E1-02` no persistent journal/distributed idempotency, and
 `INF-R3E1-03` the unchanged Investments/MagicMock baseline. `INF-R3D-01` and
-`INF-R3D-02` also remain preserved. R3-E1 is `IMPLEMENTED / VALIDATED /
-INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED`; R3-E2 is `READY / NOT STARTED`;
-R3-E3 and R3-E4 are `NOT STARTED`.
+`INF-R3D-02` also remain preserved. R3-E1 is `CLOSED / PUSHED`. R3-E2 now
+implements a persistence-free typed provider port, a fixed official BCB/SGS
+HTTP client, deterministic provider-owned DAILY partitioning, sequential
+bounded multichunk execution, strict response certification through R3-C, and
+external-only `SUCCESS`, `EMPTY`, `PARTIAL`, and `FAILED` evidence. The five
+series and their metadata remain registry-owned. No real HTTP request, SQLite
+operation, scheduler, endpoint, or startup acquisition was introduced. Gemini
+3.8 Flash High approved the independent adversarial R3-E2 review with 0
+blocking, 0 material, 0 minor, 2 new informational findings, and 5 preserved
+findings. `INF-R3E2-01` records aggregate in-memory observation accumulation;
+`INF-R3E2-02` records the future-test dependence on `MockTransport` or an
+equivalent injected transport. R3-E2 is `IMPLEMENTED / TESTED / INDEPENDENTLY
+APPROVED / CHECKPOINT AUTHORIZED`; R3-E3 and R3-E4 are `NOT STARTED`.
 
 ## Implemented and validated capabilities
 
@@ -224,7 +234,7 @@ is placeholder/future-facing copy, not implemented capability.
 | Pierre Finance | Active import/API | Governed after ingestion under existing rules |
 | MyProfit CSV | Active import for positions, portfolio history, and income events | Provider facts with grain/provenance limitations |
 | yfinance | Active quote/history/fundamental adapter with memory cache | Provider-specific reference; not a shared external-context layer |
-| BCB/SGS | R3-C domain/registry and R3-D governed persistence closed; R3-E.0 locked; R3-E1 store compatibility implemented/tested | No acquired BCB data, network provider, governed provider ingestion, public API, or consumer read model |
+| BCB/SGS | R3-C domain/registry and R3-D persistence closed; R3-E1 closed; R3-E2 provider independently approved with mocked transport | No live BCB acquisition, governed persistence orchestration, public API, scheduler, or consumer read model |
 | News | Absent | No provider, provenance, or relevance contract |
 
 The R3-C foundation and R3-D persistence implementation now exist. R3-D adds
@@ -235,10 +245,18 @@ state evaluators. No provider, scheduler, endpoint, or consumer context was
 added. Gemini 3.8 Flash High independently approved R3-D with 0 blocking, 0
 material, 0 minor, and 2 informational findings. SQLAlchemy 2.0.21 and 2.0.51
 both passed the R3-D/R3-C gates; every migration and persistence test used a
-disposable SQLite database and the active database was untouched. R3-E1 adds
-only the existing-store compatibility adapter and remains awaiting independent
-code review; R3-E2, R3-E3, R3-E4, and R3-F remain not started. No BCB
-observation has been acquired.
+disposable SQLite database and the active database was untouched. R3-E1 is
+closed and pushed. R3-E2 adds only the external provider foundation: one
+bounded request per client call, deterministic multichunk planning in the
+adapter, strict JSON/date/Decimal validation, R3-C normalization, and typed
+per-chunk and aggregate evidence without persistence claims. Its `70` focused
+tests used only `httpx.MockTransport`; R3-C `127`, R3-D/R3-E1 `61`, and
+bootstrap `8` regressions pass. The complete unit suite is `1101 passed, 2
+failed`, limited to the unchanged Investments/MagicMock baseline. Gemini 3.8
+Flash High approved the independent R3-E2 review with 0 blocking, 0 material,
+0 minor, 2 new informational findings, and 5 preserved findings. R3-E2 is at
+the authorized implementation checkpoint; R3-E3, R3-E4, and R3-F remain not
+started. No live BCB observation has been acquired.
 
 ## Theme and design current state
 
@@ -328,8 +346,8 @@ versioned. R3-C is
 `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D.1 is
 `APPROVED / LOCKED / VERSIONED`; R3-D is `CLOSED / PUSHED`; R3-E.0 is
 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED / PUSHED`;
-R3-E1 is `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CHECKPOINT
-AUTHORIZED`; R3-E2 is `READY / NOT STARTED`; R3-E3 and R3-E4 are `NOT STARTED`.
+R3-E1 is `CLOSED / PUSHED`; R3-E2 is `IMPLEMENTED / TESTED / INDEPENDENTLY
+APPROVED / CHECKPOINT AUTHORIZED`; R3-E3 and R3-E4 are `NOT STARTED`.
 Product
 recomposition and smart-prefill behavior remain reserved for R6.
 
