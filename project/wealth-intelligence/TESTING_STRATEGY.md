@@ -4,10 +4,10 @@
 implemented/validated/independently approved/closed; R3-D.1 contract
 approved/independently verified/locked/versioned; R3-D closed/pushed; R3-E.0
 contract approved/independently verified/locked/versioned/pushed; R3-E1
-closed/pushed; R3-E2 implemented/tested/independently approved/checkpoint authorized;
-R3-E3–E4 not started;
+closed/pushed; R3-E2 closed/pushed;
+R3-E3 implemented/tested/independently approved/ready for checkpoint; R3-E4 ready/not started;
 10.5-B paused pending R7
-**Date:** 2026-10-12
+**Date:** 2026-10-13
 
 ---
 
@@ -657,8 +657,37 @@ preserved findings: `INF-R3E2-01` aggregate in-memory accumulation and
 `INF-R3E2-02` future-test dependence on `MockTransport` or equivalent
 injection; `INF-R3D-01`, `INF-R3D-02`, and `INF-R3E1-01` through
 `INF-R3E1-03` remain unresolved. R3-E2 is `IMPLEMENTED / TESTED /
-INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED`; R3-E3 and R3-E4 are `NOT
-STARTED`.
+INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` and is now closed/pushed. R3-E3
+is `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / READY FOR CHECKPOINT`;
+R3-E4 is `READY / NOT STARTED`.
+
+#### R3-E3 executable validation record
+
+R3-E3 tests the internal governed-ingestion composition without a public
+trigger, live HTTP, or active-database access. The `34` focused tests cover all
+five registry keys through `httpx.MockTransport`, explicit ordinary and bounded
+historical intents, exact DAILY 90-day and MONTHLY 24-civil-month revisit
+windows and floors, provider-complete-before-persistence ordering, deferred-only
+store calls, empty evidence, all four derived global outcomes, discontinuous
+success/failure/success plans, first/mid-observation persistence failure,
+simulated interruption between chunks, prior-coverage preservation, A→A and
+A→B→A history, stale and failed finalization, and independent-reader visibility
+only after the finalization commit. Corrupt provider evidence is rejected before
+store mutation.
+
+Current evidence is R3-E3 `34 passed`, R3-C `127 passed`, R3-D/R3-E1 `61
+passed`, R3-E2 `70 passed`, bootstrap `8 passed`, FIRE/Goals/Planning `629
+passed`, and the selected current R2 Smart Context suite `153 passed`. Complete
+units report `1135 passed, 2 failed`; both failures are the unchanged
+Investments/MagicMock timeline baseline. The combined R3-E3 plus R3-D/R3-E1
+selection reports `95 passed` on the retained SQLAlchemy 2.0.21 environment.
+All persistence tests used disposable migrated SQLite databases; no live BCB
+request or active financial database access occurred. Gemini 3.8 Flash High
+independently approved R3-E3 with 0 blocking, 0 material, 0 minor, 0 new
+informational findings, and the 7 preserved R3-D/R3-E1/R3-E2 findings. The
+review reproduced the listed gates on Python 3.14.0, SQLite 3.50.4, and
+SQLAlchemy 2.0.51. The isolated SQLAlchemy 2.0.21 `95 passed` result remains
+implementation evidence; it was not attributed to the independent review.
 
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,

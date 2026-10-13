@@ -1,5 +1,41 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-E3] — 2026-10-13 — Governed Ingestion & Sync State Integration
+
+- Added an internal application-layer governed-ingestion service that composes
+  the closed/pushed R3-E2 provider port with the closed/pushed R3-E1 store
+  service. The request requires an explicit acquisition identity,
+  registry-owned series key, and ordinary-refresh or bounded
+  historical-reconciliation intent.
+- Implemented the locked ordinary revision windows: DAILY uses the inclusive
+  interval `max(registry floor, D - 89 days)..D`; MONTHLY uses the inclusive 24
+  civil-month interval from the first day 23 months before `D` through `D`.
+- Enforced provider-complete-before-persistence ordering. Certified successful
+  observations are written only through R3-E1 deferred ingestion; empty,
+  failed, incomplete, and persistence-failed chunks become typed acquisition
+  evidence; one final R3-E1 call derives and commits the global sync outcome.
+- Kept external provider status separate from the committed global store
+  result. The service preserves R3-C registry validation, exact Decimal values,
+  fingerprint identity, UTC evidence, immutable history, event counters, LKG,
+  and R3-E1's conservative coverage policy.
+- Added `34` focused tests using only `httpx.MockTransport` and disposable
+  migrated SQLite. Regressions pass for R3-C `127`, R3-D/R3-E1 `61`, R3-E2
+  `70`, bootstrap `8`, FIRE/Goals/Planning `629`, and the selected current R2
+  Smart Context suite `153`. Complete units report `1135 passed, 2 failed`,
+  limited to the unchanged Investments/MagicMock baseline; the R3-E3 plus
+  R3-D/R3-E1 selection also reports `95 passed` on SQLAlchemy 2.0.21.
+- Gemini 3.8 Flash High independently approved the adversarial R3-E3 review:
+  0 blocking, 0 material, 0 minor, 0 new informational findings, and 7
+  preserved informational findings (`INF-R3D-01/02`, `INF-R3E1-01/02/03`, and
+  `INF-R3E2-01/02`). It reproduced the listed gates on Python 3.14.0, SQLite
+  3.50.4, and SQLAlchemy 2.0.51; the isolated SQLAlchemy 2.0.21 `95 passed`
+  result remains implementation evidence, not an independent-review claim.
+- No live BCB request, active-database access, migration, dependency, scheduler,
+  startup acquisition, endpoint, frontend, financial-engine, locked-contract,
+  R3-E1, or R3-E2 change was made. R3-E3 is `IMPLEMENTED / TESTED /
+  INDEPENDENTLY APPROVED / READY FOR CHECKPOINT`; R3-E4 remains `READY / NOT
+  STARTED`.
+
 ## [PHASE-10.R3-E2] — 2026-10-12 — Contract-Aligned BCB/SGS Provider Foundation
 
 - Added a typed, persistence-free external-observation provider port with
