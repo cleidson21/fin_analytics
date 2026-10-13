@@ -1,5 +1,63 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-E4] — 2026-10-13 — Governed Manual Refresh
+
+- Added an explicit internal-only `ManualExternalRefreshService`; no API route,
+  CLI, screen, scheduler, startup hook, deployment, or automatic acquisition
+  was introduced. The locked R3-E4 surface remains an application service.
+- Added immutable manual request, eligibility, and result types. Requests accept
+  only a Registry V1 key, acquisition/correlation identity, and the existing
+  R3-E3 ordinary-refresh or explicit bounded historical-reconciliation intent;
+  arbitrary SGS IDs, URLs, provider settings, table names, ingestion modes, and
+  unrestricted force flags remain impossible.
+- Added a pure UTC eligibility decision over registry definition plus certified
+  sync state. DAILY uses the existing six-hour call-suppression policy and
+  MONTHLY uses twenty-four hours. Missing state permits only the ordinary or
+  explicitly bounded request already represented by R3-E3; it creates no row
+  and authorizes no full-history fallback.
+- Eligibility reuses persisted `next_refresh_eligible_at`. `SUCCESS` and `EMPTY`
+  obey their finalized cooldown; `PARTIAL` and `FAILED` preserve the prior
+  successful boundary and may retry immediately only when the certified state
+  has no retry boundary. Clock regression, registry-version mismatch, and sync
+  identity mismatch fail closed without provider or store mutation.
+- The sync-state reader is a short-lived read-only boundary over R3-E1
+  `get_sync_state(...)` and releases its read transaction before provider I/O.
+  Eligible requests delegate once to R3-E3, which remains the sole owner of
+  provider acquisition, deferred persistence, finalization, coverage, LKG, and
+  counters. Manual results preserve `SUCCESS`, `EMPTY`, `PARTIAL`, and `FAILED`;
+  cooldown denial is the separate `NOT_ELIGIBLE` outcome.
+- Added `30` focused R3-E4 tests using fake providers and disposable migrated
+  SQLite only. They cover all five series, exact 6h/24h boundaries, UTC and
+  clock regression, absent/mismatched state, failure retry semantics, request
+  validation, all four finalized results, no-write cooldown, correlation,
+  provider/finalization errors, single finalization, safe telemetry, sequential
+  calls, and concurrent calls.
+- Current validation: R3-E4 `30 passed`; combined R3-E4/R3-E3/store/policy `120
+  passed`; R3-E2 `70 passed`; R3-C `127 passed`; R3-D/R3-E1 `61 passed`;
+  bootstrap `8 passed`; FIRE/Goals/Planning `629 passed`; R2 Smart Context `153
+  passed`; complete units `1165 passed, 2 failed`. The two failures are the
+  unchanged Investments/MagicMock timeline baseline. Runtime versions were
+  Python 3.14.0, SQLite 3.50.4, and SQLAlchemy 2.0.51.
+- Concurrent eligible triggers may still duplicate external calls because V1
+  has no persistent acquisition journal or distributed single-flight. R3-E1
+  serialization/finalization preserved one correct sync state in the exercised
+  race; no exactly-once claim is made. This remains the inherited
+  `INF-R3E1-02` limitation, not a new closed finding.
+- Gemini 3.8 Flash High independently approved the adversarial R3-E4 review:
+  0 blocking, 0 material, 0 minor, 1 new informational finding, and 7 preserved
+  informational findings. `INF-R3E4-01` is open: if a future authenticated
+  caller exposes the existing typed `HISTORICAL_RECONCILIATION` intent, it must
+  enforce specific administrative authorization, validate intent and interval,
+  deny anonymous access, and not provide an uncontracted cooldown bypass. This
+  phase remains internal-only and adds no endpoint or RBAC mechanism. The seven
+  preserved findings are `INF-R3D-01/02`, `INF-R3E1-01/02/03`, and
+  `INF-R3E2-01/02`.
+- OpenAPI remains 55 paths and 59 operations with no External Context refresh
+  route. No live BCB request, active-database access, migration, dependency,
+  frontend, financial-engine, locked-contract, R3-E1, R3-E2, or R3-E3 change
+  was made. R3-E4 is `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED /
+  IMPLEMENTATION CHECKPOINT`.
+
 ## [PHASE-10.R3-E3] — 2026-10-13 — Governed Ingestion & Sync State Integration
 
 - Added an internal application-layer governed-ingestion service that composes
@@ -32,9 +90,9 @@
   result remains implementation evidence, not an independent-review claim.
 - No live BCB request, active-database access, migration, dependency, scheduler,
   startup acquisition, endpoint, frontend, financial-engine, locked-contract,
-  R3-E1, or R3-E2 change was made. R3-E3 is `IMPLEMENTED / TESTED /
-  INDEPENDENTLY APPROVED / READY FOR CHECKPOINT`; R3-E4 remains `READY / NOT
-  STARTED`.
+  R3-E1, or R3-E2 change was made. The controlled checkpoint was published as
+  `686d64b49731a44a56e0d7fd8b44752ee1b663d8`; R3-E3 is `CLOSED / PUSHED`, and
+  R3-E4 is `AUTHORIZED / NOT IMPLEMENTED`.
 
 ## [PHASE-10.R3-E2] — 2026-10-12 — Contract-Aligned BCB/SGS Provider Foundation
 

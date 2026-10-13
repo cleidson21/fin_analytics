@@ -5,7 +5,7 @@ implemented/validated/independently approved/closed; R3-D.1 contract
 approved/independently verified/locked/versioned; R3-D closed/pushed; R3-E.0
 contract approved/independently verified/locked/versioned/pushed; R3-E1
 closed/pushed; R3-E2 closed/pushed;
-R3-E3 implemented/tested/independently approved/ready for checkpoint; R3-E4 ready/not started;
+R3-E3 closed/pushed; R3-E4 implemented/tested/independently approved and awaiting its implementation checkpoint;
 10.5-B paused pending R7
 **Date:** 2026-10-13
 
@@ -658,8 +658,9 @@ preserved findings: `INF-R3E2-01` aggregate in-memory accumulation and
 injection; `INF-R3D-01`, `INF-R3D-02`, and `INF-R3E1-01` through
 `INF-R3E1-03` remain unresolved. R3-E2 is `IMPLEMENTED / TESTED /
 INDEPENDENTLY APPROVED / CHECKPOINT AUTHORIZED` and is now closed/pushed. R3-E3
-is `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / READY FOR CHECKPOINT`;
-R3-E4 is `READY / NOT STARTED`.
+is `CLOSED / PUSHED` at commit
+`686d64b49731a44a56e0d7fd8b44752ee1b663d8`; R3-E4 is `IMPLEMENTED / TESTED /
+INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT`.
 
 #### R3-E3 executable validation record
 
@@ -688,6 +689,40 @@ informational findings, and the 7 preserved R3-D/R3-E1/R3-E2 findings. The
 review reproduced the listed gates on Python 3.14.0, SQLite 3.50.4, and
 SQLAlchemy 2.0.51. The isolated SQLAlchemy 2.0.21 `95 passed` result remains
 implementation evidence; it was not attributed to the independent review.
+
+#### R3-E4 executable validation record
+
+R3-E4 tests only the explicit internal manual trigger. Its pure policy covers
+all five registry series; absent sync state; strict UTC; regressive clocks;
+registry and sync identity mismatch; DAILY before/at/after six hours; MONTHLY
+before/at/after twenty-four hours; prior `SUCCESS`, `EMPTY`, `PARTIAL`, and
+`FAILED`; last attempt without last success; and exact next-eligible evidence.
+
+Service tests use fake providers plus disposable migrated SQLite to prove
+ordinary and explicit bounded historical requests, no arbitrary series or
+interval bypass, correlation preservation, all four finalized R3-E3 outcomes,
+typed provider/finalization errors, exactly one finalizer invocation, no write
+or provider call on cooldown, safe telemetry, sequential suppression, release
+of the read transaction before provider I/O, and concurrent requests without
+sync-state corruption. The concurrent case deliberately observes two provider
+calls and makes no single-flight or exactly-once claim; this preserves the
+existing `INF-R3E1-02` V1 limitation.
+
+Current local evidence is R3-E4 `30 passed`; combined
+R3-E4/R3-E3/store/policy `120 passed`; R3-E2 `70 passed`; R3-C `127 passed`;
+R3-D/R3-E1 `61 passed`; bootstrap `8 passed`; FIRE/Goals/Planning `629 passed`;
+and selected R2 Smart Context `153 passed`. Complete units report `1165 passed,
+2 failed`, both the unchanged Investments/MagicMock timeline baseline. Tests
+ran on Python 3.14.0, SQLite 3.50.4, and SQLAlchemy 2.0.51. OpenAPI remains 55
+paths and 59 operations with no External Context refresh route. No live BCB
+request or active financial database access occurred. Gemini 3.8 Flash High
+independently approved the adversarial R3-E4 review with 0 blocking, 0 material,
+0 minor, 1 new informational finding, and 7 preserved informational findings.
+`INF-R3E4-01` remains open: a future authenticated caller exposing explicit
+historical reconciliation must enforce specific administrative authorization,
+intent/interval validation, and denied-access coverage; R3-E4 introduces no
+endpoint or RBAC mechanism. The preserved findings are `INF-R3D-01/02`,
+`INF-R3E1-01/02/03`, and `INF-R3E2-01/02`.
 
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,

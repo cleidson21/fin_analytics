@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-13 — Phase 10.R3-E3 independently approved; ready for checkpoint
+**Updated:** 2026-10-13 — Phase 10.R3-E4 independently approved; implementation checkpoint authorized
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -40,14 +40,14 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-E.0 historical revision windows/acquisition finalization amendment | `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED / PUSHED` |
 | 10.R3-E1 store compatibility adapter | `CLOSED / PUSHED` |
 | 10.R3-E2 BCB/SGS provider | `CLOSED / PUSHED` |
-| 10.R3-E3 governed ingestion | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / READY FOR CHECKPOINT` |
-| 10.R3-E4 manual refresh | `READY / NOT STARTED` |
+| 10.R3-E3 governed ingestion | `CLOSED / PUSHED` |
+| 10.R3-E4 manual refresh | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT` |
 | 10.R3-F External Reference Context | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
 | 10.R3-I independent stabilization | `PLANNED / NOT STARTED` |
-| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 READY FOR CHECKPOINT` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 READY FOR CHECKPOINT` |
+| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -145,9 +145,31 @@ and disposable SQLite only. No live HTTP, active-database access, scheduler,
 endpoint, frontend, migration, dependency, or financial-engine change was
 introduced. Gemini 3.8 Flash High independently approved R3-E3 with 0
 blocking, 0 material, 0 minor, no new informational findings, and the seven
-preserved R3-D/R3-E1/R3-E2 informational findings. R3-E3 is `IMPLEMENTED /
-TESTED / INDEPENDENTLY APPROVED / READY FOR CHECKPOINT`; R3-E4 remains `READY
-/ NOT STARTED`.
+preserved R3-D/R3-E1/R3-E2 informational findings. Its controlled checkpoint
+was published as commit `686d64b49731a44a56e0d7fd8b44752ee1b663d8`; R3-E3
+is `CLOSED / PUSHED`. R3-E4 now implements only the locked internal manual
+trigger. It resolves a Registry V1 key, reads certified sync state through a
+short-lived R3-E1 `get_sync_state(...)` boundary, evaluates the existing DAILY
+six-hour or MONTHLY twenty-four-hour call-suppression policy, and delegates an
+eligible request once to R3-E3. Ordinary and explicit bounded historical
+intents remain distinct; no endpoint, scheduler, startup acquisition, automatic
+backfill, or force bypass exists. The typed outcome keeps `NOT_ELIGIBLE`
+separate from finalized `SUCCESS`, `EMPTY`, `PARTIAL`, and `FAILED`.
+
+R3-E4 has `30` focused passing tests with fake providers and disposable migrated
+SQLite. Combined R3-E4/R3-E3/store/policy validation is `120 passed`; R3-E2 is
+`70`, R3-C `127`, R3-D/R3-E1 `61`, bootstrap `8`, FIRE/Goals/Planning `629`,
+and selected R2 Smart Context `153`. Complete units report `1165 passed, 2
+failed`, limited to the unchanged Investments/MagicMock baseline. OpenAPI
+remains 55 paths and 59 operations with no External Context refresh route.
+Gemini 3.8 Flash High independently approved the adversarial R3-E4 review with
+0 blocking, 0 material, 0 minor, 1 new informational finding, and 7 preserved
+informational findings. `INF-R3E4-01` is open: the internal typed
+`HISTORICAL_RECONCILIATION` intent requires future caller-boundary
+authentication and specific administrative authorization if it is ever exposed;
+no endpoint or RBAC mechanism is introduced by R3-E4. The preserved findings
+are `INF-R3D-01/02`, `INF-R3E1-01/02/03`, and `INF-R3E2-01/02`. R3-E4 is
+`IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT`.
 
 ## Implemented and validated capabilities
 
@@ -248,7 +270,7 @@ is placeholder/future-facing copy, not implemented capability.
 | Pierre Finance | Active import/API | Governed after ingestion under existing rules |
 | MyProfit CSV | Active import for positions, portfolio history, and income events | Provider facts with grain/provenance limitations |
 | yfinance | Active quote/history/fundamental adapter with memory cache | Provider-specific reference; not a shared external-context layer |
-| BCB/SGS | R3-C domain/registry and R3-D persistence closed; R3-E1 and R3-E2 closed/pushed; R3-E3 governed ingestion implemented/tested with mocked transport and disposable SQLite | No live BCB acquisition, public API, scheduler, manual refresh, or consumer read model |
+| BCB/SGS | R3-C domain/registry and R3-D persistence closed; R3-E1 through R3-E3 closed/pushed; R3-E4 internal manual refresh independently approved with fake providers and disposable SQLite | No live BCB acquisition, public API, scheduler, automatic refresh, deployment, or consumer read model |
 | News | Absent | No provider, provenance, or relevance contract |
 
 The R3-C foundation and R3-D persistence implementation now exist. R3-D adds
@@ -279,9 +301,13 @@ R3-E3 plus R3-D/R3-E1 selection reports `95 passed` on SQLAlchemy 2.0.21.
 The independent review reproduced the R3-E3 `34`, R3-E2 `70`, R3-C `127`,
 R3-D/R3-E1 `61`, combined `95`, bootstrap `8`, FIRE/Goals/Planning `629`, R2
 `153`, and complete-unit `1135 passed, 2 failed` evidence on Python 3.14.0,
-SQLite 3.50.4, and SQLAlchemy 2.0.51. R3-E3 is independently approved and
-ready for checkpoint; R3-E4 and R3-F remain not started. No live BCB
-observation has been acquired.
+SQLite 3.50.4, and SQLAlchemy 2.0.51. R3-E3 is closed and pushed at
+`686d64b49731a44a56e0d7fd8b44752ee1b663d8`. R3-E4 adds the internal explicit
+trigger and is implemented/tested and independently approved. Concurrent
+eligible triggers may duplicate external calls because V1 has no persistent
+attempt journal or distributed single-flight; store serialization preserves
+history and operational state, and no exactly-once guarantee is claimed. R3-F
+remains not started. No live BCB observation has been acquired.
 
 ## Theme and design current state
 
@@ -371,9 +397,8 @@ versioned. R3-C is
 `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D.1 is
 `APPROVED / LOCKED / VERSIONED`; R3-D is `CLOSED / PUSHED`; R3-E.0 is
 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED / PUSHED`;
-R3-E1 is `CLOSED / PUSHED`; R3-E2 is `CLOSED / PUSHED`; R3-E3 is `IMPLEMENTED /
-TESTED / INDEPENDENTLY APPROVED / READY FOR CHECKPOINT`; R3-E4 is `READY /
-NOT STARTED`.
+R3-E1 is `CLOSED / PUSHED`; R3-E2 is `CLOSED / PUSHED`; R3-E3 is `CLOSED /
+PUSHED`; R3-E4 is `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT`.
 Product
 recomposition and smart-prefill behavior remain reserved for R6.
 
