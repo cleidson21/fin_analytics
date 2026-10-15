@@ -6,8 +6,9 @@ approved/independently verified/locked/versioned; R3-D closed/pushed; R3-E.0
 contract approved/independently verified/locked/versioned/pushed; R3-E1
 closed/pushed; R3-E2 closed/pushed;
 R3-E3 closed/pushed; R3-E4 implemented/tested/independently approved and awaiting its implementation checkpoint;
+R3-F1 closed/pushed; R3-I independently approved/documentation reconciled;
 10.5-B paused pending R7
-**Date:** 2026-10-13
+**Date:** 2026-10-15
 
 ---
 
@@ -747,7 +748,21 @@ External Observation Store, persistence-foundation, and executable-registry
 selection reports `100 passed`. Tests used immutable fakes plus disposable
 SQLite Store coverage; no active database, live BCB
 request, provider, refresh, migration command, endpoint, frontend, financial
-engine, commit, or push was exercised. Independent review remains pending.
+engine, commit, or push was exercised.
+
+Independent R3-F1 review completed with 0 blocking, 0 material, and 0 minor
+findings. Its checkpoint is published at
+`30c4df058fd80923c37243252f4ee8fc6fa76dce`; R3-F1 is `CLOSED / PUSHED`.
+
+#### R3-I independent stabilization record
+
+The fresh-context transversal audit passed `234` tests with 0 blocking, 0
+material, and 0 minor findings. It found no new code issue requiring change and
+preserved eight historical informational findings: `INF-R3D-01/02`,
+`INF-R3E1-01/02/03`, `INF-R3E2-01/02`, and `INF-R3E4-01`. R3-I is
+`INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`; this documentation
+remediation runs no additional test suite and does not declare R3-I closed or
+pushed.
 
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,

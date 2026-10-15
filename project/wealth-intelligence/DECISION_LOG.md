@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-10-12
+**Updated:** 2026-10-15
 
 ---
 
@@ -1224,8 +1224,9 @@ SQL/provider access, writes, refresh, scheduler, endpoint, frontend, migration,
 financial-engine calculation, and canonical wealth-source changes remain
 prohibited. R3-E4's published implementation checkpoint remains preserved.
 
-**R3-F1 implementation record (2026-10-15):** The approved point-in-time read
-boundary is `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`. The additive
+**Historical R3-F1 implementation record (2026-10-15):** At its implementation
+checkpoint, the approved point-in-time read boundary was `IMPLEMENTED / TESTED
+/ AWAITING INDEPENDENT REVIEW`. The additive
 implementation consists of the closed immutable purpose matrix, immutable
 request/result and replay/operational envelopes, and the internal read-only
 `ExternalReferenceContextService`. It delegates selection to the existing
@@ -1235,5 +1236,20 @@ write, refresh, endpoint, frontend, migration, engine calculation, or runtime
 consumer. The implementation reuses the certified R3-D state evaluator and
 introduces no `STALE` criterion: complete positive coverage plus selected-head
 evidence may establish `CURRENT`; otherwise freshness remains `UNKNOWN`.
-Focused evidence is `28 passed`; the combined R3-F1 plus Registry/Store gate is
-`100 passed`. This record does not close R3-F1 or alter ADR-029's locked history.
+Focused evidence was `28 passed`; the combined R3-F1 plus Registry/Store gate
+was `100 passed`. At that point this record did not close R3-F1 or alter
+ADR-029's locked history.
+
+**R3-F1 approval and closure record (2026-10-15):** Independent review
+completed with 0 blocking, 0 material, and 0 minor findings. The implementation
+checkpoint is published at `30c4df058fd80923c37243252f4ee8fc6fa76dce`, and
+R3-F1 is now `CLOSED / PUSHED`. This current status does not rewrite the
+chronology above, amend ADR-029, activate a runtime consumer, or authorize
+history windows or a new R3-F2.
+
+**R3-I independent stabilization record (2026-10-15):** The fresh-context
+transversal audit passed `234` tests, reported 0 blocking, 0 material, and 0
+minor findings, required no code change, and preserved eight historical
+informational findings. R3-I is `INDEPENDENTLY APPROVED / DOCUMENTATION
+RECONCILED`, not `CLOSED / PUSHED`. R3-G remains separately gated and
+R3-H remains deferred.

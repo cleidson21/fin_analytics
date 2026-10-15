@@ -1,5 +1,5 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R3-F1 IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`
+**Status:** `ACTIVE QUEUE — 10.R3-I INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`
 **Date:** 2026-10-15
 
 ---
@@ -9,7 +9,7 @@
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
-| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 AWAITING REVIEW` | R2 taxonomy and context boundary; ADR-029 |
+| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
@@ -115,10 +115,12 @@ contract requires explicit economic-date and UTC knowledge-time cuts, point
 lookup only, deterministic bitemporal `reference_replay`, a separate current
 `operational_state_snapshot`, conservative policy-derived freshness, explicit
 absence, exact Decimal, provenance, and preservation of the original economic
-period. R3-F1 is `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`: its
+period. R3-F1 is `CLOSED / PUSHED`: its
 internal read-only service delegates only to the certified Store reads, has no
 runtime consumer, and reports `28 passed` focused plus `100 passed` with the
-minimal Registry/Store regression selection.
+minimal Registry/Store regression selection. Its published checkpoint is
+`30c4df058fd80923c37243252f4ee8fc6fa76dce`, and independent review reported
+0 blocking, 0 material, and 0 minor findings.
 
 ### 10.R3 locked microphase sequence
 
@@ -137,10 +139,10 @@ minimal Registry/Store regression selection.
 | R3-E3 | Governed Ingestion | `CLOSED / PUSHED` | checkpoint `686d64b49731a44a56e0d7fd8b44752ee1b663d8`; seven findings preserved |
 | R3-E4 | Manual Refresh | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT` | Gemini 3.8 Flash High: 0 blocking/material/minor; `INF-R3E4-01` open and seven prior informational findings preserved |
 | R3-F.0 | Purpose Contract Definition | `CONTRACT APPROVED / DOCUMENTED` | user approval of D1-D6 and three mandatory refinements on 2026-10-14 |
-| R3-F1 | Point-in-time External Reference Read Boundary | `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW` | 28 focused passed; 100 combined Registry/Store passed; no runtime consumer |
+| R3-F1 | Point-in-time External Reference Read Boundary | `CLOSED / PUSHED` | checkpoint `30c4df058fd80923c37243252f4ee8fc6fa76dce`; independent review 0 blocking/material/minor; no runtime consumer |
 | R3-G | Existing market/yfinance boundary remediation under ADR-006 | `SEPARATELY GATED / NOT STARTED` | focused impact approval + R3 foundations; required before yfinance admission |
 | R3-H | Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` | separate activation decision |
-| R3-I | Independent stabilization | `PLANNED / NOT STARTED` | activated BCB-only tasks C–F; plus G/H only if activated |
+| R3-I | Independent stabilization | `INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED` | 234 transversal tests passed; no new code finding; eight historical informational findings preserved |
 
 The reordering from the R3-A draft places persistence/freshness before live
 provider ingestion so knowledge-time, revision, deduplication, and
@@ -149,6 +151,10 @@ order is locked by ADR-029. Mandatory BCB-only closure scope is R3-C/D/E/F/I.
 R3-G requires separate legacy-impact approval and is
 mandatory before yfinance admission, not before a BCB-only closure. R3-H stays
 deferred and cannot be reported as implemented.
+
+R3-I technically approved the activated BCB-only scope, and its documentation
+is reconciled; R3-I is not yet `CLOSED / PUSHED`. R3-G was not
+activated, R3-H remains deferred, and the current roadmap defines no R3-F2.
 
 ## Closed and preserved baseline
 

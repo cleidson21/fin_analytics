@@ -9,8 +9,8 @@ CLOSED`; R3-D.1 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED /
 VERSIONED`; R3-D `CLOSED / PUSHED`; R3-E.0 `CONTRACT APPROVED / INDEPENDENTLY
 VERIFIED / LOCKED / VERSIONED / PUSHED`; R3-E1/E2/E3 `CLOSED / PUSHED`;
 R3-E4 `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION
-CHECKPOINT`; R3-F.0 `CONTRACT APPROVED / DOCUMENTED`; R3-F1 `IMPLEMENTED /
-TESTED / AWAITING INDEPENDENT REVIEW`
+CHECKPOINT`; R3-F.0 `CONTRACT APPROVED / DOCUMENTED`; R3-F1 `CLOSED /
+PUSHED`; R3-I `INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`
 
 This plan decomposes the locked External Context contract into independently
 reviewable increments. The contract, registry, and ADR-029 were explicitly
@@ -26,7 +26,10 @@ Ingestion & Acquisition Finalization V1 remediation on 2026-10-12. The
 R3-E sequence through R3-E4 is checkpointed. On 2026-10-14, the user approved
 R3-F.0 decisions D1-D6 and the three mandatory temporal/status refinements
 documented below. R3-F1 was implemented and focused-tested on 2026-10-15; it
-remains open pending independent review.
+was independently approved with 0 blocking, 0 material, and 0 minor findings
+and published at `30c4df058fd80923c37243252f4ee8fc6fa76dce`. R3-I then passed
+234 transversal tests with no new code finding and eight historical
+informational findings preserved; its documentation is reconciled.
 
 ## 1. Dependency order
 
@@ -465,7 +468,7 @@ Unauthorized purpose/series/consumer access returns typed
 
 ### R3-F1 — Point-in-time External Reference Read Boundary
 
-`IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`. R3-F1 implements only an
+`CLOSED / PUSHED`. R3-F1 implements only an
 internal, read-only `ExternalReferenceContextService` over certified Registry
 and Store boundaries, with immutable request/result contracts, the closed enum
 and matrix above, exact `Decimal`, complete provenance, explicit absence, and
@@ -637,6 +640,14 @@ GPT-5.6 Sol High; high reasoning, only after activation.
 
 ## 10. R3-I — Independent stabilization
 
+### Status
+
+`INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`. The independent
+fresh-context audit passed `234` transversal tests, reported 0 blocking, 0
+material, and 0 minor findings, required no code change, and preserved eight
+historical informational findings. This status does not declare R3-I
+`CLOSED / PUSHED` before its documentation checkpoint.
+
 ### Objective
 
 Challenge the complete approved R3 implementation from a fresh context.
@@ -747,9 +758,17 @@ preservation of the selected observation's original economic period. R3-F.0 is
 
 `10.R3-F1 — Point-in-time External Reference Read Boundary`
 
-`IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`. The implementation adds
+`CLOSED / PUSHED` at checkpoint
+`30c4df058fd80923c37243252f4ee8fc6fa76dce`. The implementation adds
 only the closed purpose module, read-only service/models, and focused unit tests.
 The R3-F1 suite reports `28 passed`; the combined R3-F1 plus Registry/Store
 regression gate reports `100 passed`. No runtime consumer, write, refresh,
 scheduler, endpoint, frontend, migration, engine, or wealth-source change was
-introduced. Do not declare R3-F1 closed before independent review.
+introduced. Independent review reported 0 blocking, 0 material, and 0 minor
+findings.
+
+R3-I is `INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`: `234`
+transversal tests passed, no new code finding required remediation, and eight
+historical informational findings remain preserved. The next action is only
+the controlled R3-I documentation checkpoint. R3-G remains separately gated,
+R3-H remains deferred, and no R3-F2 exists in the current plan.

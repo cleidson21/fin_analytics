@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-15 — R3-F1 implemented/tested; independent review pending
+**Updated:** 2026-10-15 — R3-I independently approved; documentation reconciled
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -44,12 +44,12 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-E4 manual refresh | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT` |
 | Structural FK Remediation (`position_snapshots`) | `IMPLEMENTED / FINDINGS REMEDIATED / TESTED / AWAITING INDEPENDENT DELTA REVIEW / NO DEPLOYMENT` |
 | 10.R3-F.0 External Reference Context purpose contract | `CONTRACT APPROVED / DOCUMENTED` |
-| 10.R3-F1 Point-in-time External Reference Read Boundary | `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW` |
+| 10.R3-F1 Point-in-time External Reference Read Boundary | `CLOSED / PUSHED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
-| 10.R3-I independent stabilization | `PLANNED / NOT STARTED` |
-| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F.0 APPROVED / R3-F1 AWAITING REVIEW` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 AWAITING REVIEW` |
+| 10.R3-I independent stabilization | `INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED` |
+| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F.0 APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -316,8 +316,9 @@ only `MARKET_INTEREST_RATE_REFERENCE`, `MARKET_INFLATION_REFERENCE`, and
 `MARKET_FX_REFERENCE`. The additional immutable service allowlist maps them,
 respectively, to the three SELIC/CDI series, IPCA monthly, and USD sell from
 Registry V1, for the future internal Market context composer only; no runtime
-consumer is active. R3-F1 is now `IMPLEMENTED / TESTED / AWAITING INDEPENDENT
-REVIEW`.
+consumer is active. R3-F1 is `CLOSED / PUSHED` at checkpoint
+`30c4df058fd80923c37243252f4ee8fc6fa76dce`; its independent audit reported
+0 blocking, 0 material, and 0 minor findings.
 
 The approved R3-F1 boundary is a read-only point lookup with explicit economic
 date and UTC knowledge-time cuts. It separates deterministic bitemporal
@@ -336,6 +337,12 @@ explicit absence, keeps operational state separate with no invented
 and selected-head evidence; otherwise freshness is `UNKNOWN`. R3-F1 focused
 tests report `28 passed`, and its combined Registry/Store regression gate
 reports `100 passed`.
+
+R3-I Independent Stabilization is `INDEPENDENTLY APPROVED / DOCUMENTATION
+RECONCILED`. Its fresh-context transversal audit passed `234` tests,
+found no new code finding, and preserved eight historical informational
+findings. R3-G remains separately gated, R3-H remains deferred, and no R3-F2
+exists in the current roadmap.
 
 ## Theme and design current state
 
