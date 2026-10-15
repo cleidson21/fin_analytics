@@ -1,5 +1,51 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [MICROPHASE-FK-REMEDIATION] — 2026-10-13 — Structural Foreign Key Remediation for Position Snapshots
+
+- Implemented a conditional remediation for the SQLite `foreign key mismatch`
+  on `position_snapshots` confirmed by the backend traceback. The user later
+  confirmed that MyProfit import resumed after a targeted operational hotfix
+  removed only the invalid physical FK.
+- Created canonical Alembic migration `b7e2d1a4c9f3` (successor of `4f9c2d7e1a6b`)
+  using `op.batch_alter_table(..., copy_from=corrected_table, recreate="always")`
+  to drop the invalid physical constraint `fk_position_snapshots_account_id` referencing
+  non-existent `accounts(id)`. The repair is a no-op on the canonical schema and
+  fails closed on unknown columns, foreign keys, inbound foreign keys,
+  semantically divergent indexes, triggers, or views. It preserves
+  the valid foreign key to `assets(id)`, unique constraint
+  `uq_position_snapshot_account_asset_date`, all 4 secondary indexes, and exact
+  Decimal precisions.
+- Corrected historical provenance: canonical Alembic revision `a1b2c3d4e5f6`
+  never declared the invalid account FK; legacy SQL
+  `database/migrations/005_open_finance.sql` did, but the exact drift path remains
+  unproven.
+- Added 12 regression test functions in
+  `tests/unit/test_position_snapshots_fk_remediation.py`, expanding to 22 pytest
+  cases using isolated disposable SQLite databases. Verified pre-remediation error reproduction,
+  100% preservation of 223 synthetic snapshots via SHA256 digest, exact PRAGMA
+  structural checks, valid asset FK enforcement, logical `account_id` semantics,
+  canonical-schema no-op, fail-closed unknown-shape/orphan handling, explicitly
+  blocked downgrade, inbound-FK rejection, semantic index rejection, and
+  `ConfirmMyProfitAtivosSyncUseCase` with 30 synthetic assets under
+  verified active `foreign_keys=ON`. This is a use-case test, not an HTTP test.
+- Earlier review findings were remediated: the `aiosqlite` listener no longer incorrectly
+  filters out the adapted DBAPI connection; the deployment plan now acknowledges
+  SQLite non-transactional DDL; incident evidence is no longer overstated; and
+  migration provenance is accurately bounded. Final continuity review then
+  identified missing inbound-FK detection and name-only secondary-index checks;
+  both are now implemented with pre-DDL adversarial coverage.
+- Fresh targeted validation: new adversarial selection `12 passed`; remediation
+  `22 passed`; remediation plus pertinent External Context migration `27 passed`.
+  Historical complete units remain `1175 passed, 2 failed`; they were not rerun.
+- A disposable empty-database probe exposed pre-existing Alembic bootstrap debt:
+  the two historical roots both create `categories`, so `upgrade head` from empty
+  fails before this revision. This remediation does not claim or alter that
+  repository-wide bootstrap path.
+- This reconciliation did not access or modify the operational database. The
+  separately applied operational hotfix was user-validated, while operational
+  Alembic remains at `2d6b4f8a9c1e`; repository deployment remains blocked
+  pending independent delta review and intermediate revision alignment.
+
 ## [PHASE-10.R3-E4] — 2026-10-13 — Governed Manual Refresh
 
 - Added an explicit internal-only `ManualExternalRefreshService`; no API route,

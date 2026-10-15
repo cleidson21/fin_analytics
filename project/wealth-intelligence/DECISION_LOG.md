@@ -104,7 +104,7 @@
 
 **Migration 013 (SQL script):** Defines `position_snapshots` with `snapshot_hash` UNIQUE — designed for B3 Área do Investidor import (never used).
 
-**Alembic migration `a1b2c3d4e5f6` (wealth_phase1):** Defines the CORRECT `position_snapshots` with schema: id + account_id + asset_id + reference_date + quantity + avg_price + source_type + run_id + is_manual + current_value. This is what the ORM and all production code use.
+**Alembic migration `a1b2c3d4e5f6` (wealth_phase1):** Defines the canonical base `position_snapshots` schema with 11 columns and only the valid `asset_id -> assets.id` foreign key. Revision `08aabd3f3f30` later adds `current_value`, producing the 12-column schema used by the ORM and production code.
 
 **Live DB inspection (2026-09-09):**
 - Real table schema: id, account_id, asset_id, reference_date, quantity, avg_price, source_type, run_id, is_manual, created_at, updated_at, current_value
@@ -124,7 +124,7 @@
 
 **BLOCKER is cleared. No schema change required. Ready for Lote 10.1.**
 
-**Remaining risk:** `alembic check` raises `NoReferencedColumnError` for FK `accounts.id` because the Pierre `accounts` table uses composite PK (provider, external_id), not a column named `id`. The FK in `PositionSnapshotModel` is already declared as logical-only (see comment in the model: "validated programmatically; no FK constraint"). The FK declared in the Alembic migration DDL is the issue — but this is a pre-existing condition that did NOT prevent the system from running. Documented in ADR-014.
+**Remaining risk (reconciled 2026-10-13):** The ORM and canonical Alembic chain both keep `account_id` logical-only. A later operational inspection reported a physical FK to nonexistent `accounts.id`; legacy `database/migrations/005_open_finance.sql` declares such a relationship, but the exact drift path is unproven. Conditional corrective revision `b7e2d1a4c9f3` is implemented and isolated-tested; operational deployment remains separately gated. Documented in ADR-014.
 
 ---
 
@@ -156,17 +156,19 @@ behavior.
 ---
 
 ## ADR-014: accounts Table PK — Dual System Incompatibility
-**Status:** DOCUMENTED — no change required for Lote 10.1
+**Status:** DOCUMENTED / CORRECTIVE REVISION IMPLEMENTED / DEPLOYMENT BLOCKED
 **Discovered:** Lote 10.0-A (2026-09-09)
-**Context:** The Pierre `accounts` table uses a composite PK `(provider, external_id)` — there is no `id` column. The `PositionSnapshotModel` ORM declares `account_id` as a FK to `accounts.id`, but with an explicit comment: "validated programmatically; no FK constraint due to dual-schema accounts table in live DB — logical reference only." The Alembic migration `a1b2c3d4e5f6` also declares this FK in DDL (`fk_position_snapshots_account_id`), but SQLite does not enforce FK constraints by default. The `alembic check` command fails with `NoReferencedColumnError` because it tries to resolve this FK during autogenerate comparison.
+**Context:** The Pierre `accounts` table uses a composite PK `(provider, external_id)` — there is no `id` column. `PositionSnapshotModel.account_id` is a mandatory indexed string with no physical `ForeignKey`; it is a logical reference. Canonical Alembic migration `a1b2c3d4e5f6` likewise declares only the valid `asset_id -> assets.id` FK. A reported operational schema nevertheless contained `account_id -> accounts.id`; legacy SQL `database/migrations/005_open_finance.sql` declares that relationship, but its exact introduction into the reported database has not been established.
 
 **Why this exists:** position_snapshots.account_id stores a string identifier (e.g., `'Myprofit'`) that is NOT an actual FK to the Pierre accounts table. It is a logical grouping identifier for investment data imported from MyProfit, which is a separate system from Pierre Finance.
 
-**Impact:** No runtime impact. `alembic check` fails, but `alembic upgrade head` and `alembic current` work correctly. The application starts and all Investments endpoints function correctly.
+**Impact:** On a database carrying that physical drift, enabling `PRAGMA foreign_keys=ON` makes snapshot inserts deterministically fail with SQLite `foreign key mismatch`. This mechanism was reproduced in isolated SQLite and is compatible with the observed MyProfit HTTP 500, but it is not proven as that incident's root cause because the original backend traceback is unavailable.
 
-**Decision:** No change in Lote 10.0-A. This is a pre-existing architectural constraint from the dual-system design. The correct long-term resolution (Lote 10.1 or later) is to either: (a) create a separate `investment_accounts` table not linked to Pierre `accounts`, or (b) formalize the MyProfit account identifier in the data model. Documented for awareness.
+**Decision:** Preserve `account_id` as the current logical reference. Corrective revision `b7e2d1a4c9f3` conditionally removes the invalid physical FK only when the exact supported drift is present, performs no table rewrite on canonical schemas, fails closed on unknown physical shapes, and blocks unsafe downgrade. A future model redesign may still introduce a dedicated investment-account identity, but it is outside this remediation.
 
-**Gate impact:** Does NOT block Lote 10.1. No migration needed.
+**Gate impact:** Repository implementation is available, but operational deployment is blocked pending independent review, verified backup/restore, actual revision/schema inspection, intermediate-migration review, maintenance window, and explicit authorization.
+
+**Operational follow-up (2026-10-14):** A targeted SQLite hotfix removed only the invalid physical account FK; the user confirmed restored MyProfit import. The operational Alembic revision remains `2d6b4f8a9c1e`. Repository revision `b7e2d1a4c9f3` now additionally rejects inbound FKs and semantically divergent secondary indexes before batch DDL, with disposable adversarial coverage. This follow-up does not alter the ADR decision, authorize deployment, or change the R3-E4 `IMPLEMENTATION CHECKPOINT`; R3-F remains `NOT STARTED`.
 
 ---
 

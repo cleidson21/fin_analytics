@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-13 — Phase 10.R3-E4 independently approved; implementation checkpoint authorized
+**Updated:** 2026-10-14 — FK remediation delta implemented; independent review pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -42,6 +42,7 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-E2 BCB/SGS provider | `CLOSED / PUSHED` |
 | 10.R3-E3 governed ingestion | `CLOSED / PUSHED` |
 | 10.R3-E4 manual refresh | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT` |
+| Structural FK Remediation (`position_snapshots`) | `IMPLEMENTED / FINDINGS REMEDIATED / TESTED / AWAITING INDEPENDENT DELTA REVIEW / NO DEPLOYMENT` |
 | 10.R3-F External Reference Context | `PLANNED / NOT STARTED` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
@@ -425,9 +426,24 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   sorting failures.
 - Repository-wide mobile, lint, and Recharts SSR warning debt remains.
 - `INF-R3D-01`: global SQLite foreign-key enablement passed tested
-  environments, but active-database deployment remains blocked pending legacy
-  referential-integrity assessment, backup/rollback, startup validation, and
-  explicit authorization.
+  environments. A conditional structural remediation for a reported invalid
+  `position_snapshots.account_id -> accounts.id` physical constraint was
+  implemented in migration `b7e2d1a4c9f3`. Its preflight now rejects inbound
+  FKs and semantically divergent secondary indexes before batch DDL. Targeted
+  evidence is `22 passed` for remediation and `27 passed` with pertinent
+  External Context migration coverage. Historical complete units remain `1175
+  passed, 2 failed` and were not rerun in this targeted task.
+  Canonical Alembic history never declared that FK; the exact origin of the
+  reported physical drift remains unproven. The backend traceback confirmed the
+  invalid FK failure, and the user confirmed MyProfit import after the separate
+  operational hotfix.
+  Operational Alembic remains at `2d6b4f8a9c1e`; this reconciliation did not
+  access or modify the operational database.
+  Active-database deployment remains blocked pending legacy referential-integrity
+  assessment, backup/rollback, intermediate migration alignment, and explicit authorization.
+- Fresh `alembic upgrade head` from an empty disposable database remains blocked
+  by pre-existing dual-root bootstrap debt: both historical roots attempt to
+  create `categories`. The FK remediation neither reaches nor changes that path.
 - `INF-R3D-02`: declared Pydantic pins are not clean-install reproducible and
   existing tests require undeclared `pytest-asyncio`; dependency remediation
   remains a separate unauthorized task.

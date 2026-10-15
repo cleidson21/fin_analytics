@@ -711,9 +711,15 @@ existing `INF-R3E1-02` V1 limitation.
 Current local evidence is R3-E4 `30 passed`; combined
 R3-E4/R3-E3/store/policy `120 passed`; R3-E2 `70 passed`; R3-C `127 passed`;
 R3-D/R3-E1 `61 passed`; bootstrap `8 passed`; FIRE/Goals/Planning `629 passed`;
-and selected R2 Smart Context `153 passed`. Complete units report `1165 passed,
-2 failed`, both the unchanged Investments/MagicMock timeline baseline. Tests
-ran on Python 3.14.0, SQLite 3.50.4, and SQLAlchemy 2.0.51. OpenAPI remains 55
+and selected R2 Smart Context `153 passed`. Position snapshots structural FK
+remediation now has 12 test functions and `22 passed` cases in isolated SQLite.
+The two added adversarial tests expand to `12 passed`: one composite inbound-FK
+case and eleven index-definition cases covering names, columns, uniqueness,
+order, collation, partial predicates, expressions, and unexpected composition.
+The remediation plus pertinent External Context migration gate reports `27
+passed`. Historical complete units remain `1175 passed, 2 failed`, both the
+unchanged Investments/MagicMock timeline baseline; they were not rerun here.
+Tests ran on Python 3.14.0, SQLite 3.50.4, and SQLAlchemy 2.0.51. OpenAPI remains 55
 paths and 59 operations with no External Context refresh route. No live BCB
 request or active financial database access occurred. Gemini 3.8 Flash High
 independently approved the adversarial R3-E4 review with 0 blocking, 0 material,
