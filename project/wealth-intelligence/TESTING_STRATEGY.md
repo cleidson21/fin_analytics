@@ -730,6 +730,25 @@ intent/interval validation, and denied-access coverage; R3-E4 introduces no
 endpoint or RBAC mechanism. The preserved findings are `INF-R3D-01/02`,
 `INF-R3E1-01/02/03`, and `INF-R3E2-01/02`.
 
+#### R3-F1 executable validation record
+
+R3-F1 focused tests cover the exact closed purpose enum and immutable matrix;
+all five authorized purpose/key pairs; typed pre-Store cross-purpose denial;
+invalid purpose/key and non-UTC requests; rejection of unapproved history and
+provider parameters; immutable request/result envelopes; explicit absence and
+valid Decimal zero; unchanged daily/monthly economic periods; preservation of
+Store-selected `A -> B -> A`, knowledge cuts, and equal-time sequence; current
+sync state separated from replay with no invented `state_observed_at`; registry
+mismatch LKG preservation; conservative `CURRENT` evidence; insufficient
+freshness; and failed-acquisition LKG behavior.
+
+Current local evidence is R3-F1 `28 passed`. The combined R3-F1,
+External Observation Store, persistence-foundation, and executable-registry
+selection reports `100 passed`. Tests used immutable fakes plus disposable
+SQLite Store coverage; no active database, live BCB
+request, provider, refresh, migration command, endpoint, frontend, financial
+engine, commit, or push was exercised. Independent review remains pending.
+
 - R3-E owns mocked BCB/SGS transport: allowlisted series, inclusive date bounds,
   daily ten-year partitioning, monthly normalization, response limits,
   malformed payloads, unit conflicts, timeout/DNS/429/4xx/5xx, bounded retry,

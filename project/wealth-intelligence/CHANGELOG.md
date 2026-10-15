@@ -1,5 +1,47 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R3-F1] — 2026-10-15 — Point-in-time External Reference Read Boundary
+
+- Added the exact three-value `ExternalReferencePurpose` enum and immutable
+  purpose-to-Registry-key allowlist approved in R3-F.0.
+- Added immutable request/result envelopes and the internal read-only
+  `ExternalReferenceContextService`, delegating bitemporal selection and current
+  sync-state reads to the certified R3-D/E Store boundary.
+- Preserved exact Decimal, canonical text, the selected event and economic
+  period, knowledge sequence, and complete available provenance; missing data
+  remains explicit and cross-purpose access fails with `PURPOSE_NOT_ALLOWED`
+  before Store access.
+- Kept deterministic `reference_replay` separate from the non-historical
+  `operational_state_snapshot`; no `state_observed_at` is invented. Registry
+  mismatch preserves eligible LKG and forces freshness/acquisition health to
+  `UNKNOWN`.
+- Reused certified state evaluation. `CURRENT` requires complete positive
+  coverage plus selected-head evidence; without it freshness is `UNKNOWN`, and
+  no new `STALE` rule is invented.
+- Validation: `28 passed` focused and `100 passed` for R3-F1 plus minimal
+  Registry/Store regressions. Status is `IMPLEMENTED / TESTED / AWAITING
+  INDEPENDENT REVIEW`; no runtime consumer, write, provider call, refresh,
+  endpoint, frontend, migration, engine, operational database access, commit,
+  or push was introduced or executed.
+
+## [PHASE-10.R3-F.0] — 2026-10-14 — Purpose Contract Formalization
+
+- Formalized the user-approved D1-D6 contract for the future internal
+  `ExternalReferenceContextService`: a closed three-purpose enum and immutable
+  purpose-to-series allowlist for the future Market context composer only.
+- Approved point-in-time selection with explicit economic-date and UTC
+  knowledge-time cuts, deterministic `knowledge_sequence` replay, exact
+  Decimal, full provenance, typed `PURPOSE_NOT_ALLOWED`, and explicit absence.
+- Separated deterministic bitemporal `reference_replay` from the current,
+  non-historical `operational_state_snapshot`; mutable sync state cannot claim
+  historical health, coverage, or freshness.
+- Required certified conservative freshness policy (`UNKNOWN` without enough
+  evidence) and preservation of the eligible observation's original economic
+  period across weekends, holidays, and months without publication.
+- Recorded R3-F.0 as `CONTRACT APPROVED / DOCUMENTED` and R3-F1 as
+  `NOT IMPLEMENTED`. Registry V1, locked contracts, R3-E4's checkpoint,
+  financial engines, and the canonical wealth source remain unchanged.
+
 ## [MICROPHASE-FK-REMEDIATION] — 2026-10-13 — Structural Foreign Key Remediation for Position Snapshots
 
 - Implemented a conditional remediation for the SQLite `foreign key mismatch`

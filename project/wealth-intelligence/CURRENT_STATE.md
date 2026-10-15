@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-14 — FK remediation delta implemented; independent review pending
+**Updated:** 2026-10-15 — R3-F1 implemented/tested; independent review pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -43,12 +43,13 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-E3 governed ingestion | `CLOSED / PUSHED` |
 | 10.R3-E4 manual refresh | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT` |
 | Structural FK Remediation (`position_snapshots`) | `IMPLEMENTED / FINDINGS REMEDIATED / TESTED / AWAITING INDEPENDENT DELTA REVIEW / NO DEPLOYMENT` |
-| 10.R3-F External Reference Context | `PLANNED / NOT STARTED` |
+| 10.R3-F.0 External Reference Context purpose contract | `CONTRACT APPROVED / DOCUMENTED` |
+| 10.R3-F1 Point-in-time External Reference Read Boundary | `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW` |
 | 10.R3-G existing market boundary remediation | `SEPARATELY GATED / NOT STARTED` |
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
 | 10.R3-I independent stabilization | `PLANNED / NOT STARTED` |
-| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED` |
+| 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F.0 APPROVED / R3-F1 AWAITING REVIEW` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 AWAITING REVIEW` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -307,8 +308,34 @@ SQLite 3.50.4, and SQLAlchemy 2.0.51. R3-E3 is closed and pushed at
 trigger and is implemented/tested and independently approved. Concurrent
 eligible triggers may duplicate external calls because V1 has no persistent
 attempt journal or distributed single-flight; store serialization preserves
-history and operational state, and no exactly-once guarantee is claimed. R3-F
-remains not started. No live BCB observation has been acquired.
+history and operational state, and no exactly-once guarantee is claimed. No
+live BCB observation has been acquired.
+
+R3-F.0 is `CONTRACT APPROVED / DOCUMENTED`. Its closed purpose enum contains
+only `MARKET_INTEREST_RATE_REFERENCE`, `MARKET_INFLATION_REFERENCE`, and
+`MARKET_FX_REFERENCE`. The additional immutable service allowlist maps them,
+respectively, to the three SELIC/CDI series, IPCA monthly, and USD sell from
+Registry V1, for the future internal Market context composer only; no runtime
+consumer is active. R3-F1 is now `IMPLEMENTED / TESTED / AWAITING INDEPENDENT
+REVIEW`.
+
+The approved R3-F1 boundary is a read-only point lookup with explicit economic
+date and UTC knowledge-time cuts. It separates deterministic bitemporal
+`reference_replay` from current `operational_state_snapshot`, which makes no
+historical-state claim. Economic freshness is policy-derived and conservative:
+insufficient evidence is `UNKNOWN`. The selected observation retains its
+original economic period across weekends, holidays, or unpublished months.
+No history window, interpolation, carry-forward, implicit financial default,
+write, endpoint, frontend, scheduler, migration, engine calculation, or change
+to the canonical wealth source is implemented or authorized. The implementation
+adds only a closed immutable purpose matrix, immutable request/result envelopes,
+and a read-only service that delegates to `get_latest_series_as_of(...)` and
+`get_sync_state(...)`. It preserves the certified event unchanged, reports
+explicit absence, keeps operational state separate with no invented
+`state_observed_at`, and derives `CURRENT` only from complete positive coverage
+and selected-head evidence; otherwise freshness is `UNKNOWN`. R3-F1 focused
+tests report `28 passed`, and its combined Registry/Store regression gate
+reports `100 passed`.
 
 ## Theme and design current state
 

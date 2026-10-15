@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R3-E4 INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT`
-**Date:** 2026-10-13
+**Status:** `ACTIVE QUEUE — 10.R3-F1 IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`
+**Date:** 2026-10-15
 
 ---
 
@@ -9,7 +9,7 @@
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
-| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
+| 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 AWAITING REVIEW` | R2 taxonomy and context boundary; ADR-029 |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
@@ -88,8 +88,8 @@ orchestrator that binds explicit acquisition intent to the existing R3-E2
 provider and R3-E1 deferred-ingestion/finalization boundary. R3-E4 now adds the
 internal-only explicit trigger, pure eligibility policy, short-lived read-only
 sync-state boundary, and typed manual result while delegating all acquisition
-and finalization to R3-E3. It is `IMPLEMENTED / TESTED / AWAITING INDEPENDENT
-CODE REVIEW`. No live BCB data has been acquired.
+and finalization to R3-E3. It is `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED
+/ IMPLEMENTATION CHECKPOINT`. No live BCB data has been acquired.
 
 The R3-E.0 approval checkpoint is preserved. R3-E1 implements only its approved
 store compatibility increment and its independent adversarial review is
@@ -107,6 +107,19 @@ anonymous or cooldown-bypassing access. R3-E4 itself remains internal-only and
 introduces no endpoint or RBAC change; it is ready for its implementation
 checkpoint.
 
+R3-F.0 decisions D1-D6 were explicitly approved on 2026-10-14 and are now
+documented. They close the purpose enum to Market interest-rate, inflation, and
+FX reference reads; restrict each purpose to its approved Registry V1 series;
+and reserve consumption for a future internal Market context composer. The
+contract requires explicit economic-date and UTC knowledge-time cuts, point
+lookup only, deterministic bitemporal `reference_replay`, a separate current
+`operational_state_snapshot`, conservative policy-derived freshness, explicit
+absence, exact Decimal, provenance, and preservation of the original economic
+period. R3-F1 is `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`: its
+internal read-only service delegates only to the certified Store reads, has no
+runtime consumer, and reports `28 passed` focused plus `100 passed` with the
+minimal Registry/Store regression selection.
+
 ### 10.R3 locked microphase sequence
 
 | Task | Outcome | Status | Dependency |
@@ -123,7 +136,8 @@ checkpoint.
 | R3-E2 | BCB Provider | `CLOSED / PUSHED` | Gemini 3.8 Flash High: 0 blocking/material/minor; `INF-R3E2-01` and `INF-R3E2-02` preserved; baseline `2ae5114` |
 | R3-E3 | Governed Ingestion | `CLOSED / PUSHED` | checkpoint `686d64b49731a44a56e0d7fd8b44752ee1b663d8`; seven findings preserved |
 | R3-E4 | Manual Refresh | `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT` | Gemini 3.8 Flash High: 0 blocking/material/minor; `INF-R3E4-01` open and seven prior informational findings preserved |
-| R3-F | Purpose-limited External Reference Context | `PLANNED / NOT STARTED` | R3-D + R3-E |
+| R3-F.0 | Purpose Contract Definition | `CONTRACT APPROVED / DOCUMENTED` | user approval of D1-D6 and three mandatory refinements on 2026-10-14 |
+| R3-F1 | Point-in-time External Reference Read Boundary | `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW` | 28 focused passed; 100 combined Registry/Store passed; no runtime consumer |
 | R3-G | Existing market/yfinance boundary remediation under ADR-006 | `SEPARATELY GATED / NOT STARTED` | focused impact approval + R3 foundations; required before yfinance admission |
 | R3-H | Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` | separate activation decision |
 | R3-I | Independent stabilization | `PLANNED / NOT STARTED` | activated BCB-only tasks C–F; plus G/H only if activated |

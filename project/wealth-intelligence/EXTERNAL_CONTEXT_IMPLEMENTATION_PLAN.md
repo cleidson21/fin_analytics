@@ -7,7 +7,10 @@
 **Implementation:** R3-C `IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED /
 CLOSED`; R3-D.1 `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED /
 VERSIONED`; R3-D `CLOSED / PUSHED`; R3-E.0 `CONTRACT APPROVED / INDEPENDENTLY
-VERIFIED / LOCKED / CHECKPOINT AUTHORIZED`; R3-E `READY / NOT STARTED`
+VERIFIED / LOCKED / VERSIONED / PUSHED`; R3-E1/E2/E3 `CLOSED / PUSHED`;
+R3-E4 `IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION
+CHECKPOINT`; R3-F.0 `CONTRACT APPROVED / DOCUMENTED`; R3-F1 `IMPLEMENTED /
+TESTED / AWAITING INDEPENDENT REVIEW`
 
 This plan decomposes the locked External Context contract into independently
 reviewable increments. The contract, registry, and ADR-029 were explicitly
@@ -20,9 +23,10 @@ blocking, 0 material, 0 minor, and 2 informational findings. R3-D is closed and
 pushed at baseline `d62012413f7ec956b070c0fe21420be1f29403ff`. The user
 explicitly approved the R3-E.0 decisions on 2026-10-11 and the Deferred
 Ingestion & Acquisition Finalization V1 remediation on 2026-10-12. The
-documentation-only amendment now awaits targeted independent remediation
-re-review. Every implementation microphase still requires its own task and
-gate.
+R3-E sequence through R3-E4 is checkpointed. On 2026-10-14, the user approved
+R3-F.0 decisions D1-D6 and the three mandatory temporal/status refinements
+documented below. R3-F1 was implemented and focused-tested on 2026-10-15; it
+remains open pending independent review.
 
 ## 1. Dependency order
 
@@ -437,14 +441,74 @@ GPT-5.6 Sol High; high reasoning.
 
 ## 7. R3-F — External reference context
 
-### Objective
+### R3-F.0 approved purpose contract
 
-Implement the internal purpose-limited `ExternalReferenceContextService` over
-R3-C/D/E boundaries, with explicit `as_of`, provenance, availability,
-freshness, and absence.
-Historical reads use the logical `known_from` cut and expose conservative
-`REGISTRY_VERSION_MISMATCH` results without treating mismatch as automatic
-unavailability or discarding last-known-good.
+`CONTRACT APPROVED / DOCUMENTED` on 2026-10-14. R3-F.0 authorizes no runtime
+consumer and implements no service. The closed purpose enum for R3-F1 is:
+
+- `MARKET_INTEREST_RATE_REFERENCE`;
+- `MARKET_INFLATION_REFERENCE`;
+- `MARKET_FX_REFERENCE`.
+
+The immutable purpose-to-series matrix is an additional service restriction:
+
+| Purpose | Only eligible series | Certified source | Permitted consumer in this phase |
+|---|---|---|---|
+| `MARKET_INTEREST_RATE_REFERENCE` | `BCB_SGS_SELIC_TARGET`, `BCB_SGS_SELIC_EFFECTIVE`, `BCB_SGS_CDI` | certified BCB/SGS Registry and Store | future internal Market context composer |
+| `MARKET_INFLATION_REFERENCE` | `BCB_SGS_IPCA_MONTHLY` | certified BCB/SGS Registry and Store | future internal Market context composer |
+| `MARKET_FX_REFERENCE` | `BCB_SGS_USD_SELL` | certified BCB/SGS Registry and Store | future internal Market context composer |
+
+This matrix narrows access without changing Registry V1 `SeriesUse`, units,
+definitions, eligibility, identifiers, versions, or any locked contract.
+Unauthorized purpose/series/consumer access returns typed
+`PURPOSE_NOT_ALLOWED`; it is never silently broadened.
+
+### R3-F1 — Point-in-time External Reference Read Boundary
+
+`IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`. R3-F1 implements only an
+internal, read-only `ExternalReferenceContextService` over certified Registry
+and Store boundaries, with immutable request/result contracts, the closed enum
+and matrix above, exact `Decimal`, complete provenance, explicit absence, and
+orthogonal status dimensions. It has no runtime consumer. Consumers may not use
+direct SQL or providers.
+
+Every request must provide both `consumer_as_of_date` and an explicit UTC
+`consumer_as_of_timestamp`; there is no hidden current clock. Selection must
+satisfy:
+
+```text
+reference_period_end <= consumer_as_of_date
+known_from <= consumer_as_of_timestamp
+```
+
+Within those cuts, deterministic selection preserves `knowledge_sequence`,
+including revision/reversion `A -> B -> A`. R3-F1 permits point-in-time lookup
+only. `history_window` and any other unapproved history request must be
+rejected, never ignored.
+
+The result separates two non-interchangeable views:
+
+- `reference_replay`: value, original economic period, selected knowledge
+  event, and provenance determined by the two temporal cuts;
+- `operational_state_snapshot`: current operational state observed when the
+  read occurs, with no claim that it represents historical health, coverage,
+  or freshness.
+
+Mutable sync state must not be used to reconstruct historical operational
+state. `state_observed_at` requires trustworthy temporal evidence; otherwise
+its absence is explicit. The last eligible observation keeps its original
+economic period: a Friday FX quote read on Sunday remains Friday's quote, and
+the last published IPCA month does not become the current month. No
+interpolation, economic carry-forward, annualization, projection, conversion,
+or automatic assumption is authorized.
+
+Economic freshness is derived only from a certified, conservative service
+policy. `CURRENT` requires sufficient positive evidence; `STALE` requires an
+objective criterion approved in advance; insufficient evidence yields
+`UNKNOWN`. HTTP success alone cannot establish `CURRENT`. Missing data returns
+`reference=None`, an explicit reason code, and the appropriate availability;
+exact Decimal zero remains a valid observation. Registry mismatch preserves
+eligible last-known-good and does not by itself imply `STALE` or `UNAVAILABLE`.
 
 ### Candidate files
 
@@ -459,8 +523,11 @@ unavailability or discarding last-known-good.
 - explicit date/timestamp `as_of` and no hidden current clock;
 - bitemporal replay/no look-ahead;
 - exact Decimal and full provenance preservation;
-- `CURRENT`, `STALE`, `UNKNOWN`, `AVAILABLE`, `PARTIAL`, `UNAVAILABLE`, and
-  independent acquisition-health states;
+- separation of replay from current operational-state snapshot;
+- conservative `CURRENT`, `STALE`, `UNKNOWN`, `AVAILABLE`, `PARTIAL`,
+  `UNAVAILABLE`, and independent acquisition-health states;
+- explicit absence, valid Decimal zero, and preserved original economic period;
+- rejection of `history_window` and typed `PURPOSE_NOT_ALLOWED`;
 - last-known-good and source failure behavior;
 - cross-purpose leakage prevention;
 - no SQL in composer, no internal HTTP, no user-financial writes;
@@ -469,8 +536,10 @@ unavailability or discarding last-known-good.
 
 ### Acceptance
 
-Internal reference boundary only. Availability of a reference does not make it
-an effective assumption or Smart Context default.
+Internal point-in-time reference boundary only. Availability of a reference
+does not make it an effective assumption or Smart Context default. No writes,
+refresh, scheduler, endpoint, frontend, migration, engine, or canonical wealth
+source change is in scope.
 
 ### Independent gate
 
@@ -665,19 +734,22 @@ implemented, validated, independently approved, closed, and pushed at baseline
 
 The user explicitly approved the R3-E.0 decisions on 2026-10-11 and the
 Deferred Ingestion & Acquisition Finalization V1 remediation on 2026-10-12.
-The controlled documentation-only remediation is implemented and awaits
-targeted independent re-review.
-Therefore:
+R3-E.0 is `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / VERSIONED /
+PUSHED`; R3-E1/E2/E3 are `CLOSED / PUSHED`; and R3-E4 is `IMPLEMENTED / TESTED
+/ INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT`. Those checkpoints remain
+preserved.
 
-`10.R3-E.0 — Deferred Ingestion & Acquisition Finalization V1 remediation`
+On 2026-10-14, the user approved R3-F.0 decisions D1-D6 with explicit
+separation between deterministic bitemporal `reference_replay` and current
+`operational_state_snapshot`, conservative certified `economic_freshness`, and
+preservation of the selected observation's original economic period. R3-F.0 is
+`CONTRACT APPROVED / DOCUMENTED`. The next separately gated task is:
 
-`CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED / CHECKPOINT AUTHORIZED`.
+`10.R3-F1 — Point-in-time External Reference Read Boundary`
 
-Gemini 3.8 Flash High approved the targeted remediation review with 0 blocking,
-0 material, 0 minor, and 2 informational findings. The resolved findings are
-`MAT-R3E0-01`, `MIN-R3E0-01`, `MIN-R3E0-02`, and `INF-R3E0-01` (the latter as a
-governed limitation). `INF-R3E0-02` (scalar discontinuous coverage) and
-`INF-R3E0-03` (no persistent acquisition journal) remain explicit V1 risks.
-R3-E is `READY / NOT STARTED`. Do not implement a
-provider, ingestion, refresh, reconciliation, scheduler, migration, endpoint,
-or deployment in this documentation checkpoint.
+`IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`. The implementation adds
+only the closed purpose module, read-only service/models, and focused unit tests.
+The R3-F1 suite reports `28 passed`; the combined R3-F1 plus Registry/Store
+regression gate reports `100 passed`. No runtime consumer, write, refresh,
+scheduler, endpoint, frontend, migration, engine, or wealth-source change was
+introduced. Do not declare R3-F1 closed before independent review.

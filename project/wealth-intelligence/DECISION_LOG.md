@@ -1159,3 +1159,81 @@ PUSHED`; R3-E.0 is `CONTRACT APPROVED / INDEPENDENTLY VERIFIED / LOCKED /
 CHECKPOINT AUTHORIZED`; R3-E is `READY / NOT STARTED`; and R3-F is `PLANNED /
 NOT STARTED`. R3-E implementation remains separately gated. ADR-029 remains
 `ACCEPTED / LOCKED` throughout.
+
+### ADR-029 — Addendum R3-F.0: Purpose-Limited Point-in-Time Reference Context
+
+**Status:** `APPROVED / DOCUMENTED`
+
+**Date:** 2026-10-14
+
+**Approval:** The user explicitly approved D1-D6 and the three refinements
+below. This addendum constrains the future R3-F1 read boundary; it does not
+modify the locked External Context contract, Registry V1, or prior ADR-029
+decisions, and it activates no runtime consumer.
+
+1. **D1 — closed purpose enum.** R3-F1 may expose only
+   `MARKET_INTEREST_RATE_REFERENCE`, `MARKET_INFLATION_REFERENCE`, and
+   `MARKET_FX_REFERENCE`.
+2. **D2 — immutable allowlist.** Interest-rate reference is restricted to
+   `BCB_SGS_SELIC_TARGET`, `BCB_SGS_SELIC_EFFECTIVE`, and `BCB_SGS_CDI`;
+   inflation reference to `BCB_SGS_IPCA_MONTHLY`; and FX reference to
+   `BCB_SGS_USD_SELL`. Only the future internal Market context composer is an
+   approved consumer at this stage. Access outside the purpose/consumer/series
+   matrix returns typed `PURPOSE_NOT_ALLOWED`.
+3. **D3 — Registry V1 preservation.** The matrix is an additional service
+   restriction. It changes no `SeriesUse`, unit, definition, eligibility,
+   identifier, fingerprint, or locked Registry version.
+4. **D4 — point lookup only.** Every request provides explicit
+   `consumer_as_of_date` and UTC `consumer_as_of_timestamp`. R3-F1 does not
+   authorize `history_window`; any unapproved history request is rejected and
+   never silently ignored.
+5. **D5 — replay/status separation.** `reference_replay` contains the value,
+   original economic period, selected knowledge event, and provenance chosen
+   deterministically by the two cuts. `operational_state_snapshot` is current
+   operational state observed at read time and does not represent the past.
+   Mutable sync state does not reconstruct historical health, coverage, or
+   freshness. `state_observed_at` is populated only from reliable temporal
+   evidence; otherwise its absence is explicit.
+6. **D6 — conservative state policy.** Certified service policy alone derives
+   `economic_freshness`: `CURRENT` requires sufficient positive evidence,
+   `STALE` requires a previously approved objective criterion, and missing
+   evidence yields `UNKNOWN`. HTTP success alone is insufficient. Missing data
+   returns `reference=None`, a reason code, and appropriate availability;
+   Decimal zero is valid data. Registry mismatch preserves eligible LKG and
+   does not automatically mean `STALE` or `UNAVAILABLE`.
+
+**Temporal invariants:** Deterministic selection requires
+`reference_period_end <= consumer_as_of_date` and
+`known_from <= consumer_as_of_timestamp`, with explicit UTC and no implicit
+clock. `knowledge_sequence` remains the tie-breaker, including `A -> B -> A`.
+
+**Approved refinements:** `reference_replay` is explicitly separate from the
+non-historical `operational_state_snapshot`; economic freshness is derived only
+from certified conservative policy and otherwise is `UNKNOWN`; and the last
+eligible observation retains its original economic period. A Friday FX quote
+does not become a Sunday quote, and the last published IPCA observation does
+not become the current month. No interpolation, economic carry-forward,
+annualization, projection, conversion, or automatic assumption is authorized.
+
+**Next gate:** `R3-F1 — Point-in-time External Reference Read Boundary` is
+`NOT IMPLEMENTED`. Its bounded scope is a read-only service over certified
+Registry/Store boundaries, immutable request/result, closed purpose matrix,
+explicit two-cut selection, Decimal, provenance, explicit absence, orthogonal
+statuses, replay/current-state separation, and focused tests. Direct consumer
+SQL/provider access, writes, refresh, scheduler, endpoint, frontend, migration,
+financial-engine calculation, and canonical wealth-source changes remain
+prohibited. R3-E4's published implementation checkpoint remains preserved.
+
+**R3-F1 implementation record (2026-10-15):** The approved point-in-time read
+boundary is `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`. The additive
+implementation consists of the closed immutable purpose matrix, immutable
+request/result and replay/operational envelopes, and the internal read-only
+`ExternalReferenceContextService`. It delegates selection to the existing
+`get_latest_series_as_of(...)` Store boundary and current operational evidence
+to `get_sync_state(...)`; it adds no repository, persistence, provider call,
+write, refresh, endpoint, frontend, migration, engine calculation, or runtime
+consumer. The implementation reuses the certified R3-D state evaluator and
+introduces no `STALE` criterion: complete positive coverage plus selected-head
+evidence may establish `CURRENT`; otherwise freshness remains `UNKNOWN`.
+Focused evidence is `28 passed`; the combined R3-F1 plus Registry/Store gate is
+`100 passed`. This record does not close R3-F1 or alter ADR-029's locked history.
