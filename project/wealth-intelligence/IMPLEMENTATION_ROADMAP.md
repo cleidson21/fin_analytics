@@ -1,5 +1,5 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R4-B INDEPENDENTLY APPROVED`
+**Status:** `ACTIVE QUEUE — 10.R4-C CHECKPOINT PENDING`
 **Date:** 2026-10-16
 
 ---
@@ -10,7 +10,7 @@
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
 | 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
-| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A CLOSED / R4-B INDEPENDENTLY APPROVED` | R2 + R3 context semantics and deterministic tools; ADR-030 |
+| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A CLOSED / R4-B CLOSED / R4-C CHECKPOINT PENDING` | R2 + R3 context semantics and deterministic tools; ADR-030 |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
 | 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
@@ -160,19 +160,26 @@ activated, R3-H remains deferred, and the current roadmap defines no R3-F2.
 
 R4.0 approved the architecture contract and decomposition without automatically
 authorizing every increment. R4-A is closed and pushed at
-`bea92edb18872bd3e3603dc10ebc62bed8de8100`. The user subsequently authorized
-the minimum R4-B implementation; it is independently approved with `84 passed`
-and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings, but remains open pending
-a separately authorized Git checkpoint. R4-C through R4-H are not implemented.
+`bea92edb18872bd3e3603dc10ebc62bed8de8100`. R4-B is closed and pushed at
+`8149e3d27a75c76ed6cc7f46fab60aabebd96396` after independent approval with
+`84 passed` and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. R4-C now has a
+independently approved no-persistence implementation and awaits its Git
+checkpoint. Independent review records `77 passed`, `0 BLOCKING`, and `0
+MATERIAL` active findings. Historical `MAT-R4C-01` is adjudicated
+`INFORMATIONAL / FUTURE ACTIVATION BLOCKER`: R4-F must integrate and validate a
+pre-execution audit guard before any operational provider or tool dispatch; a
+`VOLATILE` sink never meets the required `DURABLE` guarantee. `INF-R4C-01`
+preserves the future HMAC key-configuration/rotation/key-ID governance gate.
+R4-D through R4-H are not implemented.
 
 | Task | Planned outcome | Current status | Hard dependency or gate |
 |---|---|---|---|
 | R4-A | Provider-Neutral Contracts | `CLOSED / PUSHED` | checkpoint `bea92edb18872bd3e3603dc10ebc62bed8de8100`; internal application service and deterministic fake only |
-| R4-B | Authorization, Tools & Minimal Context | `INDEPENDENTLY APPROVED` | exact five-tool read-only registry over R2; server-side scope; no R3 consumer/provider/endpoint; `84 passed`; 0 new blocking/material/minor findings |
-| R4-C | Audit & Telemetry Boundary | `PLANNED / NOT AUTHORIZED` | R4-A; minimized logical envelope; persistence, retention, `ai_runs`, and migration require a separate gate |
+| R4-B | Authorization, Tools & Minimal Context | `CLOSED / PUSHED` | checkpoint `8149e3d27a75c76ed6cc7f46fab60aabebd96396`; exact five-tool read-only registry over R2; `84 passed`; 0 new blocking/material/minor findings |
+| R4-C | Audit & Telemetry Boundary | `INDEPENDENTLY APPROVED / CHECKPOINT PENDING` | `77 passed`; `0 BLOCKING`/`0 MATERIAL` active; `MAT-R4C-01` historical designation adjudicated `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`; persistence, definitive retention, `ai_runs`, and migration not authorized |
 | R4-D | Ollama Local Adapter | `PLANNED / OLLAMA NOT INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE` | R4-A/R4-C; D.0 hardware evidence; separate installation and model-download authorizations |
 | R4-E | Gemini Resilient Adapter | `PLANNED / NOT AUTHORIZED` | R4-A/R4-C; current official SDK verification; adapter integration approval is separate from real-financial-data transmission approval |
-| R4-F | Evidence-Based Hybrid Router | `PLANNED / NOT AUTHORIZED` | R4-D/R4-E capability and health evidence; `LOCAL_ONLY` default; explicit fallback policy |
+| R4-F | Evidence-Based Hybrid Router | `PLANNED / NOT AUTHORIZED` | R4-D/R4-E capability and health evidence; mandatory pre-execution audit-guard integration/validation before operational provider or tool dispatch; `LOCAL_ONLY` default; explicit fallback policy |
 | R4-G | Benchmark Harness | `PLANNED / EXECUTION NOT AUTHORIZED` | eligible model catalog; synthetic reference set; separate quota, schedule, download, provider-call, and budget approval |
 | R4-H | Personalization & Memory Contract | `PLANNED / NOT AUTHORIZED` | authorized preferences and certified retrieval first; any persistence or training requires a separate gate |
 

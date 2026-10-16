@@ -144,12 +144,17 @@ The LLM is **READ-ONLY** with respect to financial truth.
 | Goals | Goal projections | Calculated (contribution + return assumptions) | Deterministic Calc | NO (runtime) | NO | NO |
 | AI | Classification rules | Database (classification_rules) | User Governed + System | YES | NO | FEEDBACK ONLY |
 | AI | Prompt versions | Database (ai_prompt_versions — IMMUTABLE) | System | YES | NO | NO |
-| AI | AI run logs | Database (ai_runs) | System audit | YES | NO | NO |
+| AI | Historical AI run-log schema | Legacy SQL `ai_runs` scaffolding; not an active R4 sink | Scaffolding only | NOT ACTIVE / NOT AUTHORIZED FOR R4 | NO | NO |
 | AI | Insights | Database (ai_insights — future) | AI Generated | YES (future) | NO | **READ DISPLAY** |
 | External | News articles | External APIs (future) | External | OPTIONAL | YES | SUMMARIZE ONLY |
 | External | Analyst consensus | External APIs (future) | External | OPTIONAL | YES | SUMMARIZE ONLY |
 | Retirement | Real FIRE target | Explicit spending + explicit assumed withdrawal rate | Deterministic Calc | NO (transient) | NO | EXPLAIN ONLY |
 | Retirement | FI date projection | FIRE target + certified Planning solver | Deterministic Calc | NO (transient) | NO | EXPLAIN ONLY |
+
+R4-C adds only a minimized logical audit/telemetry envelope and volatile
+in-memory test sinks. It does not reuse or modify `ai_runs`. Durable audit
+persistence, schema choice, definitive retention, access, deletion, and
+sampling remain separately gated.
 
 ---
 

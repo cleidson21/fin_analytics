@@ -847,6 +847,27 @@ pushed.
   read-only tools, and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings.
   `MIN-R4A-01` remains deferred; no provider, endpoint, persistence, or R3
   consumer was activated by this review.
+- **R4-C implementation evidence (2026-10-16):** `21` focused tests cover
+  immutable/versioned events and metrics, strict UTC, request/event correlation,
+  HMAC-pseudonymous scope, rejection of unknown fields and malicious metadata,
+  absence of raw prompt/response/financial/tool payload fields, optional token
+  usage, exact Decimal zero cost, absent provider/model evidence, preserved
+  `AIErrorCode`, deterministic volatile sinks, mandatory-audit sink failure,
+  durable-guarantee rejection for remote or tool-enabled execution, separate
+  optional-telemetry failure, metric contracts, and no database/network access.
+  Direct R4-A/R4-B regressions add `56 passed`, for `77 passed` combined. No
+  global suite was run. Audit persistence, definitive retention, `ai_runs`,
+  migration, external observability, providers, endpoints, and scheduler were
+  not exercised or authorized.
+- **R4-C independent review adjudication (2026-10-16):** Approved with `77
+  passed`, `0 BLOCKING`, and `0 MATERIAL` active findings. Historical
+  `MAT-R4C-01` is retained and adjudicated `INFORMATIONAL / FUTURE ACTIVATION
+  BLOCKER`: the R4-C emitter is not integrated as a pre-execution guard in
+  R4-A/R4-B, therefore it cannot prove fail-closed behavior before execution.
+  `VOLATILE` remains non-durable. R4-F must integrate and validate the guard
+  before operational provider or tool dispatch. `INF-R4C-01` remains for future
+  HMAC key configuration, rotation, and key-ID governance. No implementation
+  follows from this review finding.
 
 ### Phase 10.R5 — Design / Navigation / Theme
 - Validate System/Light/Dark, persistence/system preference, semantic tokens,

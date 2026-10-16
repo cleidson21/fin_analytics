@@ -1,4 +1,18 @@
-"""Provider-neutral R4-A contracts; no provider SDKs or runtime configuration."""
+"""Provider-neutral R4 contracts; no provider SDKs or runtime configuration."""
+
+from .audit import (
+    AUDIT_EVENT_CONTRACT_VERSION,
+    AIAuditEvent,
+    AIAuditEventFactory,
+    AuditError,
+    AuditFallback,
+    AuditOutcome,
+    AuditToolExecution,
+    DegradationState,
+    PseudonymousScopeIdentity,
+    ToolExecutionOutcome,
+    pseudonymize_server_user_scope,
+)
 
 from .contracts import (
     AICapability,
@@ -63,9 +77,33 @@ from .tool_contracts import (
     ToolResultStatus,
     ToolSideEffect,
 )
+from .telemetry import (
+    TELEMETRY_METRIC_CONTRACT_VERSION,
+    AITelemetryMetric,
+    CostMetric,
+    ErrorMetric,
+    LatencyMetric,
+    ProviderModelMetric,
+    RetryMetric,
+    RoutingFallbackMetric,
+    RoutingOutcome,
+    TokenUsageMetric,
+    ToolExecutionMetric,
+)
 
 
 __all__ = [
+    "AUDIT_EVENT_CONTRACT_VERSION",
+    "AIAuditEvent",
+    "AIAuditEventFactory",
+    "AuditError",
+    "AuditFallback",
+    "AuditOutcome",
+    "AuditToolExecution",
+    "DegradationState",
+    "PseudonymousScopeIdentity",
+    "ToolExecutionOutcome",
+    "pseudonymize_server_user_scope",
     "AICapability",
     "AIContextEntry",
     "AIProviderHealth",
@@ -128,4 +166,15 @@ __all__ = [
     "ToolResultContract",
     "ToolResultStatus",
     "ToolSideEffect",
+    "TELEMETRY_METRIC_CONTRACT_VERSION",
+    "AITelemetryMetric",
+    "CostMetric",
+    "ErrorMetric",
+    "LatencyMetric",
+    "ProviderModelMetric",
+    "RetryMetric",
+    "RoutingFallbackMetric",
+    "RoutingOutcome",
+    "TokenUsageMetric",
+    "ToolExecutionMetric",
 ]

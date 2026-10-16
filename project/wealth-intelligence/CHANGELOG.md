@@ -1,5 +1,35 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R4-C] — 2026-10-16 — Audit & Telemetry Boundary
+
+- Added immutable, typed, versioned minimized audit events and typed optional
+  telemetry metrics over the existing R4-A/R4-B contracts. Technical user scope
+  is HMAC-pseudonymized; prompts, responses, raw financial context, transaction
+  descriptions, tool arguments, credentials, headers, and provider messages
+  have no event field.
+- Added separate replaceable audit/telemetry ports and deterministic volatile
+  in-memory sinks. Required audit fails closed on sink failure or insufficient
+  guarantee; remote and tool-enabled execution requires durability, so the
+  in-memory sink is not accepted as persistent evidence. Optional telemetry
+  failure remains explicit and non-critical.
+- Focused R4-C validation: `21 passed`; direct R4-A/R4-B regressions: `56
+  passed`; combined: `77 passed`. No global suite was run.
+- R4-B is `CLOSED / PUSHED` at checkpoint
+  `8149e3d27a75c76ed6cc7f46fab60aabebd96396`. R4-C is `INDEPENDENTLY APPROVED
+  / CHECKPOINT PENDING`.
+- Independent review approved R4-C with `77 passed`, `0 BLOCKING`, and `0
+  MATERIAL` active findings. Historical `MAT-R4C-01` is retained and adjudicated
+  `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`: a future R4-F orchestration must
+  integrate and validate a pre-execution audit guard before operational provider
+  or tool dispatch; `VOLATILE` does not substitute for `DURABLE`. `INF-R4C-01`
+  remains for future HMAC key configuration/rotation/key-ID governance. Status
+  is `INDEPENDENTLY APPROVED / CHECKPOINT PENDING`.
+- Audit persistence and definitive retention are `NOT AUTHORIZED`; historical
+  `ai_runs` was not reused or modified. Ollama is `NOT INSTALLED`, Gemini was
+  `NOT CALLED`, and R4-D and later increments are `NOT IMPLEMENTED`. No database
+  access, migration, HTTP call, provider SDK, endpoint, frontend, scheduler,
+  commit, or push occurred.
+
 ## [PHASE-10.R4-B] — 2026-10-16 — Authorization, Read-Only Tools & Minimal Context
 
 - Added a trusted server-side scope resolver over the existing authenticated
@@ -17,10 +47,11 @@
 - Focused R4-B validation: `24 passed`; directly related R4-A/R2/Planning
   regressions: `60 passed`; combined: `84 passed`. No global suite was run.
 - Independent review approved R4-B with `84 passed`, five read-only tools, and
-  `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. It is
-  `INDEPENDENTLY APPROVED`, not yet `CLOSED / PUSHED`. R3 External Reference,
+  `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. It is `CLOSED / PUSHED` at
+  `8149e3d27a75c76ed6cc7f46fab60aabebd96396`. R3 External Reference,
   provider adapters/calls, Engines, writes, persistence, migrations, endpoints,
-  frontend, scheduler, commit, and push remain absent or deferred.
+  frontend, and scheduler remain absent or deferred; the later checkpoint
+  changed Git state only.
 
 ## [PHASE-10.R4-A] — 2026-10-15 — Provider-Neutral Contracts
 

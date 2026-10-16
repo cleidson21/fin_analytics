@@ -1,6 +1,6 @@
 # AI & LLM Architecture
 
-**Status:** `10.R4-B INDEPENDENTLY APPROVED / PROVIDERS NOT INTEGRATED`
+**Status:** `10.R4-C INDEPENDENTLY APPROVED / CHECKPOINT PENDING`
 
 **Date:** 2026-10-16
 
@@ -20,7 +20,10 @@ No AI runtime is currently operating in the application.
 - no scheduler for AI work;
 - R4-A provider-neutral contracts and the internal R4-B authorization,
   read-only tool, and minimum-context boundaries now exist, but there is no
-  real provider adapter, router, retry executor, or runtime telemetry;
+  real provider adapter, router, or retry executor;
+- R4-C immutable minimized audit/telemetry contracts, replaceable sink ports,
+  deterministic volatile in-memory sinks, and audit fail-closed enforcement now
+  exist, but there is no durable sink or external observability;
 - `backend/integrations/gemini/classifier.py`, `models.py`, and `prompts.py` are
   empty files;
 - AI-related tables, environment settings, and installed SDKs are scaffolding,
@@ -407,9 +410,9 @@ and the telemetry contract precedes persistence and real execution, with no
 implicit database or migration.
 
 R4-A through R4-H were approved as planned increments, not as one automatic
-implementation authorization. R4-A is `CLOSED / PUSHED`. R4-B is now
-`INDEPENDENTLY APPROVED`; R4-C through R4-H remain `NOT IMPLEMENTED` and
-require their own gates.
+implementation authorization. R4-A and R4-B are `CLOSED / PUSHED`; R4-C is
+`INDEPENDENTLY APPROVED / CHECKPOINT PENDING`. R4-D through R4-H remain
+`NOT IMPLEMENTED` and require their own gates.
 
 ## 18. R4-A implementation record
 
@@ -511,4 +514,51 @@ against tool results. No provider, network, operational database, migration,
 endpoint, frontend, scheduler, persistence, R3 consumer, engine invocation,
 commit, or push is introduced. Independent review reports `84 passed`, five
 read-only tools, and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. R4-B is
-independently approved but not `CLOSED / PUSHED` until its Git checkpoint.
+independently approved and `CLOSED / PUSHED` at
+`8149e3d27a75c76ed6cc7f46fab60aabebd96396`.
+
+## 20. R4-C implementation record
+
+R4-C implements only the logical no-persistence audit and telemetry boundary:
+
+- immutable, typed, versioned audit events contain request/correlation IDs,
+  HMAC-pseudonymous technical scope, task and schema/policy versions, execution
+  mode, allowlisted/used tools, permitted technical references, UTC timestamps,
+  latency, optional tokens and exact Decimal cost, attempts, typed error,
+  result, fallback, validation, and degradation state;
+- event construction consumes existing `AIRequest`, `AIResponse`,
+  `AIErrorCode`, `ServerUserScope`, and `ToolBudget` contracts. It has no field
+  for prompts, responses, financial context, transaction descriptions, tool
+  arguments, credentials, headers, or raw provider messages, and accepts no
+  arbitrary metadata payload;
+- typed optional metrics cover total/first-token latency, partial token usage,
+  exact Decimal cost including zero, provider/model identity when known, error
+  class, attempts, routing/fallback, and tool outcome without assuming provider
+  parity;
+- replaceable audit and telemetry ports are separate. Required audit emission
+  fails closed on insufficient guarantee or sink failure; optional telemetry
+  failure is reported separately and cannot masquerade as audit success;
+- the only concrete sinks are deterministic in-memory test sinks. Their
+  guarantee is explicitly `VOLATILE`; remote, tool-enabled, or tool-executing
+  events require `DURABLE` and reject those sinks.
+
+Focused R4-C validation passes `21` tests; direct R4-A/R4-B regressions pass
+`56`, for `77 passed` combined. No global suite was run. Historical `ai_runs`
+was inspected but not reused or modified. Audit persistence and definitive
+retention are `NOT AUTHORIZED`. Ollama is `NOT INSTALLED`; Gemini was `NOT
+CALLED`; R4-D and later increments are `NOT IMPLEMENTED`. No database access,
+migration, HTTP call, provider SDK, endpoint, frontend, scheduler, commit, or
+push is introduced.
+
+**Independent review adjudication (2026-10-16):** R4-C is independently
+approved with `77 passed`, `0 BLOCKING`, and `0 MATERIAL` active findings. The
+historical review designation `MAT-R4C-01` is retained for traceability; its
+current adjudication is `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`, not a
+defect in isolated R4-C scope. R4-A/R4-B services do not integrate a
+pre-execution guard, so the existence of `AIAuditTelemetryEmitter` does not
+establish fail-closed behavior before execution. A `VOLATILE` sink remains
+insufficient for `DURABLE` audit. R4-F orchestration must integrate and
+validate that pre-execution guard before any operational dispatch to providers
+or tools is activated. `INF-R4C-01` remains: future HMAC key configuration,
+rotation, and key-ID governance require a separately authorized secret/config
+contract. This adjudication changes neither ADR-030 nor any locked decision.

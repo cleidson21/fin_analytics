@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-16 — R4-B implemented and locally validated
+**Updated:** 2026-10-16 — R4-C independently approved; checkpoint pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -51,9 +51,10 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F.0 APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` |
 | 10.R4.0 Hybrid AI Runtime contract | `CONTRACT APPROVED / DOCUMENTATION IN PROGRESS` |
 | 10.R4-A Provider-Neutral Contracts | `CLOSED / PUSHED` |
-| 10.R4-B Authorization, Tools & Minimal Context | `INDEPENDENTLY APPROVED` |
+| 10.R4-B Authorization, Tools & Minimal Context | `CLOSED / PUSHED` |
+| 10.R4-C Audit & Telemetry Boundary | `INDEPENDENTLY APPROVED / CHECKPOINT PENDING` |
 | 10.R4-D Ollama Local Adapter | `OLLAMA NOT INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4.0 CONTRACT APPROVED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CHECKPOINT PENDING` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -266,8 +267,12 @@ There is **no production AI runtime**.
 - R4-B adds an internal authenticated-scope resolver, an immutable exact
   five-tool read-only registry, a deny-by-default executor, and a minimized
   certified context builder over R2 readers;
+- R4-C adds immutable versioned audit events, pseudonymous technical scope,
+  allowlisted metadata construction, typed optional telemetry, replaceable sink
+  ports, deterministic volatile in-memory sinks, and fail-closed audit-guarantee
+  enforcement;
 - no real provider adapter, router, retry executor, fallback executor, or
-  persistent telemetry;
+  durable audit/telemetry persistence;
 - the three `backend/integrations/gemini/*.py` files are empty;
 - AI-related database tables and environment settings are scaffolding only;
 - `google-generativeai` being installed does not constitute a runtime.
@@ -276,18 +281,30 @@ Any UI copy suggesting that local Ollama or a Wealth Advisor is already active
 is placeholder/future-facing copy, not implemented capability.
 
 The R4.0 Hybrid AI Runtime contract is approved and R4-A is closed/pushed at
-`bea92edb18872bd3e3603dc10ebc62bed8de8100`. R4-B now implements only the
+`bea92edb18872bd3e3603dc10ebc62bed8de8100`. R4-B is closed/pushed at
+`8149e3d27a75c76ed6cc7f46fab60aabebd96396` and implements only the
 internal server-scope, read-only registry/executor, and minimal R2 context
-boundary; it is independently approved but not closed. Its exact tools are
+boundary. Its exact tools are
 Home, Planning, Goal, FIRE context, and one owned-Goal read. Independent review
 reports `84 passed` with `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. The R2
 single-tenant guard remains fail-closed and is not a universal multi-tenant
 claim. No R3 External Reference consumer or Planning/FIRE engine tool is
-activated. There is still no production AI runtime. Ollama is not installed,
-no eligible local runtime is available, and Gemini was not called. `LOCAL_ONLY`
-remains the default. R4-C through R4-H, telemetry persistence, benchmarking,
-installation, downloads, provider SDKs, and real provider execution remain
-separately gated.
+activated. R4-C now implements the logical audit and telemetry boundary and is
+`INDEPENDENTLY APPROVED / CHECKPOINT PENDING`: `21` focused tests plus `56`
+direct R4-A/R4-B regressions pass (`77 passed`), with `0 BLOCKING` and `0
+MATERIAL` active findings. Historical `MAT-R4C-01` is adjudicated
+`INFORMATIONAL / FUTURE ACTIVATION BLOCKER`: no pre-execution guard is
+integrated into R4-A/R4-B, so the emitter alone does not guarantee fail-closed
+behavior before execution; a `VOLATILE` sink never substitutes for `DURABLE`.
+R4-F must integrate and validate the guard before operational provider or tool
+dispatch. `INF-R4C-01` remains for future HMAC-key configuration/rotation/key-ID
+governance. There is still no production AI runtime. Audit persistence and
+definitive retention are `NOT AUTHORIZED`; historical `ai_runs` remains
+untouched. Ollama is `NOT INSTALLED`, no eligible local runtime is available,
+and Gemini was `NOT CALLED`. `LOCAL_ONLY` remains the default. R4-D and later
+increments are `NOT IMPLEMENTED`; benchmarking, installation, downloads,
+provider SDKs, provider execution, database access, migration, endpoint,
+frontend, and scheduler remain separately gated.
 
 ## External context current state
 
