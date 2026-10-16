@@ -37,6 +37,7 @@
 | ADR-027 | Wealth OS Product Architecture & Documentation Ownership | ACCEPTED | 10.R1 |
 | ADR-028 | Smart Financial Context and Declared/Observed Income Boundary | ACCEPTED | 10.R2-A |
 | ADR-029 | External Context Observation, Temporal, and Provider Boundary | ACCEPTED / LOCKED | 10.R3-B |
+| ADR-030 | Hybrid AI Runtime Foundation and Assisted Local Setup | ACCEPTED | 10.R4.0 |
 
 ---
 
@@ -1253,3 +1254,109 @@ minor findings, required no code change, and preserved eight historical
 informational findings. R3-I is `INDEPENDENTLY APPROVED / DOCUMENTATION
 RECONCILED`, not `CLOSED / PUSHED`. R3-G remains separately gated and
 R3-H remains deferred.
+
+---
+
+## ADR-030: Hybrid AI Runtime Foundation and Assisted Local Setup
+
+**Status:** `ACCEPTED — R4.0 CONTRACT APPROVED / DOCUMENTATION IN PROGRESS`
+
+**Date:** 2026-10-15
+
+**Context:** There is no production AI runtime, functional Advisor, provider
+abstraction, or tool registry. Historical Gemini files, SDK dependencies,
+tables, settings, and UI text are scaffolding rather than capability. Ollama is
+not installed. R4 needs one provider-neutral runtime that consumes deterministic
+Engines and governed R2/R3 context without duplicating financial authority or
+silently sending financial data to a remote provider.
+
+**Decision:** The user approved D1-D12 of the R4.0 Hybrid AI Runtime proposal:
+
+1. Local Llama candidates are admitted only after a read-only hardware gate and
+   are pinned by exact digest; no candidate is the definitive model now.
+2. Hardware and environment inspection is mandatory before installation or
+   model download.
+3. Real financial data is ineligible for free Gemini. Future remote processing
+   requires a verified paid project, explicit opt-in, data minimization, and a
+   compatible provider policy.
+4. Gemini uses one adapter based on the then-current official `google-genai`
+   SDK; historical scaffolding is reconciled rather than duplicated.
+5. One retry controller owns application and SDK attempts. The initial
+   configurable baseline is no more than three total attempts inside one
+   deadline and token/cost budget.
+6. `LOCAL_ONLY` is default; `HYBRID` is opt-in; fallback and offline-to-cloud
+   promotion are never silent.
+7. Circuit-breaker parameters begin as experimental values and require
+   evidence-based calibration.
+8. Benchmarking follows a reproducible protocol but no run, download, provider
+   call, schedule, quota use, or expense is authorized.
+9. Telemetry uses a minimized envelope. Persistence, `ai_runs` reuse, schema,
+   retention, and migration require a separate gate.
+10. Initial personalization is limited to authorized preferences and retrieval
+    of certified information. There is no silent memory, training, or weight
+    update.
+11. R4 supplies one infrastructure and reconciles historical scaffolding; it
+    does not presume or create a parallel Advisor.
+12. The first increment is exercised through an internal application service
+    and mocks, without endpoint, frontend, or scheduler.
+
+**Mandatory refinements:** Adapter integration authorization is distinct from
+authorization to send real financial data. `LOCAL_ONLY` remains binding when no
+local model exists and then returns typed unavailability. Benchmark quality and
+availability are separate dimensions and cannot elect a model or time window
+before measurements. The telemetry contract precedes persistence and real
+execution; no database or migration is implied.
+
+**Runtime boundary:** AI interprets or orchestrates approved capabilities. It
+does not calculate wealth, returns, dividends, or other Engine-owned truth;
+query arbitrary SQL; execute financial operations; or write records. Tools are
+authenticated, server-side, user-scoped, typed, call-bounded, audited, and
+read-only. Minimum certified context, provenance, prompt-injection isolation,
+structured-output validation, server-side secrets, and explicit errors are
+mandatory. ADR-023 and locked R2/R3 contracts remain authoritative.
+
+**Provider and routing boundary:** The provider/model registries record exact
+capabilities, health, revision/digest, limits, and measured evidence. The router
+applies privacy, consent, task capability, token, cost, and availability gates
+before comparing quality, latency, and cost evidence. `LOCAL_ONLY`,
+`REMOTE_ONLY`, and opt-in `HYBRID` are explicit modes. Gemini-to-Ollama fallback
+is allowed only when authorized and contract-compatible; offline/local policy
+can never fall through to cloud. No suitable provider produces a typed error or
+explicit degraded result.
+
+**Ollama assisted plan:** R4-D.0 is a read-only OS/CPU/RAM/GPU/VRAM/driver/disk
+preflight with no installation. R4-D.1 is separately authorized guided
+installation from current official instructions, including service, PATH,
+version, loopback, exposure, and cloud-disabled verification. R4-D.2 separately
+authorizes a hardware-supported model download, digest/license/quantization
+validation, structured JSON, and offline inference. R4-D.3 measures cold/warm
+start, latency, tokens/s, resources, effective context, controlled concurrency,
+and local-adapter behavior. Exact commands, expected evidence, side effects,
+and success/stop criteria are presented to the user at each gate. D.0-D.3 are
+an internal R4-D checklist unless a later roadmap decision promotes them.
+
+**Telemetry and benchmark boundary:** The logical audit envelope includes
+request ID, opaque user scope, provider/model/version or digest, routing and
+tool decisions, latency, tokens, cost when known, retries, error, fallback,
+outcome, UTC time, and certified-source references. It excludes raw prompts,
+full financial context, personal data, credentials, and API keys. The separate
+benchmark uses identical synthetic/verifiable tasks, exact configurations,
+alternated order, and distributed `America/Bahia` windows; it reports quality
+and availability separately, including success, `429`/`503`, latency, tokens,
+cost, factual/financial quality, source adherence, invalid output, fallback,
+local resources, throughput, and sample confidence where applicable.
+
+**Increment and authorization consequence:** R4-A Provider-Neutral Contracts,
+R4-B Authorization/Tools/Minimal Context, R4-C Audit/Telemetry, R4-D Ollama,
+R4-E Gemini, R4-F Hybrid Router, R4-G Benchmark Harness, and R4-H
+Personalization/Memory are `PLANNED`, not authorized implementations. R4-A is
+the first candidate and remains `NOT IMPLEMENTED`. Proposed model choices,
+retention periods, budgets, and recovery thresholds are not approved
+operational configuration.
+
+**Preservation and exclusions:** ADR-030 does not rewrite ADR-002, ADR-007,
+ADR-023, ADR-027, ADR-028, ADR-029, or any locked R2/R3 contract. R3-I remains
+`INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`. This formalization changes
+documentation only and authorizes no code, dependency, installation, model
+download, API-key test, Gemini call, benchmark, database access, migration,
+endpoint, frontend, scheduler, commit, or push.

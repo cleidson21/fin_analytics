@@ -785,7 +785,50 @@ pushed.
 - Test provider abstraction without financial-domain coupling, approved tool
   authorization, minimum context, secret absence, structured output, audit,
   timeout/error/cost telemetry, injection boundaries, and read-only behavior.
+- R4-A's first proof uses an internal application service and mocks only. It
+  opens no endpoint, frontend, scheduler, network provider, or database.
+- Cover the explicit `LOCAL_ONLY`, `REMOTE_ONLY`, and opt-in `HYBRID` matrix.
+  In particular, `LOCAL_ONLY` with no installed/eligible local model returns
+  typed unavailability and never attempts cloud fallback.
+- Prove a single retry controller across application and SDK, no more than the
+  configured total-attempt ceiling (initial baseline: three), total deadline
+  and token/cost budget enforcement, bounded jitter/`Retry-After`, and no retry
+  for authentication, policy, invalid request/output, hard quota, or budget
+  failures. Exercise distinct `429`, `503`, timeout, network, quota, and model
+  unavailable classifications plus circuit closed/open/half-open behavior.
+- Prove server-side user scope, deny-by-default tool authorization, typed
+  argument validation, call limits, structured isolation of untrusted content,
+  exact Decimal-string/source preservation, schema rejection, and absence of
+  arbitrary SQL, write tools, or financial operations.
+- Validate telemetry construction and redaction before any persistence test.
+  Persistence, retention, `ai_runs` reuse, schema, and migration remain a
+  separate gate.
+- Authorized R4-D validation progresses through read-only hardware evidence,
+  secure loopback/cloud-disabled Ollama configuration, digest-pinned offline
+  inference, then controlled resource/performance and adapter checks. Each
+  step has explicit pass and stop conditions; no installation or download is
+  implied by this strategy.
+- Benchmark tests use synthetic, financially verifiable cases and treat quality
+  and availability as separate outputs. Live execution, provider calls, model
+  downloads, quotas, scheduling, and costs require explicit authorization.
 - Real provider calls are not the default automated-test strategy.
+- **R4-A implementation evidence (2026-10-15):** `32` focused tests pass for
+  the async SDK-free port, frozen request/response and evidence contracts,
+  explicit UTC, default `LOCAL_ONLY`, remote consent/privacy gates, immutable
+  exact registries with no model default, safe typed errors, strict schema and
+  source validation, Decimal-string/zero preservation, deterministic fake
+  discovery/health/generation/failure/cancellation/closure, no network, no
+  provider SDK import, and no database/write dependency. Minimal R2 Smart
+  Context plus R3 External Reference regressions pass `39` tests. Factual
+  adherence remains explicitly unvalidated until R4-B; no global suite was run.
+- **R4-A schema-review clarification (2026-10-15):** These tests cover the
+  canonical strict structural AST only; they do not establish a generic JSON
+  Schema interpreter or support for `pattern`, `minimum`, `maximum`, `$ref`, or
+  enum restrictions. `OutputSchemaNode` has no enum feature. Any future use of
+  those semantics requires a contract extension and focused tests before
+  activation. `MIN-R4A-01` remains deferred: nested structural failure paths
+  are not fully propagated to `AIErrorMetadata.field`, with no confirmed
+  functional impact; this checkpoint intentionally changes no validator code.
 
 ### Phase 10.R5 — Design / Navigation / Theme
 - Validate System/Light/Dark, persistence/system preference, semantic tokens,

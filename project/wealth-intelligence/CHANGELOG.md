@@ -1,5 +1,46 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R4-A] — 2026-10-15 — Provider-Neutral Contracts
+
+- Added an asynchronous SDK-free `AIProvider` port, immutable request/response,
+  provider/model capability and evidence contracts, exact registries with no
+  default model, safe typed errors, and strict local output/source validation.
+- Added an internal non-routing application service that enforces exact
+  provider/model registration, lifecycle, capabilities, privacy, consent,
+  execution mode, and deadline before invoking the caller-supplied adapter.
+- Added a deterministic no-I/O fake provider for valid output, invalid schema,
+  timeout, unavailability, rate limit, cancellation, discovery, health, usage,
+  Decimal cost, and resource-closure verification.
+- Focused R4-A validation: `32 passed`. Minimal R2 Smart Context and R3 External
+  Reference regressions: `39 passed`. No global suite was run.
+- Status is `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`, not closed.
+  R4-B through R4-H remain not implemented; Ollama is not installed, Gemini was
+  not called, and benchmarking was not executed.
+- No provider SDK installation/import, API-key read/test, network call,
+  operational database access, migration, persistence, endpoint, frontend,
+  scheduler, commit, or push occurred.
+
+## [PHASE-10.R4.0] — 2026-10-15 — Hybrid AI Runtime Contract Formalization
+
+- Formalized the user-approved D1-D12 provider-neutral runtime contract and its
+  four mandatory refinements in the canonical AI architecture and ADR-030.
+- Preserved `LOCAL_ONLY` as the default, explicit unavailability without a
+  local model, opt-in `HYBRID`, and the separation between Gemini adapter
+  integration and authorization to transmit real financial data.
+- Planned R4-A through R4-H without authorizing implementation. R4-A remains
+  `NOT IMPLEMENTED / NEXT GATE CANDIDATE`; every later increment is separately
+  gated.
+- Recorded that Ollama is not installed and defined the assisted R4-D.0-D.3
+  hardware, installation, model setup, offline, performance, and adapter
+  validation checklist. No installation or model download occurred.
+- Kept benchmark quality and availability separate, with no model or time-window
+  choice before evidence and no execution, provider call, quota, or cost
+  authorization.
+- Defined the minimized telemetry contract before persistence. Reuse of
+  `ai_runs`, retention, schema, database, and migration remain separate gates.
+- Documentation only: no code, dependency, API-key test, Gemini call,
+  operational database access, endpoint, frontend, scheduler, commit, or push.
+
 ## [PHASE-10.R3-I] — 2026-10-15 — Independent Stabilization Documentation Reconciliation
 
 - Recorded R3-F1 independent approval with 0 blocking, 0 material, and 0 minor

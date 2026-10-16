@@ -1,5 +1,5 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R3-I INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`
+**Status:** `ACTIVE QUEUE — 10.R4-A IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`
 **Date:** 2026-10-15
 
 ---
@@ -10,7 +10,7 @@
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
 | 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
-| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `NOT STARTED` | R2 + R3 context semantics and deterministic tools |
+| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A AWAITING INDEPENDENT REVIEW` | R2 + R3 context semantics and deterministic tools; ADR-030 |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
 | 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
@@ -155,6 +155,40 @@ deferred and cannot be reported as implemented.
 R3-I technically approved the activated BCB-only scope, and its documentation
 is reconciled; R3-I is not yet `CLOSED / PUSHED`. R3-G was not
 activated, R3-H remains deferred, and the current roadmap defines no R3-F2.
+
+### 10.R4 planned increment sequence
+
+R4.0 approved the architecture contract and decomposition without automatically
+authorizing every increment. The user subsequently authorized R4-A only. R4-A
+is implemented and locally tested but remains open pending independent review
+and a separately authorized Git checkpoint; R4-B through R4-H are not
+implemented.
+
+| Task | Planned outcome | Current status | Hard dependency or gate |
+|---|---|---|---|
+| R4-A | Provider-Neutral Contracts | `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW` | R4.0 contract; internal application service and deterministic fake only; no endpoint/provider/network |
+| R4-B | Authorization, Tools & Minimal Context | `PLANNED / NOT AUTHORIZED` | R4-A; server-side user scope; read-only allowlist; R2/R3 certified context |
+| R4-C | Audit & Telemetry Boundary | `PLANNED / NOT AUTHORIZED` | R4-A; minimized logical envelope; persistence, retention, `ai_runs`, and migration require a separate gate |
+| R4-D | Ollama Local Adapter | `PLANNED / OLLAMA NOT INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE` | R4-A/R4-C; D.0 hardware evidence; separate installation and model-download authorizations |
+| R4-E | Gemini Resilient Adapter | `PLANNED / NOT AUTHORIZED` | R4-A/R4-C; current official SDK verification; adapter integration approval is separate from real-financial-data transmission approval |
+| R4-F | Evidence-Based Hybrid Router | `PLANNED / NOT AUTHORIZED` | R4-D/R4-E capability and health evidence; `LOCAL_ONLY` default; explicit fallback policy |
+| R4-G | Benchmark Harness | `PLANNED / EXECUTION NOT AUTHORIZED` | eligible model catalog; synthetic reference set; separate quota, schedule, download, provider-call, and budget approval |
+| R4-H | Personalization & Memory Contract | `PLANNED / NOT AUTHORIZED` | authorized preferences and certified retrieval first; any persistence or training requires a separate gate |
+
+R4-D contains an assisted internal checklist rather than new normative phases:
+
+| Checklist | Scope | Current status |
+|---|---|---|
+| R4-D.0 — Hardware & Environment Preflight | Read-only OS, CPU, RAM, GPU, VRAM, driver, disk, and candidate-fit evidence | `PLANNED / NO INSTALLATION` |
+| R4-D.1 — Assisted Ollama Installation | Current official instructions, service/PATH/version, cloud disabled, loopback and exposure checks | `DEFERRED / SEPARATE AUTHORIZATION REQUIRED` |
+| R4-D.2 — Local Model Setup | Hardware-based selection, separately authorized download, digest/license/quantization and offline structured-output validation | `DEFERRED / SEPARATE AUTHORIZATION REQUIRED` |
+| R4-D.3 — Performance & Adapter Validation | Cold/warm, latency, tokens/s, resources, context, concurrency, and local-only adapter checks | `DEFERRED / REQUIRES D.1 AND D.2` |
+
+The project must provide exact commands, expected evidence, side effects, and
+objective success/stop criteria at each assisted R4-D gate. R4.0 authorizes no
+installation, download, provider call, benchmark, expense, persistence,
+endpoint, frontend, scheduler, or migration. Proposed models, retention
+periods, circuit-breaker thresholds, and budgets are not operational settings.
 
 ## Closed and preserved baseline
 

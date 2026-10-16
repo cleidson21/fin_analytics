@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-15 — R3-I independently approved; documentation reconciled
+**Updated:** 2026-10-15 — R4-A implemented and locally validated
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -49,7 +49,10 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R3-H Focus expectations | `FOCUS DEFERRED / NOT IMPLEMENTED` |
 | 10.R3-I independent stabilization | `INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED` |
 | 10.R3 External Context | `R3-C CLOSED / R3-D.1 LOCKED / R3-D CLOSED / R3-E.0 PUSHED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F.0 APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED` |
+| 10.R4.0 Hybrid AI Runtime contract | `CONTRACT APPROVED / DOCUMENTATION IN PROGRESS` |
+| 10.R4-A Provider-Neutral Contracts | `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW` |
+| 10.R4-D Ollama Local Adapter | `OLLAMA NOT INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4.0 CONTRACT APPROVED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -257,13 +260,26 @@ There is **no production AI runtime**.
 - no OpenAI client/runtime;
 - no Ollama integration/runtime;
 - no AI scheduler;
-- no provider abstraction or tool registry;
+- R4-A provider-neutral contracts, immutable registries, strict validator,
+  internal proof service, and deterministic fake provider exist;
+- no real provider adapter, authorization/tool registry, context builder,
+  router, retry executor, fallback executor, or persistent telemetry;
 - the three `backend/integrations/gemini/*.py` files are empty;
 - AI-related database tables and environment settings are scaffolding only;
 - `google-generativeai` being installed does not constitute a runtime.
 
 Any UI copy suggesting that local Ollama or a Wealth Advisor is already active
 is placeholder/future-facing copy, not implemented capability.
+
+The R4.0 Hybrid AI Runtime contract is approved. R4-A now implements and tests
+only its provider-neutral contracts through an internal service and synthetic
+fake adapter; it is awaiting independent review and is not closed. There is
+still no production AI runtime. Ollama is not installed, no eligible local
+runtime is available, and Gemini was not called. `LOCAL_ONLY` is the default
+contract mode and blocks a supplied remote adapter before generation. Approval
+to integrate Gemini remains separate from approval to transmit real financial
+data. R4-B through R4-H, telemetry persistence, benchmarking, installation,
+downloads, provider SDKs, and real provider execution remain separately gated.
 
 ## External context current state
 

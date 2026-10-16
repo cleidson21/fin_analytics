@@ -1,8 +1,8 @@
 # AI & LLM Architecture
 
-**Status:** `10.R1 HIGH-LEVEL DIRECTION LOCKED / RUNTIME NOT IMPLEMENTED`
+**Status:** `10.R4-A IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW / PROVIDERS NOT INTEGRATED`
 
-**Date:** 2026-10-02
+**Date:** 2026-10-15
 
 **Canonical responsibility:** current AI-runtime truth, AI authority/privacy
 boundaries, and high-level provider/tool direction. Phase 10.R4 owns the exact
@@ -18,7 +18,9 @@ No AI runtime is currently operating in the application.
 - no OpenAI client/runtime;
 - no Ollama integration/runtime;
 - no scheduler for AI work;
-- no provider abstraction or tool registry;
+- R4-A provider-neutral contracts now exist, but there is no real provider
+  adapter, authorization/tool registry, router, retry executor, or runtime
+  telemetry;
 - `backend/integrations/gemini/classifier.py`, `models.py`, and `prompts.py` are
   empty files;
 - AI-related tables, environment settings, and installed SDKs are scaffolding,
@@ -170,3 +172,292 @@ or the full R6 experience recomposition.
 Historical provider/model/cost research remains available in repository audits
 and infrastructure notes. It is non-normative and must be revalidated when R4
 starts.
+
+## 11. R4.0 approved runtime contract
+
+R4.0 approves the provider-neutral foundation only. By itself it does not activate a
+provider, install a model or SDK, call a remote API, expose an endpoint, create
+a scheduler, or persist telemetry. The runtime must be one
+infrastructure that reconciles the historical Gemini scaffolding; it must not
+create a second Advisor or assume that a functional Advisor already exists.
+
+The canonical flow is:
+
+```text
+authenticated internal use case
+  -> authorization, privacy, and consent policy
+  -> minimum certified context and allowlisted read-only tools
+  -> evidence-based provider/model router and resilience controls
+  -> one eligible provider adapter
+  -> structured-output validation
+  -> minimized audit/telemetry envelope
+```
+
+`AIProvider` is a domain-neutral port. Its eventual implementation must expose
+bounded model discovery, health probing, generation, cancellation, and resource
+closure without leaking SDK types into financial services. A request carries a
+request ID, authenticated user scope, task kind, execution mode, data
+classification, remote-processing authorization, required capabilities,
+minimum context with certified source references, output schema, allowed tools,
+token/cost ceilings, deadline, and policy version. A response carries the
+provider and exact model identity/version or local digest, validated structured
+output, cited certified sources, executed tool calls, token and latency usage,
+cost when applicable, retries, fallback reason, outcome, and UTC timestamp.
+
+Provider and model capability registries are separate. Provider capabilities
+describe transport, health, structured-output, tool, privacy, and deployment
+properties; model capabilities describe context/output limits, supported task
+types, exact revision or digest, license, quantization, and measured evidence.
+Availability is discovered and verified at runtime or at an authorized
+preflight; no model ID is an eternal constant or financial-domain dependency.
+
+Structured output is accepted only after schema and semantic-boundary
+validation. Financial numbers originating in certified tools remain exact
+Decimal strings with provenance. Invalid or incomplete output fails explicitly;
+it cannot become a partial financial fact. The common error taxonomy must at
+least distinguish invalid request/output, unauthorized task/tool/data,
+privacy-policy rejection, no eligible provider/model, local runtime unavailable,
+authentication, quota, rate limit, provider overload, timeout, network failure,
+model unavailable, budget exceeded, tool failure, cancellation, and internal
+failure, with transient/permanent classification and retry eligibility.
+
+## 12. Execution modes, selection, resilience, and fallback
+
+- `LOCAL_ONLY` is the default. If Ollama or an eligible local model is absent,
+  it returns explicit unavailability; it never promotes the request to cloud.
+- `REMOTE_ONLY` requires an eligible remote task and explicit remote-processing
+  authorization. Provider integration alone is not that authorization.
+- `HYBRID` is opt-in. It may consider a compatible local or remote provider
+  only after privacy, consent, capability, token, budget, and policy gates pass.
+
+The router first applies these hard gates, then ranks eligible candidates from
+current health and measured quality, latency, cost, limits, and task fit.
+Historical evidence may influence selection only when its dataset, model
+revision, configuration, sample, and freshness are known. Time of day is not a
+fixed routing rule before benchmark evidence exists.
+
+Fallback is an explicit routing decision, not an exception shortcut. Gemini to
+Ollama is allowed only in `HYBRID`, when the local model satisfies the original
+task and output contract, and when the caller is informed of material quality
+or capability differences. Ollama to Gemini is prohibited whenever the request
+requires offline operation. If no compatible provider exists, the result is a
+typed error or explicitly declared degraded outcome; limitations are never
+hidden.
+
+There is one retry controller across application and SDK. The initial baseline
+is at most three total attempts, configurable downward, always inside one total
+deadline, token ceiling, and cost budget. Only classified transient failures
+may retry, using bounded exponential backoff with jitter and `Retry-After` when
+valid. Authentication, policy, invalid request/output, exhausted daily quota,
+hard budget, and incompatible/unavailable model errors do not retry blindly.
+SDK retries must be disabled or incorporated into the same attempt accounting.
+
+Circuit breakers are scoped by provider/model. Their initial thresholds,
+observation windows, recovery periods, and half-open probes are experimental
+values that require mocked validation and later calibration; they are not
+operational settings authorized by this contract. Rate limits and concurrency
+are bounded per provider/model/user scope. Cache is allowed only for an
+idempotent, semantically equivalent request whose source freshness and access
+scope remain valid.
+
+Gemini handling must distinguish `429 RESOURCE_EXHAUSTED` caused by a
+recoverable rate window from exhausted daily/project quota, and distinguish
+both from `503 UNAVAILABLE` overload. Network failures and timeouts may be
+transient; authentication, policy, unsupported model, and hard quota/cost
+failures are permanent for the current operation unless verified evidence says
+otherwise. No retry loop may consume tokens indefinitely.
+
+## 13. Local provider contract and assisted Ollama gate
+
+Ollama is not installed on the current computer. R4-D is `PLANNED / OLLAMA NOT
+INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE`. Llama models supported by
+the then-current official Ollama catalog may be evaluated, but no model,
+quantization, context window, or hardware fit is selected before the read-only
+hardware gate. Any admitted artifact is pinned by exact digest and records its
+license, quantization, configuration, storage, and verified effective limits.
+
+Llama 3.2 3B and Llama 3.1 8B quantized candidates may seed that evaluation;
+they are candidates only, not approved operational models. Their real
+availability, license, digest, RAM/VRAM, CPU/GPU behavior, context, throughput,
+latency, concurrency, storage, and energy implications must be reverified when
+the gate runs.
+
+R4-D uses the following assisted execution checklist. D.0-D.3 are internal
+steps of R4-D, not new normative phases unless the roadmap is later amended:
+
+| Step | Authorized scope and future checks | Success criterion |
+|---|---|---|
+| R4-D.0 — Hardware & Environment Preflight | Read-only verification of the real OS, architecture, CPU, RAM, GPU, VRAM, driver, free disk, virtualization/runtime constraints, and local ports; compare eligible model requirements. On Windows, the assisted run may use system inventory commands such as `Get-CimInstance`, `Get-Volume`, and vendor diagnostics such as `nvidia-smi` when already present. Install and download nothing. | Evidence identifies the real environment, constraints, candidate envelope, and stop conditions without changing the machine. |
+| R4-D.1 — Assisted Ollama Installation | After separate authorization, consult current official documentation, guide the OS-specific installation, verify service, PATH, exact version, local API, loopback binding, and firewall/exposure; explicitly disable cloud features and unintended remote access. | Ollama is versioned, healthy only on the approved local boundary, cloud-disabled, and not exposed beyond the authorized interface. |
+| R4-D.2 — Local Model Setup | After a separate download authorization, choose model and quantization from D.0 evidence; verify official availability, license, exact digest, storage, and limits; test basic inference, validated JSON, and operation with external network unavailable. | The pinned model produces the required structured contract locally and remains usable offline within measured resource limits. |
+| R4-D.3 — Performance & Adapter Validation | Measure cold/warm start, first-token and end-to-end latency, tokens/s, CPU/RAM/GPU/VRAM, effective context, initial bounded concurrency, cancellation, and adapter errors, with no unauthorized remote access. | Reproducible measurements establish a safe local operating envelope and the provider-neutral adapter passes mocked and authorized offline integration checks. |
+
+At each assisted step the project must present the exact commands before they
+run, explain expected output and side effects, and report objective pass/stop
+criteria. This contract authorizes none of those installation, download, or
+execution actions now.
+
+## 14. Gemini remote-provider contract
+
+Gemini has one adapter based on the current official `google-genai` SDK when
+R4-E is separately authorized. Historical Gemini files and the installed
+legacy package are scaffolding to reconcile, not permission to maintain
+duplicate adapters. Exact SDK and model versions are verified and pinned at
+implementation time rather than assumed here.
+
+Authorization to integrate the adapter is separate from authorization to send
+real financial data. Real financial data is ineligible for a free Gemini tier.
+Any future remote use of such data requires a verified paid project, explicit
+user opt-in, minimum-necessary payload, compatible provider data-use/retention
+policy, server-side secret handling, cost limits, and a task-specific approval.
+Without all gates, the request remains local or returns explicit
+unavailability. API keys never enter code, prompts, client storage, documents,
+tool results, or logs.
+
+## 15. Read-only tools, context, and personalization
+
+Tool access is server-side, authenticated, user-scoped, and deny-by-default.
+The runtime receives an explicit per-request allowlist, validates every typed
+argument and result, enforces a bounded call count and deadline, and audits the
+authorization decision and outcome. Tools may expose certified read models or
+deterministic engines; they cannot expose arbitrary SQL, unrestricted network
+or filesystem access, provider-native built-ins, financial operations, or any
+write capability in R4 Foundation. ADR-023 remains authoritative for initial
+wealth, and R2/R3 source and provenance semantics remain unchanged.
+
+Untrusted instructions from user or external content cannot alter system
+policy, tool authorization, user scope, provider mode, or data classification.
+Context builders structurally separate instructions from bounded sourced data,
+sanitize rendered content, preserve provenance, and omit sensitive or unrelated
+fields. The LLM does not recalculate wealth, returns, dividends, or any metric
+owned by an Engine.
+
+Initial personalization is limited to explicit, correctable user preferences
+and retrieval of certified information. Any memory must be consented,
+minimum-necessary, user-isolated, versioned, attributable, reviewable, and
+deletable. Observed pattern, hypothesis, and recommendation remain distinct.
+No sensitive-data learning, implicit memory, weight update, training pipeline,
+or fine-tuning is authorized. Local Llama inference does not change model
+weights. Any analytical model or later fine-tuning requires a separate contract
+and gate.
+
+## 16. Telemetry and benchmark contract
+
+The minimized logical telemetry envelope precedes persistence and real
+execution. It includes request ID, opaque user scope, provider/model/version or
+digest, routing decision and policy version, permitted tool-call metadata,
+latency, token counts, cost when known, retries, classified error, fallback
+reason, outcome, UTC timestamp, and certified source references. Raw prompts,
+full financial context, personal data, credentials, tokens, and API keys are
+excluded or redacted before emission. Telemetry failure cannot expose payloads
+or silently authorize a provider.
+
+The persistence medium, reuse of historical `ai_runs`, schema, retention,
+access controls, deletion, and definitive sampling remain a separate gate. No
+database, migration, or operational retention value is implied by this
+contract.
+
+Benchmarking is a harness separate from normal runtime and is not authorized to
+run. It records the exact eligible model revision/digest and configuration,
+uses identical synthetic and financially verifiable reference tasks, alternates
+candidate order, and samples explicit windows across days of week in
+`America/Bahia`. A limited pilot precedes any multi-day observation and both
+require separate approval for provider calls, model downloads, quota,
+concurrency, schedule, and budget.
+
+Quality and availability are evaluated separately. Required measures include
+success rate, `429`/`503` rates, first-token and p50/p95 end-to-end latency,
+input/output tokens, estimated and actual cost, factual and financial quality,
+source adherence, invalid-output rate, fallback result, and—locally—CPU, RAM,
+GPU/VRAM, throughput, and energy/storage observations when measurable. Sample
+size or confidence interval accompanies comparisons where applicable. No model
+or time window is preferred before measurements.
+
+## 17. Approved decisions and authorization state
+
+The user approved the following R4.0 decisions:
+
+1. **D1:** local Llama candidates require the hardware gate and digest pinning.
+2. **D2:** read-only hardware inspection precedes any model installation.
+3. **D3:** real financial data is not eligible for free Gemini; paid-project
+   verification, opt-in, minimization, and compatible policy are prerequisites.
+4. **D4:** there is one Gemini adapter, using the official `google-genai` SDK.
+5. **D5:** one retry controller uses at most three total attempts as a
+   configurable baseline within deadline and budget.
+6. **D6:** `LOCAL_ONLY` is default; `HYBRID` is opt-in; no silent fallback or
+   offline-to-cloud promotion exists.
+7. **D7:** initial circuit-breaker parameters are experimental and calibrated
+   from evidence.
+8. **D8:** the benchmark protocol is reproducible but authorizes no execution,
+   download, call, or expense.
+9. **D9:** telemetry is minimized; persistence, `ai_runs` reuse, and final
+   retention require a separate gate.
+10. **D10:** initial personalization is authorized preference plus certified
+    retrieval only, with no silent training.
+11. **D11:** R4 builds one infrastructure and reconciles historical scaffolding;
+    it does not presume an existing functional Advisor.
+12. **D12:** the first increment is tested through an internal application
+    service and mocks, with no endpoint, frontend, or scheduler.
+
+Four mandatory refinements also apply: Gemini integration approval and
+real-financial-data transmission approval are separate; `LOCAL_ONLY` returns
+explicit unavailability even when no local model exists; benchmark quality and
+availability remain separate and elect no model or schedule before evidence;
+and the telemetry contract precedes persistence and real execution, with no
+implicit database or migration.
+
+R4-A through R4-H were approved as planned increments, not as one automatic
+implementation authorization. R4-A is now `IMPLEMENTED / TESTED / AWAITING
+INDEPENDENT REVIEW`; R4-B through R4-H remain `NOT IMPLEMENTED` and require
+their own gates.
+
+## 18. R4-A implementation record
+
+R4-A implements only the provider-neutral contract foundation:
+
+- an asynchronous, SDK-free `AIProvider` application port for stable identity,
+  exact model discovery, health, generation, explicit cancellation, and
+  idempotent resource closure;
+- frozen request/response contracts for server-resolved user scope, privacy,
+  consent, capabilities, minimum structured context, certified references,
+  strict output schema, tool/token/cost budgets, UTC deadline, policy versions,
+  provider/model evidence, usage, latency, exact Decimal cost, validation,
+  retry/fallback metadata, warnings, and UTC completion time;
+- instance-scoped immutable provider/model capability registries with exact
+  identifiers and no default model, alias resolution, or mutable global state;
+- a closed safe error taxonomy with allowlisted metadata and no raw provider
+  payload or financial context;
+- strict local structural validation that rejects unknown/missing fields,
+  invalid types, floats/Decimal objects in canonical values, unauthorized or
+  missing source references, disallowed tool metadata, and token/cost overruns.
+  Certified Decimal strings, including zero and scale, are preserved. Factual
+  adherence remains explicitly `NOT_PERFORMED` for R4-B;
+- an internal application service that invokes only the provider and exact
+  model supplied by its caller after registry, locality, privacy, consent,
+  capability, lifecycle, and deadline checks. It performs no selection, retry,
+  fallback, authorization lookup, tool execution, context building, or write;
+- a deterministic synthetic fake adapter covering valid output, invalid schema,
+  timeout, unavailability, rate limiting, cancellation, usage, cost, discovery,
+  health, and closure without network, provider SDK, environment, database, or
+  filesystem I/O.
+
+**Schema scope clarification (DOC-R4A-01 / DOC-R4A-02):** R4-A implements a
+canonical, strict structural AST (`CanonicalOutputSchema` / `OutputSchemaNode`),
+not a generic interpreter for every JSON Schema version. It does not claim
+support for JSON Schema keywords such as `pattern`, `minimum`, `maximum`, or
+`$ref`. `OutputSchemaNode` also has no enum restriction in R4-A. A future
+capability that depends on any of those semantics requires a contract extension
+and focused tests before activation.
+
+**Deferred independent-review finding (MIN-R4A-01):** When a structural failure
+occurs in a nested node, the full nested path is not yet propagated into
+`AIErrorMetadata.field`. The finding has no confirmed functional impact on
+R4-A validation or rejection behavior. It remains deferred; `validation.py` is
+not changed by this checkpoint.
+
+Focused validation passed `32` R4-A tests. Minimal R2 Smart Context and R3
+External Reference regressions passed `39` tests. The user-reported root/backend
+`GEMINI_API_KEY` configuration was neither read nor tested; its presence grants
+no adapter, remote-processing, or real-financial-data authorization. No Gemini
+or Ollama code ran, Ollama remains uninstalled, and no benchmark, database,
+migration, endpoint, frontend, scheduler, commit, or push was introduced.
