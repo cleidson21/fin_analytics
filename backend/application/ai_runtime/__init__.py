@@ -46,6 +46,23 @@ from .contracts import (
 from .errors import AIContractError, AIErrorCode, AIErrorMetadata
 from .registry import ModelCapabilityRegistry, ProviderCapabilityRegistry
 from .validation import CanonicalOutputValidator
+from .tool_contracts import (
+    ContextCompleteness,
+    FeatureContextToolArguments,
+    OwnedGoalToolArguments,
+    ReadOnlyToolDefinition,
+    ReadOnlyToolRegistry,
+    ToolArgumentContract,
+    ToolArgumentKind,
+    ToolAuthorizationRule,
+    ToolExecutionResult,
+    ToolExecutionState,
+    ToolInvocation,
+    ToolProvenanceContract,
+    ToolResultContract,
+    ToolResultStatus,
+    ToolSideEffect,
+)
 
 
 __all__ = [
@@ -96,4 +113,19 @@ __all__ = [
     "ModelCapabilityRegistry",
     "ProviderCapabilityRegistry",
     "CanonicalOutputValidator",
+    "ContextCompleteness",
+    "FeatureContextToolArguments",
+    "OwnedGoalToolArguments",
+    "ReadOnlyToolDefinition",
+    "ReadOnlyToolRegistry",
+    "ToolArgumentContract",
+    "ToolArgumentKind",
+    "ToolAuthorizationRule",
+    "ToolExecutionResult",
+    "ToolExecutionState",
+    "ToolInvocation",
+    "ToolProvenanceContract",
+    "ToolResultContract",
+    "ToolResultStatus",
+    "ToolSideEffect",
 ]

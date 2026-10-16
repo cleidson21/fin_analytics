@@ -1,8 +1,8 @@
 # AI & LLM Architecture
 
-**Status:** `10.R4-A IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW / PROVIDERS NOT INTEGRATED`
+**Status:** `10.R4-B INDEPENDENTLY APPROVED / PROVIDERS NOT INTEGRATED`
 
-**Date:** 2026-10-15
+**Date:** 2026-10-16
 
 **Canonical responsibility:** current AI-runtime truth, AI authority/privacy
 boundaries, and high-level provider/tool direction. Phase 10.R4 owns the exact
@@ -18,9 +18,9 @@ No AI runtime is currently operating in the application.
 - no OpenAI client/runtime;
 - no Ollama integration/runtime;
 - no scheduler for AI work;
-- R4-A provider-neutral contracts now exist, but there is no real provider
-  adapter, authorization/tool registry, router, retry executor, or runtime
-  telemetry;
+- R4-A provider-neutral contracts and the internal R4-B authorization,
+  read-only tool, and minimum-context boundaries now exist, but there is no
+  real provider adapter, router, retry executor, or runtime telemetry;
 - `backend/integrations/gemini/classifier.py`, `models.py`, and `prompts.py` are
   empty files;
 - AI-related tables, environment settings, and installed SDKs are scaffolding,
@@ -407,9 +407,9 @@ and the telemetry contract precedes persistence and real execution, with no
 implicit database or migration.
 
 R4-A through R4-H were approved as planned increments, not as one automatic
-implementation authorization. R4-A is now `IMPLEMENTED / TESTED / AWAITING
-INDEPENDENT REVIEW`; R4-B through R4-H remain `NOT IMPLEMENTED` and require
-their own gates.
+implementation authorization. R4-A is `CLOSED / PUSHED`. R4-B is now
+`INDEPENDENTLY APPROVED`; R4-C through R4-H remain `NOT IMPLEMENTED` and
+require their own gates.
 
 ## 18. R4-A implementation record
 
@@ -461,3 +461,54 @@ External Reference regressions passed `39` tests. The user-reported root/backend
 no adapter, remote-processing, or real-financial-data authorization. No Gemini
 or Ollama code ran, Ollama remains uninstalled, and no benchmark, database,
 migration, endpoint, frontend, scheduler, commit, or push was introduced.
+
+## 19. R4-B implementation record
+
+R4-B implements only the internal authorization, read-only tool, and minimum
+context boundary:
+
+- `TrustedServerUserScopeResolver` derives `ServerUserScope` from the active
+  `UserResponseDTO` supplied by the existing authenticated server boundary. A
+  tool argument cannot set or replace `user_id`, and a request scope that does
+  not match the authenticated principal fails closed;
+- an immutable, instance-scoped registry contains exactly
+  `read_home_context`, `read_planning_context`, `read_goal_context`,
+  `read_fire_context`, and `read_owned_goal`. Definitions fix version,
+  purpose, exact argument/result contracts, handler, authorization rule,
+  financial data class, local timeout, per-request call ceiling, provenance,
+  and `READ_ONLY` side effect. There are no aliases, wildcards, reflection,
+  dynamic handlers, or R3 External Reference tool;
+- the first four handlers delegate only to `SmartContextConsumerFoundation`.
+  `read_owned_goal` delegates to the existing Decimal-safe
+  `PlanningGoalReadQuery.get_goal(...)`, passes the authenticated user ID, and
+  revalidates the returned owner before exposing a minimized result;
+- the executor denies unknown, non-allowlisted, wrong-purpose, wrong-privacy,
+  over-budget, expired, or cross-owner calls before returning context. Exact
+  server-side parsers accept only `as_of_date` or `goal_id`; extra fields such
+  as `user_id`, SQL, URL, path, or write instructions are rejected without
+  relying on unsupported `OutputSchemaNode` enum or generic JSON Schema
+  semantics;
+- `MinimalAIContextBuilder` preserves certified Decimal strings (including
+  zero), civil/observed time, semantic type, source/owner, scope, freshness,
+  explicit unavailable/assumption states, evidence, provenance, and
+  completeness. It omits Goal `user_id` and linked-account identity, performs
+  no financial calculation, and labels retrieved text structurally as
+  `UNTRUSTED_DATA` rather than interpreting it as policy;
+- the existing R2 exact-single-user guard remains fail-closed but is not
+  represented as universal multi-tenant authorization. Ownership exceptions
+  become safe `AUTHORIZATION_DENIED` errors; missing or cross-owner Goal reads
+  do not return data;
+- tool timeout enforcement checks the request deadline before execution and
+  rejects a result that completes after the local tool ceiling. Because the
+  certified R2 readers are synchronous, R4-B does not claim unsafe cross-thread
+  preemption of an already-running reader; hard cancellation remains a future
+  adapter/runtime concern if evidence requires it.
+
+Focused validation passes `24` R4-B tests plus `60` directly related R4-A/R2
+regressions (`84 passed` combined). Provider-output factual adherence remains
+`NOT_PERFORMED`; R4-B validates certified tool construction, not an LLM claim
+against tool results. No provider, network, operational database, migration,
+endpoint, frontend, scheduler, persistence, R3 consumer, engine invocation,
+commit, or push is introduced. Independent review reports `84 passed`, five
+read-only tools, and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. R4-B is
+independently approved but not `CLOSED / PUSHED` until its Git checkpoint.

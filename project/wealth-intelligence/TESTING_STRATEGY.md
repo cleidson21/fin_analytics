@@ -829,6 +829,24 @@ pushed.
   activation. `MIN-R4A-01` remains deferred: nested structural failure paths
   are not fully propagated to `AIErrorMetadata.field`, with no confirmed
   functional impact; this checkpoint intentionally changes no validator code.
+- **R4-B implementation evidence (2026-10-16):** `24` focused tests cover the
+  immutable exact registry; server-derived active-user scope; scope mismatch,
+  wrong-owner and ambiguous single-tenant failure; all four R2 context tools;
+  owned-Goal delegation and returned-owner revalidation; unknown/cross-purpose
+  denial; strict rejection of extra `user_id`, SQL, URL, filesystem and write
+  arguments; request/per-tool budgets; deadline/local timeout rejection;
+  explicit absence, Decimal-string zero, provenance, completeness, minimized
+  Goal fields, and prompt injection preserved only as `UNTRUSTED_DATA`. The
+  directly related R4-A contracts, R2 consumer/ownership, and Planning reader
+  regressions add `60 passed`, for `84 passed` combined. Fakes and existing
+  isolated test fixtures were used; no active database, provider, network,
+  write, migration, endpoint, or R3 tool was exercised. Synchronous reader
+  timeout is admission/late-result enforcement, not a claim of preemptive
+  cancellation.
+- **R4-B independent review (2026-10-16):** Approved with `84 passed`, five
+  read-only tools, and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings.
+  `MIN-R4A-01` remains deferred; no provider, endpoint, persistence, or R3
+  consumer was activated by this review.
 
 ### Phase 10.R5 — Design / Navigation / Theme
 - Validate System/Light/Dark, persistence/system preference, semantic tokens,

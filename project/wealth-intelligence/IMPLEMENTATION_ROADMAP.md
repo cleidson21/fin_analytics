@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R4-A IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`
-**Date:** 2026-10-15
+**Status:** `ACTIVE QUEUE — 10.R4-B INDEPENDENTLY APPROVED`
+**Date:** 2026-10-16
 
 ---
 
@@ -10,7 +10,7 @@
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
 | 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
-| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A AWAITING INDEPENDENT REVIEW` | R2 + R3 context semantics and deterministic tools; ADR-030 |
+| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A CLOSED / R4-B INDEPENDENTLY APPROVED` | R2 + R3 context semantics and deterministic tools; ADR-030 |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
 | 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
@@ -159,15 +159,16 @@ activated, R3-H remains deferred, and the current roadmap defines no R3-F2.
 ### 10.R4 planned increment sequence
 
 R4.0 approved the architecture contract and decomposition without automatically
-authorizing every increment. The user subsequently authorized R4-A only. R4-A
-is implemented and locally tested but remains open pending independent review
-and a separately authorized Git checkpoint; R4-B through R4-H are not
-implemented.
+authorizing every increment. R4-A is closed and pushed at
+`bea92edb18872bd3e3603dc10ebc62bed8de8100`. The user subsequently authorized
+the minimum R4-B implementation; it is independently approved with `84 passed`
+and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings, but remains open pending
+a separately authorized Git checkpoint. R4-C through R4-H are not implemented.
 
 | Task | Planned outcome | Current status | Hard dependency or gate |
 |---|---|---|---|
-| R4-A | Provider-Neutral Contracts | `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW` | R4.0 contract; internal application service and deterministic fake only; no endpoint/provider/network |
-| R4-B | Authorization, Tools & Minimal Context | `PLANNED / NOT AUTHORIZED` | R4-A; server-side user scope; read-only allowlist; R2/R3 certified context |
+| R4-A | Provider-Neutral Contracts | `CLOSED / PUSHED` | checkpoint `bea92edb18872bd3e3603dc10ebc62bed8de8100`; internal application service and deterministic fake only |
+| R4-B | Authorization, Tools & Minimal Context | `INDEPENDENTLY APPROVED` | exact five-tool read-only registry over R2; server-side scope; no R3 consumer/provider/endpoint; `84 passed`; 0 new blocking/material/minor findings |
 | R4-C | Audit & Telemetry Boundary | `PLANNED / NOT AUTHORIZED` | R4-A; minimized logical envelope; persistence, retention, `ai_runs`, and migration require a separate gate |
 | R4-D | Ollama Local Adapter | `PLANNED / OLLAMA NOT INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE` | R4-A/R4-C; D.0 hardware evidence; separate installation and model-download authorizations |
 | R4-E | Gemini Resilient Adapter | `PLANNED / NOT AUTHORIZED` | R4-A/R4-C; current official SDK verification; adapter integration approval is separate from real-financial-data transmission approval |

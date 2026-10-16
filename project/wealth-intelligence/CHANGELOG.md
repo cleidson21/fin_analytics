@@ -1,5 +1,27 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R4-B] — 2026-10-16 — Authorization, Read-Only Tools & Minimal Context
+
+- Added a trusted server-side scope resolver over the existing authenticated
+  user DTO and a deny-by-default executor that enforces scope, purpose,
+  privacy, exact arguments, request/per-tool call budgets, deadline, local
+  timeout, ownership, and safe typed failures.
+- Added an immutable exact registry for `read_home_context`,
+  `read_planning_context`, `read_goal_context`, `read_fire_context`, and
+  `read_owned_goal`. The first four reuse R2 `SmartContextConsumerFoundation`;
+  the fifth reuses and revalidates the existing owned Goal reader.
+- Added a minimized context builder preserving Decimal strings, zero, source,
+  owner/scope, time, freshness, explicit absence, evidence, provenance, and
+  completeness while marking retrieved text as untrusted data and omitting
+  Goal ownership/account identifiers.
+- Focused R4-B validation: `24 passed`; directly related R4-A/R2/Planning
+  regressions: `60 passed`; combined: `84 passed`. No global suite was run.
+- Independent review approved R4-B with `84 passed`, five read-only tools, and
+  `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. It is
+  `INDEPENDENTLY APPROVED`, not yet `CLOSED / PUSHED`. R3 External Reference,
+  provider adapters/calls, Engines, writes, persistence, migrations, endpoints,
+  frontend, scheduler, commit, and push remain absent or deferred.
+
 ## [PHASE-10.R4-A] — 2026-10-15 — Provider-Neutral Contracts
 
 - Added an asynchronous SDK-free `AIProvider` port, immutable request/response,
@@ -13,9 +35,10 @@
   Decimal cost, and resource-closure verification.
 - Focused R4-A validation: `32 passed`. Minimal R2 Smart Context and R3 External
   Reference regressions: `39 passed`. No global suite was run.
-- Status is `IMPLEMENTED / TESTED / AWAITING INDEPENDENT REVIEW`, not closed.
-  R4-B through R4-H remain not implemented; Ollama is not installed, Gemini was
-  not called, and benchmarking was not executed.
+- R4-A was independently approved and published at
+  `bea92edb18872bd3e3603dc10ebc62bed8de8100`; it is `CLOSED / PUSHED`.
+  Ollama is not installed, Gemini was not called, and benchmarking was not
+  executed.
 - No provider SDK installation/import, API-key read/test, network call,
   operational database access, migration, persistence, endpoint, frontend,
   scheduler, commit, or push occurred.
