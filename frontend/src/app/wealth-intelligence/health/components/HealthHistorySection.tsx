@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -31,7 +31,7 @@ export function HealthHistorySection({ history }: { history: HistoricalFinancial
   if (history.length === 0) {
     return (
       <HealthPanel title="Histórico financeiro">
-        <div className="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-zinc-500">
+        <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
           Não há histórico para exibir.
         </div>
       </HealthPanel>
@@ -59,7 +59,7 @@ export function HealthHistorySection({ history }: { history: HistoricalFinancial
     <HealthPanel
       title="Histórico financeiro"
       action={
-        <span className="rounded-full border border-sky-400/15 bg-sky-400/[0.07] px-2.5 py-1 text-[11px] font-medium text-sky-300">
+        <span className="rounded-full border border-sky-400/15 bg-sky-400/[0.07] px-2.5 py-1 text-[11px] font-medium text-sky-700 dark:text-sky-300">
           {chartHistory.length === 1 ? "Último mês" : `Últimos ${chartHistory.length} meses`}
         </span>
       }
@@ -77,80 +77,80 @@ export function HealthHistorySection({ history }: { history: HistoricalFinancial
           initialDimension={{ width: 800, height: 340 }}
         >
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="referenceMonth"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#71717a", fontSize: 11 }}
+              tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
               tickFormatter={(value: string) => formatReferenceMonth(value, true)}
               minTickGap={18}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#71717a", fontSize: 11 }}
+              tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
               tickFormatter={(value: number) =>
                 new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value)
               }
             />
             <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.025)" }}
+              cursor={{ fill: "var(--chart-grid)" }}
               contentStyle={{
-                background: "rgba(18,18,20,0.97)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "var(--popover)",
+                border: "1px solid var(--chart-grid)",
                 borderRadius: "12px",
                 boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
               }}
-              labelStyle={{ color: "#e4e4e7", marginBottom: 8 }}
+              labelStyle={{ color: "var(--foreground)", marginBottom: 8 }}
               labelFormatter={(value) => formatReferenceMonth(String(value))}
               formatter={(value, name) => [formatCurrency(String(value)), seriesLabels[String(name)] ?? String(name)]}
             />
             <Legend
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ color: "#a1a1aa", fontSize: 12, paddingTop: 12 }}
+              wrapperStyle={{ color: "var(--chart-axis)", fontSize: 12, paddingTop: 12 }}
               formatter={(value) => seriesLabels[value] ?? value}
             />
-            <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} maxBarSize={24} />
-            <Bar dataKey="expense" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={24} />
-            <Bar dataKey="net" fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={24} />
+            <Bar dataKey="income" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={24} />
+            <Bar dataKey="expense" fill="var(--chart-5)" radius={[4, 4, 0, 0]} maxBarSize={24} />
+            <Bar dataKey="net" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={24} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-xl border border-white/[0.06]">
+      <div className="mt-4 overflow-x-auto rounded-xl border border-border">
         <table className="w-full min-w-[650px] text-left text-xs">
           <caption className="sr-only">Valores mensais exatos do histórico financeiro</caption>
-          <thead className="bg-black/20">
+          <thead className="bg-muted/35">
             <tr>
-              <th scope="col" className="px-4 py-3 font-semibold text-zinc-400">Mês</th>
-              <th scope="col" className="px-4 py-3 text-right font-semibold text-emerald-300/80">Receitas</th>
-              <th scope="col" className="px-4 py-3 text-right font-semibold text-rose-300/80">Despesas</th>
-              <th scope="col" className="px-4 py-3 text-right font-semibold text-sky-300/80">Fluxo líquido</th>
-              <th scope="col" className="px-4 py-3 text-right font-semibold text-violet-300/80">Taxa</th>
+              <th scope="col" className="px-4 py-3 font-semibold text-muted-foreground">Mês</th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold text-success-foreground">Receitas</th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold text-destructive">Despesas</th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold text-sky-700 dark:text-sky-300">Fluxo líquido</th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold text-violet-700 dark:text-violet-300">Taxa</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.05]">
+          <tbody className="divide-y divide-border">
             {[...tableHistory].reverse().map((item) => (
               <tr
                 key={item.reference_month}
-                className="text-zinc-300 odd:bg-white/[0.012] even:bg-white/[0.028] hover:bg-white/[0.045]"
+                className="text-foreground/90 odd:bg-muted/25 even:bg-muted/30 hover:bg-muted/40"
               >
-                <th scope="row" className="whitespace-nowrap px-4 py-2.5 font-semibold capitalize text-zinc-100">
+                <th scope="row" className="whitespace-nowrap px-4 py-2.5 font-semibold capitalize text-foreground">
                   {formatReferenceMonth(item.reference_month)}
                 </th>
-                <td className="px-4 py-2.5 text-right font-medium tabular-nums text-emerald-300/90">
+                <td className="px-4 py-2.5 text-right font-medium tabular-nums text-success-foreground">
                   {formatCurrency(item.total_income)}
                 </td>
-                <td className="px-4 py-2.5 text-right font-medium tabular-nums text-rose-300/90">
+                <td className="px-4 py-2.5 text-right font-medium tabular-nums text-destructive">
                   {formatCurrency(item.total_expense)}
                 </td>
                 <td className={`px-4 py-2.5 text-right font-semibold tabular-nums ${financialTone(item.net_cashflow)}`}>
                   {formatCurrency(item.net_cashflow)}
                 </td>
                 <td className={`px-4 py-2.5 text-right font-semibold tabular-nums ${
-                  item.savings_rate === null ? "text-zinc-600" : financialTone(item.savings_rate)
+                  item.savings_rate === null ? "text-muted-foreground" : financialTone(item.savings_rate)
                 }`}>
                   {formatPercent(item.savings_rate)}
                 </td>
@@ -166,17 +166,17 @@ export function HealthHistorySection({ history }: { history: HistoricalFinancial
             type="button"
             onClick={() => setPageFromLatest((page) => Math.max(0, page - 1))}
             disabled={!hasNewerRecords}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-35"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-muted/35 px-3 text-xs font-medium text-foreground/90 transition hover:bg-muted/55 disabled:cursor-not-allowed disabled:opacity-35"
           >
             <ChevronLeft aria-hidden="true" size={14} />
             Mais recentes
           </button>
-          <span className="text-xs tabular-nums text-zinc-500">{rangeStart}–{rangeEnd} de {history.length}</span>
+          <span className="text-xs tabular-nums text-muted-foreground">{rangeStart}–{rangeEnd} de {history.length}</span>
           <button
             type="button"
             onClick={() => setPageFromLatest((page) => Math.min(page + 1, pageCount - 1))}
             disabled={!hasOlderRecords}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-35"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-muted/35 px-3 text-xs font-medium text-foreground/90 transition hover:bg-muted/55 disabled:cursor-not-allowed disabled:opacity-35"
           >
             Mais antigos
             <ChevronRight aria-hidden="true" size={14} />

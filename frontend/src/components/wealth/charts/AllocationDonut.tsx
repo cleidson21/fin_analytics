@@ -17,8 +17,8 @@ const DonutTooltip = ({ active, payload }: Record<string, unknown>) => {
   return (
     <div
       style={{
-        backgroundColor: "rgba(20,20,20,0.97)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        backgroundColor: "var(--popover)",
+        border: "1px solid var(--border)",
         borderRadius: "12px",
         padding: "12px 16px",
         boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
@@ -27,9 +27,9 @@ const DonutTooltip = ({ active, payload }: Record<string, unknown>) => {
     >
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
         <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: d.color, boxShadow: `0 0 6px ${d.color}80` }} />
-        <span style={{ color: "#e5e7eb", fontSize: "13px", fontWeight: 600 }}>{d.name}</span>
+        <span style={{ color: "var(--foreground)", fontSize: "13px", fontWeight: 600 }}>{d.name}</span>
       </div>
-      <p style={{ color: "#ffffff", fontSize: "15px", fontWeight: 700, margin: 0 }}>{formatCurrency(d.value)}</p>
+      <p style={{ color: "var(--foreground)", fontSize: "15px", fontWeight: 700, margin: 0 }}>{formatCurrency(d.value)}</p>
     </div>
   );
 };

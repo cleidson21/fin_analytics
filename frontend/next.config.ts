@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: '/goals',
+        destination: '/wealth-intelligence/goals',
+        permanent: false,
+      },
+      {
         source: '/governance/transactions',
         destination: '/governance/data?tab=transactions',
         permanent: true,

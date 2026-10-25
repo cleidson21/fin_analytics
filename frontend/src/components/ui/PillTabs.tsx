@@ -19,8 +19,8 @@ export function PillTabs({
   tabs,
   activeTab,
   onChange,
-  activeColor = "#4ecf98",
-  activeBg = "rgba(78,207,152,0.12)",
+  activeColor = "var(--financial-positive)",
+  activeBg = "color-mix(in oklab, var(--financial-positive) 12%, transparent)",
   className,
 }: PillTabsProps) {
   return (
@@ -30,15 +30,16 @@ export function PillTabs({
         return (
           <button
             key={tab.id}
+            type="button"
             onClick={() => onChange(tab.id)}
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-semibold transition-colors",
-              isActive ? "" : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border border-transparent"
+              isActive ? "" : "border border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
             )}
             style={{
               backgroundColor: isActive ? activeBg : "transparent",
               color: isActive ? activeColor : undefined,
-              borderColor: isActive ? activeColor.replace("1)", "0.3)") : undefined, // fallback if hex
+              borderColor: isActive ? `color-mix(in oklab, ${activeColor} 35%, transparent)` : undefined,
               borderWidth: isActive ? 1 : 1,
               borderStyle: "solid",
             }}

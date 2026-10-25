@@ -30,21 +30,14 @@ export function WealthChartCard({
   return (
     <div
       className={cn(
-        "rounded-2xl p-5 flex flex-col transition-all duration-200",
+        "flex flex-col rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm transition-colors duration-200 hover:bg-accent/25 motion-reduce:transition-none",
         flexMode ? "overflow-visible" : "",
         className
       )}
-      style={{
-        background: "rgba(26,26,26,0.9)",
-        border: "1px solid rgba(255,255,255,0.07)",
-      }}
     >
       {/* Header */}
       <div className="flex justify-between items-center mb-5 flex-shrink-0">
-        <h3
-          className="text-sm font-medium"
-          style={{ color: "#d1d5db" }}
-        >
+        <h3 className="text-sm font-medium text-foreground/90">
           {title}
         </h3>
         {action && <div>{action}</div>}
@@ -55,18 +48,15 @@ export function WealthChartCard({
         // Modo tabela: sem altura mínima fixa, o card cresce com o conteúdo
         <div className="w-full">
           {isLoading ? (
-            <div className="h-32 w-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+            <div className="h-32 w-full animate-pulse rounded-xl bg-muted motion-reduce:animate-none" />
           ) : isError ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-10" style={{ color: "#6b7280" }}>
+            <div className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground">
               <AlertCircle size={28} style={{ opacity: 0.5 }} />
               <p className="text-sm">Dados indisponíveis no momento.</p>
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                  style={{ background: "rgba(255,255,255,0.05)", color: "#9ca3af" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <RefreshCw size={12} />
                   Tentar novamente
@@ -81,9 +71,9 @@ export function WealthChartCard({
         // Modo flex: filho controla seu próprio layout, sem absolute, overflow visível para popups
         <div className="flex-1 w-full flex flex-col overflow-visible" style={{ minHeight: 200 }}>
           {isLoading ? (
-            <div className="w-full h-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)", minHeight: 200 }} />
+            <div className="h-full min-h-[200px] w-full animate-pulse rounded-xl bg-muted motion-reduce:animate-none" />
           ) : isError ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-10" style={{ color: "#6b7280" }}>
+            <div className="flex flex-col items-center justify-center gap-3 py-10 text-muted-foreground">
               <AlertCircle size={28} style={{ opacity: 0.5 }} />
               <p className="text-sm">Dados indisponíveis no momento.</p>
             </div>
@@ -96,19 +86,16 @@ export function WealthChartCard({
         <div className="flex-1 relative min-h-[200px] w-full h-full flex flex-col">
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-full h-full rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+              <div className="h-full w-full animate-pulse rounded-xl bg-muted motion-reduce:animate-none" />
             </div>
           ) : isError ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ color: "#6b7280" }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
               <AlertCircle size={28} style={{ opacity: 0.5 }} />
               <p className="text-sm">Dados indisponíveis no momento.</p>
               {onRetry && (
                 <button
                   onClick={onRetry}
-                  className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                  style={{ background: "rgba(255,255,255,0.05)", color: "#9ca3af" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+                  className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <RefreshCw size={12} />
                   Tentar novamente

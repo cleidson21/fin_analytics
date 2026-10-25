@@ -14,6 +14,7 @@ from backend.api.routers.planning import router as planning_router
 from backend.api.routers.fire import router as fire_router
 from backend.api.routers.profile import router as profile_router
 from backend.api.routers.financial_context import router as financial_context_router
+from backend.api.routers.wealth_home import router as wealth_home_router
 
 app = FastAPI(title="Fin Analytics")
 
@@ -66,3 +67,6 @@ app.include_router(profile_router, prefix="/api/v1")
 
 # Recurring-income candidate decision API (Phase 10.R2-B4).
 app.include_router(financial_context_router, prefix="/api/v1")
+
+# Wealth Home W2: authenticated Health and owned-Goals read composition only.
+app.include_router(wealth_home_router, prefix="/api/v1")

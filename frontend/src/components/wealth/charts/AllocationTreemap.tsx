@@ -94,11 +94,11 @@ export function AllocationTreemap({ data }: AllocationTreemapProps) {
             if (payload && payload.length > 0) {
               const node = payload[0].payload;
               return (
-                <div className="bg-[#242424] border border-white/[0.08] rounded-xl p-3 text-white shadow-xl">
-                  <p className="font-semibold text-sm mb-1">{node.name}</p>
-                  <p className="text-xs text-neutral-400">Valor: {formatCurrency(node.value)}</p>
+                <div className="rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-xl">
+                  <p className="mb-1 text-sm font-semibold">{node.name}</p>
+                  <p className="text-xs text-muted-foreground">Valor: {formatCurrency(node.value)}</p>
                   {node.peso !== undefined && (
-                    <p className="text-xs text-neutral-500 mt-0.5">Peso: {node.peso.toFixed(1)}%</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">Peso: {node.peso.toFixed(1)}%</p>
                   )}
                 </div>
               );

@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, User, ChevronDown, ShieldCheck } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { getTabsForPath } from "@/config/navigation";
+import {
+  buildPeriodAwareTabHref,
+  getTabsForPath,
+  isNavigationTabActive,
+} from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 
 const TAB_COLORS: Record<string, string> = {
   "/wealth-intelligence/planning": "#c4b5fd",
@@ -23,9 +28,9 @@ const TAB_COLORS: Record<string, string> = {
   "/governance/imports":       "#4ecf98",  // Nova Importação — verde
   "/governance/database":      "#94a3b8",  // Saneamento — slate
   "/governance/audit":         "#f687b3",  // Auditoria — rosa
-  "/wealth-intelligence":      "#b794f4",  // Wealth Intelligence Dashboard — violeta
+  "/wealth-intelligence":      "#b794f4",  // Visão geral patrimonial — violeta
   "/wealth-intelligence/health": "#7EB8F7", // Saúde Financeira — azul
-  "/goals":                    "#4ecf98",  // Metas — verde
+  "/wealth-intelligence/goals": "#4ecf98", // Metas — verde
   "/wealth":                   "#94a3b8",  // Resumo — neutro
   "/wealth/patrimonio":        "#4ecf98",  // Patrimônio — verde
   "/wealth/allocation":        "#f5a623",  // Alocação — âmbar
@@ -68,20 +73,20 @@ function UserMenu() {
       <button
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-sm transition-all duration-200",
+          "flex items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
           open
-            ? "border-white/15 bg-white/[0.08] shadow-lg"
-            : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/12"
+            ? "border-border bg-accent shadow-lg"
+            : "border-border bg-card hover:bg-accent"
         )}
       >
         {/* Avatar */}
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 text-[11px] font-bold text-white shadow-sm">
           {initials}
         </span>
-        <span className="font-medium text-zinc-200 hidden sm:block">{firstName}</span>
+        <span className="hidden font-medium text-foreground sm:block">{firstName}</span>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 text-zinc-500 transition-transform duration-200",
+            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
             open && "rotate-180"
           )}
         />
@@ -89,22 +94,22 @@ function UserMenu() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-white/[0.09] bg-zinc-950/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
+        <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl shadow-black/20">
           {/* User info header */}
-          <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 text-[13px] font-bold text-white">
               {initials}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-zinc-100">
+              <p className="truncate text-sm font-semibold text-foreground">
                 {user.name || "Usuário"}
               </p>
-              <p className="truncate text-[11px] text-zinc-500">{user.email}</p>
+              <p className="truncate text-[11px] text-muted-foreground">{user.email}</p>
             </div>
           </div>
 
           {/* Role badge */}
-          <div className="px-4 py-2.5 border-b border-white/[0.06]">
+          <div className="border-b border-border px-4 py-2.5">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-400/20">
               <ShieldCheck className="h-3 w-3" />
               {user.role}
@@ -116,14 +121,14 @@ function UserMenu() {
             <Link
               href="/profile"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-zinc-300 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <User className="h-4 w-4 text-zinc-500" />
+              <User className="h-4 w-4 text-muted-foreground" />
               Meu perfil
             </Link>
             <button
               onClick={() => { setOpen(false); logout(); }}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-rose-400 transition-colors hover:bg-rose-500/[0.08] hover:text-rose-300"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive"
             >
               <LogOut className="h-4 w-4" />
               Sair da conta
@@ -136,6 +141,7 @@ function UserMenu() {
 }
 export function TopNav() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const tabs = getTabsForPath(pathname);
   if (!tabs) {
@@ -143,50 +149,27 @@ export function TopNav() {
   }
 
   return (
-    <div className="flex justify-center pt-8 pb-0">
-      <nav className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-white/[0.03] p-1 relative z-10">
+    <div className="relative flex flex-col gap-3 px-4 pt-4 sm:px-6 lg:block lg:pt-8">
+      <nav aria-label="Navegação da seção" className="relative z-10 flex w-full min-w-0 items-center gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 shadow-sm lg:mx-auto lg:w-fit">
         {tabs.map((tab) => {
-          let activePath = pathname;
-          if (pathname.startsWith("/wealth/asset")) {
-            activePath = "/wealth/allocation";
-          }
-          
-          let isActive = activePath === tab.href;
-
-          if (!tabs.some(t => t.href === activePath)) {
-             if (tab.href !== "/" && tab.href !== "/wealth" && tab.href !== "/governance" && activePath.startsWith(tab.href + "/")) {
-                isActive = true;
-             } else {
-                 const isBaseTab = tab.href === "/" || tab.href === "/wealth" || tab.href === "/governance";
-                 // Only highlight base tab if NO other tab is a prefix match
-                 const hasOtherPrefixMatch = tabs.some(t => t.href !== tab.href && t.href !== "/" && activePath.startsWith(t.href + "/"));
-                 if (isBaseTab && activePath.startsWith(tab.href === "/" ? "/" : tab.href + "/") && !hasOtherPrefixMatch) {
-                    isActive = true;
-                 }
-             }
-          }
+          const isActive = isNavigationTabActive(
+            pathname,
+            tab.href,
+            tabs.map((candidate) => candidate.href),
+          );
 
           const dotColor = TAB_COLORS[tab.href];
 
           return (
             <Link
               key={tab.name}
-              href={tab.href}
+              href={buildPeriodAwareTabHref(pathname, tab.href, searchParams)}
               className={cn(
-                "flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm transition-all duration-200",
+                "flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
                 isActive
-                  ? "font-semibold shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-300"
+                  ? "bg-accent font-semibold text-accent-foreground shadow-sm ring-1 ring-inset ring-border"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
-              style={
-                isActive && dotColor
-                  ? {
-                      color: dotColor,
-                      background: `${dotColor}14`,
-                      boxShadow: `0 0 0 1px ${dotColor}25`,
-                    }
-                  : undefined
-              }
             >
               <span
                 className={cn("h-[7px] w-[7px] flex-shrink-0 rounded-full", !isActive && "opacity-25")}
@@ -199,7 +182,8 @@ export function TopNav() {
       </nav>
 
       {/* User Menu — top right */}
-      <div className="absolute right-6 top-6 z-20">
+      <div className="order-first flex items-center justify-end gap-2 lg:absolute lg:right-6 lg:top-6 lg:z-20">
+        <ThemeSwitcher compact />
         <UserMenu />
       </div>
     </div>

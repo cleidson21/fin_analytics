@@ -26,7 +26,7 @@ export function DiversificationGauge({ score }: DiversificationGaugeProps) {
         <path
           d="M 10 50 A 40 40 0 0 1 90 50"
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="var(--chart-grid)"
           strokeWidth="12"
           strokeLinecap="round"
         />

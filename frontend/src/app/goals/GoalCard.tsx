@@ -1,45 +1,53 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
-import { GoalType, GoalStatus, GoalPriority, type Goal } from "./types";
+import {
+  CalendarDays,
+  ChevronDown,
+  CircleDollarSign,
+  Pencil,
+  Target,
+  Trash2,
+} from "lucide-react";
 
-// ------------------------------------------------------------------ //
-// Utilitários de formatação                                           //
-// ------------------------------------------------------------------ //
+import type { Goal } from "./types";
 
-const BRL = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+const BRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+
+const PERCENT = new Intl.NumberFormat("pt-BR", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
 
 const GOAL_TYPE_LABELS: Record<string, string> = {
-  EMERGENCY_RESERVE: "Reserva de Emergência",
+  EMERGENCY_RESERVE: "Reserva de emergência",
   RETIREMENT: "Aposentadoria",
   TRAVEL: "Viagem",
   PURCHASE: "Compra",
   CUSTOM: "Personalizada",
-  WEALTH_TARGET: "Patrimônio-Alvo",
-  INVESTMENT_TARGET: "Investimento-Alvo",
-  DIVIDEND_INCOME: "Renda de Dividendos",
-  FINANCIAL_INDEPENDENCE: "Independência Financeira",
+  WEALTH_TARGET: "Patrimônio-alvo",
+  INVESTMENT_TARGET: "Investimento-alvo",
+  DIVIDEND_INCOME: "Renda de dividendos",
+  FINANCIAL_INDEPENDENCE: "Independência financeira",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  ACTIVE:    { label: "Ativa",     color: "#4ecf98", bg: "rgba(78,207,152,0.12)" },
-  PAUSED:    { label: "Pausada",   color: "#f5a623", bg: "rgba(245,166,35,0.12)" },
-  ACHIEVED:  { label: "Concluída", color: "#7EB8F7", bg: "rgba(126,184,247,0.12)" },
-  CANCELLED: { label: "Cancelada", color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  ACTIVE: { label: "Ativa", className: "border-emerald-400/20 bg-emerald-400/10 text-success-foreground" },
+  PAUSED: { label: "Pausada", className: "border-amber-400/20 bg-amber-400/10 text-warning-foreground" },
+  ACHIEVED: { label: "Concluída", className: "border-sky-400/20 bg-sky-400/10 text-sky-700 dark:text-sky-300" },
+  CANCELLED: { label: "Cancelada", className: "border-border bg-unavailable/10 text-muted-foreground" },
 };
 
-const PRIORITY_CONFIG: Record<number, { label: string; color: string }> = {
-  1: { label: "P1", color: "#ef4444" },
-  2: { label: "P2", color: "#f97316" },
-  3: { label: "P3", color: "#f5a623" },
-  4: { label: "P4", color: "#7EB8F7" },
-  5: { label: "P5", color: "#94a3b8" },
+const PRIORITY_LABELS: Record<number, string> = {
+  1: "Prioridade 1",
+  2: "Prioridade 2",
+  3: "Prioridade 3",
+  4: "Prioridade 4",
+  5: "Prioridade 5",
 };
-
-// ------------------------------------------------------------------ //
-// GoalCard                                                            //
-// ------------------------------------------------------------------ //
 
 interface GoalCardProps {
   goal: Goal;
@@ -49,182 +57,123 @@ interface GoalCardProps {
 
 export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
   const status = STATUS_CONFIG[goal.status] ?? STATUS_CONFIG.ACTIVE;
-  const priority = goal.priority ? PRIORITY_CONFIG[goal.priority] : null;
-  const hasProgress =
-    goal.current_amount !== null && goal.current_amount !== undefined;
-  const progressPct = goal.progress_pct ?? 0;
+  const hasCurrentAmount = goal.current_amount !== null && goal.current_amount !== undefined;
+  const hasGovernedProgress = hasCurrentAmount
+    && goal.progress_pct !== null
+    && goal.progress_pct !== undefined;
+  const visualProgress = hasGovernedProgress
+    ? Math.min(100, Math.max(0, goal.progress_pct as number))
+    : null;
+  const progressLabel = hasGovernedProgress
+    ? PERCENT.format((goal.progress_pct as number) / 100)
+    : null;
 
   return (
-    <div
-      className="goal-card"
-      style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: "16px",
-        padding: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
-        transition: "border-color 0.2s, background 0.2s",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor =
-          "rgba(255,255,255,0.16)";
-        (e.currentTarget as HTMLDivElement).style.background =
-          "rgba(255,255,255,0.05)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor =
-          "rgba(255,255,255,0.08)";
-        (e.currentTarget as HTMLDivElement).style.background =
-          "rgba(255,255,255,0.03)";
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ fontSize: "11px", color: "#94a3b8", marginBottom: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+    <article className="flex min-w-0 flex-col rounded-2xl border border-border bg-muted/30 p-4 transition hover:border-border hover:bg-muted/40 sm:p-5">
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
             {GOAL_TYPE_LABELS[goal.goal_type] ?? goal.goal_type}
           </p>
-          <h3 style={{ color: "#f1f5f9", fontWeight: 600, fontSize: "15px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <h2 className="mt-1 truncate text-base font-semibold text-foreground" title={goal.name}>
             {goal.name}
-          </h3>
+          </h2>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
-          {priority && (
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 700,
-                color: priority.color,
-                background: `${priority.color}1a`,
-                borderRadius: "6px",
-                padding: "2px 7px",
-              }}
-            >
-              {priority.label}
+        <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+          {goal.priority ? (
+            <span className="rounded-full border border-border px-2 py-1 text-[10px] font-semibold text-muted-foreground">
+              {PRIORITY_LABELS[goal.priority]}
             </span>
-          )}
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              color: status.color,
-              background: status.bg,
-              borderRadius: "6px",
-              padding: "2px 8px",
-            }}
-          >
+          ) : null}
+          <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${status.className}`}>
             {status.label}
           </span>
         </div>
-      </div>
+      </header>
 
-      {/* Valor Alvo */}
-      <div>
-        <p style={{ fontSize: "11px", color: "#64748b", marginBottom: "3px" }}>Valor Alvo</p>
-        <p style={{ fontSize: "22px", fontWeight: 700, color: "#7EB8F7", letterSpacing: "-0.5px" }}>
-          {BRL(goal.target_amount)}
-        </p>
-      </div>
-
-      {/* Progresso */}
-      {hasProgress ? (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-            <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-              Atual: <span style={{ color: "#f1f5f9", fontWeight: 500 }}>
-                {BRL(goal.current_amount!)}
-              </span>
-            </span>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#4ecf98" }}>
-              {progressPct.toFixed(1)}%
-            </span>
-          </div>
-          <div style={{ height: "6px", background: "rgba(255,255,255,0.08)", borderRadius: "99px", overflow: "hidden" }}>
+      <div className="mt-5 min-h-11">
+        {hasGovernedProgress && visualProgress !== null && progressLabel ? (
+          <div>
+            <div className="mb-2 flex items-end justify-between gap-3">
+              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Progresso</span>
+              <span className="text-sm font-semibold tabular-nums text-success-foreground">{progressLabel}</span>
+            </div>
             <div
-              style={{
-                height: "100%",
-                width: `${progressPct}%`,
-                background: progressPct >= 100
-                  ? "#4ecf98"
-                  : progressPct >= 50
-                  ? "linear-gradient(90deg, #7EB8F7, #4ecf98)"
-                  : "#7EB8F7",
-                borderRadius: "99px",
-                transition: "width 0.4s ease",
-              }}
-            />
+              role="progressbar"
+              aria-label={`Progresso da meta ${goal.name}`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={visualProgress}
+              aria-valuetext={progressLabel}
+              className="h-2.5 overflow-hidden rounded-full bg-muted/55"
+            >
+              <div
+                className={`h-full rounded-full transition-[width] motion-reduce:transition-none ${visualProgress >= 100 ? "bg-emerald-400" : "bg-gradient-to-r from-sky-400 to-emerald-400"}`}
+                style={{ width: `${visualProgress}%` }}
+              />
+            </div>
           </div>
-        </div>
-      ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <div style={{ height: "6px", flex: 1, background: "rgba(255,255,255,0.06)", borderRadius: "99px" }} />
-          <span style={{ fontSize: "11px", color: "#475569" }}>— sem valor atual</span>
-        </div>
-      )}
-
-      {/* Info secundária */}
-      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-        {goal.target_date && (
-          <span style={{ fontSize: "12px", color: "#64748b" }}>
-            📅 {new Date(goal.target_date + "T00:00:00").toLocaleDateString("pt-BR")}
-          </span>
-        )}
-        {goal.monthly_contribution !== null && goal.monthly_contribution !== undefined && (
-          <span style={{ fontSize: "12px", color: "#64748b" }}>
-            📈 {BRL(goal.monthly_contribution)}/mês
-          </span>
+        ) : (
+          <div className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+            <Target aria-hidden="true" className="size-3.5" />
+            Progresso ainda não disponível
+          </div>
         )}
       </div>
 
-      {goal.description && (
-        <p style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.5, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "10px" }}>
-          {goal.description}
-        </p>
-      )}
+      <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4 text-xs sm:grid-cols-4">
+        <div className="min-w-0 rounded-lg bg-muted/30 px-3 py-2.5">
+          <dt className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">Valor atual</dt>
+          <dd className="mt-1 truncate font-medium tabular-nums text-foreground" title={hasCurrentAmount ? BRL.format(goal.current_amount as number) : "Não informado"}>
+            {hasCurrentAmount ? BRL.format(goal.current_amount as number) : "Não informado"}
+          </dd>
+        </div>
+        <div className="min-w-0 rounded-lg bg-muted/30 px-3 py-2.5">
+          <dt className="flex items-center gap-1 text-[10px] uppercase tracking-[0.1em] text-muted-foreground"><CircleDollarSign aria-hidden="true" className="size-3" />Aporte</dt>
+          <dd className="mt-1 truncate font-medium tabular-nums text-foreground/90" title={goal.monthly_contribution !== null && goal.monthly_contribution !== undefined ? `${BRL.format(goal.monthly_contribution)}/mês` : "Não informado"}>
+            {goal.monthly_contribution !== null && goal.monthly_contribution !== undefined ? `${BRL.format(goal.monthly_contribution)}/mês` : "Não informado"}
+          </dd>
+        </div>
+        <div className="min-w-0 rounded-lg bg-muted/30 px-3 py-2.5">
+          <dt className="flex items-center gap-1 text-[10px] uppercase tracking-[0.1em] text-muted-foreground"><CalendarDays aria-hidden="true" className="size-3" />Data-alvo</dt>
+          <dd className="mt-1 truncate font-medium tabular-nums text-foreground/90">
+            {goal.target_date ? new Date(`${goal.target_date}T00:00:00`).toLocaleDateString("pt-BR") : "Não informada"}
+          </dd>
+        </div>
+        <div className="min-w-0 rounded-lg border border-sky-300/15 bg-sky-300/[0.07] px-3 py-2.5">
+          <dt className="text-[10px] uppercase tracking-[0.1em] text-sky-700 dark:text-sky-300">Objetivo</dt>
+          <dd className="mt-1 truncate font-semibold tabular-nums text-sky-700 dark:text-sky-300" title={BRL.format(goal.target_amount)}>{BRL.format(goal.target_amount)}</dd>
+        </div>
+      </dl>
 
-      {/* Ações */}
-      <div style={{ display: "flex", gap: "8px", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "12px" }}>
+      {goal.description ? (
+        <details className="group mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium text-muted-foreground hover:text-foreground">
+            Detalhes da meta
+            <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" />
+          </summary>
+          <p className="mt-2 leading-5 text-muted-foreground">{goal.description}</p>
+        </details>
+      ) : null}
+
+      <footer className="mt-3 flex justify-end gap-2 border-t border-border pt-3">
         <button
+          type="button"
           onClick={() => onEdit(goal)}
-          style={{
-            flex: 1,
-            padding: "7px",
-            background: "rgba(126,184,247,0.08)",
-            color: "#7EB8F7",
-            border: "1px solid rgba(126,184,247,0.2)",
-            borderRadius: "8px",
-            fontSize: "13px",
-            fontWeight: 500,
-            cursor: "pointer",
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(126,184,247,0.16)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(126,184,247,0.08)")}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-300/20 bg-sky-300/[0.06] px-3 py-2 text-xs font-semibold text-sky-700 dark:text-sky-300 transition hover:bg-sky-300/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50"
         >
+          <Pencil aria-hidden="true" className="size-3.5" />
           Editar
         </button>
         <button
+          type="button"
           onClick={() => onDelete(goal)}
-          style={{
-            flex: 1,
-            padding: "7px",
-            background: "rgba(239,68,68,0.06)",
-            color: "#f87171",
-            border: "1px solid rgba(239,68,68,0.15)",
-            borderRadius: "8px",
-            fontSize: "13px",
-            fontWeight: 500,
-            cursor: "pointer",
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.14)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.06)")}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-300/15 bg-rose-300/[0.04] px-3 py-2 text-xs font-semibold text-destructive transition hover:bg-rose-300/[0.10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/50"
         >
+          <Trash2 aria-hidden="true" className="size-3.5" />
           Excluir
         </button>
-      </div>
-    </div>
+      </footer>
+    </article>
   );
 }

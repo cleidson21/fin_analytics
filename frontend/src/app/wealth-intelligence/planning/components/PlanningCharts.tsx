@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   CartesianGrid,
@@ -41,8 +41,8 @@ function chartCurrency(value: unknown) {
 // Chart title uses analytic label style — not competing with hero
 function ChartFrame({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="h-80 rounded-xl border border-white/[0.06] bg-zinc-900/40 p-4 sm:p-5">
-      <p className="mb-4 text-sm font-semibold tracking-tight text-zinc-300">{title}</p>
+    <div className="h-80 rounded-xl border border-border bg-card p-4 sm:p-5">
+      <p className="mb-4 text-sm font-semibold tracking-tight text-foreground/90">{title}</p>
       {children}
     </div>
   );
@@ -53,12 +53,12 @@ function ProjectionTooltip({ active, payload }: { active?: boolean; payload?: Ar
   if (!active || !point) return null;
 
   return (
-    <div className="min-w-48 rounded-xl border border-white/[0.10] bg-zinc-950/95 px-3.5 py-3 shadow-xl">
-      <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-zinc-500">{point.periodEndLabel}</p>
+    <div className="min-w-48 rounded-xl border border-border bg-popover px-3.5 py-3 shadow-xl">
+      <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">{point.periodEndLabel}</p>
       <dl className="mt-2 space-y-1.5 text-xs">
-        <div className="flex justify-between gap-4"><dt className="text-zinc-600">Patrimônio</dt><dd className="font-medium text-violet-200">{formatBRLDecimalString(point.endingWealthText)}</dd></div>
-        <div className="flex justify-between gap-4"><dt className="text-zinc-600">Aportes</dt><dd className="text-sky-200">{formatBRLDecimalString(point.cumulativeContributionsText)}</dd></div>
-        <div className="flex justify-between gap-4"><dt className="text-zinc-600">Crescimento</dt><dd className="text-emerald-200">{formatBRLDecimalString(point.cumulativeGrowthText)}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Patrimônio</dt><dd className="font-medium text-violet-700 dark:text-violet-300">{formatBRLDecimalString(point.endingWealthText)}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Aportes</dt><dd className="text-sky-700 dark:text-sky-300">{formatBRLDecimalString(point.cumulativeContributionsText)}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Crescimento</dt><dd className="text-success-foreground">{formatBRLDecimalString(point.cumulativeGrowthText)}</dd></div>
       </dl>
     </div>
   );
@@ -84,17 +84,17 @@ export function ProjectionChart({ result, targetAmount }: { result: ForwardProje
       <ResponsiveContainer width="100%" height="90%" minWidth={1}>
         <LineChart data={data} margin={{ top: 10, right: 12, left: 6, bottom: 0 }}>
           {/* Grid: very low opacity — orient without competing */}
-          <CartesianGrid stroke="rgba(255,255,255,0.14)" strokeDasharray="3 5" vertical={false} />
-          <XAxis dataKey="periodEndLabel" stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} minTickGap={28} />
-          <YAxis stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={chartCurrency} width={96} />
-          <Tooltip content={<ProjectionTooltip />} cursor={{ stroke: "rgba(255,255,255,0.10)", strokeDasharray: "3 3" }} />
-          <Legend verticalAlign="top" align="left" iconType="circle" iconSize={7} wrapperStyle={{ fontSize: "11px", paddingBottom: "10px", color: "#71717a" }} />
+          <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
+          <XAxis dataKey="periodEndLabel" stroke="var(--chart-axis)" fontSize={10} tickLine={false} axisLine={false} minTickGap={28} />
+          <YAxis stroke="var(--chart-axis)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={chartCurrency} width={96} />
+          <Tooltip content={<ProjectionTooltip />} cursor={{ stroke: "var(--chart-grid)", strokeDasharray: "3 3" }} />
+          <Legend verticalAlign="top" align="left" iconType="circle" iconSize={7} wrapperStyle={{ fontSize: "11px", paddingBottom: "10px", color: "var(--chart-axis)" }} />
           {/* Target line: amber dashed — preserved exactly, approved by user */}
-          {targetAmount ? <ReferenceLine y={decimalForChart(targetAmount)} stroke="#fbbf24" strokeDasharray="6 5" strokeOpacity={0.7} ifOverflow="extendDomain" /> : null}
+          {targetAmount ? <ReferenceLine y={decimalForChart(targetAmount)} stroke="var(--chart-4)" strokeDasharray="6 5" strokeOpacity={0.8} ifOverflow="extendDomain" /> : null}
           {/* Primary series: slightly more prominent; supporting series: quieter */}
-          <Line type="linear" dataKey="endingWealth" name="Patrimônio projetado" stroke="#a78bfa" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "#a78bfa" }} />
-          <Line type="linear" dataKey="cumulativeContributions" name="Aportes acumulados" stroke="#7dd3fc" strokeWidth={1.5} dot={false} />
-          <Line type="linear" dataKey="cumulativeGrowth" name="Crescimento acumulado" stroke="#6ee7b7" strokeWidth={1.5} dot={false} />
+          <Line type="linear" dataKey="endingWealth" name="Patrimônio projetado" stroke="var(--chart-3)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "var(--chart-3)" }} />
+          <Line type="linear" dataKey="cumulativeContributions" name="Aportes acumulados" stroke="var(--chart-2)" strokeWidth={1.5} dot={false} />
+          <Line type="linear" dataKey="cumulativeGrowth" name="Crescimento acumulado" stroke="var(--chart-1)" strokeWidth={1.5} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </ChartFrame>
@@ -105,8 +105,8 @@ type ScenarioChartPoint = Record<string, number | string>;
 
 // Comparison chart: reference = neutral zinc, compared scenarios = violet/sky/etc.
 // Color order: first scenario pair is reference(zinc) + compared(violet), then sky for 3rd, etc.
-const scenarioReferenceColor = "#71717a";  // zinc — neutral, recedes
-const scenarioComparedColors = ["#a78bfa", "#7dd3fc", "#6ee7b7", "#fcd34d"];  // violet, sky, emerald, amber
+const scenarioReferenceColor = "var(--chart-axis)";  // zinc — neutral, recedes
+const scenarioComparedColors = ["var(--chart-3)", "var(--chart-2)", "var(--chart-1)", "var(--chart-4)"];
 
 function scenarioName(entry: ScenarioComparisonEntry, index: number) {
   return entry.label?.trim() || `Cenário ${index + 1}`;
@@ -117,15 +117,15 @@ function ScenarioTooltip({ active, payload, entries }: { active?: boolean; paylo
   if (!active || !point) return null;
 
   return (
-    <div className="min-w-48 rounded-xl border border-white/[0.10] bg-zinc-950/95 px-3.5 py-3 shadow-xl">
-      <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-zinc-500">{typeof point.periodEndLabel === "string" ? point.periodEndLabel : "Período"}</p>
+    <div className="min-w-48 rounded-xl border border-border bg-popover px-3.5 py-3 shadow-xl">
+      <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">{typeof point.periodEndLabel === "string" ? point.periodEndLabel : "Período"}</p>
       <dl className="mt-2 space-y-1.5 text-xs">
         {entries.map((entry, index) => {
           const text = point[`${entry.scenario_id}Text`];
           return (
             <div key={entry.scenario_id} className="flex justify-between gap-4">
-              <dt className="text-zinc-600">{scenarioName(entry, index)}</dt>
-              <dd className="font-medium text-zinc-200">{typeof text === "string" ? formatBRLDecimalString(text) : "—"}</dd>
+              <dt className="text-muted-foreground">{scenarioName(entry, index)}</dt>
+              <dd className="font-medium text-foreground">{typeof text === "string" ? formatBRLDecimalString(text) : "—"}</dd>
             </div>
           );
         })}
@@ -169,11 +169,11 @@ export function ScenarioComparisonChart({ entries, referenceScenarioId }: { entr
     <ChartFrame title="Trajetórias por cenário">
       <ResponsiveContainer width="100%" height="90%" minWidth={1}>
         <LineChart data={data} margin={{ top: 10, right: 12, left: 6, bottom: 0 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.14)" strokeDasharray="3 5" vertical={false} />
-          <XAxis dataKey="periodEndLabel" stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} minTickGap={28} />
-          <YAxis stroke="#52525b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={chartCurrency} width={96} />
-          <Tooltip content={<ScenarioTooltip entries={entries} />} cursor={{ stroke: "rgba(255,255,255,0.10)", strokeDasharray: "3 3" }} />
-          <Legend verticalAlign="top" align="left" iconType="circle" iconSize={7} wrapperStyle={{ fontSize: "11px", paddingBottom: "10px", color: "#71717a" }} />
+          <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
+          <XAxis dataKey="periodEndLabel" stroke="var(--chart-axis)" fontSize={10} tickLine={false} axisLine={false} minTickGap={28} />
+          <YAxis stroke="var(--chart-axis)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={chartCurrency} width={96} />
+          <Tooltip content={<ScenarioTooltip entries={entries} />} cursor={{ stroke: "var(--chart-grid)", strokeDasharray: "3 3" }} />
+          <Legend verticalAlign="top" align="left" iconType="circle" iconSize={7} wrapperStyle={{ fontSize: "11px", paddingBottom: "10px", color: "var(--chart-axis)" }} />
           {entries.map((entry) => {
             const isReference = entry.scenario_id === referenceScenarioId;
             const color = colorMap.get(entry.scenario_id) ?? scenarioReferenceColor;

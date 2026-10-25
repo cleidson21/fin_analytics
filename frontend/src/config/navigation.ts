@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 type SearchParamsLike = {
+  get(name: string): string | null;
   toString(): string;
 };
 
@@ -27,7 +28,7 @@ type SearchParamsLike = {
 export const SIDEBAR_NAV = [
   { name: "Controle Financeiro", href: "/", icon: LayoutDashboard },
   { name: "Investimentos", href: "/wealth", icon: LineChart },
-  { name: "Wealth Intelligence", href: "/wealth-intelligence", icon: Target },
+  { name: "Inteligência Patrimonial", href: "/wealth-intelligence", icon: Target },
   { name: "Governança", href: "/governance", icon: ShieldCheck },
 ] as const;
 
@@ -60,8 +61,8 @@ export const SECTION_TABS = {
     { name: "Contas", href: "/accounts", icon: Building2 },
   ],
   wealthIntelligence: [
-    { name: "Dashboard", href: "/wealth-intelligence", icon: LayoutDashboard },
-    { name: "Metas", href: "/goals", icon: Target },
+    { name: "Visão geral", href: "/wealth-intelligence", icon: LayoutDashboard },
+    { name: "Metas", href: "/wealth-intelligence/goals", icon: Target },
     { name: "Saúde Financeira", href: "/wealth-intelligence/health", icon: HeartPulse },
     { name: "Planejamento", href: "/wealth-intelligence/planning", icon: LineChart },
     { name: "Independência Financeira", href: "/wealth-intelligence/fire", icon: Target },
@@ -78,7 +79,71 @@ export function getTabsForPath(pathname: string) {
   return SECTION_TABS.dashboard;
 }
 
+export function isSidebarNavigationActive(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return (
+      pathname === "/" ||
+      pathname.startsWith("/transactions") ||
+      pathname.startsWith("/categories") ||
+      pathname.startsWith("/installments")
+    );
+  }
+  if (href === "/governance") return pathname.startsWith("/governance");
+  if (href === "/wealth-intelligence") {
+    return pathname.startsWith("/wealth-intelligence") || pathname.startsWith("/goals");
+  }
+  if (href === "/wealth") return pathname === "/wealth" || pathname.startsWith("/wealth/");
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function isNavigationTabActive(
+  pathname: string,
+  href: string,
+  tabHrefs: readonly string[],
+): boolean {
+  const activePath = pathname.startsWith("/wealth/asset")
+    ? "/wealth/allocation"
+    : pathname;
+
+  if (activePath.startsWith("/goals") && href === "/wealth-intelligence/goals") return true;
+
+  if (activePath === href) return true;
+
+  const exactTabExists = tabHrefs.includes(activePath);
+  if (exactTabExists) return false;
+
+  const isSectionBase = href === "/" || href === "/wealth" || href === "/governance";
+  const hasMoreSpecificMatch = tabHrefs.some(
+    (candidate) =>
+      candidate !== href &&
+      candidate !== "/" &&
+      activePath.startsWith(`${candidate}/`),
+  );
+
+  if (isSectionBase) {
+    const insideSection = href === "/" ? activePath.startsWith("/") : activePath.startsWith(`${href}/`);
+    return insideSection && !hasMoreSpecificMatch;
+  }
+
+  return activePath.startsWith(`${href}/`);
+}
+
 export function buildHrefWithSearchParams(pathname: string, searchParams: SearchParamsLike) {
   const queryString = searchParams.toString();
   return queryString ? `${pathname}?${queryString}` : pathname;
+}
+
+export function buildPeriodAwareTabHref(
+  currentPathname: string,
+  targetHref: string,
+  searchParams: SearchParamsLike,
+): string {
+  const periodRoutes = new Set([
+    "/wealth-intelligence",
+    "/wealth-intelligence/health",
+  ]);
+  if (periodRoutes.has(currentPathname) && periodRoutes.has(targetHref)) {
+    return buildHrefWithSearchParams(targetHref, searchParams);
+  }
+  return targetHref;
 }

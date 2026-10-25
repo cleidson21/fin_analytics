@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useId, useState, type ReactNode } from "react";
 import { ChevronDown, Info } from "lucide-react";
@@ -23,10 +23,10 @@ type PlanningInputsProps = {
   onReturnTypeChange?: (returnType: ReturnType) => void;
 };
 
-const inputClassName = "min-h-10 w-full rounded-xl border border-white/[0.12] bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/10";
+const inputClassName = "min-h-10 w-full rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/10";
 
 function FieldError({ id, message }: { id: string; message?: string }) {
-  return message ? <span id={id} className="text-xs font-normal text-rose-200">{message}</span> : null;
+  return message ? <span id={id} className="text-xs font-normal text-destructive">{message}</span> : null;
 }
 
 function DateBaseSummary({ value }: { value: string }) {
@@ -93,9 +93,9 @@ export function PlanningInputs({
   }
 
   return (
-    <fieldset className="space-y-4">
-      <div className={comparisonScenario ? "grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"}>
-        <label className={`flex min-w-0 flex-col gap-1.5 text-sm font-medium text-zinc-300 ${comparisonScenario ? "sm:col-span-2" : ""}`}>
+    <fieldset className="space-y-3">
+      <div className={comparisonScenario ? "grid gap-3 sm:grid-cols-2" : "grid gap-3 sm:grid-cols-2 xl:grid-cols-3"}>
+        <label className={`flex min-w-0 flex-col gap-1.5 text-sm font-medium text-foreground/90 ${comparisonScenario ? "sm:col-span-2" : ""}`}>
           Origem do patrimônio inicial
           <select
             id={`${idPrefix}-source`}
@@ -110,7 +110,7 @@ export function PlanningInputs({
         </label>
 
         {value.source === "USER_PROVIDED_SCENARIO" ? (
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
             Patrimônio inicial
             <input
               required
@@ -124,7 +124,7 @@ export function PlanningInputs({
             <FieldError id={`${idPrefix}-initial-wealth-error`} message={fieldErrors.initialWealth} />
           </label>
         ) : value.source === "INVESTMENT_PORTFOLIO_SNAPSHOT" ? (
-          <div className="self-end text-sm text-zinc-400 sm:col-span-2 xl:col-span-2">
+          <div className="self-end text-sm text-muted-foreground sm:col-span-2 xl:col-span-2">
             <div className="flex items-center gap-1.5">
               <span>Carteira de investimentos MyProfit</span>
               <button
@@ -132,16 +132,16 @@ export function PlanningInputs({
                 aria-expanded={portfolioInfoOpen}
                 aria-controls={portfolioInfoId}
                 onClick={() => setPortfolioInfoOpen((current) => !current)}
-                className="rounded-full p-1 text-zinc-400 transition hover:bg-white/[0.07] hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
+                className="rounded-full p-1 text-muted-foreground transition hover:bg-muted/55 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
               >
                 <Info aria-hidden="true" size={16} />
                 <span className="sr-only">Sobre a carteira de investimentos MyProfit</span>
               </button>
             </div>
-            {portfolioInfoOpen ? <p id={portfolioInfoId} className="mt-2 max-w-xl text-xs leading-5 text-zinc-500">Usa o snapshot disponível da sua carteira de investimentos para a data da simulação. Não representa seu patrimônio total.</p> : null}
+            {portfolioInfoOpen ? <p id={portfolioInfoId} className="mt-2 max-w-xl text-xs leading-5 text-muted-foreground">Usa o snapshot disponível da sua carteira de investimentos para a data da simulação. Não representa seu patrimônio total.</p> : null}
           </div>
         ) : goalSourceMode === "selector" ? (
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
             Meta com valor atual
             <select
               required
@@ -156,13 +156,13 @@ export function PlanningInputs({
                 </option>
               ))}
             </select>
-            {goals.length === 0 ? <span className="text-xs font-normal text-zinc-500">Nenhuma meta disponível para esta origem.</span> : null}
+            {goals.length === 0 ? <span className="text-xs font-normal text-muted-foreground">Nenhuma meta disponível para esta origem.</span> : null}
           </label>
         ) : (
-          <p className="self-end text-sm text-zinc-400 sm:col-span-2 xl:col-span-2">Usa o valor atual da meta selecionada acima.</p>
+          <p className="self-end text-sm text-muted-foreground sm:col-span-2 xl:col-span-2">Usa o valor atual da meta selecionada acima.</p>
         )}
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
           Aporte mensal
           <input
             required
@@ -175,7 +175,7 @@ export function PlanningInputs({
           />
           <FieldError id={`${idPrefix}-contribution-error`} message={fieldErrors.monthlyContribution} />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
           Retorno esperado ao ano
           <div className="relative">
             <input
@@ -187,13 +187,13 @@ export function PlanningInputs({
               aria-describedby={fieldErrors.expectedReturnRate ? `${idPrefix}-return-error` : `${idPrefix}-return-help`}
               className={`${inputClassName} pr-14`}
             />
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">% a.a.</span>
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">% a.a.</span>
           </div>
-          <span id={`${idPrefix}-return-help`} className="text-xs font-normal text-zinc-500">Ex.: 8,5 = 8,5% ao ano.</span>
+          <span id={`${idPrefix}-return-help`} className="text-xs font-normal text-muted-foreground">Ex.: 8,5 = 8,5% ao ano.</span>
           <FieldError id={`${idPrefix}-return-error`} message={fieldErrors.expectedReturnRate} />
         </label>
         {!comparisonScenario ? (
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
             Horizonte (meses)
             <input
               required
@@ -211,7 +211,7 @@ export function PlanningInputs({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.015] px-3 py-2 text-xs text-zinc-400">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {comparisonScenario ? <span>Configurações do cenário</span> : <DateBaseSummary value={value.asOfDate} />}
           {!comparisonScenario ? <span aria-hidden="true">·</span> : null}
@@ -222,14 +222,14 @@ export function PlanningInputs({
           aria-expanded={advancedOpen}
           aria-controls={advancedId}
           onClick={() => setAdvancedOpen((current) => !current)}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-violet-200 transition hover:bg-violet-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-violet-700 dark:text-violet-300 transition hover:bg-violet-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
         >
           Opções avançadas
           <ChevronDown aria-hidden="true" size={14} className={advancedOpen ? "rotate-180 transition-transform" : "transition-transform"} />
         </button>
       </div>
       {!advancedOpen && hasNonDefaultConfiguration ? (
-        <p className="text-xs text-violet-200">
+        <p className="text-xs text-violet-700 dark:text-violet-300">
           {!comparisonScenario && (value.outputMode === "REAL" ? "Valores reais" : value.returnType === "REAL" ? "Retorno real" : "Valores nominais")}
           {showInflation && value.inflationRate ? " · inflação informada" : ""}
           {!comparisonScenario && value.asOfDate ? " · data-base personalizada" : ""}
@@ -238,8 +238,8 @@ export function PlanningInputs({
       ) : null}
 
       {advancedOpen ? (
-        <div id={advancedId} className="grid gap-4 rounded-xl border border-white/[0.08] bg-white/[0.015] p-4 sm:grid-cols-2 xl:grid-cols-3">
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+        <div id={advancedId} className="grid gap-4 rounded-xl border border-border bg-muted/25 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
             Tipo de retorno
             <select value={value.returnType} onChange={(event) => updateReturnType(event.target.value as ReturnType)} className={inputClassName}>
               <option value="NOMINAL">Nominal</option>
@@ -247,7 +247,7 @@ export function PlanningInputs({
             </select>
           </label>
           {!comparisonScenario ? (
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
               Base de saída
               <select value={value.outputMode} onChange={(event) => updateOutputMode(event.target.value as OutputMode)} className={inputClassName}>
                 <option value="NOMINAL" disabled={value.returnType === "REAL"}>Nominal</option>
@@ -256,7 +256,7 @@ export function PlanningInputs({
             </label>
           ) : null}
           {showInflation ? (
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
               Inflação esperada
               <div className="relative">
                 <input
@@ -268,13 +268,13 @@ export function PlanningInputs({
                   aria-describedby={fieldErrors.inflationRate ? `${idPrefix}-inflation-error` : undefined}
                   className={`${inputClassName} pr-14`}
                 />
-                <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-zinc-500">% a.a.</span>
+                <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">% a.a.</span>
               </div>
               <FieldError id={`${idPrefix}-inflation-error`} message={fieldErrors.inflationRate} />
             </label>
           ) : null}
           {!comparisonScenario ? (
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
               Data-base personalizada
               <input
                 value={value.asOfDate}
@@ -285,11 +285,11 @@ export function PlanningInputs({
                 className={inputClassName}
               />
               <FieldError id={`${idPrefix}-as-of-error`} message={fieldErrors.asOfDate} />
-              <button type="button" onClick={() => patch({ asOfDate: "" }, "asOfDate")} className="self-start text-xs font-medium text-violet-200 hover:text-violet-100">Usar hoje</button>
+              <button type="button" onClick={() => patch({ asOfDate: "" }, "asOfDate")} className="self-start text-xs font-medium text-violet-700 hover:text-violet-600 dark:text-violet-300 dark:hover:text-violet-200">Usar hoje</button>
             </label>
           ) : null}
           {value.source === "USER_PROVIDED_SCENARIO" ? (
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-300">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">
               Data e hora do patrimônio
               <input
                 type="datetime-local"
@@ -298,13 +298,13 @@ export function PlanningInputs({
                 aria-describedby={fieldErrors.observedAt ? `${idPrefix}-observed-error` : undefined}
                 className={inputClassName}
               />
-              <span className="text-xs font-normal text-zinc-500">Vazio usa o momento do envio.</span>
+              <span className="text-xs font-normal text-muted-foreground">Vazio usa o momento do envio.</span>
               <FieldError id={`${idPrefix}-observed-error`} message={fieldErrors.observedAt} />
-              <button type="button" onClick={() => patch({ observedAt: "" }, "observedAt")} className="self-start text-xs font-medium text-violet-200 hover:text-violet-100">Usar momento do envio</button>
+              <button type="button" onClick={() => patch({ observedAt: "" }, "observedAt")} className="self-start text-xs font-medium text-violet-700 hover:text-violet-600 dark:text-violet-300 dark:hover:text-violet-200">Usar momento do envio</button>
             </label>
           ) : null}
           {advancedSlot}
-          <p className="text-xs leading-5 text-zinc-500 sm:col-span-2 xl:col-span-3">Taxa efetiva anual · Aporte no fim do mês</p>
+          <p className="text-xs leading-5 text-muted-foreground sm:col-span-2 xl:col-span-3">Taxa efetiva anual · Aporte no fim do mês</p>
         </div>
       ) : null}
     </fieldset>

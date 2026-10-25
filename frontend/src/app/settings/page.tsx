@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
 import {
   ShieldCheck,
   Lock,
@@ -32,17 +33,17 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-6 py-4">
+    <div className="rounded-2xl border border-border bg-muted/30 overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-border px-6 py-4">
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconColor}`}>
           <Icon className="w-4 h-4" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-zinc-100">{title}</p>
-          <p className="text-xs text-zinc-500">{subtitle}</p>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
-      <div className="divide-y divide-white/[0.05]">{children}</div>
+      <div className="divide-y divide-border">{children}</div>
     </div>
   );
 }
@@ -63,23 +64,23 @@ function SettingsRow({
   danger?: boolean;
 }) {
   return (
-    <div className={`flex items-center gap-4 px-6 py-4 transition-colors hover:bg-white/[0.02] ${danger ? "hover:bg-red-500/[0.03]" : ""}`}>
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${danger ? "bg-red-500/10 text-red-400" : "bg-white/[0.04] text-zinc-400"}`}>
+    <div className={`flex items-center gap-4 px-6 py-4 transition-colors hover:bg-muted/30 ${danger ? "hover:bg-red-500/[0.03]" : ""}`}>
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${danger ? "bg-red-500/10 text-red-400" : "bg-muted/40 text-muted-foreground"}`}>
         <Icon className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className={`text-sm font-medium ${danger ? "text-red-400" : "text-zinc-200"}`}>{label}</p>
+          <p className={`text-sm font-medium ${danger ? "text-red-400" : "text-foreground"}`}>{label}</p>
           {badge && (
-            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 ring-1 ring-inset ring-white/10">
+            <span className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ring-1 ring-inset ring-border">
               {badge}
             </span>
           )}
         </div>
-        {description && <p className="text-xs text-zinc-500 mt-0.5">{description}</p>}
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
       {action ?? (
-        <ChevronRight className={`w-4 h-4 shrink-0 ${danger ? "text-red-400/50" : "text-zinc-600"}`} />
+        <ChevronRight className={`w-4 h-4 shrink-0 ${danger ? "text-red-400/50" : "text-muted-foreground"}`} />
       )}
     </div>
   );
@@ -93,7 +94,7 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none
-        ${checked ? "bg-emerald-500" : "bg-white/10"}`}
+        ${checked ? "bg-emerald-500" : "bg-muted/70"}`}
     >
       <span
         className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200
@@ -120,28 +121,28 @@ function PasswordSection() {
   return (
     <div>
       <div
-        className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-white/[0.02] cursor-pointer"
+        className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-muted/30 cursor-pointer"
         onClick={() => setOpen(!open)}
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-400">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
           <Lock className="w-4 h-4" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-zinc-200">Alterar senha</p>
-          <p className="text-xs text-zinc-500 mt-0.5">Atualize sua senha de acesso</p>
+          <p className="text-sm font-medium text-foreground">Alterar senha</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Atualize sua senha de acesso</p>
         </div>
-        <ChevronRight className={`w-4 h-4 shrink-0 text-zinc-600 transition-transform ${open ? "rotate-90" : ""}`} />
+        <ChevronRight className={`w-4 h-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
       </div>
       {open && (
         <form onSubmit={handleSave} className="px-6 pb-5 space-y-3">
-          <div className="h-px bg-white/[0.05] mb-4" />
+          <div className="h-px bg-muted/45 mb-4" />
           {[
             { label: "Senha atual", value: current, set: setCurrent },
             { label: "Nova senha", value: newPw, set: setNewPw },
             { label: "Confirmar nova senha", value: confirm, set: setConfirm },
           ].map(({ label, value, set }) => (
             <div key={label}>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">{label}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">{label}</label>
               <div className="relative">
                 <input
                   type={show ? "text" : "password"}
@@ -149,12 +150,12 @@ function PasswordSection() {
                   onChange={(e) => set(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-4 pr-10 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
+                  className="w-full rounded-xl border border-border bg-muted/40 py-2.5 pl-4 pr-10 text-sm text-foreground placeholder-zinc-600 outline-none transition-colors focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20"
                 />
                 <button
                   type="button"
                   onClick={() => setShow(!show)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
                   {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -222,7 +223,7 @@ export default function SettingsPage() {
             label="Autenticação de dois fatores"
             description="Adicione uma camada extra de proteção"
             badge="Em breve"
-            action={<span className="text-xs text-zinc-600">Indisponível</span>}
+            action={<span className="text-xs text-muted-foreground">Indisponível</span>}
           />
           <SettingsRow
             icon={Monitor}
@@ -276,13 +277,8 @@ export default function SettingsPage() {
           <SettingsRow
             icon={Sun}
             label="Tema"
-            description="Dark (padrão)"
-            badge="Em breve"
-            action={
-              <span className="rounded-xl bg-white/[0.05] px-3 py-1 text-xs text-zinc-400 ring-1 ring-inset ring-white/10">
-                🌙 Dark
-              </span>
-            }
+            description="Siga o sistema ou escolha um tema"
+            action={<ThemeSwitcher />}
           />
           <SettingsRow
             icon={Globe}
@@ -290,7 +286,7 @@ export default function SettingsPage() {
             description="Português (Brasil)"
             badge="Em breve"
             action={
-              <span className="rounded-xl bg-white/[0.05] px-3 py-1 text-xs text-zinc-400 ring-1 ring-inset ring-white/10">
+              <span className="rounded-xl bg-muted/45 px-3 py-1 text-xs text-muted-foreground ring-1 ring-inset ring-border">
                 🇧🇷 PT-BR
               </span>
             }
@@ -304,15 +300,15 @@ export default function SettingsPage() {
           icon={Download}
           iconColor="bg-violet-500/15 text-violet-400"
         >
-          <div className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-white/[0.02] cursor-pointer" onClick={handleExport}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-zinc-400">
+          <div className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-muted/30 cursor-pointer" onClick={handleExport}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
               <Download className="w-4 h-4" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-zinc-200">Exportar meus dados</p>
-              <p className="text-xs text-zinc-500 mt-0.5">Baixar perfil e configurações em JSON</p>
+              <p className="text-sm font-medium text-foreground">Exportar meus dados</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Baixar perfil e configurações em JSON</p>
             </div>
-            <ChevronRight className="w-4 h-4 shrink-0 text-zinc-600" />
+            <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />
           </div>
           <div className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-red-500/[0.03] cursor-pointer" onClick={handleClearCache}>
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
@@ -320,7 +316,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-red-400">Limpar dados locais</p>
-              <p className="text-xs text-zinc-500 mt-0.5">Remove o perfil estendido salvo neste navegador</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Remove o perfil estendido salvo neste navegador</p>
             </div>
             <ChevronRight className="w-4 h-4 shrink-0 text-red-400/50" />
           </div>

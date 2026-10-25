@@ -15,11 +15,11 @@ export function HealthPanel({
 }: HealthPanelProps) {
   return (
     <section
-      className={`rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 shadow-xl shadow-black/10 sm:p-5 ${className}`}
+      className={`rounded-2xl border border-border bg-muted/35 p-4 shadow-xl shadow-black/10 ${className}`}
     >
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
+      <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-zinc-100 sm:text-lg">{title}</h2>
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
         </div>
         {action}
       </header>

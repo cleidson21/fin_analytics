@@ -14,14 +14,14 @@ export function AssetHistoryChart({ data }: AssetHistoryChartProps) {
         <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="colorClose" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#4ecf98" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#4ecf98" stopOpacity={0}/>
+              <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
           <XAxis 
             dataKey="date" 
-            stroke="#8B92A5" 
+            stroke="var(--chart-axis)"
             fontSize={12} 
             tickLine={false} 
             axisLine={false} 
@@ -34,22 +34,22 @@ export function AssetHistoryChart({ data }: AssetHistoryChartProps) {
             }}
           />
           <YAxis 
-            stroke="#8B92A5" 
+            stroke="var(--chart-axis)"
             fontSize={12} 
             tickLine={false} 
             axisLine={false} 
             tickFormatter={(val) => `R$ ${val}`}
           />
           <Tooltip 
-            contentStyle={{ backgroundColor: '#1A1D24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
-            itemStyle={{ color: '#4ecf98' }}
+            contentStyle={{ backgroundColor: 'var(--popover)', border: '1px solid var(--chart-grid)', borderRadius: '8px', color: 'var(--foreground)' }}
+            itemStyle={{ color: 'var(--chart-1)' }}
             formatter={(value: unknown) => [formatCurrency(Number(value)), 'Cotação']}
-            labelStyle={{ color: '#8B92A5', marginBottom: '4px' }}
+            labelStyle={{ color: 'var(--chart-axis)', marginBottom: '4px' }}
           />
           <Area 
             type="monotone" 
             dataKey="close" 
-            stroke="#4ecf98" 
+            stroke="var(--chart-1)"
             strokeWidth={2}
             fillOpacity={1} 
             fill="url(#colorClose)" 

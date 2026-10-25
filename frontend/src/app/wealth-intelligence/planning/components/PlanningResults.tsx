@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { GitCompareArrows, TrendingUp } from "lucide-react";
 import {
   formatAnnualRateDecimalString,
@@ -49,9 +49,9 @@ const statusBadgeStyles: Record<string, string> = {
   PROJECTED_EARLY: "border-emerald-500/25 bg-emerald-500/10 text-emerald-400",
   PROJECTED_ON_TIME: "border-emerald-500/25 bg-emerald-500/10 text-emerald-400",
   PROJECTED_LATE: "border-amber-500/25 bg-amber-500/10 text-amber-400",
-  SOLVED: "border-zinc-600/30 bg-zinc-800/30 text-zinc-400",
-  NOT_APPLICABLE: "border-zinc-600/30 bg-zinc-800/30 text-zinc-400",
-  INSUFFICIENT_DATA: "border-zinc-600/30 bg-zinc-800/30 text-zinc-400",
+  SOLVED: "border-border bg-muted/40 text-muted-foreground",
+  NOT_APPLICABLE: "border-border bg-muted/40 text-muted-foreground",
+  INSUFFICIENT_DATA: "border-border bg-muted/40 text-muted-foreground",
   UNREACHABLE: "border-amber-500/25 bg-amber-500/10 text-amber-400",
   NOT_REACHED_WITHIN_HORIZON: "border-amber-500/25 bg-amber-500/10 text-amber-400",
   IMPOSSIBLE_HORIZON: "border-amber-500/25 bg-amber-500/10 text-amber-400",
@@ -81,8 +81,8 @@ function displayValue(value: string | number | null, kind: ValueKind) {
 function Metric({ label, value, kind = "text", emphasis = false }: MetricProps) {
   return (
     <div className={`py-2.5 ${emphasis ? "sm:col-span-2" : ""}`}>
-      <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-zinc-600">{label}</p>
-      <p className={`mt-1 break-words font-medium tabular-nums text-zinc-200 ${emphasis ? "text-xl sm:text-2xl" : "text-sm"}`}>
+      <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-muted-foreground">{label}</p>
+      <p className={`mt-1 break-words font-medium tabular-nums text-foreground ${emphasis ? "text-xl sm:text-2xl" : "text-sm"}`}>
         {displayValue(value, kind)}
       </p>
     </div>
@@ -105,21 +105,21 @@ function ResultHero({
   children?: ReactNode;
 }) {
   return (
-    <div className={`rounded-xl border border-white/[0.07] bg-zinc-900/80 px-5 py-5 sm:px-6 sm:py-6 ${heroAccentEdge[accent]}`}>
+    <div className={`rounded-xl border border-border bg-card px-5 py-5 sm:px-6 sm:py-6 ${heroAccentEdge[accent]}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">{eyebrow}</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{eyebrow}</p>
         {children}
       </div>
-      <p className="mt-4 break-words text-3xl font-semibold tracking-[-0.035em] tabular-nums text-white sm:text-4xl lg:text-5xl">
+      <p className="mt-4 break-words text-3xl font-semibold tracking-[-0.035em] tabular-nums text-foreground sm:text-4xl lg:text-5xl">
         {displayValue(value, valueKind)}
       </p>
-      {detail ? <p className="mt-2.5 text-xs text-zinc-500">{detail}</p> : null}
+      {detail ? <p className="mt-2.5 text-xs text-muted-foreground">{detail}</p> : null}
     </div>
   );
 }
 
 export function PlanningStatusBadge({ status }: { status: string }) {
-  const style = statusBadgeStyles[status] ?? "border-zinc-600/30 bg-zinc-800/30 text-zinc-400";
+  const style = statusBadgeStyles[status] ?? "border-border bg-muted/40 text-muted-foreground";
   return (
     <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${style}`}>
       {statusLabels[status] ?? status}
@@ -146,16 +146,16 @@ function InitialWealthProvenance({ fact }: { fact: InitialWealthFact }) {
   const versionAt = portfolio ? formatTimestamp(fact.provenance.updated_at) : null;
 
   return (
-    <details className="group mt-1 border-t border-white/[0.05] pt-3">
-      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 text-[10px] text-zinc-600 marker:hidden">
-        <span className="font-medium text-zinc-500">
+    <details className="group mt-1 border-t border-border pt-3">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 text-[10px] text-muted-foreground marker:hidden">
+        <span className="font-medium text-muted-foreground">
           {sourceLabel(fact)}
           {portfolio && referenceMonth ? ` · ${formatReferenceMonth(referenceMonth)}` : ""}
         </span>
-        <span className="text-zinc-700 transition-colors hover:text-zinc-400">Ver origem</span>
+        <span className="text-muted-foreground transition-colors hover:text-muted-foreground">Ver origem</span>
       </summary>
-      <div className="mt-2 grid gap-1 pl-0 text-[10px] leading-5 text-zinc-500">
-        <p>Patrimônio inicial: <span className="font-medium text-zinc-300">{formatBRLDecimalString(fact.amount)}</span></p>
+      <div className="mt-2 grid gap-1 pl-0 text-[10px] leading-5 text-muted-foreground">
+        <p>Patrimônio inicial: <span className="font-medium text-foreground/90">{formatBRLDecimalString(fact.amount)}</span></p>
         {observedAt ? <p>Informado em: {observedAt}</p> : null}
         {versionAt ? <p>Versão importada em: {versionAt}</p> : null}
       </div>
@@ -166,7 +166,7 @@ function InitialWealthProvenance({ fact }: { fact: InitialWealthFact }) {
 // Metrics grid — editorial style with subtle dividers, no individual card borders
 function MetricsGrid({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`grid divide-y divide-white/[0.05] rounded-xl border border-white/[0.06] bg-zinc-900/40 px-4 sm:divide-y-0 sm:divide-x ${className}`}>
+    <div className={`grid divide-y divide-border rounded-xl border border-border bg-card px-4 sm:divide-y-0 sm:divide-x ${className}`}>
       {children}
     </div>
   );
@@ -274,50 +274,50 @@ function ScenarioResultCard({ entry, referenceScenarioId, index }: { entry: Scen
   const reference = entry.scenario_id === referenceScenarioId;
   const name = entry.label?.trim() || `Cenário ${index + 1}`;
   const accent = [
-    { edge: "border-l-violet-400/55", icon: "bg-violet-400/10 text-violet-300", value: "text-violet-100" },
-    { edge: "border-l-sky-400/55", icon: "bg-sky-400/10 text-sky-300", value: "text-sky-100" },
-    { edge: "border-l-emerald-400/55", icon: "bg-emerald-400/10 text-emerald-300", value: "text-emerald-100" },
-    { edge: "border-l-amber-400/55", icon: "bg-amber-400/10 text-amber-300", value: "text-amber-100" },
+    { edge: "border-l-violet-400/55", icon: "bg-violet-400/10 text-violet-700 dark:text-violet-300", value: "text-violet-700 dark:text-violet-300" },
+    { edge: "border-l-sky-400/55", icon: "bg-sky-400/10 text-sky-700 dark:text-sky-300", value: "text-sky-700 dark:text-sky-300" },
+    { edge: "border-l-emerald-400/55", icon: "bg-emerald-400/10 text-success-foreground", value: "text-success-foreground" },
+    { edge: "border-l-amber-400/55", icon: "bg-amber-400/10 text-warning-foreground", value: "text-warning-foreground" },
   ][index % 4]!;
 
   return (
     <article className={`min-w-0 space-y-4 rounded-xl border border-l-[3px] p-4 sm:p-5 ${reference
-      ? "border-white/[0.09] border-l-zinc-400/45 bg-zinc-900/60"
-      : `border-white/[0.07] bg-zinc-900/40 ${accent.edge}`
+      ? "border-border border-l-zinc-400/45 bg-card"
+      : `border-border bg-card ${accent.edge}`
     }`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${reference ? "bg-white/[0.05] text-zinc-400" : accent.icon}`}><TrendingUp aria-hidden="true" size={15} /></span>
+          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${reference ? "bg-muted/45 text-muted-foreground" : accent.icon}`}><TrendingUp aria-hidden="true" size={15} /></span>
           <div className="min-w-0">
-            <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-zinc-500">{reference ? "Referência" : `Cenário ${index + 1}`}</p>
-            <h4 className="mt-1 break-words text-base font-semibold leading-snug text-zinc-100 [overflow-wrap:anywhere]">{name}</h4>
-            {entry.archetype ? <p className="mt-0.5 text-xs text-zinc-500">{entry.archetype === "CONSERVATIVE" ? "Conservador" : entry.archetype === "OPTIMISTIC" ? "Otimista" : "Base"}</p> : null}
+            <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-muted-foreground">{reference ? "Referência" : `Cenário ${index + 1}`}</p>
+            <h4 className="mt-1 break-words text-base font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">{name}</h4>
+            {entry.archetype ? <p className="mt-0.5 text-xs text-muted-foreground">{entry.archetype === "CONSERVATIVE" ? "Conservador" : entry.archetype === "OPTIMISTIC" ? "Otimista" : "Base"}</p> : null}
           </div>
         </div>
         {entry.target_achievement_result ? <PlanningStatusBadge status={entry.target_achievement_result.status} /> : null}
       </div>
 
       {/* Projected wealth — hero metric within card */}
-      <div className="border-t border-white/[0.05] pt-3">
-        <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-zinc-600">Patrimônio projetado</p>
-        <p className={`mt-1 break-words text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl ${reference ? "text-zinc-100" : accent.value}`}>{displayValue(entry.projection_result.final_wealth, "money")}</p>
+      <div className="border-t border-border pt-3">
+        <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-muted-foreground">Patrimônio projetado</p>
+        <p className={`mt-1 break-words text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl ${reference ? "text-foreground" : accent.value}`}>{displayValue(entry.projection_result.final_wealth, "money")}</p>
       </div>
 
       {/* Secondary metrics — typographic grid, no nested card borders */}
-      <div className="grid grid-cols-2 divide-x divide-white/[0.05] border-t border-white/[0.05] pt-3">
+      <div className="grid grid-cols-2 divide-x divide-border border-t border-border pt-3">
         <div className="pr-4"><Metric label="Aportes totais" value={entry.projection_result.total_contributions} kind="money" /></div>
         <div className="pl-4"><Metric label="Crescimento projetado" value={entry.projection_result.total_projected_growth} kind="money" /></div>
       </div>
 
       {/* Delta metrics — higher contrast for the values, muted labels */}
-      <div className="grid grid-cols-2 divide-x divide-white/[0.05] border-t border-white/[0.05] pt-3">
+      <div className="grid grid-cols-2 divide-x divide-border border-t border-border pt-3">
         <div className="pr-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-zinc-600">Diferença de patrimônio</p>
-          <p className="mt-1 text-sm font-medium tabular-nums text-zinc-100">{displayValue(entry.final_wealth_delta, "money")}</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-muted-foreground">Diferença de patrimônio</p>
+          <p className="mt-1 text-sm font-medium tabular-nums text-foreground">{displayValue(entry.final_wealth_delta, "money")}</p>
         </div>
         <div className="pl-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-zinc-600">Meses ganhos/perdidos</p>
-          <p className="mt-1 text-sm font-medium tabular-nums text-zinc-100">
+          <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-muted-foreground">Meses ganhos/perdidos</p>
+          <p className="mt-1 text-sm font-medium tabular-nums text-foreground">
             {entry.months_saved_or_lost !== null && entry.months_saved_or_lost !== undefined
               ? displayValue(entry.months_saved_or_lost, "months")
               : "—"}
@@ -339,7 +339,7 @@ export function ScenarioComparisonResult({ result }: { result: ScenarioCompariso
         value={`${result.entries.length} cenários analisados`}
         valueKind="text"
         detail={`Referência definida por você · ${result.horizon_months} meses`}
-      ><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-400/10 text-sky-300"><GitCompareArrows aria-hidden="true" size={17} /></span></ResultHero>
+      ><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-400/10 text-sky-700 dark:text-sky-300"><GitCompareArrows aria-hidden="true" size={17} /></span></ResultHero>
       <div className="grid gap-4 xl:grid-cols-2">
         {result.entries.map((entry, index) => (
           <ScenarioResultCard key={entry.scenario_id} entry={entry} referenceScenarioId={result.reference_scenario_id} index={index} />

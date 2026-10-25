@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/utils";
 import { WealthTooltip } from "@/components/wealth/ui/WealthTooltip";
 
 interface CashflowBarChartProps {
-  data: Record<string, unknown>[] | any[];
+  data: object[];
 }
 
 export function CashflowBarChart({ data }: CashflowBarChartProps) {
@@ -36,10 +36,10 @@ export function CashflowBarChart({ data }: CashflowBarChartProps) {
           </linearGradient>
         </defs>
 
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
         <XAxis
           dataKey="month"
-          stroke="#374151"
+          stroke="var(--chart-axis)"
           fontSize={11}
           tickLine={false}
           axisLine={false}
@@ -51,7 +51,7 @@ export function CashflowBarChart({ data }: CashflowBarChartProps) {
           }}
         />
         <YAxis
-          stroke="#374151"
+          stroke="var(--chart-axis)"
           fontSize={11}
           tickLine={false}
           axisLine={false}
@@ -79,7 +79,7 @@ export function CashflowBarChart({ data }: CashflowBarChartProps) {
           verticalAlign="top"
           height={36}
           iconType="circle"
-          wrapperStyle={{ fontSize: "11px", color: "#6b7280" }}
+          wrapperStyle={{ fontSize: "11px", color: "var(--muted-foreground)" }}
           formatter={(value) => {
             if (value === "compras_value") return "Aportes";
             if (value === "vendas_value") return "Retiradas";

@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Plus, RefreshCw, Target } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { fetchFromAPI } from "@/lib/api";
 import { GoalCard } from "./GoalCard";
@@ -107,134 +108,76 @@ export default function GoalsPage() {
   // ---------------------------------------------------------------- //
 
   return (
-    <PageLayout title="Metas" subtitle="Objetivos e marcos financeiros." hideTitle={true}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+    <PageLayout title="Metas" subtitle="" hideTitle>
+      <main className="mx-auto w-full max-w-6xl space-y-4 py-2">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
         <div>
-          <p style={{ color: "#64748b", fontSize: "14px", margin: "4px 0 0" }}>
-            {loading
-              ? "Carregando..."
-              : goals.length === 0
-              ? "Nenhuma meta cadastrada"
-              : `${goals.length} ${goals.length === 1 ? "meta" : "metas"}`}
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700 dark:text-sky-300">Metas</p>
+          <h1 className="mt-1 text-lg font-semibold tracking-tight text-foreground">Seus objetivos financeiros</h1>
+          <p className="mt-0.5 text-xs text-muted-foreground" aria-live="polite">
+            {loading ? "Carregando…" : goals.length === 0 ? "Nenhuma meta cadastrada" : `${goals.length} ${goals.length === 1 ? "meta" : "metas"}`}
           </p>
         </div>
         <button
           id="btn-create-goal"
+          type="button"
           onClick={() => setShowCreate(true)}
-          style={{
-            padding: "10px 20px",
-            background: "#7EB8F7",
-            color: "#0f172a",
-            border: "none",
-            borderRadius: "10px",
-            fontSize: "14px",
-            fontWeight: 700,
-            cursor: "pointer",
-            transition: "opacity 0.2s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          className="inline-flex items-center gap-2 rounded-xl bg-sky-300 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50"
         >
-          + Nova Meta
+          <Plus aria-hidden="true" className="size-4" />
+          Nova meta
         </button>
-      </div>
+      </header>
 
-      {/* Estado de erro */}
       {error && (
-        <div
-          style={{
-            background: "rgba(239,68,68,0.08)",
-            border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: "12px",
-            padding: "16px 20px",
-            color: "#f87171",
-            fontSize: "14px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/20 bg-rose-400/[0.055] px-4 py-3 text-sm text-destructive">
           <span>{error}</span>
           <button
+            type="button"
             onClick={loadGoals}
-            style={{ color: "#f87171", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "13px" }}
+            className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold text-destructive hover:bg-rose-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/50"
           >
+            <RefreshCw aria-hidden="true" className="size-3.5" />
             Tentar novamente
           </button>
         </div>
       )}
 
-      {/* Estado de loading */}
       {loading && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "16px",
-          }}
-        >
+        <div aria-label="Carregando metas" className="grid gap-4">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: "16px",
-                padding: "20px",
-                height: "200px",
-                animation: "pulse 1.5s ease-in-out infinite",
-              }}
+              aria-hidden="true"
+              className="h-56 animate-pulse rounded-2xl border border-border bg-muted/30 motion-reduce:animate-none"
             />
           ))}
         </div>
       )}
 
-      {/* Estado vazio */}
       {!loading && !error && goals.length === 0 && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "64px 24px",
-            background: "rgba(255,255,255,0.02)",
-            border: "1px dashed rgba(255,255,255,0.08)",
-            borderRadius: "20px",
-          }}
-        >
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎯</div>
-          <h3 style={{ color: "#f1f5f9", fontSize: "18px", fontWeight: 600, margin: "0 0 8px" }}>
+        <section className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-border bg-muted/25 px-6 py-10 text-center">
+          <div>
+          <span className="mx-auto grid size-11 place-items-center rounded-xl bg-sky-300/10 text-sky-700 dark:text-sky-300"><Target aria-hidden="true" className="size-5" /></span>
+          <h2 className="mt-4 text-base font-semibold text-foreground">
             Nenhuma meta cadastrada
-          </h3>
-          <p style={{ color: "#64748b", fontSize: "14px", margin: "0 0 24px" }}>
-            Defina seus objetivos financeiros e acompanhe o progresso.
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Cadastre um objetivo para começar a acompanhar seu progresso.
           </p>
           <button
+            type="button"
             onClick={() => setShowCreate(true)}
-            style={{
-              padding: "10px 24px",
-              background: "#7EB8F7",
-              color: "#0f172a",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
+            className="mt-5 rounded-xl bg-sky-300 px-4 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50"
           >
-            Criar Primeira Meta
+            Criar primeira meta
           </button>
-        </div>
+          </div>
+        </section>
       )}
 
-      {/* Lista de metas */}
       {!loading && goals.length > 0 && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "16px",
-          }}
-        >
+        <section aria-label="Metas cadastradas" className="grid gap-4">
           {goals.map((goal) => (
             <GoalCard
               key={goal.id}
@@ -243,7 +186,7 @@ export default function GoalsPage() {
               onDelete={setDeletingGoal}
             />
           ))}
-        </div>
+        </section>
       )}
 
       {/* Modal de criação */}
@@ -276,13 +219,7 @@ export default function GoalsPage() {
           deleting={deleting}
         />
       )}
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.7; }
-        }
-      `}</style>
+      </main>
     </PageLayout>
   );
 }

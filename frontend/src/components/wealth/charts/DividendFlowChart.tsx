@@ -80,7 +80,7 @@ export function DividendFlowChart({ data, monthlyAssets = {} }: DividendFlowChar
             className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
               windowMonths === opt.value
                 ? "bg-[#f5a623]/20 text-[#f5a623] ring-1 ring-inset ring-[#f5a623]/30"
-                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
+                : "text-muted-foreground hover:text-foreground/90 hover:bg-muted/40"
             }`}
           >
             {opt.label}
@@ -117,10 +117,10 @@ export function DividendFlowChart({ data, monthlyAssets = {} }: DividendFlowChar
               </linearGradient>
             </defs>
 
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
             <XAxis
               dataKey="month"
-              stroke="#374151"
+              stroke="var(--chart-axis)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
@@ -128,14 +128,14 @@ export function DividendFlowChart({ data, monthlyAssets = {} }: DividendFlowChar
               tickFormatter={formatMonth}
             />
             <YAxis
-              stroke="#374151"
+              stroke="var(--chart-axis)"
               fontSize={10}
               tickLine={false}
               axisLine={false}
               tickFormatter={(val) => `R$${(val).toFixed(0)}`}
             />
             <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              cursor={{ fill: "var(--chart-grid)" }}
               content={(props) => (
                 <WealthTooltip
                   {...props}
@@ -175,19 +175,19 @@ export function DividendFlowChart({ data, monthlyAssets = {} }: DividendFlowChar
       </div>
 
       {/* Hint */}
-      <p className="text-[10px] text-zinc-600 text-center -mt-1">
+      <p className="text-[10px] text-muted-foreground text-center -mt-1">
         Clique em uma barra para ver a composição por ativo
       </p>
 
       {selectedMonth && (
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-xs">
+        <div className="rounded-xl border border-border bg-muted/35 p-3 text-xs">
           <div className="mb-2 flex items-center justify-between">
-            <span className="font-semibold text-zinc-200">Composição — {formatMonth(selectedMonth)}</span>
+            <span className="font-semibold text-foreground">Composição — {formatMonth(selectedMonth)}</span>
             <button
               type="button"
               onClick={() => setSelectedMonth(null)}
               aria-label="Fechar composição"
-              className="rounded p-1 text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -196,7 +196,7 @@ export function DividendFlowChart({ data, monthlyAssets = {} }: DividendFlowChar
             {Object.entries(monthlyAssets[selectedMonth] ?? {})
               .sort(([, amountA], [, amountB]) => amountB - amountA)
               .map(([ticker, amount]) => (
-                <span key={ticker} className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2 py-1 text-zinc-300">
+                <span key={ticker} className="inline-flex items-center gap-1.5 rounded-lg bg-muted/40 px-2 py-1 text-foreground/90">
                   <span className="h-2 w-2 rounded-full" style={{ background: tickerColorMap[ticker] }} />
                   {ticker}: {formatCurrency(amount)}
                 </span>

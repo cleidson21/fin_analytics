@@ -57,10 +57,10 @@ export function AdvancedAlphaChart({ data, showCarteira, showIbov, showCdi, show
           </linearGradient>
         </defs>
 
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
         <XAxis
           dataKey="month"
-          stroke="#374151"
+          stroke="var(--chart-axis)"
           fontSize={11}
           tickLine={false}
           axisLine={false}
@@ -72,7 +72,7 @@ export function AdvancedAlphaChart({ data, showCarteira, showIbov, showCdi, show
           }}
         />
         <YAxis
-          stroke="#374151"
+          stroke="var(--chart-axis)"
           fontSize={11}
           tickLine={false}
           axisLine={false}
@@ -93,7 +93,7 @@ export function AdvancedAlphaChart({ data, showCarteira, showIbov, showCdi, show
           verticalAlign="bottom"
           height={36}
           iconType="plainline"
-          wrapperStyle={{ fontSize: "11px", color: "#6b7280", marginTop: "10px" }}
+          wrapperStyle={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "10px" }}
           formatter={(value) => NAME_MAP[value] || value}
         />
 

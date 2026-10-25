@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 import { LoaderCircle, Target } from "lucide-react";
 
 import type { Goal } from "@/app/goals/types";
+import { ShowOnWealthHomeButton } from "@/app/wealth-intelligence/components/ShowOnWealthHomeButton";
 import {
   projectGoal,
   type GoalPlanningRequest,
@@ -87,10 +88,10 @@ export function GoalPlanningCapability({
 
   return (
     <CapabilityPanel title="Metas existentes">
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <label className="flex max-w-xl flex-col gap-1.5 text-sm font-medium text-zinc-300">
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        <label className="flex max-w-xl flex-col gap-1.5 text-sm font-medium text-foreground/90">
           Meta
-          <select required value={goalId} onChange={(event) => setGoalId(event.target.value)} disabled={loadingGoals} className="min-h-10 rounded-xl border border-white/[0.12] bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/10 disabled:opacity-60">
+          <select required value={goalId} onChange={(event) => setGoalId(event.target.value)} disabled={loadingGoals} className="min-h-10 rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/10 disabled:opacity-60">
             <option value="">{loadingGoals ? "Carregando metas..." : "Selecione uma meta"}</option>
             {goals.map((goal) => (
               <option key={goal.id} value={goal.id}>
@@ -100,26 +101,28 @@ export function GoalPlanningCapability({
           </select>
         </label>
         {selectedGoal ? (
-          <p className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 text-sm text-zinc-400">
+          <p className="rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
             Tipo: {selectedGoal.goal_type} · Status: {selectedGoal.status} · Alvo: {String(selectedGoal.target_amount)} · Prazo: {selectedGoal.target_date ?? "não informado"}
           </p>
         ) : null}
         <PlanningInputs value={input} onChange={setInput} goals={goals} idPrefix="goal-planning" goalSourceMode="path" fieldErrors={fieldErrors} onFieldChange={clearFieldError} />
-        <label className="flex max-w-xl flex-col gap-1.5 text-sm font-medium text-zinc-300">
+        <label className="flex max-w-xl flex-col gap-1.5 text-sm font-medium text-foreground/90">
           Base do alvo da meta (opcional)
-          <select value={targetBasis} onChange={(event) => setTargetBasis(event.target.value as TargetValueBasis | "")} className="min-h-10 rounded-xl border border-white/[0.12] bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/10">
+          <select value={targetBasis} onChange={(event) => setTargetBasis(event.target.value as TargetValueBasis | "")} className="min-h-10 rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/10">
             <option value="">Não informar</option>
             <option value="NOMINAL">Nominal</option>
             <option value="REAL">Real</option>
           </select>
         </label>
-        <button type="submit" disabled={loading || loadingGoals || goals.length === 0} className="inline-flex min-h-10 min-w-36 items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/15 px-4 text-sm font-semibold text-violet-100 transition-colors hover:border-violet-300/45 hover:bg-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60">
+        <div className="flex justify-end border-t border-border pt-4">
+        <button type="submit" disabled={loading || loadingGoals || goals.length === 0} className="inline-flex min-h-10 min-w-36 items-center justify-center gap-2 rounded-xl bg-violet-300 px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-violet-200 disabled:cursor-not-allowed disabled:opacity-60">
           {loading ? <LoaderCircle aria-hidden="true" className="animate-spin" size={16} /> : <Target aria-hidden="true" size={16} />}
           {loading ? "Analisando..." : "Analisar meta"}
         </button>
+        </div>
       </form>
       {error ? <CapabilityError message={error} onDismiss={() => setError(null)} /> : null}
-      <CapabilityResultState hasResult={result !== null} loading={loading} dirty={result !== null && submittedSnapshot !== currentSnapshot} loadingLabel="Analisando meta existente" empty={<CapabilityEmpty>Escolha uma meta para analisar seu status de planejamento.</CapabilityEmpty>}>
+      <CapabilityResultState hasResult={result !== null} loading={loading} dirty={result !== null && submittedSnapshot !== currentSnapshot} loadingLabel="Analisando meta existente" empty={<CapabilityEmpty>Escolha uma meta para analisar seu status de planejamento.</CapabilityEmpty>} action={result && error === null ? <ShowOnWealthHomeButton analysis={{ domain: "PLANNING", kind: "GOAL", result }} /> : null}>
         {result ? <GoalPlanningResult result={result} /> : null}
       </CapabilityResultState>
     </CapabilityPanel>

@@ -110,4 +110,11 @@ archive/
 plans/
 samples/
 docs/archive/
-scripts/archive/
+scripts/archive/
+
+# Laboratórios históricos locais de LLM (arquivados fora da raiz Git)
+/experiments/llm-benchmarks/
+/benchmark/finanalytics_benchmark/
+/benchmark/finanalytics_benchmark_v2/
+/benchmark/finanalytics_benchmark_v3/
+/benchmark/finanalytics_benchmark_v4/

@@ -18,18 +18,20 @@ const PERIODS: { label: string; value: WealthPeriod }[] = [
 
 export function WealthPeriodToggle({ active, onChange, className }: WealthPeriodToggleProps) {
   return (
-    <div className={cn("inline-flex bg-white/[0.02] border border-white/[0.07] rounded-lg overflow-hidden", className)}>
+    <div role="group" aria-label="Período do gráfico" className={cn("inline-flex overflow-hidden rounded-lg border border-border bg-muted/30", className)}>
       {PERIODS.map((period) => {
         const isActive = active === period.value;
         return (
           <button
             key={period.value}
+            type="button"
+            aria-pressed={isActive}
             onClick={() => onChange(period.value)}
             className={cn(
-              "px-3 py-1 text-xs font-medium transition-all duration-200 border-r border-white/[0.05] last:border-r-0",
+              "min-h-9 border-r border-border px-3 py-1 text-xs font-medium transition-colors last:border-r-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none",
               isActive 
-                ? "bg-[#1f1f1f] text-[#4ecf98]" 
-                : "bg-transparent text-neutral-600 hover:text-neutral-400"
+                ? "bg-accent text-accent-foreground"
+                : "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
             {period.label}

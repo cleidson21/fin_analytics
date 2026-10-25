@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Landmark, Percent } from "lucide-react";
+﻿import { ArrowDownRight, ArrowUpRight, Landmark, Percent } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type {
@@ -19,13 +19,13 @@ import {
 import { healthMetricAccents } from "../visualTokens";
 
 const cardBase =
-  "relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 shadow-lg shadow-black/10 sm:p-5";
+  "relative overflow-hidden rounded-2xl border border-border bg-muted/35 p-4 shadow-lg shadow-black/10";
 
 const trendTone: Record<FinancialTrendDirection, string> = {
-  INCREASED: "border-sky-400/20 bg-sky-400/[0.09] text-sky-300",
-  DECREASED: "border-violet-400/20 bg-violet-400/[0.09] text-violet-300",
-  UNCHANGED: "border-white/10 bg-white/[0.05] text-zinc-300",
-  INSUFFICIENT_DATA: "border-amber-400/15 bg-amber-400/[0.06] text-amber-300",
+  INCREASED: "border-sky-400/20 bg-sky-400/[0.09] text-sky-700 dark:text-sky-300",
+  DECREASED: "border-violet-400/20 bg-violet-400/[0.09] text-violet-700 dark:text-violet-300",
+  UNCHANGED: "border-border bg-muted/45 text-foreground/90",
+  INSUFFICIENT_DATA: "border-amber-400/15 bg-amber-400/[0.06] text-warning-foreground",
 };
 
 interface SummaryCardProps {
@@ -41,17 +41,17 @@ interface SummaryCardProps {
 function SummaryCard({ label, value, trend, tone, icon, accentBorder, iconTone }: SummaryCardProps) {
   return (
     <article className={`${cardBase} border-t-2 ${accentBorder}`}>
-      <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-white/[0.025]" />
+      <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-muted/30" />
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">{label}</p>
-          <p className={`mt-2 break-words text-2xl font-semibold tabular-nums tracking-tight [overflow-wrap:anywhere] ${tone}`}>
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+          <p className={`mt-1.5 break-words text-2xl font-semibold tabular-nums tracking-tight [overflow-wrap:anywhere] ${tone}`}>
             {value}
           </p>
         </div>
         <div className={`rounded-xl border p-2.5 ${iconTone}`}>{icon}</div>
       </div>
-      <div className="relative mt-4 border-t border-white/[0.06] pt-3">{trend}</div>
+      <div className="relative mt-3 border-t border-border pt-3">{trend}</div>
     </article>
   );
 }
@@ -90,7 +90,7 @@ function TrendKpi({
         {badgeValue}
       </span>
       {absoluteDelta ? (
-        <span className={`text-xs font-semibold tabular-nums ${financialTone(metric.absolute_delta)}`}>{absoluteDelta}</span>
+        <span className="text-xs font-semibold tabular-nums text-foreground/90">{absoluteDelta}</span>
       ) : null}
     </div>
   );
@@ -107,13 +107,13 @@ export function HealthSummaryCards({
 
   return (
     <section aria-labelledby="health-summary-title">
-      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h2 id="health-summary-title" className="text-lg font-semibold text-zinc-100">Visão geral</h2>
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h2 id="health-summary-title" className="text-base font-semibold text-foreground">Indicadores do mês</h2>
         <div className="flex flex-wrap gap-2 text-[11px] font-medium">
-          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-zinc-300">
+          <span className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-foreground/90">
             Período · {formatCompactMonth(cashflow.reference_month)}
           </span>
-          <span className="rounded-full border border-sky-400/15 bg-sky-400/[0.07] px-3 py-1.5 text-sky-300">
+          <span className="rounded-full border border-sky-400/15 bg-sky-400/[0.07] px-3 py-1.5 text-sky-700 dark:text-sky-300">
             Comparação · {formatCompactMonth(trends.comparison_month)} → {formatCompactMonth(trends.trend_target_month)}
           </span>
         </div>
@@ -124,7 +124,7 @@ export function HealthSummaryCards({
           label="Receitas"
           value={formatCurrency(cashflow.total_income)}
           trend={<TrendKpi metric={trendByMetric.get("total_income")} />}
-          tone="text-emerald-300"
+          tone="text-success-foreground"
           icon={<ArrowUpRight aria-hidden="true" size={20} />}
           accentBorder={healthMetricAccents.income.border}
           iconTone={healthMetricAccents.income.icon}
@@ -133,7 +133,7 @@ export function HealthSummaryCards({
           label="Despesas"
           value={formatCurrency(cashflow.total_expense)}
           trend={<TrendKpi metric={trendByMetric.get("total_expense")} />}
-          tone="text-rose-300"
+          tone="text-destructive"
           icon={<ArrowDownRight aria-hidden="true" size={20} />}
           accentBorder={healthMetricAccents.expense.border}
           iconTone={healthMetricAccents.expense.icon}

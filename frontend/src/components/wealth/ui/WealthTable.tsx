@@ -26,7 +26,7 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
   const totalPages = pageSize ? Math.ceil(data.length / pageSize) : 1;
   const displayData = pageSize ? data.slice((currentPage - 1) * pageSize, currentPage * pageSize) : data;
   return (
-    <div className={cn("w-full overflow-x-auto rounded-xl border border-white/[0.05]", className)}>
+    <div className={cn("w-full overflow-x-auto rounded-xl border border-border", className)}>
       <table className="w-full text-left">
         <thead>
           <tr>
@@ -34,7 +34,7 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
               <th 
                 key={i} 
                 className={cn(
-                  "px-2 sm:px-3 pb-2 pt-3 text-[10px] tracking-[0.08em] uppercase text-neutral-500 font-normal border-b border-white/[0.05]",
+                  "border-b border-border px-2 pb-2 pt-3 text-[10px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:px-3",
                   col.align === "right" && "text-right",
                   col.align === "center" && "text-center",
                   typeof col.className === "string" ? col.className : undefined,
@@ -51,14 +51,14 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
             <tr>
               <td colSpan={columns.length} className="px-4 py-8 text-center">
                 <div className="flex flex-col items-center justify-center space-y-3 opacity-50">
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-                  <span className="text-[13px] text-neutral-400">Carregando dados...</span>
+                  <div className="w-5 h-5 border-2 border-border border-t-white/80 rounded-full animate-spin" />
+                  <span className="text-[13px] text-muted-foreground">Carregando dados...</span>
                 </div>
               </td>
             </tr>
           ) : displayData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-[13px] text-neutral-500">
+              <td colSpan={columns.length} className="px-4 py-8 text-center text-[13px] text-muted-foreground">
                 {emptyMessage}
               </td>
             </tr>
@@ -67,7 +67,7 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
               <tr 
                 key={rowIndex} 
                 className={cn(
-                  "border-b border-white/[0.03] last:border-0 hover:bg-white/[0.015] transition-colors cursor-default",
+                  "border-b border-border last:border-0 hover:bg-muted/25 transition-colors cursor-default",
                   typeof rowClassName === "function" ? rowClassName(row, rowIndex) : rowClassName
                 )}
               >
@@ -75,7 +75,7 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
                   <td 
                     key={colIndex} 
                     className={cn(
-                      "px-2 sm:px-3 py-3 text-[13px] text-neutral-400 whitespace-nowrap",
+                      "whitespace-nowrap px-2 py-3 text-[13px] text-muted-foreground sm:px-3",
                       col.align === "right" && "text-right",
                       col.align === "center" && "text-center",
                       typeof col.className === "function" ? col.className(row) : col.className
@@ -94,22 +94,22 @@ export function WealthTable<T>({ data, columns, className, emptyMessage = "Nenhu
         </tbody>
       </table>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.05]">
-          <span className="text-xs text-neutral-500">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <span className="text-xs text-muted-foreground">
             Página {currentPage} de {totalPages}
           </span>
           <div className="flex gap-2">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-xs font-medium text-white bg-white/[0.03] border border-white/[0.05] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/[0.06] transition-colors"
+              className="px-3 py-1 text-xs font-medium text-foreground bg-muted/35 border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/50 transition-colors"
             >
               Anterior
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 text-xs font-medium text-white bg-white/[0.03] border border-white/[0.05] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/[0.06] transition-colors"
+              className="px-3 py-1 text-xs font-medium text-foreground bg-muted/35 border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/50 transition-colors"
             >
               Próxima
             </button>

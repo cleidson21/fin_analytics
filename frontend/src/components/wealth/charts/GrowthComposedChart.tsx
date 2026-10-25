@@ -37,10 +37,10 @@ export function GrowthComposedChart({ data }: GrowthComposedChartProps) {
           </linearGradient>
         </defs>
 
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
         <XAxis
           dataKey="month"
-          stroke="#374151"
+          stroke="var(--chart-axis)"
           fontSize={11}
           tickLine={false}
           axisLine={false}
@@ -53,7 +53,7 @@ export function GrowthComposedChart({ data }: GrowthComposedChartProps) {
         />
         <YAxis
           yAxisId="patrimonio"
-          stroke="#374151"
+          stroke="var(--chart-axis)"
           fontSize={11}
           tickLine={false}
           axisLine={false}

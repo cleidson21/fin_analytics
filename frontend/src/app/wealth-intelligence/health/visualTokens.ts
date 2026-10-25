@@ -1,4 +1,4 @@
-export interface CategoryAccent {
+﻿export interface CategoryAccent {
   color: string;
   name: string;
 }
@@ -28,18 +28,18 @@ export function getCategoryAccent(category: string): CategoryAccent {
 export const healthMetricAccents = {
   income: {
     border: "border-t-emerald-400/50",
-    icon: "border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-300",
+    icon: "border-emerald-400/15 bg-emerald-400/[0.07] text-success-foreground",
   },
   expense: {
     border: "border-t-rose-400/50",
-    icon: "border-rose-400/15 bg-rose-400/[0.07] text-rose-300",
+    icon: "border-rose-400/15 bg-rose-400/[0.07] text-destructive",
   },
   net: {
     border: "border-t-sky-400/50",
-    icon: "border-sky-400/15 bg-sky-400/[0.07] text-sky-300",
+    icon: "border-sky-400/15 bg-sky-400/[0.07] text-sky-700 dark:text-sky-300",
   },
   savings: {
     border: "border-t-violet-400/50",
-    icon: "border-violet-400/15 bg-violet-400/[0.07] text-violet-300",
+    icon: "border-violet-400/15 bg-violet-400/[0.07] text-violet-700 dark:text-violet-300",
   },
 } as const;

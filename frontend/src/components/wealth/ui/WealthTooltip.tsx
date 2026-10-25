@@ -1,11 +1,8 @@
 import { formatCurrency } from "@/lib/utils";
-import { TooltipProps } from "recharts";
+import type { TooltipContentProps } from "recharts";
+import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface WealthTooltipProps extends TooltipProps<any, any> {
-  active?: boolean;
-  payload?: readonly any[];
-  label?: string | number;
+interface WealthTooltipProps extends TooltipContentProps<ValueType, NameType> {
   _labelFormatter?: (label: string) => string;
   valueFormatter?: (value: number, dataKey: string) => string;
   nameMap?: Record<string, string>;
@@ -39,42 +36,21 @@ export function WealthTooltip({
   const formattedLabel = label !== undefined ? labelFmt(String(label)) : "";
 
   return (
-    <div
-      style={{
-        backgroundColor: "rgba(20,20,20,0.97)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: "12px",
-        padding: "12px 16px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-        minWidth: "160px",
-        backdropFilter: "blur(12px)",
-      }}
-    >
+    <div className="min-w-40 rounded-xl border border-border bg-popover px-4 py-3 text-popover-foreground shadow-xl">
       {formattedLabel && (
-        <p
-          style={{
-            color: "#6b7280",
-            fontSize: "11px",
-            fontWeight: 500,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            marginBottom: "10px",
-            paddingBottom: "8px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
-          }}
-        >
+        <p className="mb-2.5 border-b border-border pb-2 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           {formattedLabel}
         </p>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-        {payload.map((entry: any, i: number) => {
+        {payload.map((entry, i) => {
           if (entry.value === undefined || entry.value === null) return null;
 
           const dataKeyStr = String(entry.dataKey || "");
           const displayName = nameMap[dataKeyStr] || entry.name || dataKeyStr;
-          const color = colorMap[dataKeyStr] || entry.color || entry.stroke || "#fff";
-          const rawValue = Number(entry.value);
+          const color = colorMap[dataKeyStr] || entry.color || entry.stroke || "var(--foreground)";
+          const rawValue = Number(Array.isArray(entry.value) ? entry.value[0] : entry.value);
 
           let displayValue: string;
           if (valueFormatter) {
@@ -104,13 +80,13 @@ export function WealthTooltip({
                     boxShadow: `0 0 6px ${color}80`,
                   }}
                 />
-                <span style={{ color: "#9ca3af", fontSize: "12px" }}>{displayName}</span>
+                <span className="text-xs text-muted-foreground">{displayName}</span>
               </div>
               <span
                 style={{
                   color: isPercentage
-                    ? isPositive ? "#4ecf98" : "#e97070"
-                    : "#ffffff",
+                    ? isPositive ? "var(--financial-positive)" : "var(--financial-negative)"
+                    : "var(--foreground)",
                   fontSize: "13px",
                   fontWeight: 600,
                   fontVariantNumeric: "tabular-nums",

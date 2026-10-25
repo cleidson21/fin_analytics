@@ -1,4 +1,4 @@
-export function formatCurrency(value: string | null) {
+﻿export function formatCurrency(value: string | null) {
   if (value === null) return "—";
 
   return new Intl.NumberFormat("pt-BR", {
@@ -75,10 +75,10 @@ export function formatCompactMonth(referenceMonth: string) {
 }
 
 export function financialTone(value: string | null) {
-  if (value === null) return "text-zinc-100";
+  if (value === null) return "text-financial-neutral";
   const numericValue = Number(value);
 
-  if (numericValue > 0) return "text-emerald-300";
-  if (numericValue < 0) return "text-rose-300";
-  return "text-zinc-100";
+  if (numericValue > 0) return "text-success-foreground";
+  if (numericValue < 0) return "text-destructive";
+  return "text-financial-neutral";
 }

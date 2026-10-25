@@ -75,18 +75,18 @@ export function DividendYoYChart({ data, years }: DividendYoYChartProps) {
                       background: `${color}18`,
                       boxShadow: `0 0 0 1px ${color}35`,
                     }
-                  : { color: "#6b7280", background: "rgba(255,255,255,0.03)" }
+                  : { color: "var(--muted-foreground)", background: "var(--chart-grid)" }
               }
             >
               <span
                 className="inline-block h-2 w-2 rounded-full"
-                style={{ background: isActive ? color : "#6b7280" }}
+                style={{ background: isActive ? color : "var(--muted-foreground)" }}
               />
               {year}
             </button>
           );
         })}
-        <span className="ml-auto text-[10px] text-zinc-600">
+        <span className="ml-auto text-[10px] text-muted-foreground">
           {visibleYears.length} de {years.length} anos visíveis
         </span>
       </div>
@@ -104,23 +104,23 @@ export function DividendYoYChart({ data, years }: DividendYoYChartProps) {
               ))}
             </defs>
 
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
             <XAxis
               dataKey="name"
-              stroke="#374151"
+              stroke="var(--chart-axis)"
               fontSize={11}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              stroke="#374151"
+              stroke="var(--chart-axis)"
               fontSize={11}
               tickLine={false}
               axisLine={false}
               tickFormatter={(val) => `R$${(val / 1000).toFixed(0)}k`}
             />
             <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              cursor={{ fill: "var(--chart-grid)" }}
               content={(props) => (
                 <WealthTooltip
                   {...props}

@@ -6,26 +6,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { SECONDARY_NAV, SIDEBAR_NAV } from "@/config/navigation";
+import { isSidebarNavigationActive, SECONDARY_NAV, SIDEBAR_NAV } from "@/config/navigation";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
-  const isFinancialDomain =
-    pathname === "/" ||
-    pathname.startsWith("/transactions") ||
-    pathname.startsWith("/categories") ||
-    pathname.startsWith("/installments");
 
   if (isLoginPage) {
     return <>{children}</>;
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 flex-col border-r border-white/10 bg-white/5 px-6 py-8 backdrop-blur lg:flex">
-          <Link href="/" className="mb-10 inline-flex items-center gap-3 self-start group">
+        <aside className="hidden w-72 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-6 py-8 text-sidebar-foreground lg:flex">
+          <Link href="/" className="group mb-10 inline-flex items-center gap-3 self-start rounded-xl focus-visible:ring-2 focus-visible:ring-ring">
             {/* Logo FA — FinAnalytics */}
             <Image
               src="/logo.jpg"
@@ -36,37 +31,28 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="shrink-0 rounded-xl transition-transform group-hover:scale-105"
             />
             <div className="flex flex-col leading-tight">
-              <span className="text-lg font-bold tracking-tight text-white">FinAnalytics</span>
-              <span className="text-[11px] font-semibold tracking-widest text-emerald-400/70 uppercase">Finance OS</span>
+              <span className="text-lg font-bold tracking-tight text-foreground">FinAnalytics</span>
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Finance OS</span>
             </div>
           </Link>
 
 
           <nav className="flex flex-1 flex-col gap-8">
             <div>
-              <p className="mb-3 text-xs uppercase tracking-[0.24em] text-zinc-500">Plataforma</p>
+              <p className="mb-3 text-xs uppercase tracking-[0.24em] text-muted-foreground">Plataforma</p>
               <div className="space-y-1">
                 {SIDEBAR_NAV.map((item) => {
-                  const isActive =
-                    item.href === "/"
-                      ? isFinancialDomain
-                      : item.href.startsWith("/governance")
-                        ? pathname.startsWith("/governance")
-                      : item.href.startsWith("/wealth-intelligence")
-                        ? pathname.startsWith("/wealth-intelligence") || pathname.startsWith("/goals")
-                      : item.href === "/wealth"
-                        ? pathname === "/wealth" || pathname.startsWith("/wealth/")
-                      : pathname === item.href || pathname.startsWith(item.href);
+                  const isActive = isSidebarNavigationActive(pathname, item.href);
 
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                         isActive
-                          ? "bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-400/20"
-                          : "text-zinc-300 hover:bg-white/5 hover:text-white"
+                          ? "bg-emerald-500/10 text-emerald-700 ring-1 ring-inset ring-emerald-500/25 dark:text-emerald-300"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
@@ -78,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <div>
-              <p className="mb-3 text-xs uppercase tracking-[0.24em] text-zinc-500">Acesso rápido</p>
+              <p className="mb-3 text-xs uppercase tracking-[0.24em] text-muted-foreground">Acesso rápido</p>
               <div className="space-y-1">
                 {SECONDARY_NAV.map((item) => {
                   const isActive = 
@@ -91,10 +77,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors",
+                        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                         isActive
-                          ? "bg-white/10 text-white ring-1 ring-inset ring-white/15"
-                          : "text-zinc-300 hover:bg-white/5 hover:text-white"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground ring-1 ring-inset ring-sidebar-border"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
