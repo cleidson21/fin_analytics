@@ -1,5 +1,73 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [PHASE-10.R5-IMPLEMENTATION] — 2026-10-24 — Design, Navigation, and Theme
+
+- Recorded the user's explicit approval and implementation start for the
+  bounded frontend-only R5 contract. R6, R7, Portfolio Intelligence 10.5-B,
+  operational AI/provider work, migrations, deployment, commit, and push remain
+  unauthorized.
+- Validated R5-0 without recreating the existing routes: `/wealth-intelligence`
+  and its Goals, Health, Planning, and FIRE children preserve direct access,
+  active navigation, month-aware links, query state, and the tested legacy
+  `/goals` redirect.
+- Implemented R5-1 System/Light/Dark selection with hydration-safe bootstrap,
+  operating-system preference tracking, and appearance-only `fin_theme`
+  persistence. Added semantic surface, text, border, status, financial, chart,
+  focus, and interaction tokens and migrated the bounded Wealth Intelligence
+  shell and shared primitives without persisting financial state.
+- Implemented R5-2's ADR-024 hierarchy: `Simular`, `Objetivo`, and `Comparar`
+  are the three top-level intentions; `Quando alcanço?`, `Quanto aportar?`, and
+  `Meta cadastrada` are nested Objective tasks. All five existing deterministic
+  services, conditional forms, results, charts, deep links, and the transient
+  “Mostrar na Visão Geral” flow are preserved without automatic calculation.
+- Implemented R5-3 stabilization for semantic living states, responsive
+  controls, global reduced motion and focus, theme-aware chart axes/series, and
+  accessible Goals dialogs with labels, initial/contained/restored focus,
+  Escape handling, and mutation-safe dismissal.
+- Validation: frontend Vitest `218 passed`; focused backend Wealth
+  Home/Goals/Planning/FIRE contracts `219 passed`; TypeScript and focused ESLint
+  passed; the 38-route Next.js production build passed; `git diff --check`
+  remains the final repository integrity gate. The legacy
+  `/wealth/asset/[ticker]` Recharts SSR size warning remains visible and is not
+  attributed to an R5 route.
+- R5 is `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE
+  PENDING`. R6 remains `NOT STARTED`.
+
+## [R4-C-CHECKPOINT-RECONCILIATION] — 2026-10-24
+
+- Verified that `HEAD` and the local `origin/develop` tracking ref both resolve
+  to the published R4-C checkpoint
+  `14cb65db1cddd5466523eefdca54c78affb3eca7`.
+- Reran the exact R4-C plus direct R4-A/R4-B regression selection: `77 passed`.
+  R4-C is `CLOSED / PUSHED`; no runtime correction was required.
+- Preserved `MAT-R4C-01` as an `INFORMATIONAL / FUTURE ACTIVATION BLOCKER` for
+  R4-F pre-execution durable audit and preserved `INF-R4C-01` for future HMAC
+  key configuration, rotation, and key-ID governance.
+- Added the non-normative checkpoint decision and executable R5 proposal in
+  `audits/R4_C_CHECKPOINT_AND_R5_PREPARATION_2026-10-24.md`. R5 remains
+  `NOT STARTED` pending explicit authorization.
+
+## [UNRELEASED-W2-W4.2-LOCAL] — 2026-10-24 — Wealth Intelligence Product Increments
+
+- Reconciled the current local W2–W4.2 implementation: authenticated
+  `wealth-home-v2`, monthly Health and ADR-023 investment wealth, current owned
+  Goals, nested navigation with month propagation, five deterministic Planning
+  flows, three explicit FIRE modes, and one navigation-scoped in-memory selected
+  result. This is worktree evidence, not a canonical R5/R6/R7 phase closure.
+- Corrected Goal progress localization to pt-BR, made Health trend deltas
+  directionally factual rather than qualitatively red/green, and updated the
+  Wealth Home loading state to cover all governed sources.
+- Added the non-normative traceability audit
+  `audits/W2_W4_2_RECONCILIATION_2026-10-24.md` and reconciled README, Current
+  State, and Roadmap tracking text without changing ADRs or locked contracts.
+- Validation: `828` governed backend tests passed; the broader Investments
+  selection preserved the two documented MagicMock/timeline failures; frontend
+  Vitest passed `206` tests in 24 files; TypeScript, focused ESLint, and the
+  38-route Next.js production build passed. The existing Recharts SSR size
+  warning remains.
+- No financial Engine, migration, Portfolio Intelligence, Advisor integration,
+  LLM execution, benchmark, download, deployment, commit, or push occurred.
+
 ## [PHASE-10.R4-C] — 2026-10-16 — Audit & Telemetry Boundary
 
 - Added immutable, typed, versioned minimized audit events and typed optional
@@ -16,14 +84,16 @@
   passed`; combined: `77 passed`. No global suite was run.
 - R4-B is `CLOSED / PUSHED` at checkpoint
   `8149e3d27a75c76ed6cc7f46fab60aabebd96396`. R4-C is `INDEPENDENTLY APPROVED
-  / CHECKPOINT PENDING`.
+  / CHECKPOINT PENDING` in this time-of-implementation record; the later
+  checkpoint reconciliation verifies it `CLOSED / PUSHED` at
+  `14cb65db1cddd5466523eefdca54c78affb3eca7`.
 - Independent review approved R4-C with `77 passed`, `0 BLOCKING`, and `0
   MATERIAL` active findings. Historical `MAT-R4C-01` is retained and adjudicated
   `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`: a future R4-F orchestration must
   integrate and validate a pre-execution audit guard before operational provider
   or tool dispatch; `VOLATILE` does not substitute for `DURABLE`. `INF-R4C-01`
-  remains for future HMAC key configuration/rotation/key-ID governance. Status
-  is `INDEPENDENTLY APPROVED / CHECKPOINT PENDING`.
+  remains for future HMAC key configuration/rotation/key-ID governance. The
+  current reconciled status is `CLOSED / PUSHED`.
 - Audit persistence and definitive retention are `NOT AUTHORIZED`; historical
   `ai_runs` was not reused or modified. Ollama is `NOT INSTALLED`, Gemini was
   `NOT CALLED`, and R4-D and later increments are `NOT IMPLEMENTED`. No database

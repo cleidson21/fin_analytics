@@ -1,8 +1,8 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R3-C IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`
+**Status:** `10.R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING`
 
-**Next:** `PREPARE R3-D OBSERVATION STORE & FRESHNESS IMPLEMENTATION PREFLIGHT`
+**Next:** `USER VISUAL ACCEPTANCE OF R5 — DO NOT START R6`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -10,9 +10,21 @@ Wealth OS through incremental composition of its validated financial core.
 
 ## Current state
 
-Goals, Financial Health, Planning, and FIRE are validated. The 10.5-A Portfolio
-Intelligence audit and its user decisions remain valid. Phase 10.5-B is paused
-until the Wealth OS realignment closes at R7.
+Goals, Financial Health, Planning, and FIRE are validated. R2 is closed; R3-I is
+independently approved and documentation-reconciled; R4-A and R4-B are closed;
+R4-C is closed and pushed at checkpoint
+`14cb65db1cddd5466523eefdca54c78affb3eca7`. The 10.5-A
+Portfolio Intelligence audit and its user decisions remain valid. Phase 10.5-B
+is paused until the Wealth OS realignment closes at R7.
+
+The current worktree contains the W2–W4.2 Wealth Intelligence increments and the
+bounded R5 consolidation: an authenticated Wealth Home read model, governed
+Health/Goals/investment-wealth cards, month-aware navigation, five deterministic
+Planning capabilities organized under the three ADR-024 intentions, three FIRE
+modes, user-selected transient results held only in memory, semantic tokens, and
+Dark/Light/System themes. Automated R5 gates passed; desktop/tablet/mobile
+visual acceptance remains pending with the user. These facts do not start or
+close canonical R6 or R7.
 
 R2-A locks declared financial context, deterministic recurring-income
 candidates, human decisions, ownership, provenance, and feature-specific
@@ -76,8 +88,9 @@ runtime imports/startup DDL-inert, makes the configured database URL
 authoritative, keeps Alembic as schema authority, and isolates pytest from the
 active database. MR3 reconciled active Alembic bookkeeping to migration
 `2d6b4f8a9c1e`; the subsequent upgrade was a no-op and preserved schema and
-financial data. R2 is closed. R3-C is closed and R3-D is ready but not started;
-product recomposition/smart prefills remain reserved for R6.
+financial data. R2 is closed. R3-D through R3-F1 and R3-I have progressed as
+recorded in `CURRENT_STATE.md`; product recomposition/smart prefills remain
+governed by R6.
 
 R3-A completed and approved the External Context architecture/source audit.
 R3-B now provides a locked External Context contract, official BCB/SGS series
@@ -92,9 +105,9 @@ executable registry, strict Decimal/civil-period normalization, economic
 identity, structured errors, and fingerprint boundary without network,
 persistence, API, frontend, or engine changes. Independent implementation
 review approved R3-C with 0 blocking, 0 material, 0 minor, and 2 informational
-findings. Its status is
-`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; R3-D is
-`READY / NOT STARTED`.
+findings. Its historical status is
+`IMPLEMENTED / VALIDATED / INDEPENDENTLY APPROVED / CLOSED`; later R3 status is
+owned by `CURRENT_STATE.md` and `IMPLEMENTATION_ROADMAP.md`.
 
 ## Read in this order
 

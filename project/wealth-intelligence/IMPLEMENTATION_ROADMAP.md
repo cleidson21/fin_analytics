@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — 10.R4-C CHECKPOINT PENDING`
-**Date:** 2026-10-16
+**Status:** `ACTIVE QUEUE — R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING`
+**Date:** 2026-10-24
 
 ---
 
@@ -10,8 +10,8 @@
 |---:|---|---|---|---|
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
 | 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
-| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A CLOSED / R4-B CLOSED / R4-C CHECKPOINT PENDING` | R2 + R3 context semantics and deterministic tools; ADR-030 |
-| 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `NOT STARTED` | R1 IA; R2/R3 context presentation requirements |
+| 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / LATER OPERATIONAL INCREMENTS GATED` | R2 + R3 context semantics and deterministic tools; ADR-030 |
+| 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING` | R1 IA; R2/R3 context presentation requirements |
 | 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
 | 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
 | 7 | 10.5-B | Resume Portfolio Intelligence contract lock using the realigned architecture | `PAUSED / PENDING WEALTH OS REALIGNMENT` | R7 closure; preserve 10.5-A |
@@ -21,6 +21,11 @@ Explore product. R4 is infrastructure, not the complete Copilot. R5 cannot
 rewrite financial engines. R6 composes validated capabilities and may change
 their interaction/presentation only within explicit contracts. R7 decides
 realignment closure.
+
+The user explicitly approved the bounded R5 contract on 2026-10-24. R5 reuses
+the W2–W4.2 product increments as baseline evidence and implements only design,
+navigation, theme, accessibility, responsive, and localization stabilization.
+It does not start R6, satisfy the R7 gate, or authorize 10.5-B.
 
 The main implementation path remains sequential. R3 provider research and R5
 token/visual audits may run in parallel after their inputs are stable, but no
@@ -162,22 +167,23 @@ R4.0 approved the architecture contract and decomposition without automatically
 authorizing every increment. R4-A is closed and pushed at
 `bea92edb18872bd3e3603dc10ebc62bed8de8100`. R4-B is closed and pushed at
 `8149e3d27a75c76ed6cc7f46fab60aabebd96396` after independent approval with
-`84 passed` and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. R4-C now has a
-independently approved no-persistence implementation and awaits its Git
-checkpoint. Independent review records `77 passed`, `0 BLOCKING`, and `0
+`84 passed` and `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. R4-C has an
+independently approved no-persistence implementation and is closed/pushed at
+checkpoint `14cb65db1cddd5466523eefdca54c78affb3eca7`. Independent review records `77 passed`, `0 BLOCKING`, and `0
 MATERIAL` active findings. Historical `MAT-R4C-01` is adjudicated
 `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`: R4-F must integrate and validate a
 pre-execution audit guard before any operational provider or tool dispatch; a
 `VOLATILE` sink never meets the required `DURABLE` guarantee. `INF-R4C-01`
 preserves the future HMAC key-configuration/rotation/key-ID governance gate.
-R4-D through R4-H are not implemented.
+R4-D local preparation and user-observed validation are in progress; R4-E
+through R4-H are not implemented.
 
 | Task | Planned outcome | Current status | Hard dependency or gate |
 |---|---|---|---|
 | R4-A | Provider-Neutral Contracts | `CLOSED / PUSHED` | checkpoint `bea92edb18872bd3e3603dc10ebc62bed8de8100`; internal application service and deterministic fake only |
 | R4-B | Authorization, Tools & Minimal Context | `CLOSED / PUSHED` | checkpoint `8149e3d27a75c76ed6cc7f46fab60aabebd96396`; exact five-tool read-only registry over R2; `84 passed`; 0 new blocking/material/minor findings |
-| R4-C | Audit & Telemetry Boundary | `INDEPENDENTLY APPROVED / CHECKPOINT PENDING` | `77 passed`; `0 BLOCKING`/`0 MATERIAL` active; `MAT-R4C-01` historical designation adjudicated `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`; persistence, definitive retention, `ai_runs`, and migration not authorized |
-| R4-D | Ollama Local Adapter | `PLANNED / OLLAMA NOT INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE` | R4-A/R4-C; D.0 hardware evidence; separate installation and model-download authorizations |
+| R4-C | Audit & Telemetry Boundary | `CLOSED / PUSHED` | checkpoint `14cb65db1cddd5466523eefdca54c78affb3eca7`; `77 passed`; `0 BLOCKING`/`0 MATERIAL` active; `MAT-R4C-01` historical designation adjudicated `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`; persistence, definitive retention, `ai_runs`, and migration not authorized |
+| R4-D | Ollama Local Adapter | `R4-D.2 USER-OBSERVED VALIDATION RECORDED / TECHNICAL CANDIDATE ONLY` | R4-A/R4-C; Ollama 0.40.5 LOCAL_ONLY; Qwen 3.5 4B Q4_K_M `d8b0f5e9760c`; no FinAnalytics provider activation or production certification |
 | R4-E | Gemini Resilient Adapter | `PLANNED / NOT AUTHORIZED` | R4-A/R4-C; current official SDK verification; adapter integration approval is separate from real-financial-data transmission approval |
 | R4-F | Evidence-Based Hybrid Router | `PLANNED / NOT AUTHORIZED` | R4-D/R4-E capability and health evidence; mandatory pre-execution audit-guard integration/validation before operational provider or tool dispatch; `LOCAL_ONLY` default; explicit fallback policy |
 | R4-G | Benchmark Harness | `PLANNED / EXECUTION NOT AUTHORIZED` | eligible model catalog; synthetic reference set; separate quota, schedule, download, provider-call, and budget approval |
@@ -187,16 +193,54 @@ R4-D contains an assisted internal checklist rather than new normative phases:
 
 | Checklist | Scope | Current status |
 |---|---|---|
-| R4-D.0 — Hardware & Environment Preflight | Read-only OS, CPU, RAM, GPU, VRAM, driver, disk, and candidate-fit evidence | `PLANNED / NO INSTALLATION` |
-| R4-D.1 — Assisted Ollama Installation | Current official instructions, service/PATH/version, cloud disabled, loopback and exposure checks | `DEFERRED / SEPARATE AUTHORIZATION REQUIRED` |
-| R4-D.2 — Local Model Setup | Hardware-based selection, separately authorized download, digest/license/quantization and offline structured-output validation | `DEFERRED / SEPARATE AUTHORIZATION REQUIRED` |
-| R4-D.3 — Performance & Adapter Validation | Cold/warm, latency, tokens/s, resources, context, concurrency, and local-only adapter checks | `DEFERRED / REQUIRES D.1 AND D.2` |
+| R4-D.0 — Hardware & Environment Preflight | Read-only OS, CPU, RAM, GPU, VRAM, driver, disk, and candidate-fit evidence | `COMPLETE / HARDWARE READY` |
+| R4-D.1 — Assisted Ollama Installation | Current official instructions, service/PATH/version, cloud disabled, loopback and exposure checks | `0.40.5 INSTALLED / USER-OBSERVED LOCAL_ONLY` |
+| R4-D.2 — Local Model Setup | Hardware-based selection, separately authorized download, digest/license/quantization and offline structured-output validation | `USER-OBSERVED VALIDATION RECORDED / TECHNICAL CANDIDATE / NOT PRODUCTION CERTIFIED` |
+| R4-D.3 — Performance & Adapter Validation | Cold/warm, latency, tokens/s, resources, context, concurrency, and local-only adapter checks | `DEFERRED / FORMAL BENCHMARK AND ADAPTER VALIDATION NOT AUTHORIZED` |
 
 The project must provide exact commands, expected evidence, side effects, and
 objective success/stop criteria at each assisted R4-D gate. R4.0 authorizes no
 installation, download, provider call, benchmark, expense, persistence,
 endpoint, frontend, scheduler, or migration. Proposed models, retention
 periods, circuit-breaker thresholds, and budgets are not operational settings.
+
+The user-approved candidate order for the R4-D.2/R4-D.3 work
+is Qwen 3.5 4B `Q4_K_M` first, Qwen 3.5 9B `Q4_K_M` second, and PrismML Bonsai
+8B GGUF `Q1_0` third as an experimental candidate. Bonsai is Qwen3-8B-based,
+not Qwen 3.5; its published approximately 8.19B parameters, 1.16 GB file, and
+Apache 2.0 license do not prove total VRAM, quality, or Ollama `0.40.5`
+compatibility. A compatible llama.cpp may require a separate gate, and adverse
+external tool-calling evidence must be tested locally. The 9B candidate must be
+evaluated for full-GPU fit versus CPU/GPU offload. The host's four declared
+8 GB DDR4-2400 modules imply at most 76.8 GB/s theoretical bandwidth if
+effective quad-channel operation is verified. Equivalent, entirely offline
+synthetic financial tasks must compare Portuguese and financial interpretation,
+structured JSON, Decimal/provenance preservation, tool selection, abstention,
+grounding/hallucination, RAM, VRAM, GPU/CPU layer placement, latency, tokens/s,
+context consumption, and quality; no candidate wins without evidence. Ollama
+is the initial runtime and direct llama.cpp remains a future comparison. The
+earlier candidate-planning update itself authorized no model download,
+execution, runtime installation, or benchmark; subsequent actions remained
+subject to their own explicit gates.
+
+R4-D.2 user-observed evidence records Ollama `0.40.5` in `LOCAL_ONLY` mode,
+Qwen 3.5 4B `Q4_K_M` model ID `d8b0f5e9760c`, CUDA execution on the RTX 5060
+with `33/33` layers on GPU, context `4096`, and concurrency `1`. Thinking-off
+synthetic tests produced syntactically valid JSON at approximately `80-84
+tokens/s` warmed and approximately `3.5-4.9 seconds` for the tested warmed
+responses. Source fidelity is not yet established; the model is a technical
+candidate only and is not production certified.
+
+Thinking on is `NOT APPROVED IN TESTED CONFIGURATION`: JSON with `1800` tokens
+ended with no final answer and `done_reason=length`; without JSON and with
+`3000` tokens, the final answer was partial with the same completion reason,
+while generation remained near `81 tokens/s`. This result neither expands the
+token budget automatically nor establishes a universal model defect. Initial
+loads also showed intermittent GPU-discovery timeouts before successful
+initialization. Future gated work must validate empty and partial responses,
+sources, grounding, and financial conclusions rigorously. It must not activate
+operational integration before R4-F integrates and validates the mandatory
+pre-execution guard with `DURABLE` audit.
 
 ## Closed and preserved baseline
 
@@ -226,7 +270,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C CLOSED / LOCKED; R3-D CLOSED / PUSHED; R3-E.0 LOCKED / PUSHED; R3-E1 CLOSED / PUSHED; R3-E2 CLOSED / PUSHED; R3-E3 CLOSED / PUSHED; R3-E4 IMPLEMENTED / TESTED / INDEPENDENTLY APPROVED / IMPLEMENTATION CHECKPOINT; R4–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C/D/E1/E2/E3 CLOSED; R3-E4 INDEPENDENTLY APPROVED; R4-A/B/C CLOSED; R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING; R6–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
@@ -240,6 +284,24 @@ The legacy 10.6–10.12 sequence remains historical planning input. R1 reconcile
 its duplicated external-data, AI, and UX responsibilities into R2–R7; the
 legacy sequence no longer authorizes implementation independently.
 
+### R5 execution checkpoint
+
+| Increment | Proven state | Evidence |
+|---|---|---|
+| R5-0 — routes and baseline | `VALIDATED` | five canonical Wealth Intelligence routes, tested `/goals` redirect, active hierarchy, month propagation, direct/deep-link normalization |
+| R5-1 — tokens and themes | `IMPLEMENTED / AUTOMATED VALIDATED` | System/Light/Dark provider and bootstrap; appearance-only `fin_theme` persistence; semantic shell, status, financial, chart, focus, and surface tokens |
+| R5-2 — Planning ADR-024 | `VALIDATED` | exactly `Simular`, `Objetivo`, and `Comparar`; nested `Quando alcanço?`, `Quanto aportar?`, and `Meta cadastrada`; five existing deterministic capabilities preserved |
+| R5-3 — stabilization | `IMPLEMENTED / AUTOMATED VALIDATED / USER VISUAL ACCEPTANCE PENDING` | semantic Wealth surfaces, responsive controls, reduced motion, keyboard/focus-safe Goals dialogs, pt-BR regressions, accessible states and chart alternatives |
+
+Validation on 2026-10-24: frontend Vitest `218 passed`; focused backend
+Wealth Home/Goals/Planning/FIRE contracts `219 passed`; TypeScript and focused
+ESLint passed; the 38-route Next.js production build passed. The build retains
+the documented Recharts SSR dimension warning in the legacy
+`/wealth/asset/[ticker]` route. Final visual acceptance across desktop, tablet,
+and mobile is intentionally assigned to the user's local-browser review. No
+backend implementation, engine, DTO, migration, database, R6, Portfolio
+Intelligence, Advisor, provider, deployment, commit, or push was introduced.
+
 ---
 
 ## Historical execution records (non-authorizing)
@@ -247,6 +309,21 @@ legacy sequence no longer authorizes implementation independently.
 The remainder of this file preserves completed phase contracts and former
 10.6–10.12 proposals as historical evidence. Old `next` or `not started` labels
 are point-in-time records and do not override the Active queue above.
+
+### W2–W4.2 local product increments
+
+The current worktree implements and tests a composed `/wealth-intelligence`
+experience: the authenticated `wealth-home-v2` read model; monthly Health and
+ADR-023 investment-wealth facts; current owned Goals; canonical nested routes;
+month propagation to Health; five deterministic Planning flows; three explicit
+FIRE modes; and one validated result selected into memory for the Home. The
+state is not persisted and is cleared on refresh, logout, token change, or
+identity change. No Portfolio Intelligence, operational Advisor, scenario
+persistence, migration, or new financial engine is introduced.
+
+This record reconciles repository reality without designating R5 or R6 as
+started or closed. The traceability matrix and exact validation evidence are in
+`audits/W2_W4_2_RECONCILIATION_2026-10-24.md`.
 
 ### Post-10.3 Planning UX implementation
 

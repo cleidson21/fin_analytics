@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-16 — R4-C independently approved; checkpoint pending
+**Updated:** 2026-10-24 — R5 implemented; automated gates passed; user visual acceptance pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -52,9 +52,10 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R4.0 Hybrid AI Runtime contract | `CONTRACT APPROVED / DOCUMENTATION IN PROGRESS` |
 | 10.R4-A Provider-Neutral Contracts | `CLOSED / PUSHED` |
 | 10.R4-B Authorization, Tools & Minimal Context | `CLOSED / PUSHED` |
-| 10.R4-C Audit & Telemetry Boundary | `INDEPENDENTLY APPROVED / CHECKPOINT PENDING` |
-| 10.R4-D Ollama Local Adapter | `OLLAMA NOT INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CHECKPOINT PENDING` |
+| 10.R4-C Audit & Telemetry Boundary | `CLOSED / PUSHED` |
+| 10.R4-D Ollama Local Adapter | `R4-D.2 USER-OBSERVED VALIDATION RECORDED / TECHNICAL CANDIDATE ONLY` |
+| 10.R5 design, navigation, and theme | `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 AUTOMATED GATES PASSED` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -189,6 +190,7 @@ are `INF-R3D-01/02`, `INF-R3E1-01/02/03`, and `INF-R3E2-01/02`. R3-E4 is
 | Financial Health | Certified cashflow, history, categories, anomaly, and trend services/API/UI | Health domain, router, and UI |
 | Planning | Five authenticated transient capabilities using certified Decimal engines and explicit sources | ADRs 019–024, Planning domain/API/UI |
 | FIRE | One authenticated deterministic analysis capability composed over Planning | ADR-025, FIRE contract/domain/API/UI |
+| Wealth Intelligence W2–W4.2 (current worktree) | Authenticated Wealth Home v2 composition for monthly Health, current Goals, and governed monthly investment wealth; month-aware navigation; five Planning flows; three FIRE modes; one in-memory selected result | `GET /api/v1/wealth-home`, Wealth Intelligence frontend/tests, reconciliation audit |
 | Smart Context B1-B7 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, authenticated review/confirm/reject/reset decision API, internal feature-specific composition, the Profile declared/observed review experience, and typed read-only future-consumer boundaries | migration `2d6b4f8a9c1e`, Smart Context backend tests, B6 frontend tests/typecheck/build |
 | Market data | yfinance adapter/service with provider-specific cache behavior | market-data protocol and yfinance integration |
 
@@ -199,10 +201,20 @@ that distinction.
 
 ## Present UI and navigation
 
-The current top-level product is still organized around Controle Financeiro,
-Investimentos, Wealth Intelligence, Governança, and Configurações. The Wealth
-Intelligence hub links separately to Goals, Health, Planning, and FIRE and is a
-module directory rather than a context-rich Home.
+The current top-level product is organized around Controle Financeiro,
+Investimentos, Inteligência Patrimonial, Governança, and Configurações. In the
+current worktree, `/wealth-intelligence` is a composed Home rather than a module
+directory. It presents independently governed monthly Health, current Goals,
+and ADR-023 investment-wealth facts; keeps demonstration content explicit;
+links to the canonical nested Goals, Health, Planning, and FIRE routes; and can
+show one user-selected Planning/FIRE response in navigation-scoped memory only.
+The selected result is not persisted and disappears on refresh, logout, token
+change, or identity change.
+
+The user explicitly authorized the bounded R5 contract on 2026-10-24. The
+existing W2–W4.2 implementation is reused as its product baseline; it is not an
+implied R6 start or closure. R5 automated acceptance gates passed, while final
+desktop/tablet/mobile visual acceptance remains assigned to the user.
 
 R1 locks a target information architecture but changes no route. Existing deep
 links remain operational until R5/R6 explicitly implement migration.
@@ -289,8 +301,9 @@ Home, Planning, Goal, FIRE context, and one owned-Goal read. Independent review
 reports `84 passed` with `0 BLOCKING / 0 MATERIAL / 0 MINOR` new findings. The R2
 single-tenant guard remains fail-closed and is not a universal multi-tenant
 claim. No R3 External Reference consumer or Planning/FIRE engine tool is
-activated. R4-C now implements the logical audit and telemetry boundary and is
-`INDEPENDENTLY APPROVED / CHECKPOINT PENDING`: `21` focused tests plus `56`
+activated. R4-C implements the logical audit and telemetry boundary and is
+`CLOSED / PUSHED` at checkpoint
+`14cb65db1cddd5466523eefdca54c78affb3eca7`: `21` focused tests plus `56`
 direct R4-A/R4-B regressions pass (`77 passed`), with `0 BLOCKING` and `0
 MATERIAL` active findings. Historical `MAT-R4C-01` is adjudicated
 `INFORMATIONAL / FUTURE ACTIVATION BLOCKER`: no pre-execution guard is
@@ -300,11 +313,44 @@ R4-F must integrate and validate the guard before operational provider or tool
 dispatch. `INF-R4C-01` remains for future HMAC-key configuration/rotation/key-ID
 governance. There is still no production AI runtime. Audit persistence and
 definitive retention are `NOT AUTHORIZED`; historical `ai_runs` remains
-untouched. Ollama is `NOT INSTALLED`, no eligible local runtime is available,
-and Gemini was `NOT CALLED`. `LOCAL_ONLY` remains the default. R4-D and later
-increments are `NOT IMPLEMENTED`; benchmarking, installation, downloads,
-provider SDKs, provider execution, database access, migration, endpoint,
-frontend, and scheduler remain separately gated.
+untouched. Ollama `0.40.5` is installed through the exact user-scoped WinGet
+package. User-observed evidence records user-scoped `LOCAL_ONLY` operation,
+Qwen 3.5 4B `Q4_K_M` with Ollama model ID `d8b0f5e9760c`, context `4096`, and
+concurrency `1`. No provider is activated in FinAnalytics. Gemini was `NOT
+CALLED`; operational provider integration, formal benchmarking, provider SDKs,
+database access, migration, endpoint, frontend, scheduler, and subsequent R4
+work remain separately gated.
+
+The user-approved R4-D evaluation order is Qwen 3.5 4B `Q4_K_M` first and Qwen
+3.5 9B `Q4_K_M` second. PrismML Bonsai 8B GGUF `Q1_0` is a third,
+experimental candidate and does not alter that priority. It is based on
+Qwen3-8B, not Qwen 3.5, and published as approximately 8.19B parameters, a
+1.16 GB GGUF file, and Apache 2.0. Compatibility with Ollama `0.40.5` and total
+VRAM are `NOT VERIFIED`; a compatible llama.cpp may be required under a
+separate gate. Published unfavorable comparative tool-calling evidence must be
+retested locally. These are candidates only: no winner exists without
+equivalent, entirely offline synthetic-financial-task evidence for Portuguese,
+financial interpretation, structured JSON, Decimal/provenance preservation,
+tool selection, abstention, grounding/hallucination, quality, latency, tokens/s,
+context use, RAM, VRAM, and GPU/CPU layer placement. The host has 32 GB across
+four declared DDR4-2400 8 GB modules in a declared quad-channel configuration;
+the resulting theoretical 76.8 GB/s ceiling remains subject to verification.
+Ollama is the initial runtime and direct llama.cpp remains a future comparison.
+
+The user-observed R4-D.2 validation ran Qwen 3.5 4B on the RTX 5060 through
+CUDA with `33/33` layers on GPU. With thinking off, synthetic tests completed,
+JSON was syntactically valid, warmed generation was approximately `80-84
+tokens/s`, and tested warmed responses took approximately `3.5-4.9 seconds`.
+Source fidelity still requires stricter testing: this is a technical candidate,
+not a production-certified model. With thinking on, JSON plus `1800` tokens
+produced no final answer, and no JSON plus `3000` tokens produced a partial final
+answer; both ended with `done_reason=length`, at generation near `81 tokens/s`.
+That mode is `NOT APPROVED IN TESTED CONFIGURATION`; no automatic budget
+increase or universal model-defect conclusion follows. Initial loads showed
+intermittent GPU-discovery timeouts before successful initialization. Empty or
+partial answers, sources, grounding, and financial conclusions require strict
+future validation. No operational integration is authorized, and R4-F remains
+blocked on its pre-execution guard and `DURABLE` audit requirement.
 
 ## External context current state
 
@@ -387,10 +433,17 @@ exists in the current roadmap.
 
 ## Theme and design current state
 
-Light and dark semantic CSS variables exist, but the root layout and AppShell
-apply dark-specific classes and at least 71 TSX files still contain dark-only
-utility patterns. Settings does not persist a theme. System/Light/Dark is a
-future R5 target, not current behavior.
+The live shell now supports System, Light, and Dark through semantic surface,
+text, border, status, financial, chart, focus, spacing, and interaction tokens.
+Only the `fin_theme` appearance preference is persisted; financial data,
+scenarios, and transient Planning/FIRE results remain outside browser storage.
+The inline bootstrap and provider keep first paint and hydration aligned with
+the stored or operating-system preference. Wealth Intelligence shared cards,
+tables, charts, inputs, dialogs, loading/error/empty states, and the Goals CRUD
+surface consume the semantic theme boundary. Reduced-motion and visible-focus
+rules are global. The Planning route now exposes ADR-024's three top-level
+intentions with the three Objective tasks nested under `Objetivo`, while all
+five deterministic capabilities and their endpoints remain unchanged.
 
 ## Smart Context current state
 
@@ -499,7 +552,17 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
 - ADR-014 records the historical `accounts` primary-key/model mismatch.
 - Two Investments asset-detail unit tests have historical MagicMock/timeline
   sorting failures.
-- Repository-wide mobile, lint, and Recharts SSR warning debt remains.
+- Repository-wide mobile and lint debt outside the bounded R5 surfaces remains.
+  The production build also preserves a Recharts SSR dimension warning from
+  the legacy `/wealth/asset/[ticker]` route; the R5 Health chart declares
+  minimum and initial dimensions.
+- The public Goals API still represents money and progress with `float`; the
+  Decimal-safe Planning reader deliberately bypasses that legacy path.
+- R5 final visual acceptance in desktop, tablet, and mobile remains pending the
+  user's local-browser review. Automated component, accessibility, type, lint,
+  build, route, and backend contract gates passed; this does not start R6 or R7.
+- W2–W4.2 and R5 product composition remain in the current dirty worktree and
+  have no new checkpoint/commit evidence.
 - `INF-R3D-01`: global SQLite foreign-key enablement passed tested
   environments. A conditional structural remediation for a reported invalid
   `position_snapshots.account_id -> accounts.id` physical constraint was

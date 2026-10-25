@@ -15,23 +15,21 @@ consume those capabilities without replacing their financial authority.
 - Portfolio Intelligence 10.5-B: `PAUSED / PENDING WEALTH OS REALIGNMENT`
 - Wealth OS 10.R0: `AUDIT COMPLETE`
 - Wealth OS 10.R1: `ARCHITECTURE / DOCUMENTATION LOCKED`
-- Wealth OS 10.R2-A: `CONTRACT LOCKED / IMPLEMENTATION READY`
-- Wealth OS 10.R2-B1: `IMPLEMENTED / VALIDATED`
-- Wealth OS 10.R2-B2: `IMPLEMENTED / VALIDATED`
-- Wealth OS 10.R2-B3: `IMPLEMENTED / VALIDATED`
-- Wealth OS 10.R2-B4: `IMPLEMENTED / VALIDATED`
-- Wealth OS 10.R2-B5: `READY / NOT STARTED`
+- Wealth OS 10.R2: `IMPLEMENTED / VALIDATED / CLOSED`
+- Wealth OS 10.R3: `R3-I INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`
+- Wealth OS 10.R4-A/B: `CLOSED / PUSHED`
+- Wealth OS 10.R4-C: `CLOSED / PUSHED`
+- Wealth OS 10.R5: `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING`
+- Wealth Intelligence W2–W4.2: `IMPLEMENTED / TESTED IN CURRENT WORKTREE / ABSORBED INTO R5 / NOT AN R6 PHASE CLOSURE`
 
-The realignment is an incremental composition refactor. It preserves validated
-financial engines while adding Smart Context, normalized external context, a
-provider-aware AI runtime, coherent navigation/design foundations, and composed
-product journeys in later phases. R2-A locks the Smart Financial Context
-contract. R2-B1 adds only its persistence and fail-closed ownership foundation;
-R2-B2 adds the authenticated declared Profile context API; R2-B3 adds the
-read-only deterministic recurring-income evidence engine; R2-B4 exposes only
-authenticated candidate review and reversible confirm/reject/reset decisions
-with evidence-conflict protection. No composition service or frontend
-integration exists yet.
+The realignment is an incremental composition refactor. R2 now provides the
+validated Smart Financial Context foundation, R3 provides the approved External
+Context foundations, and R4-A through R4-C provide internal AI contracts,
+read-only tools, and audit/telemetry boundaries without an operational Advisor.
+The current worktree also contains the W2–W4.2 Wealth Intelligence product
+increments and the bounded R5 consolidation. R5 automated gates passed, but its
+desktop/tablet/mobile visual acceptance remains assigned to the user. These
+local increments are not an implied start or closure of canonical phase R6.
 
 ## What exists today
 
@@ -48,10 +46,13 @@ Important current limitations:
 - the existing Investments UI is not a certified Portfolio Intelligence or
   portfolio-performance engine;
 - Profile is partly browser-local and Settings is mostly placeholder behavior;
-- there is no shared Smart Context composition service, normalized External
-  Context Layer, production Advisor/Insights/Copilot, OpenAI/Ollama runtime,
-  working Gemini runtime, or AI scheduler;
-- the live UI is dark-specific despite light/dark CSS tokens.
+- Smart Context and External Context foundations exist, but there is no
+  production Advisor/Insights/Copilot, operational model adapter, hybrid router,
+  AI endpoint, or AI scheduler;
+- the W2–W4.2 Wealth Home, navigation, Planning/FIRE experience, transient
+  result sharing, and R5 themes exist only in the current worktree and await
+  final user visual acceptance before the Git checkpoint;
+- R6 has not started, and R5 completion does not authorize it.
 
 See the verified current-state owner for exact detail.
 

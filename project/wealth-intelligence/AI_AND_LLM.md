@@ -1,8 +1,8 @@
 # AI & LLM Architecture
 
-**Status:** `10.R4-C INDEPENDENTLY APPROVED / CHECKPOINT PENDING`
+**Status:** `10.R4-C CLOSED / PUSHED`
 
-**Date:** 2026-10-16
+**Date:** 2026-10-24
 
 **Canonical responsibility:** current AI-runtime truth, AI authority/privacy
 boundaries, and high-level provider/tool direction. Phase 10.R4 owns the exact
@@ -272,18 +272,79 @@ otherwise. No retry loop may consume tokens indefinitely.
 
 ## 13. Local provider contract and assisted Ollama gate
 
-Ollama is not installed on the current computer. R4-D is `PLANNED / OLLAMA NOT
-INSTALLED / INSTALLATION DEFERRED TO ASSISTED GATE`. Llama models supported by
-the then-current official Ollama catalog may be evaluated, but no model,
-quantization, context window, or hardware fit is selected before the read-only
-hardware gate. Any admitted artifact is pinned by exact digest and records its
-license, quantization, configuration, storage, and verified effective limits.
+Ollama `0.40.5` is installed on the current Windows computer through the exact
+`Ollama.Ollama` WinGet package. The package is registered and the executable
+responds with the expected version. User-observed R4-D.1 evidence records the
+user-scoped `LOCAL_ONLY` configuration. Qwen 3.5 4B `Q4_K_M`, Ollama model ID
+`d8b0f5e9760c`, is installed with context `4096` and concurrency `1` for local
+validation; no provider is activated in FinAnalytics. Any
+artifact admitted for operational use must still be pinned by the required
+exact digest and record its license, quantization, configuration, storage, and
+verified effective limits.
 
 Llama 3.2 3B and Llama 3.1 8B quantized candidates may seed that evaluation;
 they are candidates only, not approved operational models. Their real
 availability, license, digest, RAM/VRAM, CPU/GPU behavior, context, throughput,
 latency, concurrency, storage, and energy implications must be reverified when
 the gate runs.
+
+**User-approved R4-D candidate priority (2026-10-16):** the first operational
+evaluation candidate is Qwen 3.5 4B `Q4_K_M`; Qwen 3.5 9B `Q4_K_M` is the
+second priority, subject to evidence for full-GPU execution or CPU/GPU offload.
+This ordering authorizes neither download nor execution and elects no winner.
+The confirmed host has a Xeon E5-2667 v4, 32 GB across four declared DDR4-2400
+8 GB modules in declared quad-channel configuration, and an NVIDIA RTX 5060
+with 8 GB VRAM. The theoretical main-memory bandwidth is at most 76.8 GB/s and
+remains contingent on verifying the effective quad-channel configuration.
+R4-D.3 must measure RAM, VRAM, GPU/CPU layer placement, latency, tokens/s,
+context consumption, and quality under equivalent synthetic financial tasks.
+Ollama remains the initial runtime; direct llama.cpp is only a future comparison.
+
+The third candidate is **PrismML Bonsai 8B GGUF `Q1_0`**, explicitly
+experimental and lower-priority than both Qwen 3.5 candidates. Its published
+model card describes a Qwen3-8B-based architecture, not Qwen 3.5, with about
+8.19B parameters, an approximately 1.16 GB GGUF file, and Apache 2.0 licensing.
+The file size is not a total-runtime-memory claim: total VRAM, buffers, context
+cache, and layer placement must be measured. Compatibility with Ollama `0.40.5`
+is `NOT VERIFIED`; although the model card advertises an Ollama invocation, it
+also documents Q1_0 kernels through a PrismML llama.cpp fork. Any compatible
+llama.cpp installation or direct-runtime comparison requires a separate gate.
+Primary evidence: [announcement](https://prismml.com/news/bonsai-8b),
+[model card](https://huggingface.co/prism-ml/Bonsai-8B-gguf), and
+[demo repository](https://github.com/PrismML-Eng/Bonsai-demo).
+
+No published general benchmark establishes FinAnalytics suitability or
+superiority. The external model-card BFCL result (`65.7`, versus `81.0` for
+Qwen3-8B in the same published table) is an unfavorable tool-calling signal
+that must be reproduced under the FinAnalytics contract before any operational
+consideration. Equivalent, entirely offline future evaluation must cover
+Portuguese and financial interpretation, validated structured JSON, exact
+Decimal and provenance preservation, correct approved-tool selection,
+abstention when evidence is missing, grounding and hallucination, tokens/s,
+latency, total VRAM, and context consumption. No candidate wins without this
+evidence.
+
+**R4-D.2 user-observed validation (2026-10-16):** Qwen 3.5 4B `Q4_K_M`
+(`d8b0f5e9760c`) ran through Ollama `0.40.5` in `LOCAL_ONLY` mode on the RTX
+5060 through CUDA, with all `33/33` layers on GPU, context `4096`, and
+concurrency `1`. With thinking off, the synthetic tests completed with
+syntactically valid JSON; warmed generation was approximately `80-84 tokens/s`
+and the tested warmed responses took approximately `3.5-4.9 seconds`. This is
+technical-candidate evidence only: source fidelity still requires stricter
+testing and the model is not certified for production.
+
+With thinking on, JSON format and a `1800`-token allowance produced no final
+answer and ended with `done_reason=length`; without JSON format and with a
+`3000`-token allowance, the final answer was partial and again ended with
+`done_reason=length`. Generation remained near `81 tokens/s`. Thinking on is
+therefore `NOT APPROVED IN TESTED CONFIGURATION`; this does not authorize an
+automatic token-budget increase or establish a universal model defect.
+Intermittent GPU-discovery timeouts occurred during initial loads, followed by
+successful initialization. Future validation must reject or explicitly handle
+empty and partial responses and test sources, grounding, and financial
+conclusions rigorously. No operational integration is authorized. R4-F still
+requires its pre-execution guard and `DURABLE` audit before operational provider
+or tool dispatch.
 
 R4-D uses the following assisted execution checklist. D.0-D.3 are internal
 steps of R4-D, not new normative phases unless the roadmap is later amended:
@@ -562,3 +623,11 @@ validate that pre-execution guard before any operational dispatch to providers
 or tools is activated. `INF-R4C-01` remains: future HMAC key configuration,
 rotation, and key-ID governance require a separately authorized secret/config
 contract. This adjudication changes neither ADR-030 nor any locked decision.
+
+**Checkpoint reconciliation (2026-10-24):** the approved R4-C implementation
+is present at `HEAD` and the local `origin/develop` tracking ref as checkpoint
+`14cb65db1cddd5466523eefdca54c78affb3eca7`. Its focused and direct R4-A/R4-B
+selection was rerun with `77 passed`. R4-C is therefore `CLOSED / PUSHED`.
+The R4-F pre-execution durable-audit guard and future HMAC key operations remain
+separately gated activation requirements; they are not retroactively part of
+the isolated no-persistence R4-C closure.
