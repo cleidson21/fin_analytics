@@ -11,7 +11,6 @@ import {
   type ScenarioArchetype,
   type ScenarioComparisonResponse,
 } from "@/lib/planning";
-import { formatBRDate, parseBRDateInput } from "@/lib/planningLocale";
 
 import { CapabilityEmpty, CapabilityError, CapabilityPanel, CapabilityResultState } from "./CapabilityPanel";
 import { PlanningInputs } from "./PlanningInputs";
@@ -40,12 +39,6 @@ function createScenario(scenarioId: string): ScenarioDraft {
 
 function scenarioName(scenario: ScenarioDraft, index: number) {
   return scenario.label.trim() || `Cenário ${index + 1}`;
-}
-
-function SharedDateSummary({ value }: { value: string }) {
-  if (value === "") return <span>Hoje</span>;
-  const parsed = parseBRDateInput(value);
-  return <span>{parsed.ok ? `Data-base personalizada: ${formatBRDate(parsed.value)}` : "Data-base personalizada"}</span>;
 }
 
 export function ScenarioComparisonCapability({ goals }: { goals: Goal[] }) {
@@ -179,11 +172,25 @@ export function ScenarioComparisonCapability({ goals }: { goals: Goal[] }) {
         <section aria-labelledby="comparison-context-title" className="space-y-4 rounded-2xl border border-border bg-muted/25 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 id="comparison-context-title" className="text-sm font-semibold text-foreground">Contexto da comparação</h3>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              <SharedDateSummary value={sharedContext.asOfDate} />
-              <span aria-hidden="true">·</span>
-              <span>{sharedContext.outputMode === "REAL" ? "Valores reais" : "Valores nominais"}</span>
-            </div>
+            <button
+              type="button"
+              aria-expanded={sharedAdvancedOpen}
+              aria-controls={advancedId}
+              onClick={() => setSharedAdvancedOpen((current) => !current)}
+              className={`inline-flex flex-wrap items-center justify-end gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium text-violet-700 transition hover:bg-violet-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50 dark:text-violet-300 ${
+                hasNonDefaultSharedContext
+                  ? "border-violet-300/35 bg-violet-300/[0.08]"
+                  : "border-border bg-transparent"
+              }`}
+            >
+              Opções da comparação
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                {sharedContext.outputMode === "REAL" ? "Valores reais" : "Valores nominais"}
+              </span>
+              {sharedContext.asOfDate ? <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Data personalizada</span> : null}
+              {sharedContext.includeTarget ? <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Com alvo</span> : null}
+              <ChevronDown aria-hidden="true" size={14} className={sharedAdvancedOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+            </button>
           </div>
           <label className="flex max-w-xs flex-col gap-1.5 text-sm font-medium text-foreground/90">
             Horizonte (meses)
@@ -197,19 +204,6 @@ export function ScenarioComparisonCapability({ goals }: { goals: Goal[] }) {
             />
             {sharedFieldErrors.horizonMonths ? <span id="comparison-horizon-error" className="text-xs font-normal text-destructive">{sharedFieldErrors.horizonMonths}</span> : null}
           </label>
-          <button
-            type="button"
-            aria-expanded={sharedAdvancedOpen}
-            aria-controls={advancedId}
-            onClick={() => setSharedAdvancedOpen((current) => !current)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-cyan-200 transition hover:bg-cyan-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
-          >
-            Opções avançadas da comparação
-            <ChevronDown aria-hidden="true" size={14} className={sharedAdvancedOpen ? "rotate-180 transition-transform" : "transition-transform"} />
-          </button>
-          {!sharedAdvancedOpen && hasNonDefaultSharedContext ? (
-            <p className="text-xs text-cyan-100">{sharedContext.outputMode === "REAL" ? "Valores reais" : "Valores nominais"}{sharedContext.asOfDate ? " · data-base personalizada" : ""}{sharedContext.includeTarget ? " · patrimônio-alvo incluído" : ""}</p>
-          ) : null}
           {sharedAdvancedOpen ? (
             <div id={advancedId} className="grid gap-4 rounded-xl border border-border bg-background p-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">

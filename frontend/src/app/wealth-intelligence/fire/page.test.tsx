@@ -72,14 +72,12 @@ describe("FirePage execution boundary", () => {
     expect(await screen.findByText("Resultado FIRE certificado")).toBeTruthy();
   });
 
-  it("exposes navigation without carrying the Wealth Home month into FIRE", () => {
+  it("keeps one semantic heading without duplicating the global journey navigation", () => {
     render(<FirePage />);
 
-    expect(screen.getByRole("link", { name: "Visão Geral" }).getAttribute("href")).toBe(
-      "/wealth-intelligence",
-    );
-    expect(screen.getByRole("link", { name: "Planejamento" }).getAttribute("href")).toBe(
-      "/wealth-intelligence/planning?intent=simulate",
-    );
+    expect(screen.getByRole("heading", { name: "Independência Financeira" })).toBeTruthy();
+    expect(screen.queryByText("Análises determinísticas sob demanda")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Metas" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Planejamento" })).toBeNull();
   });
 });

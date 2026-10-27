@@ -14,6 +14,7 @@ import {
 
 import type { Goal } from "@/app/goals/types";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { fetchFromAPI } from "@/lib/api";
 
 import { GoalPlanningCapability } from "./components/GoalPlanningCapability";
@@ -68,6 +69,8 @@ function PlanningPageContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, token, isLoading: authLoading } = useAuth();
+  const identityKey = user !== null && token !== null ? `${user.id}:${token}` : null;
   const searchParamsString = searchParams.toString();
   const routeState = resolvePlanningRoute(new URLSearchParams(searchParamsString));
   const activeIntention = routeState.intention;
@@ -78,6 +81,23 @@ function PlanningPageContent() {
 
   useEffect(() => {
     let active = true;
+    setGoals([]);
+    setGoalsError(null);
+
+    if (authLoading) {
+      setLoadingGoals(true);
+      return () => {
+        active = false;
+      };
+    }
+    if (identityKey === null) {
+      setLoadingGoals(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setLoadingGoals(true);
 
     async function loadGoals() {
       try {
@@ -95,7 +115,7 @@ function PlanningPageContent() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authLoading, identityKey]);
 
   useEffect(() => {
     if (!routeState.needsNormalization) return;
@@ -105,6 +125,7 @@ function PlanningPageContent() {
         new URLSearchParams(searchParamsString),
         activeIntention,
         objectiveMode,
+        routeState.goalId,
       ),
       { scroll: false },
     );
@@ -112,6 +133,7 @@ function PlanningPageContent() {
     activeIntention,
     objectiveMode,
     pathname,
+    routeState.goalId,
     routeState.needsNormalization,
     router,
     searchParamsString,
@@ -166,15 +188,7 @@ function PlanningPageContent() {
       <div className="space-y-4">
         <h1 className="sr-only">Planejamento Financeiro</h1>
 
-        <section aria-labelledby="planning-mode-title" className="border-b border-border pb-4">
-          <div className="mb-2">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300">Planejamento</p>
-              <h2 id="planning-mode-title" className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-                O que você quer descobrir?
-              </h2>
-            </div>
-          </div>
+        <section aria-label="Modo de planejamento" className="space-y-3 border-b border-border pb-4">
           <div role="tablist" aria-label="Intenções de planejamento" className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-muted/35 p-1">
           {intentionOptions.map((option, index) => {
             const isActive = activeIntention === option.value;
@@ -205,7 +219,7 @@ function PlanningPageContent() {
           </div>
 
           {activeIntention === "objective" ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2" role="tablist" aria-label="Tipo de objetivo">
+            <div className="mx-auto flex w-full max-w-3xl gap-1 overflow-x-auto rounded-xl border border-border bg-background p-1" role="tablist" aria-label="Tipo de objetivo">
               {objectiveOptions.map((option, index) => {
                 const isActive = objectiveMode === option.value;
                 const Icon = option.icon;
@@ -221,10 +235,10 @@ function PlanningPageContent() {
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => selectObjectiveMode(option.value)}
                     onKeyDown={(event) => moveTabFocus(event, index, objectiveOptions, objectiveRefs, (next) => selectObjectiveMode(next.value))}
-                    className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none sm:text-sm ${
+                    className={`inline-flex min-h-11 min-w-40 flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-center text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50 motion-reduce:transition-none sm:text-sm ${
                       isActive
-                        ? "border-violet-500/35 bg-violet-500/10 text-violet-700 dark:text-violet-200"
-                        : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        ? "border-violet-300/40 bg-violet-300/12 text-foreground shadow-sm"
+                        : "border-transparent text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground"
                     }`}
                   >
                     <Icon aria-hidden="true" className="size-3.5" />
@@ -247,7 +261,13 @@ function PlanningPageContent() {
           {activeIntention === "simulate" ? <ProjectionCapability goals={goals} /> : null}
           {activeIntention === "objective" && objectiveMode === "target" ? <TargetCapability goals={goals} /> : null}
           {activeIntention === "objective" && objectiveMode === "required" ? <RequiredContributionCapability goals={goals} /> : null}
-          {activeIntention === "objective" && objectiveMode === "goals" ? <GoalPlanningCapability goals={goals} loadingGoals={loadingGoals} /> : null}
+          {activeIntention === "objective" && objectiveMode === "goals" ? (
+            <GoalPlanningCapability
+              goals={goals}
+              loadingGoals={loadingGoals}
+              initialGoalId={routeState.goalId}
+            />
+          ) : null}
           {activeIntention === "compare" ? <ScenarioComparisonCapability goals={goals} /> : null}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { fetchFromAPI } from "@/lib/api";
+import { fetchFromAPI, requestFromAPI } from "@/lib/api";
 
 /** Planning API contracts. Financial values remain exact JSON decimal strings. */
 export type DecimalString = string;
@@ -200,6 +200,17 @@ export interface GoalPlanningFact {
   updated_at: ISODatetimeString;
 }
 
+export interface PlanningGoalContext {
+  goal_id: string;
+  name: string;
+  goal_type: GoalType;
+  status: GoalStatus;
+  target_amount: DecimalString;
+  current_amount: DecimalString | null;
+  planned_monthly_contribution: DecimalString | null;
+  target_date: ISODateString | null;
+}
+
 export interface GoalPlanningRequest {
   initial_wealth: GoalPlanningInitialWealthSelector;
   assumptions: ProjectionAssumptions;
@@ -273,6 +284,12 @@ export function solveRequiredContribution(request: RequiredContributionRequest) 
 
 export function projectGoal(goalId: string, request: GoalPlanningRequest) {
   return postPlanning<GoalPlanningResponse>(`/planning/goals/${goalId}/projection`, request);
+}
+
+export function getPlanningGoalContext(goalId: string) {
+  return requestFromAPI<PlanningGoalContext>(
+    `/planning/goals/${encodeURIComponent(goalId)}/context`,
+  );
 }
 
 export function comparePlanningScenarios(request: ScenarioComparisonRequest) {

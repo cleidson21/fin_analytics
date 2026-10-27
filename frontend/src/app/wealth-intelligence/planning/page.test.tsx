@@ -4,6 +4,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetchFromAPIMock = vi.hoisted(() => vi.fn());
+const authState = vi.hoisted(() => ({
+  user: { id: "user-1" } as { id: string } | null,
+  token: "token-1" as string | null,
+  isLoading: false,
+}));
 const navigationMock = vi.hoisted(() => ({
   pathname: "/wealth-intelligence/planning",
   query: "",
@@ -18,6 +23,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/api", () => ({ fetchFromAPI: fetchFromAPIMock }));
+vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => authState }));
 vi.mock("@/components/layout/PageLayout", () => ({
   PageLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
@@ -31,7 +37,12 @@ vi.mock("./components/RequiredContributionCapability", () => ({
   RequiredContributionCapability: () => <div>Capacidade de aporte</div>,
 }));
 vi.mock("./components/GoalPlanningCapability", () => ({
-  GoalPlanningCapability: () => <div>Capacidade de meta autenticada</div>,
+  GoalPlanningCapability: ({ initialGoalId }: { initialGoalId?: string | null }) => (
+    <div>
+      Capacidade de meta autenticada
+      {initialGoalId ? <span>Meta inicial: {initialGoalId}</span> : null}
+    </div>
+  ),
 }));
 vi.mock("./components/ScenarioComparisonCapability", () => ({
   ScenarioComparisonCapability: () => <div>Capacidade de comparação</div>,
@@ -42,6 +53,9 @@ import PlanningPage from "./page";
 afterEach(() => cleanup());
 
 beforeEach(() => {
+  authState.user = { id: "user-1" };
+  authState.token = "token-1";
+  authState.isLoading = false;
   navigationMock.query = "";
   navigationMock.push.mockReset();
   navigationMock.replace.mockReset();
@@ -72,6 +86,30 @@ describe("PlanningPage route integration", () => {
     expect(navigationMock.replace).not.toHaveBeenCalled();
   });
 
+  it("passes only a valid deep-linked Goal identifier to the authenticated capability", async () => {
+    const goalId = "abcdefab-1234-5678-90ab-abcdefabcdef";
+    navigationMock.query = `intent=objective&task=goals&goal=${goalId}`;
+
+    render(<PlanningPage />);
+
+    expect(screen.getByText(`Meta inicial: ${goalId}`)).toBeTruthy();
+    await waitFor(() => expect(fetchFromAPIMock).toHaveBeenCalledWith("/goals"));
+    expect(navigationMock.replace).not.toHaveBeenCalled();
+  });
+
+  it("removes an invalid Goal identifier before mounting any Goal context", async () => {
+    navigationMock.query = "intent=objective&task=goals&goal=not-a-uuid";
+
+    render(<PlanningPage />);
+
+    expect(screen.queryByText(/Meta inicial:/)).toBeNull();
+    await waitFor(() => expect(fetchFromAPIMock).toHaveBeenCalledWith("/goals"));
+    expect(navigationMock.replace).toHaveBeenCalledWith(
+      "/wealth-intelligence/planning?intent=objective&task=goals",
+      { scroll: false },
+    );
+  });
+
   it("puts a directly selected mode in browser history without serializing financial inputs", async () => {
     navigationMock.query = "intent=simulate&from=wealth-home";
     render(<PlanningPage />);
@@ -95,6 +133,20 @@ describe("PlanningPage route integration", () => {
     await waitFor(() => expect(fetchFromAPIMock).toHaveBeenCalledTimes(1));
   });
 
+  it("clears and reloads the Goal list when the authenticated identity changes", async () => {
+    navigationMock.query = "intent=objective&task=goals";
+    const { rerender } = render(<PlanningPage />);
+    await waitFor(() => expect(fetchFromAPIMock).toHaveBeenCalledTimes(1));
+
+    authState.user = { id: "user-2" };
+    authState.token = "token-2";
+    rerender(<PlanningPage />);
+
+    await waitFor(() => expect(fetchFromAPIMock).toHaveBeenCalledTimes(2));
+    expect(fetchFromAPIMock).toHaveBeenNthCalledWith(1, "/goals");
+    expect(fetchFromAPIMock).toHaveBeenNthCalledWith(2, "/goals");
+  });
+
   it.each([
     ["intent=simulate", "Capacidade de projeção"],
     ["intent=objective&task=target", "Capacidade de prazo"],
@@ -113,13 +165,15 @@ describe("PlanningPage route integration", () => {
 
   it("shows exactly three primary intentions and keeps Objective tasks nested", async () => {
     navigationMock.query = "intent=simulate&from=wealth-home";
-    render(<PlanningPage />);
+    const firstRender = render(<PlanningPage />);
     await waitFor(() => expect(fetchFromAPIMock).toHaveBeenCalledWith("/goals"));
 
     expect(screen.getByRole("tab", { name: "Simular" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Objetivo" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Comparar" })).toBeTruthy();
     expect(screen.queryByRole("tab", { name: "Quando alcanço?" })).toBeNull();
+    expect(screen.queryByText("O que você quer descobrir?")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Metas" })).toBeNull();
 
     fireEvent.click(screen.getByRole("tab", { name: "Objetivo" }));
 
@@ -128,6 +182,15 @@ describe("PlanningPage route integration", () => {
       "/wealth-intelligence/planning?intent=objective&from=wealth-home&task=target",
       { scroll: false },
     );
+
+    firstRender.unmount();
+    navigationMock.query = "intent=objective&task=target&from=wealth-home";
+    render(<PlanningPage />);
+
+    const objectiveTabs = screen.getByRole("tablist", { name: "Tipo de objetivo" });
+    expect(objectiveTabs.className).toContain("max-w-3xl");
+    expect(objectiveTabs.className).toContain("rounded-xl");
+    expect(screen.getByRole("tab", { name: "Quando alcanço?" }).className).toContain("justify-center");
   });
 
   it("maps the three Objective tasks to the existing route contracts", async () => {

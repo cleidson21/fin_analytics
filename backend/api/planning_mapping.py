@@ -15,6 +15,7 @@ from backend.application.dtos.planning_dto import (
     ProjectionPeriodResponseDTO,
     ProjectionAssumptionsRequestDTO,
     ProjectionAssumptionsResponseDTO,
+    PlanningGoalContextResponseDTO,
     RequiredContributionResponseDTO,
     ScenarioComparisonEntryResponseDTO,
     ScenarioComparisonResponseDTO,
@@ -257,6 +258,31 @@ def map_goal_planning_fact(goal_fact: GoalPlanningFact) -> GoalPlanningFactRespo
         linked_account_id=goal_fact.linked_account_id,
         created_at=goal_fact.created_at,
         updated_at=goal_fact.updated_at,
+    )
+
+
+def map_planning_goal_context(
+    goal_fact: GoalPlanningFact,
+) -> PlanningGoalContextResponseDTO:
+    """Copy the approved eight-field Goal context without deriving new facts."""
+
+    return PlanningGoalContextResponseDTO(
+        goal_id=goal_fact.goal_id,
+        name=goal_fact.name,
+        goal_type=goal_fact.goal_type,
+        status=goal_fact.status,
+        target_amount=serialize_decimal(goal_fact.target_amount),
+        current_amount=(
+            None
+            if goal_fact.current_amount is None
+            else serialize_decimal(goal_fact.current_amount)
+        ),
+        planned_monthly_contribution=(
+            None
+            if goal_fact.goal_planned_monthly_contribution is None
+            else serialize_decimal(goal_fact.goal_planned_monthly_contribution)
+        ),
+        target_date=goal_fact.target_date,
     )
 
 

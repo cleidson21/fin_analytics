@@ -625,21 +625,33 @@ function OverviewMetrics({
   );
 }
 
-function PlanningAndFireEntryPoints({ selection }: { selection: TransientAnalysisSelection | null }) {
+function PlanningAndFireEntryPoints({
+  selection,
+  hasGoals,
+}: {
+  selection: TransientAnalysisSelection | null;
+  hasGoals: boolean;
+}) {
+  const planningSelected = selection?.domain === "PLANNING";
+  const fireSelected = selection?.domain === "FIRE";
   const items = [
     {
       title: "Planejamento",
-      status: selection?.domain === "PLANNING" ? "Análise selecionada na Visão Geral" : "Nenhum cenário selecionado",
-      href: "/wealth-intelligence/planning?intent=simulate&from=wealth-home",
-      action: "Abrir Planejamento",
+      status: planningSelected ? "Análise selecionada na Visão Geral" : "Nenhum cenário selecionado",
+      href: planningSelected
+        ? "/wealth-intelligence/planning?intent=simulate&from=wealth-home"
+        : hasGoals
+          ? "/wealth-intelligence/planning?intent=objective&task=goals&from=wealth-home"
+          : "/wealth-intelligence/goals",
+      action: planningSelected ? "Abrir Planejamento" : hasGoals ? "Planejar uma meta" : "Cadastrar uma meta",
       icon: BarChart3,
       tone: "text-violet-700 dark:text-violet-300 bg-violet-400/10 border-violet-300/15",
     },
     {
-      title: "Independência Financeira",
-      status: selection?.domain === "FIRE" ? "Análise selecionada na Visão Geral" : "Nenhuma análise executada",
+      title: fireSelected ? "Independência Financeira" : "Simular independência",
+      status: fireSelected ? "Análise selecionada na Visão Geral" : "Nenhuma análise executada",
       href: "/wealth-intelligence/fire?from=wealth-home",
-      action: "Abrir FIRE",
+      action: fireSelected ? "Abrir FIRE" : "Iniciar análise",
       icon: Flag,
       tone: "text-warning-foreground bg-amber-400/10 border-amber-300/15",
     },
@@ -659,7 +671,10 @@ function PlanningAndFireEntryPoints({ selection }: { selection: TransientAnalysi
                 <p className="text-sm font-semibold text-foreground">{item.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{item.status}</p>
               </div>
-              <Link href={item.href} aria-label={item.action} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted/45 hover:text-foreground"><ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+              <Link href={item.href} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:bg-muted/45 hover:text-foreground">
+                {item.action}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
             </div>
           </article>
         ))}
@@ -902,7 +917,15 @@ export function WealthHomeExperience() {
       (mode === "demo" && previewState === "success") ? (
         <>
           <OverviewMetrics mode={mode} data={authenticatedData} healthHref={healthHref} selection={selection} />
-          {mode === "authenticated" ? <PlanningAndFireEntryPoints selection={selection} /> : null}
+          {mode === "authenticated" ? (
+            <PlanningAndFireEntryPoints
+              selection={selection}
+              hasGoals={
+                authenticatedData?.goals.status === "AVAILABLE" &&
+                authenticatedData.goals.total_count > 0
+              }
+            />
+          ) : null}
           {mode === "authenticated" ? <TransientAnalysisPanel /> : null}
           {mode === "authenticated" ? (
             <GovernedInvestmentVisualizationsUnavailable />

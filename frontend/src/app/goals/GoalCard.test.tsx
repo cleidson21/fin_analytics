@@ -7,7 +7,7 @@ import { GoalCard } from "./GoalCard";
 import type { Goal } from "./types";
 
 const goal: Goal = {
-  id: "goal-1",
+  id: "abcdefab-1234-5678-90ab-abcdefabcdef",
   user_id: "user-1",
   name: "Reserva de segurança",
   description: "Proteção para despesas inesperadas.",
@@ -62,5 +62,18 @@ describe("GoalCard", () => {
 
     expect(onEdit).toHaveBeenCalledWith(goal);
     expect(onDelete).toHaveBeenCalledWith(goal);
+  });
+
+  it("links to Planning with only the Goal identifier", () => {
+    render(<GoalCard goal={goal} onEdit={vi.fn()} onDelete={vi.fn()} />);
+
+    const link = screen.getByRole("link", { name: "Simular esta meta" });
+    const href = link.getAttribute("href") ?? "";
+    expect(href).toBe(
+      `/wealth-intelligence/planning?intent=objective&task=goals&goal=${goal.id}`,
+    );
+    expect(href).not.toContain(String(goal.target_amount));
+    expect(href).not.toContain(String(goal.current_amount));
+    expect(href).not.toContain(String(goal.monthly_contribution));
   });
 });

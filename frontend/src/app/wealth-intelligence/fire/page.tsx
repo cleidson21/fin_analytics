@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -64,20 +63,6 @@ export default function FirePage() {
     <PageLayout title="Independência Financeira" subtitle="" hideTitle>
       <main className="mx-auto w-full max-w-5xl py-2">
         <h1 className="sr-only">Independência Financeira</h1>
-        <section className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Independência Financeira</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Análises determinísticas sob demanda</p>
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2 text-xs font-semibold">
-            <Link href="/wealth-intelligence" className="rounded-lg border border-border px-3 py-2 text-foreground/90 hover:bg-muted/45 hover:text-foreground">
-              Visão Geral
-            </Link>
-            <Link href="/wealth-intelligence/planning?intent=simulate" className="rounded-lg border border-violet-300/20 bg-violet-300/[0.07] px-3 py-2 text-violet-700 dark:text-violet-300 hover:bg-violet-300/[0.12]">
-              Planejamento
-            </Link>
-          </div>
-        </section>
         <form onSubmit={submit} className="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5">
           <FireInputs value={form} errors={errors} onChange={patch} onMode={changeMode} />
           <div className="mt-5 flex justify-end border-t border-border pt-4">

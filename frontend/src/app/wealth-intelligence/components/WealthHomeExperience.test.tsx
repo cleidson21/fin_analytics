@@ -239,6 +239,10 @@ describe("WealthHomeExperience", () => {
     expect(await screen.findByText("Sem dado certificado")).toBeTruthy();
     expect(screen.getByText("Fotografia atual: nenhuma meta autenticada cadastrada")).toBeTruthy();
     expect(screen.queryByText("R$ 0,00")).toBeNull();
+    expect(screen.getByRole("link", { name: "Cadastrar uma meta" }).getAttribute("href")).toBe(
+      "/wealth-intelligence/goals",
+    );
+    expect(screen.queryByRole("link", { name: "Planejar uma meta" })).toBeNull();
   });
 
   it("renders an explicitly selected FIRE response separately from governed cards", async () => {
@@ -347,10 +351,11 @@ describe("WealthHomeExperience", () => {
     expect(screen.getByRole("link", { name: /Abrir Metas/i }).getAttribute("href")).toBe(
       "/wealth-intelligence/goals",
     );
-    expect(screen.getByRole("link", { name: /Abrir Planejamento/i }).getAttribute("href")).toBe(
-      "/wealth-intelligence/planning?intent=simulate&from=wealth-home",
+    expect(screen.getByRole("link", { name: /Planejar uma meta/i }).getAttribute("href")).toBe(
+      "/wealth-intelligence/planning?intent=objective&task=goals&from=wealth-home",
     );
-    expect(screen.getByRole("link", { name: "Abrir FIRE" }).getAttribute("href")).toBe(
+    expect(screen.getByText("Simular independência")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Iniciar análise" }).getAttribute("href")).toBe(
       "/wealth-intelligence/fire?from=wealth-home",
     );
     expect(screen.queryByRole("link", { name: /Abrir área operacional de investimentos/i })).toBeNull();

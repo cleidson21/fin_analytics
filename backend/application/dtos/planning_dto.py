@@ -350,6 +350,19 @@ class GoalPlanningFactResponseDTO(BaseModel):
     updated_at: datetime
 
 
+class PlanningGoalContextResponseDTO(BaseModel):
+    """Minimum owned-Goal context used only to seed transient Planning inputs."""
+
+    goal_id: UUID
+    name: str
+    goal_type: GoalType
+    status: GoalStatus
+    target_amount: str
+    current_amount: Optional[str]
+    planned_monthly_contribution: Optional[str]
+    target_date: Optional[date]
+
+
 class GoalPlanningResponseDTO(BaseModel):
     """Certified GoalPlanningResult without HTTP-side timing or solver logic."""
 

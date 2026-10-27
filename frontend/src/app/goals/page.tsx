@@ -110,24 +110,21 @@ export default function GoalsPage() {
   return (
     <PageLayout title="Metas" subtitle="" hideTitle>
       <main className="mx-auto w-full max-w-6xl space-y-4 py-2">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700 dark:text-sky-300">Metas</p>
-          <h1 className="mt-1 text-lg font-semibold tracking-tight text-foreground">Seus objetivos financeiros</h1>
+        <h1 className="sr-only">Metas</h1>
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
           <p className="mt-0.5 text-xs text-muted-foreground" aria-live="polite">
             {loading ? "Carregando…" : goals.length === 0 ? "Nenhuma meta cadastrada" : `${goals.length} ${goals.length === 1 ? "meta" : "metas"}`}
           </p>
-        </div>
-        <button
-          id="btn-create-goal"
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-sky-300 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50"
-        >
-          <Plus aria-hidden="true" className="size-4" />
-          Nova meta
-        </button>
-      </header>
+          <button
+            id="btn-create-goal"
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-sky-300 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/50"
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            Nova meta
+          </button>
+        </header>
 
       {error && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/20 bg-rose-400/[0.055] px-4 py-3 text-sm text-destructive">

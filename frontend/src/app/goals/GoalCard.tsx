@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Link from "next/link";
 import {
   CalendarDays,
   ChevronDown,
@@ -9,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import type { Goal } from "./types";
+import { GOAL_STATUS_LABELS, GOAL_TYPE_LABELS, type Goal } from "./types";
 
 const BRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -22,23 +23,11 @@ const PERCENT = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 1,
 });
 
-const GOAL_TYPE_LABELS: Record<string, string> = {
-  EMERGENCY_RESERVE: "Reserva de emergência",
-  RETIREMENT: "Aposentadoria",
-  TRAVEL: "Viagem",
-  PURCHASE: "Compra",
-  CUSTOM: "Personalizada",
-  WEALTH_TARGET: "Patrimônio-alvo",
-  INVESTMENT_TARGET: "Investimento-alvo",
-  DIVIDEND_INCOME: "Renda de dividendos",
-  FINANCIAL_INDEPENDENCE: "Independência financeira",
-};
-
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  ACTIVE: { label: "Ativa", className: "border-emerald-400/20 bg-emerald-400/10 text-success-foreground" },
-  PAUSED: { label: "Pausada", className: "border-amber-400/20 bg-amber-400/10 text-warning-foreground" },
-  ACHIEVED: { label: "Concluída", className: "border-sky-400/20 bg-sky-400/10 text-sky-700 dark:text-sky-300" },
-  CANCELLED: { label: "Cancelada", className: "border-border bg-unavailable/10 text-muted-foreground" },
+const STATUS_CONFIG: Record<Goal["status"], { className: string }> = {
+  ACTIVE: { className: "border-emerald-400/20 bg-emerald-400/10 text-success-foreground" },
+  PAUSED: { className: "border-amber-400/20 bg-amber-400/10 text-warning-foreground" },
+  ACHIEVED: { className: "border-sky-400/20 bg-sky-400/10 text-sky-700 dark:text-sky-300" },
+  CANCELLED: { className: "border-border bg-unavailable/10 text-muted-foreground" },
 };
 
 const PRIORITY_LABELS: Record<number, string> = {
@@ -56,7 +45,7 @@ interface GoalCardProps {
 }
 
 export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
-  const status = STATUS_CONFIG[goal.status] ?? STATUS_CONFIG.ACTIVE;
+  const status = STATUS_CONFIG[goal.status];
   const hasCurrentAmount = goal.current_amount !== null && goal.current_amount !== undefined;
   const hasGovernedProgress = hasCurrentAmount
     && goal.progress_pct !== null
@@ -73,7 +62,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">
-            {GOAL_TYPE_LABELS[goal.goal_type] ?? goal.goal_type}
+            {GOAL_TYPE_LABELS[goal.goal_type]}
           </p>
           <h2 className="mt-1 truncate text-base font-semibold text-foreground" title={goal.name}>
             {goal.name}
@@ -86,7 +75,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
             </span>
           ) : null}
           <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${status.className}`}>
-            {status.label}
+            {GOAL_STATUS_LABELS[goal.status]}
           </span>
         </div>
       </header>
@@ -156,7 +145,14 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
         </details>
       ) : null}
 
-      <footer className="mt-3 flex justify-end gap-2 border-t border-border pt-3">
+      <footer className="mt-3 flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+        <Link
+          href={`/wealth-intelligence/planning?intent=objective&task=goals&goal=${encodeURIComponent(goal.id)}`}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-violet-300/20 bg-violet-300/[0.07] px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-300/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50 dark:text-violet-300"
+        >
+          <Target aria-hidden="true" className="size-3.5" />
+          Simular esta meta
+        </Link>
         <button
           type="button"
           onClick={() => onEdit(goal)}

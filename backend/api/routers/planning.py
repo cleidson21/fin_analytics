@@ -13,6 +13,7 @@ from backend.api.planning_mapping import (
     build_user_initial_wealth_fact,
     map_forward_projection_result,
     map_goal_planning_result,
+    map_planning_goal_context,
     map_required_contribution_result,
     map_scenario_comparison_result,
     map_target_achievement_response,
@@ -26,6 +27,7 @@ from backend.application.dtos.planning_dto import (
     InvestmentPortfolioSnapshotInitialWealthRequestDTO,
     InitialWealthSelectorRequestDTO,
     ProjectionRequestDTO,
+    PlanningGoalContextResponseDTO,
     RequiredContributionRequestDTO,
     RequiredContributionResponseDTO,
     ScenarioComparisonRequestDTO,
@@ -247,6 +249,35 @@ def _build_scenario_definition(
         label=request.label,
         archetype=request.archetype,
     )
+
+
+@router.get(
+    "/goals/{goal_id}/context",
+    response_model=PlanningGoalContextResponseDTO,
+)
+async def get_goal_context(
+    goal_id: UUID,
+    current_user: CurrentPlanningUser,
+    db: PlanningReadSession,
+    goal_reader: PlanningGoalReadQueryDependency,
+) -> PlanningGoalContextResponseDTO:
+    """Return only the approved Decimal-safe context for one owned Goal."""
+
+    try:
+        goal_fact = goal_reader.get_goal(db, goal_id, current_user.id)
+        if goal_fact is None or goal_fact.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Goal not found.",
+            )
+        return map_planning_goal_context(goal_fact)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Planning context could not be loaded.",
+        ) from None
 
 
 @router.post("/projection", response_model=ForwardProjectionResponseDTO)

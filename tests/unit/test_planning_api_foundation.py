@@ -311,6 +311,7 @@ def test_router_keeps_the_relative_prefix_and_only_approved_planning_routes():
     assert router.prefix == "/planning"
     assert router.tags == ["Planning"]
     assert {route.path for route in router.routes} == {
+        "/planning/goals/{goal_id}/context",
         "/planning/goals/{goal_id}/projection",
         "/planning/projection",
         "/planning/target-achievement",
@@ -340,6 +341,7 @@ def test_app_starts_and_planning_openapi_has_no_fake_or_unapproved_operation():
         if path.startswith("/api/v1/planning")
     }
     assert planning_paths == {
+        "/api/v1/planning/goals/{goal_id}/context": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],
         "/api/v1/planning/projection": ["post"],
         "/api/v1/planning/required-contribution": ["post"],

@@ -3,8 +3,11 @@
 import { useId, useState, type ReactNode } from "react";
 import { ChevronDown, Info } from "lucide-react";
 
-import type { Goal } from "@/app/goals/types";
-import { formatBRDate, parseBRDateInput } from "@/lib/planningLocale";
+import {
+  GOAL_STATUS_LABELS,
+  GOAL_TYPE_LABELS,
+  type Goal,
+} from "@/app/goals/types";
 import type { OutputMode, ReturnType } from "@/lib/planning";
 
 import { type PlanningInputField, type PlanningInputState } from "./planningForm";
@@ -27,15 +30,6 @@ const inputClassName = "min-h-10 w-full rounded-xl border border-border bg-card 
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? <span id={id} className="text-xs font-normal text-destructive">{message}</span> : null;
-}
-
-function DateBaseSummary({ value }: { value: string }) {
-  if (value === "") {
-    return <span>Hoje</span>;
-  }
-
-  const parsed = parseBRDateInput(value);
-  return <span>{parsed.ok ? `Data-base personalizada: ${formatBRDate(parsed.value)}` : "Data-base personalizada"}</span>;
 }
 
 export function PlanningInputs({
@@ -62,6 +56,11 @@ export function PlanningInputs({
     (!comparisonScenario && value.outputMode !== "NOMINAL") ||
     (!comparisonScenario && value.asOfDate !== "") ||
     value.observedAt !== "";
+  const basisSummary = effectiveOutputMode === "REAL"
+    ? "Valores reais"
+    : value.returnType === "REAL"
+      ? "Retorno real"
+      : "Valores nominais";
 
   function patch(next: Partial<PlanningInputState>, field?: PlanningInputField) {
     onChange({ ...value, ...next });
@@ -152,7 +151,7 @@ export function PlanningInputs({
               <option value="">Selecione uma meta</option>
               {goals.map((goal) => (
                 <option key={goal.id} value={goal.id}>
-                  {goal.name} · {goal.goal_type} · {goal.status}
+                  {goal.name} · {GOAL_TYPE_LABELS[goal.goal_type]} · {GOAL_STATUS_LABELS[goal.status]}
                 </option>
               ))}
             </select>
@@ -180,6 +179,7 @@ export function PlanningInputs({
           <div className="relative">
             <input
               required
+              aria-label="Retorno esperado ao ano"
               value={value.expectedReturnRate}
               onChange={(event) => patch({ expectedReturnRate: event.target.value }, "expectedReturnRate")}
               placeholder="Ex.: 8,5"
@@ -198,6 +198,7 @@ export function PlanningInputs({
             <input
               required
               type="number"
+              aria-label="Horizonte (meses)"
               value={value.horizonMonths ?? ""}
               onChange={(event) => {
                 const nextValue = event.currentTarget.valueAsNumber;
@@ -211,32 +212,28 @@ export function PlanningInputs({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          {comparisonScenario ? <span>Configurações do cenário</span> : <DateBaseSummary value={value.asOfDate} />}
-          {!comparisonScenario ? <span aria-hidden="true">·</span> : null}
-          {!comparisonScenario ? <span>Valores nominais</span> : null}
-        </div>
+      <div className="flex justify-end">
         <button
           type="button"
           aria-expanded={advancedOpen}
           aria-controls={advancedId}
           onClick={() => setAdvancedOpen((current) => !current)}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-violet-700 dark:text-violet-300 transition hover:bg-violet-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
+          className={`inline-flex flex-wrap items-center justify-end gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium text-violet-700 transition hover:bg-violet-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50 dark:text-violet-300 ${
+            hasNonDefaultConfiguration
+              ? "border-violet-300/35 bg-violet-300/[0.08]"
+              : "border-border bg-transparent"
+          }`}
         >
-          Opções avançadas
+          {comparisonScenario ? "Opções do cenário" : "Opções avançadas"}
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+            {basisSummary}
+          </span>
+          {!comparisonScenario && value.asOfDate ? <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Data personalizada</span> : null}
+          {showInflation && value.inflationRate ? <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Inflação</span> : null}
+          {value.observedAt ? <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Patrimônio histórico</span> : null}
           <ChevronDown aria-hidden="true" size={14} className={advancedOpen ? "rotate-180 transition-transform" : "transition-transform"} />
         </button>
       </div>
-      {!advancedOpen && hasNonDefaultConfiguration ? (
-        <p className="text-xs text-violet-700 dark:text-violet-300">
-          {!comparisonScenario && (value.outputMode === "REAL" ? "Valores reais" : value.returnType === "REAL" ? "Retorno real" : "Valores nominais")}
-          {showInflation && value.inflationRate ? " · inflação informada" : ""}
-          {!comparisonScenario && value.asOfDate ? " · data-base personalizada" : ""}
-          {value.observedAt ? " · data histórica do patrimônio" : ""}
-        </p>
-      ) : null}
-
       {advancedOpen ? (
         <div id={advancedId} className="grid gap-4 rounded-xl border border-border bg-muted/25 p-4 sm:grid-cols-2 xl:grid-cols-3">
           <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground/90">

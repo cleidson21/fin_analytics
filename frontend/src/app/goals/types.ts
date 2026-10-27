@@ -59,21 +59,40 @@ export interface GoalUpdatePayload {
   linked_account_id?: string;
 }
 
+export const GOAL_TYPE_LABELS: Record<GoalType, string> = {
+  EMERGENCY_RESERVE: "Reserva de Emergência",
+  RETIREMENT: "Aposentadoria",
+  TRAVEL: "Viagem",
+  PURCHASE: "Compra",
+  CUSTOM: "Personalizada",
+  WEALTH_TARGET: "Patrimônio-Alvo",
+  INVESTMENT_TARGET: "Investimento-Alvo",
+  DIVIDEND_INCOME: "Renda de Dividendos",
+  FINANCIAL_INDEPENDENCE: "Independência Financeira",
+};
+
+export const GOAL_STATUS_LABELS: Record<GoalStatus, string> = {
+  ACTIVE: "Ativa",
+  PAUSED: "Pausada",
+  ACHIEVED: "Concluída",
+  CANCELLED: "Cancelada",
+};
+
 export const GOAL_TYPE_OPTIONS: { value: GoalType; label: string }[] = [
-  { value: "EMERGENCY_RESERVE",   label: "Reserva de Emergência" },
-  { value: "TRAVEL",              label: "Viagem" },
-  { value: "PURCHASE",            label: "Compra" },
-  { value: "WEALTH_TARGET",       label: "Patrimônio-Alvo" },
-  { value: "INVESTMENT_TARGET",   label: "Investimento-Alvo" },
-  { value: "DIVIDEND_INCOME",     label: "Renda de Dividendos" },
-  { value: "FINANCIAL_INDEPENDENCE", label: "Independência Financeira" },
-  { value: "RETIREMENT",          label: "Aposentadoria" },
-  { value: "CUSTOM",              label: "Personalizada" },
+  { value: "EMERGENCY_RESERVE", label: GOAL_TYPE_LABELS.EMERGENCY_RESERVE },
+  { value: "TRAVEL", label: GOAL_TYPE_LABELS.TRAVEL },
+  { value: "PURCHASE", label: GOAL_TYPE_LABELS.PURCHASE },
+  { value: "WEALTH_TARGET", label: GOAL_TYPE_LABELS.WEALTH_TARGET },
+  { value: "INVESTMENT_TARGET", label: GOAL_TYPE_LABELS.INVESTMENT_TARGET },
+  { value: "DIVIDEND_INCOME", label: GOAL_TYPE_LABELS.DIVIDEND_INCOME },
+  { value: "FINANCIAL_INDEPENDENCE", label: GOAL_TYPE_LABELS.FINANCIAL_INDEPENDENCE },
+  { value: "RETIREMENT", label: GOAL_TYPE_LABELS.RETIREMENT },
+  { value: "CUSTOM", label: GOAL_TYPE_LABELS.CUSTOM },
 ];
 
 export const GOAL_STATUS_OPTIONS: { value: GoalStatus; label: string }[] = [
-  { value: "ACTIVE",    label: "Ativa" },
-  { value: "PAUSED",    label: "Pausada" },
-  { value: "ACHIEVED",  label: "Concluída" },
-  { value: "CANCELLED", label: "Cancelada" },
+  { value: "ACTIVE", label: GOAL_STATUS_LABELS.ACTIVE },
+  { value: "PAUSED", label: GOAL_STATUS_LABELS.PAUSED },
+  { value: "ACHIEVED", label: GOAL_STATUS_LABELS.ACHIEVED },
+  { value: "CANCELLED", label: GOAL_STATUS_LABELS.CANCELLED },
 ];

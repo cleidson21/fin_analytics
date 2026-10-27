@@ -458,6 +458,7 @@ def test_endpoint_requires_authentication_and_openapi_exposes_only_approved_oper
         if path.startswith("/api/v1/planning")
     }
     assert planning_paths == {
+        "/api/v1/planning/goals/{goal_id}/context": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],
         "/api/v1/planning/projection": ["post"],
         "/api/v1/planning/required-contribution": ["post"],
