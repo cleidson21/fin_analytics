@@ -1,6 +1,6 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING`
-**Date:** 2026-10-24
+**Status:** `ACTIVE QUEUE — R5 TECHNICAL CHECKPOINT PUBLISHED / R5 VISUAL ACCEPTANCE PENDING / R6.1 USER MANUAL ACCEPTANCE REPORTED — CHECKPOINT PENDING`
+**Date:** 2026-10-26
 
 ---
 
@@ -11,8 +11,10 @@
 | — | 10.R2 | Smart Financial Context: Profile persistence, declared context, observed recurring-income candidates, human decisions, feature-specific composition, provenance | `IMPLEMENTED / VALIDATED / CLOSED` | R1 locked; ADR-028 and R2 contract |
 | 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / LATER OPERATIONAL INCREMENTS GATED` | R2 + R3 context semantics and deterministic tools; ADR-030 |
-| 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING` | R1 IA; R2/R3 context presentation requirements |
-| 5 | 10.R6 | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `NOT STARTED` | R2–R5 foundations |
+| 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `IMPLEMENTED / AUTOMATED GATES PASSED / TECHNICAL CHECKPOINT COMMITTED / PUSHED / USER VISUAL ACCEPTANCE PENDING` | R1 IA; R2/R3 context presentation requirements |
+| 5 | 10.R6 general gate | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `BLOCKED PENDING R5 VISUAL ACCEPTANCE / NOT STARTED` | R2–R5 foundations; exception below does not close this gate |
+| 5.1 | 10.R6.1 | Goals → Planning integration governed by `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / CHECKPOINT PENDING` | Explicit project-owner sequencing exception; R5 technical checkpoint published; approved microcontract; all financial/security/auth/ownership/test gates preserved |
+| 5.2 | 10.R6.2+ | Remaining R6 increments | `NOT AUTHORIZED / BLOCKED` | R5 visual acceptance plus each increment's applicable explicit gate; no inheritance from R6.1 |
 | 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
 | 7 | 10.5-B | Resume Portfolio Intelligence contract lock using the realigned architecture | `PAUSED / PENDING WEALTH OS REALIGNMENT` | R7 closure; preserve 10.5-A |
 
@@ -25,11 +27,26 @@ realignment closure.
 The user explicitly approved the bounded R5 contract on 2026-10-24. R5 reuses
 the W2–W4.2 product increments as baseline evidence and implements only design,
 navigation, theme, accessibility, responsive, and localization stabilization.
-It does not start R6, satisfy the R7 gate, or authorize 10.5-B.
+Its technical checkpoint is committed and pushed at
+`1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`; user visual acceptance remains
+pending. R5 is not closed, and the checkpoint does not satisfy the R7 gate or
+authorize 10.5-B.
 
 The main implementation path remains sequential. R3 provider research and R5
 token/visual audits may run in parallel after their inputs are stable, but no
 parallel activity changes the official dependency gates.
+
+**R5 → R6 sequencing exception (2026-10-25):** the project owner explicitly
+authorized only R6.1 Goals → Planning to begin before R5 visual acceptance. The
+authorization is a sequencing exception, not R5 closure. R6.1 is now
+`IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED /
+CHECKPOINT PENDING`. The acceptance report covers the experience tested by the
+user and does not claim a complete manual matrix or independent R6 closure. R5
+visual acceptance remains `PENDING`; the general R6 gate remains
+`BLOCKED PENDING R5 VISUAL ACCEPTANCE`;
+R6.2 and later R6 increments remain `NOT AUTHORIZED`. The exception changes no
+financial, Decimal, security, authentication, ownership, test, certification,
+or R5 regression requirement, and no later phase or increment inherits it.
 
 R2 implementation is decomposed in
 `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` as B1 declared-context
@@ -270,7 +287,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C/D/E1/E2/E3 CLOSED; R3-E4 INDEPENDENTLY APPROVED; R4-A/B/C CLOSED; R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING; R6–R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C/D/E1/E2/E3 CLOSED; R3-E4 INDEPENDENTLY APPROVED; R4-A/B/C CLOSED; R5 TECHNICAL CHECKPOINT COMMITTED/PUSHED WITH VISUAL ACCEPTANCE PENDING; R6 GENERAL GATE BLOCKED; R6.1 IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / CHECKPOINT PENDING; R6.2+ AND R7 NOT AUTHORIZED/NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
@@ -301,6 +318,10 @@ the documented Recharts SSR dimension warning in the legacy
 and mobile is intentionally assigned to the user's local-browser review. No
 backend implementation, engine, DTO, migration, database, R6, Portfolio
 Intelligence, Advisor, provider, deployment, commit, or push was introduced.
+The technical checkpoint was subsequently committed and pushed at
+`1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`; this does not constitute the
+still-pending user visual acceptance. The later R6.1 sequencing exception does
+not retroactively classify any R6 implementation as part of R5.
 
 ---
 

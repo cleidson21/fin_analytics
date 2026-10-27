@@ -2,7 +2,10 @@
 
 **Status:** `10.R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING`
 
-**Next:** `USER VISUAL ACCEPTANCE OF R5 — DO NOT START R6`
+**R5 technical checkpoint:** `COMMITTED / PUSHED` at
+`1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`
+
+**Sequencing gate:** `R6 GENERAL GATE BLOCKED PENDING R5 VISUAL ACCEPTANCE / R6.1 GOALS-PLANNING IMPLEMENTED — AUTOMATED GATES PASSED — USER MANUAL ACCEPTANCE REPORTED — CHECKPOINT PENDING / R6.2+ NOT AUTHORIZED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -17,14 +20,19 @@ R4-C is closed and pushed at checkpoint
 Portfolio Intelligence audit and its user decisions remain valid. Phase 10.5-B
 is paused until the Wealth OS realignment closes at R7.
 
-The current worktree contains the W2–W4.2 Wealth Intelligence increments and the
-bounded R5 consolidation: an authenticated Wealth Home read model, governed
+The published R5 checkpoint contains the W2–W4.2 Wealth Intelligence increments
+and the bounded R5 consolidation: an authenticated Wealth Home read model, governed
 Health/Goals/investment-wealth cards, month-aware navigation, five deterministic
 Planning capabilities organized under the three ADR-024 intentions, three FIRE
 modes, user-selected transient results held only in memory, semantic tokens, and
 Dark/Light/System themes. Automated R5 gates passed; desktop/tablet/mobile
-visual acceptance remains pending with the user. These facts do not start or
-close canonical R6 or R7.
+visual acceptance remains pending with the user. The general R6 gate therefore
+remains blocked. By the explicit, bounded sequencing amendment recorded in
+ADR-027, only R6.1 Goals → Planning could begin. R6.1 is now implemented with
+automated gates passed. After testing the implemented experience and its
+minimalist refinement, the user reported it satisfactory for the current scope;
+the controlled Git checkpoint remains pending. This does not close R5 or
+authorize R6.2+, R7, Advisor, or Portfolio Intelligence.
 
 R2-A locks declared financial context, deterministic recurring-income
 candidates, human decisions, ownership, provenance, and feature-specific
@@ -193,4 +201,6 @@ R2-B1 through R2-B8 Smart Financial Context implementation
 ```
 
 Do not begin the next phase merely because its documentation exists. Each phase
-requires an explicit task and its own contract/decomposition gate.
+requires an explicit task and its own contract/decomposition gate. The sole
+current exception is R6.1 Goals → Planning under the explicit ADR-027 sequencing
+amendment; no later increment inherits that authorization.

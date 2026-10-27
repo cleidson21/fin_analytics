@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-24 — R5 implemented; automated gates passed; user visual acceptance pending
+**Updated:** 2026-10-26 — R6.1 implemented; automated gates passed; user manual acceptance reported; checkpoint pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -54,8 +54,12 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R4-B Authorization, Tools & Minimal Context | `CLOSED / PUSHED` |
 | 10.R4-C Audit & Telemetry Boundary | `CLOSED / PUSHED` |
 | 10.R4-D Ollama Local Adapter | `R4-D.2 USER-OBSERVED VALIDATION RECORDED / TECHNICAL CANDIDATE ONLY` |
-| 10.R5 design, navigation, and theme | `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 AUTOMATED GATES PASSED` |
+| 10.R5 technical implementation/checkpoint | `IMPLEMENTED / AUTOMATED GATES PASSED / COMMITTED / PUSHED` |
+| 10.R5 visual acceptance | `PENDING` |
+| 10.R6 general gate | `BLOCKED PENDING R5 VISUAL ACCEPTANCE` |
+| 10.R6.1 Goals → Planning | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / CHECKPOINT PENDING` |
+| 10.R6.2+ | `NOT AUTHORIZED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 TECHNICAL CHECKPOINT PUBLISHED / R5 VISUAL ACCEPTANCE PENDING / R6.1 USER MANUAL ACCEPTANCE REPORTED / R6.1 CHECKPOINT PENDING` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -190,7 +194,7 @@ are `INF-R3D-01/02`, `INF-R3E1-01/02/03`, and `INF-R3E2-01/02`. R3-E4 is
 | Financial Health | Certified cashflow, history, categories, anomaly, and trend services/API/UI | Health domain, router, and UI |
 | Planning | Five authenticated transient capabilities using certified Decimal engines and explicit sources | ADRs 019–024, Planning domain/API/UI |
 | FIRE | One authenticated deterministic analysis capability composed over Planning | ADR-025, FIRE contract/domain/API/UI |
-| Wealth Intelligence W2–W4.2 (current worktree) | Authenticated Wealth Home v2 composition for monthly Health, current Goals, and governed monthly investment wealth; month-aware navigation; five Planning flows; three FIRE modes; one in-memory selected result | `GET /api/v1/wealth-home`, Wealth Intelligence frontend/tests, reconciliation audit |
+| Wealth Intelligence W2–W4.2 / R5 checkpoint | Authenticated Wealth Home v2 composition for monthly Health, current Goals, and governed monthly investment wealth; month-aware navigation; five Planning flows; three FIRE modes; one in-memory selected result | `GET /api/v1/wealth-home`, Wealth Intelligence frontend/tests, reconciliation audit, checkpoint `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b` |
 | Smart Context B1-B7 foundation | Declared-context and recurring-decision persistence, exact Decimal constraints, fail-closed ownership, authenticated declared Profile context GET/PATCH, deterministic recurring-income evidence, authenticated review/confirm/reject/reset decision API, internal feature-specific composition, the Profile declared/observed review experience, and typed read-only future-consumer boundaries | migration `2d6b4f8a9c1e`, Smart Context backend tests, B6 frontend tests/typecheck/build |
 | Market data | yfinance adapter/service with provider-specific cache behavior | market-data protocol and yfinance integration |
 
@@ -212,9 +216,22 @@ The selected result is not persisted and disappears on refresh, logout, token
 change, or identity change.
 
 The user explicitly authorized the bounded R5 contract on 2026-10-24. The
-existing W2–W4.2 implementation is reused as its product baseline; it is not an
-implied R6 start or closure. R5 automated acceptance gates passed, while final
-desktop/tablet/mobile visual acceptance remains assigned to the user.
+existing W2–W4.2 implementation is reused as its product baseline. R5 automated
+acceptance gates passed, and its technical checkpoint is committed and pushed
+at `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`; final desktop/tablet/mobile
+visual acceptance remains assigned to the user. The general R6 gate is still
+blocked by that pending visual acceptance. The project owner expressly amended
+the sequencing rule on 2026-10-25 only for R6.1 Goals → Planning. R6.1 now
+implements the approved authenticated Goal-context read model, deep link,
+presets, safe Goal switching, navigation, and tests. Its minimalist refinement
+removes duplicate page chrome and local journey navigation, keeps the global
+navigation authoritative, and preserves accessible semantic headings, the
+segmented Objective selector, and compact nominal/real option summaries. The
+automated gates pass, and the user reported the tested experience satisfactory
+for the current scope. This report does not assert every viewport, browser, or
+manual accessibility scenario, and it does not independently classify R6.1 as
+`VALIDATED / CLOSED`. The checkpoint remains pending. The exception neither
+starts R6.2+ nor closes R5 or R6.
 
 R1 locks a target information architecture but changes no route. Existing deep
 links remain operational until R5/R6 explicitly implement migration.
@@ -560,9 +577,17 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   Decimal-safe Planning reader deliberately bypasses that legacy path.
 - R5 final visual acceptance in desktop, tablet, and mobile remains pending the
   user's local-browser review. Automated component, accessibility, type, lint,
-  build, route, and backend contract gates passed; this does not start R6 or R7.
-- W2–W4.2 and R5 product composition remain in the current dirty worktree and
-  have no new checkpoint/commit evidence.
+  build, route, and backend contract gates passed. The R5 technical checkpoint
+  is committed/pushed; that publication is not visual acceptance or R5 closure.
+- The general R6 gate remains blocked. Only R6.1 Goals → Planning was
+  exceptionally authorized and is now `IMPLEMENTED / AUTOMATED GATES PASSED /
+  USER MANUAL ACCEPTANCE REPORTED / CHECKPOINT PENDING`; R6.2+, R7, Advisor,
+  and Portfolio Intelligence receive no authorization from this exception.
+- `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` records the approved R6.1
+  contract and implementation evidence and is included in the planned
+  documentation checkpoint. The new GET is authenticated, owned, Decimal-safe,
+  and read-only; the legacy Goals DTO, Planning POST contracts, engines,
+  persistence, and locked ADRs are unchanged.
 - `INF-R3D-01`: global SQLite foreign-key enablement passed tested
   environments. A conditional structural remediation for a reported invalid
   `position_snapshots.account_id -> accounts.id` physical constraint was

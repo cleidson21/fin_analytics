@@ -1,5 +1,63 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-R6.1] — 2026-10-26 — Goals → Planning Context and Presets
+
+- Added authenticated `GET /api/v1/planning/goals/{goal_id}/context` over the
+  existing owned Goal reader. The eight-field response preserves Decimal money
+  as strings, distinguishes null from explicit zero, returns non-enumerating
+  `404` for missing/wrong-owner Goals, and performs no write, Engine, portfolio,
+  MyProfit, simulation, or Goal mutation.
+- Added `Simular esta meta` with a UUID-only deep link. Planning validates the
+  route, loads the authenticated context, displays localized Goal facts, applies
+  only current-amount origin and monthly-contribution presets, and never derives
+  horizon or return assumptions.
+- Preserved local edits during Goal switching through explicit `Aplicar dados
+  desta meta` or `Cancelar` actions, blocks ambiguous submission, ignores stale
+  asynchronous responses, and clears Goal-derived state across authentication
+  failure, logout, token, or identity changes.
+- Kept the global Wealth Intelligence navigation as the single inter-page
+  journey and added navigation-only Wealth Home empty actions while preserving
+  the in-memory `TransientAnalysisContext` and explicit `Mostrar na Visão Geral`
+  flow.
+- Applied the accepted minimalist refinement: removed repeated page titles,
+  subtitles, and local journey navigation; centered the segmented Objective
+  selector; compacted advanced-premise summaries into chips; and retained
+  semantic headings, keyboard behavior, responsiveness, and the required
+  nominal/real identification.
+- Validation before the refinement: focused backend Planning/Goals `240
+  passed`, including `13 passed` for the new GET; focused frontend `54 passed`;
+  full Vitest `238 passed`; TypeScript, focused ESLint, Next.js production
+  build, and `git diff --check` passed. After the refinement: focused frontend
+  `27 passed`; full Vitest `238 passed`; TypeScript, focused ESLint, production
+  build, and `git diff --check` passed. Historical deprecation warnings and the
+  existing Recharts SSR size warning remain unchanged.
+- The user subsequently tested the experience and reported it satisfactory for
+  the current scope. This is recorded as `R6.1 UX REFINEMENT = USER-ACCEPTED
+  FOR CURRENT SCOPE`; it does not claim every viewport, browser, calculation,
+  or manual accessibility scenario and does not approve R5 visually.
+- Status: R6.1 is `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL
+  ACCEPTANCE REPORTED / CHECKPOINT PENDING`. R5 visual acceptance remains
+  `PENDING`; the general R6 gate remains blocked and R6.2+ remains unauthorized.
+  No staging, commit, or push was performed.
+
+## [TSK-R5-R6-GOVERNANCE-AMENDMENT] — 2026-10-25 — R5 → R6.1 Sequencing Reconciliation
+
+- Recorded the project owner's explicit, bounded amendment to ADR-027's
+  sequencing rule. R5 visual acceptance remains `PENDING`; R5 is not closed.
+- Confirmed the published R5 technical checkpoint as `COMMITTED / PUSHED` at
+  `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`.
+- Preserved the general R6 gate as `BLOCKED PENDING R5 VISUAL ACCEPTANCE` while
+  authorizing only R6.1 Goals → Planning as `EXPLICITLY AUTHORIZED / NOT
+  IMPLEMENTED`, bounded by the approved
+  `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` microcontract.
+- Kept R6.2+, R7, Advisor, and Portfolio Intelligence unauthorized. No later
+  increment inherits the R6.1 exception, and any R5 regression remains subject
+  to the existing gate and remediation requirements.
+- Changed documentation governance only. No endpoint, DTO, mapper, test,
+  Goals/Planning behavior, navigation, preset, product code, migration,
+  dependency, database, staging, commit, or push action was introduced. The
+  microcontract file and ADR-023/024/025 authorities remain unchanged.
+
 ## [PHASE-10.R5-IMPLEMENTATION] — 2026-10-24 — Design, Navigation, and Theme
 
 - Recorded the user's explicit approval and implementation start for the

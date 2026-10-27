@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-10-15
+**Updated:** 2026-10-25
 
 ---
 
@@ -633,6 +633,30 @@ External Context, R4 AI Runtime Foundation, R5 Design/Navigation/Theme, R6
 experience recomposition, R7 independent validation, then 10.5-B resume. R3
 provider research and R5 token audits may overlap after inputs stabilize, but
 the deterministic main queue remains sequential.
+
+**Sequencing amendment — TSK-R5-R6-GOVERNANCE-AMENDMENT (2026-10-25):** By
+explicit decision of the project owner, the sequential gate above retains its
+general force but gains one narrow exception. R5 technical work is
+`IMPLEMENTED / AUTOMATED GATES PASSED`, and its checkpoint is
+`COMMITTED / PUSHED` at `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`; R5 user
+visual acceptance remains `PENDING`, so R5 is not closed. The general R6 gate
+remains `BLOCKED PENDING R5 VISUAL ACCEPTANCE` and R6 remains `NOT STARTED`.
+
+Only R6.1 Goals → Planning, bounded by the approved
+`PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` microcontract, is
+`EXPLICITLY AUTHORIZED / NOT IMPLEMENTED` and may begin under a later scoped
+implementation task. This sequencing authorization neither implements the
+microcontract nor authorizes R6.2+, R7, Advisor, Portfolio Intelligence, or any
+other phase. It changes no financial or Decimal authority, security,
+authentication, ownership, privacy, test, certification, or regression
+requirement. Any R5-related regression remains blocking and must be addressed.
+No later increment inherits this authorization automatically.
+
+This amendment preserves the former absolute R5 → R6 gate as historical and
+general policy while narrowing only its application to R6.1. It is recorded as
+an amendment to ADR-027 rather than a new ADR because it changes only the
+execution order governed by this decision; ADR-023, ADR-024, ADR-025, and their
+locked contracts remain unchanged.
 
 **Portfolio gate:** 10.5-A remains authoritative. 10.5-B remains
 `PAUSED / PENDING WEALTH OS REALIGNMENT` and resumes only after R7 closure unless
