@@ -12,6 +12,7 @@ from backend.api.planning_mapping import (
     build_projection_assumptions,
     build_user_initial_wealth_fact,
     map_forward_projection_result,
+    map_goal_monitoring_overview,
     map_goal_progress,
     map_goal_planning_result,
     map_planning_goal_context,
@@ -21,6 +22,7 @@ from backend.api.planning_mapping import (
 )
 from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
+    GoalMonitoringOverviewResponseDTO,
     GoalProgressResponseDTO,
     GoalPathCurrentAmountInitialWealthRequestDTO,
     GoalPlanningRequestDTO,
@@ -46,6 +48,7 @@ from backend.application.services.planning_portfolio_source_resolver import (
 from backend.domains.planning.assumptions import OutputMode, ProjectionAssumptions
 from backend.domains.planning.facts import InitialWealthFact
 from backend.domains.planning.goal_planning import GoalPlanningService
+from backend.domains.planning.goal_monitoring import build_goal_monitoring_overview
 from backend.domains.planning.goal_progress import calculate_goal_progress
 from backend.domains.planning.projection import ForwardProjectionEngine
 from backend.domains.planning.readers import PlanningGoalReadQuery
@@ -252,6 +255,31 @@ def _build_scenario_definition(
         label=request.label,
         archetype=request.archetype,
     )
+
+
+@router.get(
+    "/goals/overview",
+    response_model=GoalMonitoringOverviewResponseDTO,
+)
+async def get_goal_overview(
+    current_user: CurrentPlanningUser,
+    db: PlanningReadSession,
+    goal_reader: PlanningGoalReadQueryDependency,
+) -> GoalMonitoringOverviewResponseDTO:
+    """Return count-only monitoring over the complete owned Goal collection."""
+
+    try:
+        goal_facts = goal_reader.list_goals(db, current_user.id)
+        if any(goal.user_id != current_user.id for goal in goal_facts):
+            raise ValueError("Goal ownership boundary returned inconsistent data")
+        return map_goal_monitoring_overview(
+            build_goal_monitoring_overview(goal_facts)
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Goal overview could not be loaded.",
+        ) from None
 
 
 @router.get(

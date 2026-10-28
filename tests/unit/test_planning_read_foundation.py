@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import create_engine, event
@@ -194,6 +194,41 @@ def test_goal_list_is_owned_ordered_and_decimal_safe(planning_db):
     assert [fact.name for fact in facts] == ["Priority one", "Priority two"]
     assert all(fact.user_id == owner_id for fact in facts)
     assert all(type(fact.target_amount) is Decimal for fact in facts)
+
+
+def test_goal_list_uses_one_owned_select_and_stable_tie_breakers(planning_db):
+    owner_id = uuid4()
+    other_user_id = uuid4()
+    created_at = datetime(2026, 9, 17, 12, 0, 0)
+    first_id = UUID("00000000-0000-0000-0000-000000000001")
+    second_id = UUID("00000000-0000-0000-0000-000000000002")
+    planning_db.add_all(
+        [
+            _goal(owner_id, id=second_id, priority=1, created_at=created_at),
+            _goal(owner_id, id=first_id, priority=1, created_at=created_at),
+            _goal(other_user_id, priority=1, created_at=created_at),
+        ]
+    )
+    planning_db.commit()
+    statements = []
+    event.listen(
+        planning_db.bind,
+        "before_cursor_execute",
+        lambda _conn, _cursor, statement, _parameters, _context, _many:
+            statements.append(statement),
+    )
+
+    facts = PlanningGoalReadQuery().list_goals(planning_db, owner_id)
+
+    assert [fact.goal_id for fact in facts] == [first_id, second_id]
+    assert len(statements) == 1
+    assert statements[0].lstrip().upper().startswith("SELECT")
+    assert "goals.user_id" in statements[0]
+    assert "portfolio" not in statements[0].lower()
+    assert "position_snapshots" not in statements[0].lower()
+    assert not planning_db.new
+    assert not planning_db.dirty
+    assert not planning_db.deleted
 
 
 def test_goal_initial_wealth_requires_present_current_amount(planning_db):

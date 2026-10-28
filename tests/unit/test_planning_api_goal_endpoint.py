@@ -704,6 +704,7 @@ def test_openapi_exposes_goal_endpoint_without_scenario_comparison():
     }
 
     assert planning_paths == {
+        "/api/v1/planning/goals/overview": ["get"],
         "/api/v1/planning/goals/{goal_id}/context": ["get"],
         "/api/v1/planning/goals/{goal_id}/progress": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],

@@ -7,6 +7,9 @@ from backend.application.services.planning_initial_wealth_fact_builder import (
 )
 from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
+    GoalMonitoringItemResponseDTO,
+    GoalMonitoringOverviewResponseDTO,
+    GoalMonitoringSummaryResponseDTO,
     GoalProgressResponseDTO,
     GoalPlanningFactResponseDTO,
     GoalPlanningResponseDTO,
@@ -37,6 +40,7 @@ from backend.domains.planning.required_contribution_solver import (
     RequiredContributionResult,
 )
 from backend.domains.planning.goal_planning import GoalPlanningResult
+from backend.domains.planning.goal_monitoring import GoalMonitoringOverview
 from backend.domains.planning.goal_progress import GoalProgressResult
 from backend.domains.planning.scenario_comparison import (
     ScenarioComparisonEntry,
@@ -316,6 +320,64 @@ def map_goal_progress(
             None
             if progress.completion_percent is None
             else serialize_decimal(progress.completion_percent)
+        ),
+    )
+
+
+def map_goal_monitoring_overview(
+    overview: GoalMonitoringOverview,
+) -> GoalMonitoringOverviewResponseDTO:
+    """Serialize one ordered R6.3 result without deriving financial values."""
+
+    summary = overview.summary
+    return GoalMonitoringOverviewResponseDTO(
+        summary=GoalMonitoringSummaryResponseDTO(
+            total_goals=summary.total_goals,
+            not_started=summary.not_started,
+            in_progress=summary.in_progress,
+            achieved=summary.achieved,
+            exceeded=summary.exceeded,
+            negative_current=summary.negative_current,
+            unavailable=summary.unavailable,
+        ),
+        goals=tuple(
+            GoalMonitoringItemResponseDTO(
+                goal_id=item.goal.goal_id,
+                name=item.goal.name,
+                goal_type=item.goal.goal_type,
+                status=item.goal.status,
+                target_amount=(
+                    None
+                    if item.progress.target_amount is None
+                    else serialize_decimal(item.progress.target_amount)
+                ),
+                current_amount=(
+                    None
+                    if item.progress.current_amount is None
+                    else serialize_decimal(item.progress.current_amount)
+                ),
+                planned_monthly_contribution=(
+                    None
+                    if item.goal.goal_planned_monthly_contribution is None
+                    else serialize_decimal(
+                        item.goal.goal_planned_monthly_contribution
+                    )
+                ),
+                target_date=item.goal.target_date,
+                gap_amount=(
+                    None
+                    if item.progress.gap_amount is None
+                    else serialize_decimal(item.progress.gap_amount)
+                ),
+                completion_percent=(
+                    None
+                    if item.progress.completion_percent is None
+                    else serialize_decimal(item.progress.completion_percent)
+                ),
+                progress_state=item.progress_state,
+                data_flags=item.data_flags,
+            )
+            for item in overview.goals
         ),
     )
 

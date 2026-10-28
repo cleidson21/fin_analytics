@@ -27,6 +27,7 @@ from backend.domains.planning.required_contribution_solver import (
     RequiredContributionStatus,
 )
 from backend.domains.planning.goal_planning import GoalPlanningStatus
+from backend.domains.planning.goal_monitoring import GoalDataFlag, GoalProgressState
 from backend.domains.planning.target_basis import TargetValueBasis
 from backend.domains.planning.target_solver import TargetAchievementStatus
 from backend.domains.planning.scenario_comparison import ScenarioArchetype
@@ -372,6 +373,42 @@ class GoalProgressResponseDTO(BaseModel):
     current_amount: Optional[str]
     gap_amount: Optional[str]
     completion_percent: Optional[str]
+
+
+class GoalMonitoringSummaryResponseDTO(BaseModel):
+    """Count-only summary over the complete owned Goal collection."""
+
+    total_goals: int
+    not_started: int
+    in_progress: int
+    achieved: int
+    exceeded: int
+    negative_current: int
+    unavailable: int
+
+
+class GoalMonitoringItemResponseDTO(BaseModel):
+    """Goal context plus the certified R6.2 progress and factual indicators."""
+
+    goal_id: UUID
+    name: str
+    goal_type: GoalType
+    status: GoalStatus
+    target_amount: Optional[str]
+    current_amount: Optional[str]
+    planned_monthly_contribution: Optional[str]
+    target_date: Optional[date]
+    gap_amount: Optional[str]
+    completion_percent: Optional[str]
+    progress_state: GoalProgressState
+    data_flags: tuple[GoalDataFlag, ...]
+
+
+class GoalMonitoringOverviewResponseDTO(BaseModel):
+    """Complete unpaginated monitoring read model for one authenticated user."""
+
+    summary: GoalMonitoringSummaryResponseDTO
+    goals: tuple[GoalMonitoringItemResponseDTO, ...]
 
 
 class GoalPlanningResponseDTO(BaseModel):

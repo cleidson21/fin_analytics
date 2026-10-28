@@ -267,6 +267,7 @@ def test_openapi_adds_one_get_and_preserves_all_five_planning_posts():
     }
 
     assert planning_operations == {
+        "/api/v1/planning/goals/overview": ["get"],
         "/api/v1/planning/goals/{goal_id}/context": ["get"],
         "/api/v1/planning/goals/{goal_id}/progress": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],
