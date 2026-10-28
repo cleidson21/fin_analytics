@@ -1,5 +1,33 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-R6.4] — 2026-10-27 — Joint Goal Contribution Preview
+
+- Added the approved `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md` and
+  authenticated `POST /api/v1/planning/goals/batch-contribution-preview` for
+  1–20 unique selected Goal IDs, explicit horizon, explicit hypothetical return,
+  and explicit nominal/real basis.
+- Extended `PlanningGoalReadQuery` with one ownership-filtered batch query that
+  preserves request order and supports uniform non-enumerating `404` behavior
+  when any selected Goal is absent or belongs to another identity.
+- Added a bounded orchestration service that uses only each Goal's cadastral
+  target and `GOAL_CURRENT_AMOUNT`, calls the existing
+  `RequiredContributionSolver` for every calculable item, and returns factual
+  unavailable codes for missing/nonpositive targets and missing/negative current
+  amounts. No contribution formula, Engine, portfolio/MyProfit read, aggregate
+  Goal wealth, recommendation, persistence, migration, or frontend was added.
+- Added strict Decimal-string DTOs and coverage for collection validation,
+  ownership, order, null/zero, invalid facts, cent/large values, rates, horizon,
+  basis, one-query/no-write behavior, generic failures, OpenAPI, and preservation
+  of R6.1–R6.3 plus the five prior Planning POSTs.
+- Direct R6.4/domain/API/read and adjacent Planning validation passed `144`
+  tests; the broader focused Goals/Planning selection passed `680` tests.
+  Existing Pydantic, `datetime.utcnow`, async-mock, and pytest-cache warnings
+  remain non-blocking; no new failure was observed.
+- Reconciled R6.3 as `COMMITTED / PUSHED` at
+  `1f743b297449d17064d68376891edab88432e1d2`. R6.4 is `IMPLEMENTED / FOCUSED
+  TESTS PASSED / CHECKPOINT PENDING`; no staging, commit, push, deploy, or R6.5+
+  work occurred.
+
 ## [TSK-R6.3] — 2026-10-27 — Consolidated Goal Monitoring Read Model
 
 - Added the approved `GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md` and

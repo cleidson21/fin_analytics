@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-27 — R6.3 Goal Monitoring implemented; focused tests passed; checkpoint pending
+**Updated:** 2026-10-27 — R6.4 Goal batch contribution preview implemented; focused tests passed; checkpoint pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -59,9 +59,10 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R6 general gate | `SATISFIED / READY FOR EXPLICITLY CONTRACTED INCREMENTS` |
 | 10.R6.1 Goals → Planning | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED` |
 | 10.R6.2 Goal Progress | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
-| 10.R6.3 Goal Monitoring Overview | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` |
-| 10.R6.4+ | `NOT SPECIFIED / NOT AUTHORIZED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 CLOSED / R6 GENERAL GATE SATISFIED / R6.1 COMMITTED / PUSHED / R6.2 COMMITTED / PUSHED / R6.3 FOCUSED-TESTED / CHECKPOINT PENDING` |
+| 10.R6.3 Goal Monitoring Overview | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
+| 10.R6.4 Goal Batch Contribution Preview | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` |
+| 10.R6.5+ | `NOT SPECIFIED / NOT AUTHORIZED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 CLOSED / R6 GENERAL GATE SATISFIED / R6.1-R6.3 COMMITTED / PUSHED / R6.4 FOCUSED-TESTED / CHECKPOINT PENDING` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -243,11 +244,15 @@ through the existing owned Planning Goal reader, with signed Decimal gap and an
 uncapped two-decimal completion percentage. It performs no writes, projection,
 engine execution, portfolio/MyProfit read, or automatic investment-to-Goal
 linkage. Focused validation passed and its checkpoint is published at
-`7828f64a2d8d0a25605bcb2c459775e176f99292`. R6.3 now provides the explicitly
-authorized authenticated Goal Monitoring overview over the owned batch reader.
-It reuses R6.2 per Goal, classifies mutually exclusive progress states, exposes
-factual data flags, and aggregates counts only. Focused validation passed; its
-checkpoint remains pending. R6.4+ is not authorized.
+`7828f64a2d8d0a25605bcb2c459775e176f99292`. R6.3 provides the explicitly
+authorized authenticated Goal Monitoring overview over the owned batch reader
+and is published at `1f743b297449d17064d68376891edab88432e1d2`. R6.4 now
+provides an authenticated, transient preview of the required monthly
+contribution for each explicitly selected owned Goal. It performs one batch
+read, uses only each Goal's cadastral target/current amount, and delegates every
+calculable item to the certified Required Contribution solver. Missing or
+invalid facts remain unavailable rather than becoming invented zeroes. Focused
+validation passed; the R6.4 checkpoint remains pending. R6.5+ is not authorized.
 
 R1 locks a target information architecture but changes no route. Existing deep
 links remain operational until R5/R6 explicitly implement migration.
@@ -599,8 +604,9 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED /
   COMMITTED / PUSHED`. R6.2 Goal Progress is `IMPLEMENTED / FOCUSED TESTS
   PASSED / COMMITTED / PUSHED`. R6.3 Goal Monitoring Overview is `IMPLEMENTED /
-  FOCUSED TESTS PASSED / CHECKPOINT PENDING`; R6.4+, R7, Advisor, and Portfolio
-  Intelligence remain gated.
+  FOCUSED TESTS PASSED / COMMITTED / PUSHED`. R6.4 Goal Batch Contribution
+  Preview is `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`; R6.5+,
+  R7, Advisor, and Portfolio Intelligence remain gated.
 - `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` records the approved R6.1
   contract and implementation evidence and is included in the published
   checkpoint. The new GET is authenticated, owned, Decimal-safe,
@@ -614,6 +620,11 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   progress states, exposes factual data flags, and summarizes counts only. It
   performs no monetary aggregation, MyProfit/portfolio read, engine call, write,
   migration, or frontend change.
+- `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md` governs R6.4. Its bounded,
+  ordered request loads selected Goals once under ownership, uses only
+  `GOAL_CURRENT_AMOUNT`, and delegates each calculable item to the certified
+  Required Contribution solver. It does not infer a horizon from Goal dates,
+  aggregate Goal wealth, persist a simulation, or read MyProfit/portfolio data.
 - `INF-R3D-01`: global SQLite foreign-key enablement passed tested
   environments. A conditional structural remediation for a reported invalid
   `position_snapshots.account_id -> accounts.id` physical constraint was

@@ -1,5 +1,5 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — R5 CLOSED / R6 GENERAL GATE SATISFIED / R6.1-R6.2 COMMITTED / PUSHED / R6.3 IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING`
+**Status:** `ACTIVE QUEUE — R5 CLOSED / R6 GENERAL GATE SATISFIED / R6.1-R6.3 COMMITTED / PUSHED / R6.4 IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING`
 **Date:** 2026-10-27
 
 ---
@@ -15,8 +15,9 @@
 | 5 | 10.R6 general gate | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `SEQUENCING GATE SATISFIED / READY FOR EXPLICITLY CONTRACTED INCREMENTS` | R2–R5 foundations satisfied; each increment still requires a contract/decomposition and authorization |
 | 5.1 | 10.R6.1 | Goals → Planning integration governed by `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED` | Historical project-owner sequencing exception; approved microcontract; all financial/security/auth/ownership/test gates preserved |
 | 5.2 | 10.R6.2 | Deterministic Goal Progress read model governed by `GOAL_PROGRESS_READ_MODEL_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` | R5 closed; R6 gate satisfied; explicit project-owner authorization; existing owned Goal reader |
-| 5.3 | 10.R6.3 | Consolidated Goal Monitoring read model governed by `GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` | R6.2 published; explicit project-owner authorization; existing owned Goal batch reader and certified R6.2 calculation |
-| 5.4 | 10.R6.4+ | Remaining R6 increments | `NOT SPECIFIED / NOT AUTHORIZED` | Explicit contract, decomposition, and authorization required; no inheritance from R6.3 |
+| 5.3 | 10.R6.3 | Consolidated Goal Monitoring read model governed by `GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` | R6.2 published; explicit project-owner authorization; existing owned Goal batch reader and certified R6.2 calculation |
+| 5.4 | 10.R6.4 | Joint Goal contribution preview governed by `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` | R6.3 published; explicit project-owner authorization; owned batch Goal reader and certified Required Contribution solver |
+| 5.5 | 10.R6.5+ | Remaining R6 increments | `NOT SPECIFIED / NOT AUTHORIZED` | Explicit contract, decomposition, and authorization required; no inheritance from R6.4 |
 | 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
 | 7 | 10.5-B | Resume Portfolio Intelligence contract lock using the realigned architecture | `PAUSED / PENDING WEALTH OS REALIGNMENT` | R7 closure; preserve 10.5-A |
 
@@ -68,7 +69,18 @@ existing owned batch Goal reader and certified R6.2 calculation to expose one
 authenticated, ordered, read-only overview. It classifies each Goal exactly
 once, emits factual data-quality flags, and aggregates counts only—never Goal
 money, portfolio wealth, or contributions. Focused Goals/Planning tests pass;
-its checkpoint is pending. R6.4+ remains unauthorized.
+its checkpoint is published at `1f743b297449d17064d68376891edab88432e1d2`.
+
+**R6.4 authorization (2026-10-27):** the project owner explicitly approved the
+bounded `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md`. R6.4 accepts 1 through 20
+unique owned Goal IDs plus an explicit horizon and rate assumptions, loads the
+selection in one ownership-filtered query, and delegates each calculable item
+to the certified Required Contribution solver using only
+`GOAL_CURRENT_AMOUNT`. It returns ordered individual previews and factual
+unavailable states, with no Goal-date horizon inference, Goal-wealth
+aggregation, portfolio/MyProfit read, recommendation, persistence, migration,
+or frontend. Focused Goals/Planning tests pass; its checkpoint is pending.
+R6.5+ remains unauthorized.
 
 R2 implementation is decomposed in
 `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` as B1 declared-context
@@ -309,7 +321,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C/D/E1/E2/E3 CLOSED; R3-E4 INDEPENDENTLY APPROVED; R4-A/B/C CLOSED; R5 USER-ACCEPTED/CLOSED; R6 GENERAL GATE SATISFIED; R6.1-R6.2 COMMITTED / PUSHED; R6.3 IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING; R6.4+ NOT AUTHORIZED; R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C/D/E1/E2/E3 CLOSED; R3-E4 INDEPENDENTLY APPROVED; R4-A/B/C CLOSED; R5 USER-ACCEPTED/CLOSED; R6 GENERAL GATE SATISFIED; R6.1-R6.3 COMMITTED / PUSHED; R6.4 IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING; R6.5+ NOT AUTHORIZED; R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
