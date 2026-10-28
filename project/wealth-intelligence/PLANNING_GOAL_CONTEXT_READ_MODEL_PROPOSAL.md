@@ -1,8 +1,8 @@
 # Planning Goal Context Read Model — approved microcontract
 
-**Status:** `APPROVED / IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / CHECKPOINT PENDING`
+**Status:** `APPROVED / IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED`
 
-**Phase:** `TSK-R6.1 GOALS → PLANNING / R6 GENERAL GATE REMAINS BLOCKED`
+**Phase:** `TSK-R6.1 GOALS → PLANNING / R6 GENERAL GATE SATISFIED AFTER R5 CLOSURE`
 
 **Purpose:** define the minimum authenticated read boundary and deterministic UI
 rules needed to reuse an owned Goal as the starting context for Planning.
@@ -255,6 +255,8 @@ TypeScript, focused ESLint, production build, and whitespace validation. The
 user tested the resulting experience and reported it satisfactory for the
 current scope, recorded as `R6.1 UX REFINEMENT = USER-ACCEPTED FOR CURRENT
 SCOPE`. This does not assert a complete manual test matrix or independently
-classify R6.1 as `VALIDATED / CLOSED`. R5 visual acceptance remains pending,
-the general R6 gate remains blocked, and no commit, push, R6.2+, engine,
-migration, or persistence work is authorized by this status.
+classify all of R6 as `VALIDATED / CLOSED`. The controlled two-commit checkpoint
+was published at `1b0a1c6fa538ad69c415c29f77c8f91b68f4dd0b`. The project owner
+subsequently accepted and closed the current R5 visual baseline, satisfying the
+general R6 sequencing gate. No later R6 increment, engine, migration, or
+persistence work is defined or authorized by this microcontract.

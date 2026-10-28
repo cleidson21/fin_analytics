@@ -19,17 +19,22 @@ consume those capabilities without replacing their financial authority.
 - Wealth OS 10.R3: `R3-I INDEPENDENTLY APPROVED / DOCUMENTATION RECONCILED`
 - Wealth OS 10.R4-A/B: `CLOSED / PUSHED`
 - Wealth OS 10.R4-C: `CLOSED / PUSHED`
-- Wealth OS 10.R5: `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING`
-- Wealth Intelligence W2–W4.2: `IMPLEMENTED / TESTED IN CURRENT WORKTREE / ABSORBED INTO R5 / NOT AN R6 PHASE CLOSURE`
+- Wealth OS 10.R5: `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE APPROVED FOR CURRENT BASELINE / CLOSED`
+- Wealth OS 10.R6 general gate: `SATISFIED`
+- Wealth OS 10.R6.1: `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED`
+- Wealth OS 10.R6.2: `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`
+- Wealth Intelligence W2–W4.2: `IMPLEMENTED / ABSORBED INTO CLOSED R5 BASELINE / NOT AN R6 PHASE CLOSURE`
 
 The realignment is an incremental composition refactor. R2 now provides the
 validated Smart Financial Context foundation, R3 provides the approved External
 Context foundations, and R4-A through R4-C provide internal AI contracts,
 read-only tools, and audit/telemetry boundaries without an operational Advisor.
-The current worktree also contains the W2–W4.2 Wealth Intelligence product
-increments and the bounded R5 consolidation. R5 automated gates passed, but its
-desktop/tablet/mobile visual acceptance remains assigned to the user. These
-local increments are not an implied start or closure of canonical phase R6.
+The published baseline contains the W2–W4.2 Wealth Intelligence product
+increments and the bounded R5 consolidation. R5 automated gates passed and the
+project owner accepted the current visual baseline on 2026-10-27 without
+claiming an exhaustive browser, viewport, or state matrix. R5 is closed. The
+general R6 sequencing gate is satisfied, but each later increment still needs
+an explicit contract and authorization.
 
 ## What exists today
 
@@ -50,9 +55,12 @@ Important current limitations:
   production Advisor/Insights/Copilot, operational model adapter, hybrid router,
   AI endpoint, or AI scheduler;
 - the W2–W4.2 Wealth Home, navigation, Planning/FIRE experience, transient
-  result sharing, and R5 themes exist only in the current worktree and await
-  final user visual acceptance before the Git checkpoint;
-- R6 has not started, and R5 completion does not authorize it.
+  result sharing, and R5 themes are published and user-accepted as the current
+  baseline; broader manual matrix coverage remains future validation work;
+- R6.1 is published. R6.2 adds an authenticated, owned, read-only Goal progress
+  endpoint over cadastral Goal amounts; it is implemented and focused-tested in
+  the current worktree but remains uncommitted and unpublished. R6.3+ is not
+  authorized.
 
 See the verified current-state owner for exact detail.
 

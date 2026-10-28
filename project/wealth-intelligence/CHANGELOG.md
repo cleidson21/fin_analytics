@@ -1,5 +1,48 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-R6.2] — 2026-10-27 — Deterministic Goal Progress Read Model
+
+- Added the approved `GOAL_PROGRESS_READ_MODEL_CONTRACT.md` and authenticated
+  `GET /api/v1/planning/goals/{goal_id}/progress` over the existing owned
+  `PlanningGoalReadQuery`; missing and cross-owner Goals remain indistinguishable
+  `404` responses.
+- Added a pure Decimal calculation for signed `gap_amount` and uncapped
+  `completion_percent`, rounded explicitly to two decimal places with
+  `ROUND_HALF_EVEN`. Null remains distinct from explicit zero; non-positive or
+  missing targets produce no percentage.
+- Added a Decimal-string response DTO and mapper without changing the legacy
+  Goals DTO/entity method, the five certified Planning POSTs, persistence,
+  engines, migrations, frontend, or locked contracts.
+- Added calculation, authentication, ownership, non-enumeration, edge-case,
+  no-write/no-engine/no-portfolio, OpenAPI, and compatibility tests. Direct
+  R6.2/context/foundation validation passed `90` tests; the complete focused
+  Goals/Planning selection passed `611` tests. Existing warnings remain
+  non-blocking.
+- Status: `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`. No staging,
+  commit, push, deploy, portfolio synchronization, or R6.3+ work occurred.
+
+## [TSK-R5-CLOSURE-R6-BACKEND] — 2026-10-27 — R5 Closure and R6 Gate Resolution
+
+- Recorded the project owner's express visual acceptance of the current R5
+  baseline after automated validation, the published technical checkpoint, and
+  the later minimalist refinement. The acceptance does not claim an exhaustive
+  browser, viewport, state, or manual-accessibility matrix; future UI/UX work is
+  backlog.
+- Closed R5 as `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE
+  APPROVED FOR CURRENT BASELINE / CLOSED` and marked the general R6 sequencing
+  gate `SATISFIED`.
+- Preserved the historical ADR-027 sequencing exception that allowed R6.1 to
+  begin before R5 visual acceptance. Recorded R6.1 as `IMPLEMENTED / AUTOMATED
+  GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED` at
+  `1b0a1c6fa538ad69c415c29f77c8f91b68f4dd0b`.
+- Determined from the canonical active queue that no named backend increment,
+  approved contract, or executable decomposition exists after R6.1. The
+  `R6.2+` label is a placeholder only; gate satisfaction does not authorize
+  inventing an endpoint, DTO, persistence rule, or financial behavior.
+- Changed documentation only. No backend/frontend code, engine, locked
+  contract, migration, database, staging, commit, push, deploy, benchmark, or
+  LLM operation was performed.
+
 ## [TSK-R6.1] — 2026-10-26 — Goals → Planning Context and Presets
 
 - Added authenticated `GET /api/v1/planning/goals/{goal_id}/context` over the

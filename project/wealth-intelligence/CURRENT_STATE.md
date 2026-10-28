@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-26 — R6.1 implemented; automated gates passed; user manual acceptance reported; checkpoint pending
+**Updated:** 2026-10-27 — R6.2 Goal Progress implemented; focused tests passed; checkpoint pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -55,11 +55,12 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R4-C Audit & Telemetry Boundary | `CLOSED / PUSHED` |
 | 10.R4-D Ollama Local Adapter | `R4-D.2 USER-OBSERVED VALIDATION RECORDED / TECHNICAL CANDIDATE ONLY` |
 | 10.R5 technical implementation/checkpoint | `IMPLEMENTED / AUTOMATED GATES PASSED / COMMITTED / PUSHED` |
-| 10.R5 visual acceptance | `PENDING` |
-| 10.R6 general gate | `BLOCKED PENDING R5 VISUAL ACCEPTANCE` |
-| 10.R6.1 Goals → Planning | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / CHECKPOINT PENDING` |
-| 10.R6.2+ | `NOT AUTHORIZED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 TECHNICAL CHECKPOINT PUBLISHED / R5 VISUAL ACCEPTANCE PENDING / R6.1 USER MANUAL ACCEPTANCE REPORTED / R6.1 CHECKPOINT PENDING` |
+| 10.R5 visual acceptance / closure | `USER VISUAL ACCEPTANCE APPROVED FOR CURRENT BASELINE / CLOSED` |
+| 10.R6 general gate | `SATISFIED / READY FOR EXPLICITLY CONTRACTED INCREMENTS` |
+| 10.R6.1 Goals → Planning | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED` |
+| 10.R6.2 Goal Progress | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` |
+| 10.R6.3+ | `NOT SPECIFIED / NOT AUTHORIZED` |
+| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 CLOSED / R6 GENERAL GATE SATISFIED / R6.1 COMMITTED / PUSHED / R6.2 FOCUSED-TESTED / CHECKPOINT PENDING` |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -218,20 +219,30 @@ change, or identity change.
 The user explicitly authorized the bounded R5 contract on 2026-10-24. The
 existing W2–W4.2 implementation is reused as its product baseline. R5 automated
 acceptance gates passed, and its technical checkpoint is committed and pushed
-at `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`; final desktop/tablet/mobile
-visual acceptance remains assigned to the user. The general R6 gate is still
-blocked by that pending visual acceptance. The project owner expressly amended
-the sequencing rule on 2026-10-25 only for R6.1 Goals → Planning. R6.1 now
+at `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`. On 2026-10-27 the project owner
+expressly accepted the current visual baseline and deferred additional UI/UX
+improvements to backlog. That acceptance does not claim that every browser,
+viewport, state combination, or manual accessibility scenario was individually
+tested. R5 is closed and the general R6 sequencing gate is satisfied. The
+project owner had expressly amended the sequencing rule on 2026-10-25 only for
+R6.1 Goals → Planning; that exception remains preserved historically. R6.1 now
 implements the approved authenticated Goal-context read model, deep link,
 presets, safe Goal switching, navigation, and tests. Its minimalist refinement
 removes duplicate page chrome and local journey navigation, keeps the global
 navigation authoritative, and preserves accessible semantic headings, the
 segmented Objective selector, and compact nominal/real option summaries. The
 automated gates pass, and the user reported the tested experience satisfactory
-for the current scope. This report does not assert every viewport, browser, or
-manual accessibility scenario, and it does not independently classify R6.1 as
-`VALIDATED / CLOSED`. The checkpoint remains pending. The exception neither
-starts R6.2+ nor closes R5 or R6.
+for the current scope. Its two-commit checkpoint is published at
+`1b0a1c6fa538ad69c415c29f77c8f91b68f4dd0b`. This report does not assert every
+viewport, browser, calculation, or manual accessibility scenario and does not
+independently classify all of R6 as closed. R6.2 was subsequently defined and
+explicitly authorized as a bounded Goal Progress read model. It exposes
+authenticated cadastral progress from `target_amount` and `current_amount`
+through the existing owned Planning Goal reader, with signed Decimal gap and an
+uncapped two-decimal completion percentage. It performs no writes, projection,
+engine execution, portfolio/MyProfit read, or automatic investment-to-Goal
+linkage. Focused validation passed; its checkpoint remains pending. R6.3+ is
+not authorized.
 
 R1 locks a target information architecture but changes no route. Existing deep
 links remain operational until R5/R6 explicitly implement migration.
@@ -575,19 +586,23 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   minimum and initial dimensions.
 - The public Goals API still represents money and progress with `float`; the
   Decimal-safe Planning reader deliberately bypasses that legacy path.
-- R5 final visual acceptance in desktop, tablet, and mobile remains pending the
-  user's local-browser review. Automated component, accessibility, type, lint,
-  build, route, and backend contract gates passed. The R5 technical checkpoint
-  is committed/pushed; that publication is not visual acceptance or R5 closure.
-- The general R6 gate remains blocked. Only R6.1 Goals → Planning was
-  exceptionally authorized and is now `IMPLEMENTED / AUTOMATED GATES PASSED /
-  USER MANUAL ACCEPTANCE REPORTED / CHECKPOINT PENDING`; R6.2+, R7, Advisor,
-  and Portfolio Intelligence receive no authorization from this exception.
+- R5 is user-accepted and closed for the current visual baseline. Automated
+  component, accessibility, type, lint, build, route, and backend contract gates
+  passed; the project-owner acceptance does not claim an exhaustive browser,
+  viewport, state, or manual-accessibility matrix. Further UI/UX work is backlog.
+- The general R6 sequencing gate is satisfied. R6.1 Goals → Planning is
+  `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED /
+  COMMITTED / PUSHED`. R6.2 Goal Progress is `IMPLEMENTED / FOCUSED TESTS
+  PASSED / CHECKPOINT PENDING`; R6.3+, R7, Advisor, and Portfolio Intelligence
+  remain gated.
 - `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` records the approved R6.1
-  contract and implementation evidence and is included in the planned
-  documentation checkpoint. The new GET is authenticated, owned, Decimal-safe,
+  contract and implementation evidence and is included in the published
+  checkpoint. The new GET is authenticated, owned, Decimal-safe,
   and read-only; the legacy Goals DTO, Planning POST contracts, engines,
   persistence, and locked ADRs are unchanged.
+- `GOAL_PROGRESS_READ_MODEL_CONTRACT.md` governs R6.2. The read model uses only
+  owned cadastral Goal amounts, preserves signed gap, null versus explicit zero,
+  and completion above 100%, and does not claim automatic portfolio progress.
 - `INF-R3D-01`: global SQLite foreign-key enablement passed tested
   environments. A conditional structural remediation for a reported invalid
   `position_snapshots.account_id -> accounts.id` physical constraint was

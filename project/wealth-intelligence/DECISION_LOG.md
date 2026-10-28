@@ -658,6 +658,44 @@ an amendment to ADR-027 rather than a new ADR because it changes only the
 execution order governed by this decision; ADR-023, ADR-024, ADR-025, and their
 locked contracts remain unchanged.
 
+**R5 closure and general R6 gate resolution — TSK-R5-CLOSURE-R6-BACKEND
+(2026-10-27):** The project owner expressly accepted the current R5 visual
+baseline after the published technical checkpoint and subsequent minimalist
+refinement. The acceptance is scoped to the reviewed current experience; it
+does not assert that every browser, viewport, state combination, or manual
+accessibility scenario was individually tested. Automated gates and the
+published technical checkpoint remain separate evidence. R5 is therefore
+`IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE APPROVED FOR
+CURRENT BASELINE / CLOSED`.
+
+This approval satisfies the general R5 → R6 sequencing gate. It does not erase
+the 2026-10-25 exception above, which remains the historical authority for
+starting R6.1 earlier. R6.1 is now `IMPLEMENTED / AUTOMATED GATES PASSED / USER
+MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED` at
+`1b0a1c6fa538ad69c415c29f77c8f91b68f4dd0b`.
+
+Gate satisfaction is not blanket implementation authorization. At the time of
+this closure review, the canonical roadmap defined no named backend increment,
+approved microcontract, or executable decomposition after R6.1. The former
+`R6.2+` label was only a placeholder grouping. A later R6 task had to identify
+its user outcome,
+contract/ADR authority, API and data boundaries, dependencies, and test gates.
+Until that occurred, no backend code, R7, Advisor, operational AI, or Portfolio
+Intelligence work was authorized by this resolution. ADR-023, ADR-024, ADR-025,
+and all locked contracts remain unchanged.
+
+**Subsequent R6.2 authorization — TSK-R6.2 (2026-10-27):** The project owner
+subsequently supplied the missing concrete task and expressly approved
+`GOAL_PROGRESS_READ_MODEL_CONTRACT.md`. R6.2 is limited to an authenticated,
+owned, read-only Goal progress response derived only from cadastral
+`target_amount` and `current_amount` returned by the existing
+`PlanningGoalReadQuery`. The signed gap and uncapped completion percentage use
+Decimal; null and explicit zero remain distinct. The decision authorizes no
+projection, expected return, portfolio/MyProfit source, persistence, engine,
+legacy Goals API change, frontend, R6.3+, R7, Advisor, or Portfolio
+Intelligence. This subsequent authorization does not modify ADR-023, ADR-024,
+ADR-025, ADR-027, or any locked contract.
+
 **Portfolio gate:** 10.5-A remains authoritative. 10.5-B remains
 `PAUSED / PENDING WEALTH OS REALIGNMENT` and resumes only after R7 closure unless
 an explicit later decision changes the gate.

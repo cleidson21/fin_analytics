@@ -1,11 +1,11 @@
 # FINANALYTICS — Wealth OS Documentation
 
-**Status:** `10.R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE PENDING`
+**Status:** `10.R5 IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE APPROVED FOR CURRENT BASELINE / CLOSED`
 
 **R5 technical checkpoint:** `COMMITTED / PUSHED` at
 `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`
 
-**Sequencing gate:** `R6 GENERAL GATE BLOCKED PENDING R5 VISUAL ACCEPTANCE / R6.1 GOALS-PLANNING IMPLEMENTED — AUTOMATED GATES PASSED — USER MANUAL ACCEPTANCE REPORTED — CHECKPOINT PENDING / R6.2+ NOT AUTHORIZED`
+**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1 COMMITTED / PUSHED / R6.2 GOAL PROGRESS IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / R6.3+ NOT AUTHORIZED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -26,13 +26,19 @@ Health/Goals/investment-wealth cards, month-aware navigation, five deterministic
 Planning capabilities organized under the three ADR-024 intentions, three FIRE
 modes, user-selected transient results held only in memory, semantic tokens, and
 Dark/Light/System themes. Automated R5 gates passed; desktop/tablet/mobile
-visual acceptance remains pending with the user. The general R6 gate therefore
-remains blocked. By the explicit, bounded sequencing amendment recorded in
-ADR-027, only R6.1 Goals → Planning could begin. R6.1 is now implemented with
-automated gates passed. After testing the implemented experience and its
-minimalist refinement, the user reported it satisfactory for the current scope;
-the controlled Git checkpoint remains pending. This does not close R5 or
-authorize R6.2+, R7, Advisor, or Portfolio Intelligence.
+visual acceptance was explicitly approved by the project owner on 2026-10-27
+for the current baseline. This approval does not claim an exhaustive browser,
+viewport, state, or manual-accessibility matrix. With the automated gates and
+published technical checkpoint already satisfied, R5 is closed and the general
+R6 sequencing gate is satisfied. The earlier ADR-027 exception remains part of
+the historical record. R6.1 Goals → Planning is implemented, accepted for the
+scope tested, and committed/pushed at
+`1b0a1c6fa538ad69c415c29f77c8f91b68f4dd0b`. The project owner subsequently
+authorized the bounded R6.2 Goal Progress read model. It is implemented and
+focused-tested in the current worktree under
+`GOAL_PROGRESS_READ_MODEL_CONTRACT.md`, but is not staged, committed, pushed,
+or deployed. R6.3+, R7, Advisor, and Portfolio Intelligence remain
+unauthorized.
 
 R2-A locks declared financial context, deterministic recurring-income
 candidates, human decisions, ownership, provenance, and feature-specific
@@ -144,6 +150,8 @@ owned by `CURRENT_STATE.md` and `IMPLEMENTATION_ROADMAP.md`.
 | Accepted architectural/product decisions | `DECISION_LOG.md` |
 | Historical change evidence | `CHANGELOG.md` |
 | External product inspiration | `PRODUCT_REFERENCES.md` |
+| R6.1 Goals → Planning microcontract | [PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md](PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md) |
+| R6.2 Goal Progress microcontract | [GOAL_PROGRESS_READ_MODEL_CONTRACT.md](GOAL_PROGRESS_READ_MODEL_CONTRACT.md) |
 | R2 Smart Financial Context contract | [SMART_FINANCIAL_CONTEXT_CONTRACT.md](SMART_FINANCIAL_CONTEXT_CONTRACT.md) |
 | R2 implementation decomposition | [SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md](SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md) |
 | R3 External Context locked contract | [EXTERNAL_CONTEXT_CONTRACT.md](EXTERNAL_CONTEXT_CONTRACT.md) |
@@ -201,6 +209,7 @@ R2-B1 through R2-B8 Smart Financial Context implementation
 ```
 
 Do not begin the next phase merely because its documentation exists. Each phase
-requires an explicit task and its own contract/decomposition gate. The sole
-current exception is R6.1 Goals → Planning under the explicit ADR-027 sequencing
-amendment; no later increment inherits that authorization.
+requires an explicit task and its own contract/decomposition gate. R6.1 Goals →
+Planning began under the historical ADR-027 sequencing exception and is now
+published. R6.2 was later defined and explicitly authorized by its bounded
+microcontract; no later increment inherits that authorization.
