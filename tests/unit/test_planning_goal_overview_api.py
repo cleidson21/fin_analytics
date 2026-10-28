@@ -267,6 +267,7 @@ def test_static_route_and_openapi_preserve_r61_r62_and_five_posts():
     }
     assert planning_operations == {
         "/api/v1/planning/goals/overview": ["get"],
+        "/api/v1/planning/goals/batch-contribution-preview": ["post"],
         "/api/v1/planning/goals/{goal_id}/context": ["get"],
         "/api/v1/planning/goals/{goal_id}/progress": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],

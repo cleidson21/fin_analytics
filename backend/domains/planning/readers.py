@@ -99,6 +99,34 @@ class PlanningGoalReadQuery:
         models = db.execute(statement).scalars()
         return tuple(self._to_fact(model) for model in models)
 
+    def get_goals_by_ids(
+        self,
+        db: Session,
+        goal_ids: Sequence[UUID],
+        user_id: UUID,
+    ) -> tuple[GoalPlanningFact, ...]:
+        """Load an ordered selection in one ownership-filtered SQL statement."""
+
+        ordered_ids = tuple(goal_ids)
+        if not ordered_ids:
+            return ()
+        if len(set(ordered_ids)) != len(ordered_ids):
+            raise ValueError("goal_ids must not contain duplicates")
+
+        statement = select(GoalModel).where(
+            GoalModel.user_id == user_id,
+            GoalModel.id.in_(ordered_ids),
+        )
+        models_by_id = {
+            model.id: model
+            for model in db.execute(statement).scalars()
+        }
+        return tuple(
+            self._to_fact(models_by_id[goal_id])
+            for goal_id in ordered_ids
+            if goal_id in models_by_id
+        )
+
     @staticmethod
     def current_amount_as_initial_wealth(
         goal: GoalPlanningFact,

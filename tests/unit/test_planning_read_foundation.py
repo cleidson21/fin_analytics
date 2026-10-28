@@ -231,6 +231,44 @@ def test_goal_list_uses_one_owned_select_and_stable_tie_breakers(planning_db):
     assert not planning_db.deleted
 
 
+def test_selected_goal_batch_uses_one_owned_query_and_preserves_request_order(
+    planning_db,
+):
+    owner_id = uuid4()
+    other_user_id = uuid4()
+    first = _goal(owner_id, name="First")
+    second = _goal(owner_id, name="Second")
+    foreign = _goal(other_user_id, name="Foreign")
+    planning_db.add_all([first, second, foreign])
+    planning_db.commit()
+    first_id = first.id
+    second_id = second.id
+    foreign_id = foreign.id
+    statements = []
+    event.listen(
+        planning_db.bind,
+        "before_cursor_execute",
+        lambda _conn, _cursor, statement, _parameters, _context, _many:
+            statements.append(statement),
+    )
+
+    facts = PlanningGoalReadQuery().get_goals_by_ids(
+        planning_db,
+        (second_id, foreign_id, first_id),
+        owner_id,
+    )
+
+    assert [fact.goal_id for fact in facts] == [second_id, first_id]
+    assert all(fact.user_id == owner_id for fact in facts)
+    assert len(statements) == 1
+    assert statements[0].lstrip().upper().startswith("SELECT")
+    assert "goals.user_id" in statements[0]
+    assert "portfolio" not in statements[0].lower()
+    assert not planning_db.new
+    assert not planning_db.dirty
+    assert not planning_db.deleted
+
+
 def test_goal_initial_wealth_requires_present_current_amount(planning_db):
     user_id = uuid4()
     missing = _goal(user_id, current_amount=None)

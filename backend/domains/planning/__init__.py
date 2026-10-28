@@ -21,6 +21,15 @@ from backend.domains.planning.goal_planning import (
     GoalPlanningService,
     GoalPlanningStatus,
 )
+from backend.domains.planning.goal_batch_contribution import (
+    GOAL_BATCH_CONTRIBUTION_MAX_GOALS,
+    GoalBatchContributionAvailability,
+    GoalBatchContributionImpediment,
+    GoalBatchContributionItem,
+    GoalBatchContributionPreview,
+    GoalBatchContributionPreviewService,
+    GoalBatchContributionSelection,
+)
 from backend.domains.planning.readers import (
     PlanningGoalReadQuery,
     PlanningHealthReadAdapter,
@@ -54,6 +63,13 @@ __all__ = [
     "ContributionTiming",
     "ForwardProjectionEngine",
     "ForwardProjectionResult",
+    "GOAL_BATCH_CONTRIBUTION_MAX_GOALS",
+    "GoalBatchContributionAvailability",
+    "GoalBatchContributionImpediment",
+    "GoalBatchContributionItem",
+    "GoalBatchContributionPreview",
+    "GoalBatchContributionPreviewService",
+    "GoalBatchContributionSelection",
     "GoalPlanningFact",
     "GoalPlanningResult",
     "GoalPlanningService",

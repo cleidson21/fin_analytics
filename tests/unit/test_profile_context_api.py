@@ -422,6 +422,10 @@ def test_openapi_keeps_planning_and_fire_routes_unchanged():
     }
 
     assert planning == {
+        "/api/v1/planning/goals/overview": ["get"],
+        "/api/v1/planning/goals/batch-contribution-preview": ["post"],
+        "/api/v1/planning/goals/{goal_id}/context": ["get"],
+        "/api/v1/planning/goals/{goal_id}/progress": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],
         "/api/v1/planning/projection": ["post"],
         "/api/v1/planning/required-contribution": ["post"],

@@ -142,7 +142,7 @@ def _install_reader(goal=None):
     )
 
 
-def test_openapi_has_exactly_five_authenticated_planning_operations():
+def test_openapi_has_exactly_six_authenticated_planning_operations():
     schema = app.openapi()
     planning_operations = {
         path: operations["post"]
@@ -152,6 +152,7 @@ def test_openapi_has_exactly_five_authenticated_planning_operations():
 
     assert set(planning_operations) == {
         "/api/v1/planning/projection",
+        "/api/v1/planning/goals/batch-contribution-preview",
         "/api/v1/planning/target-achievement",
         "/api/v1/planning/required-contribution",
         "/api/v1/planning/goals/{goal_id}/projection",

@@ -14,6 +14,7 @@ from pydantic import (
     PlainSerializer,
     StrictInt,
     WithJsonSchema,
+    model_validator,
 )
 
 from backend.domains.planning.assumptions import (
@@ -28,6 +29,11 @@ from backend.domains.planning.required_contribution_solver import (
 )
 from backend.domains.planning.goal_planning import GoalPlanningStatus
 from backend.domains.planning.goal_monitoring import GoalDataFlag, GoalProgressState
+from backend.domains.planning.goal_batch_contribution import (
+    GOAL_BATCH_CONTRIBUTION_MAX_GOALS,
+    GoalBatchContributionAvailability,
+    GoalBatchContributionImpediment,
+)
 from backend.domains.planning.target_basis import TargetValueBasis
 from backend.domains.planning.target_solver import TargetAchievementStatus
 from backend.domains.planning.scenario_comparison import ScenarioArchetype
@@ -200,6 +206,36 @@ class RequiredContributionRequestDTO(ProjectionRequestDTO):
     target_value_basis: TargetValueBasis
 
 
+class GoalBatchContributionAssumptionsRequestDTO(_PlanningRequestDTO):
+    """Explicit shared assumptions for a batch of certified Goal solves."""
+
+    as_of_date: StrictISODate
+    expected_return_rate: StrictDecimalString
+    return_type: ReturnType
+    output_mode: OutputMode
+    inflation_rate: Optional[StrictDecimalString] = None
+    horizon_months: StrictInt
+    rate_basis: RateBasis
+    contribution_timing: ContributionTiming
+
+
+class GoalBatchContributionPreviewRequestDTO(_PlanningRequestDTO):
+    """Ordered, bounded Goal selection with no caller-supplied wealth values."""
+
+    goal_ids: tuple[UUID, ...] = Field(
+        min_length=1,
+        max_length=GOAL_BATCH_CONTRIBUTION_MAX_GOALS,
+    )
+    assumptions: GoalBatchContributionAssumptionsRequestDTO
+    target_value_basis: TargetValueBasis
+
+    @model_validator(mode="after")
+    def reject_duplicate_goal_ids(self):
+        if len(set(self.goal_ids)) != len(self.goal_ids):
+            raise ValueError("goal_ids must not contain duplicates")
+        return self
+
+
 class GoalPlanningRequestDTO(_PlanningRequestDTO):
     """Owned-Goal Planning request; Goal facts stay exclusively server-side."""
 
@@ -331,6 +367,40 @@ class RequiredContributionResponseDTO(BaseModel):
     required_monthly_contribution: str
     solved_assumptions: ProjectionAssumptionsResponseDTO
     target_achievement_result: TargetAchievementResultResponseDTO
+
+
+class GoalBatchContributionAssumptionsResponseDTO(BaseModel):
+    """Effective shared inputs, excluding the solver-owned contribution candidate."""
+
+    as_of_date: date
+    expected_return_rate: str
+    return_type: ReturnType
+    output_mode: OutputMode
+    inflation_rate: Optional[str]
+    horizon_months: int
+    rate_basis: RateBasis
+    contribution_timing: ContributionTiming
+
+
+class GoalBatchContributionItemResponseDTO(BaseModel):
+    """One ordered Goal result without recommendation or feasibility semantics."""
+
+    goal_id: UUID
+    name: str
+    target_amount: Optional[str]
+    current_amount: Optional[str]
+    target_value_basis: TargetValueBasis
+    assumptions: GoalBatchContributionAssumptionsResponseDTO
+    availability: GoalBatchContributionAvailability
+    impediment_code: Optional[GoalBatchContributionImpediment]
+    calculation_status: Optional[RequiredContributionStatus]
+    required_monthly_contribution: Optional[str]
+
+
+class GoalBatchContributionPreviewResponseDTO(BaseModel):
+    """Transient ordered contribution previews for selected owned Goals."""
+
+    results: tuple[GoalBatchContributionItemResponseDTO, ...]
 
 
 class GoalPlanningFactResponseDTO(BaseModel):

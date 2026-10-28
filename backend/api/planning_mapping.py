@@ -7,6 +7,10 @@ from backend.application.services.planning_initial_wealth_fact_builder import (
 )
 from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
+    GoalBatchContributionAssumptionsRequestDTO,
+    GoalBatchContributionAssumptionsResponseDTO,
+    GoalBatchContributionItemResponseDTO,
+    GoalBatchContributionPreviewResponseDTO,
     GoalMonitoringItemResponseDTO,
     GoalMonitoringOverviewResponseDTO,
     GoalMonitoringSummaryResponseDTO,
@@ -40,6 +44,9 @@ from backend.domains.planning.required_contribution_solver import (
     RequiredContributionResult,
 )
 from backend.domains.planning.goal_planning import GoalPlanningResult
+from backend.domains.planning.goal_batch_contribution import (
+    GoalBatchContributionPreview,
+)
 from backend.domains.planning.goal_monitoring import GoalMonitoringOverview
 from backend.domains.planning.goal_progress import GoalProgressResult
 from backend.domains.planning.scenario_comparison import (
@@ -74,6 +81,25 @@ def build_projection_assumptions(
         inflation_rate=request.inflation_rate,
         horizon_months=request.horizon_months,
         target_date=request.target_date,
+        rate_basis=request.rate_basis,
+        contribution_timing=request.contribution_timing,
+    )
+
+
+def build_goal_batch_contribution_assumptions(
+    request: GoalBatchContributionAssumptionsRequestDTO,
+) -> ProjectionAssumptions:
+    """Build the certified solver template without a caller contribution or date rule."""
+
+    return ProjectionAssumptions(
+        as_of_date=request.as_of_date,
+        scenario_monthly_contribution=Decimal("0.00"),
+        expected_return_rate=request.expected_return_rate,
+        return_type=request.return_type,
+        output_mode=request.output_mode,
+        inflation_rate=request.inflation_rate,
+        horizon_months=request.horizon_months,
+        target_date=None,
         rate_basis=request.rate_basis,
         contribution_timing=request.contribution_timing,
     )
@@ -236,6 +262,62 @@ def map_required_contribution_result(
         target_achievement_result=map_target_achievement_result(
             result.target_achievement_result
         ),
+    )
+
+
+def map_goal_batch_contribution_preview(
+    preview: GoalBatchContributionPreview,
+    target_value_basis: TargetValueBasis,
+) -> GoalBatchContributionPreviewResponseDTO:
+    """Serialize batch solver outputs without adding financial interpretation."""
+
+    assumptions = preview.assumptions
+    assumptions_response = GoalBatchContributionAssumptionsResponseDTO(
+        as_of_date=assumptions.as_of_date,
+        expected_return_rate=serialize_decimal(assumptions.expected_return_rate),
+        return_type=assumptions.return_type,
+        output_mode=assumptions.output_mode,
+        inflation_rate=(
+            None
+            if assumptions.inflation_rate is None
+            else serialize_decimal(assumptions.inflation_rate)
+        ),
+        horizon_months=assumptions.resolved_horizon_months,
+        rate_basis=assumptions.rate_basis,
+        contribution_timing=assumptions.contribution_timing,
+    )
+    return GoalBatchContributionPreviewResponseDTO(
+        results=tuple(
+            GoalBatchContributionItemResponseDTO(
+                goal_id=item.goal.goal_id,
+                name=item.goal.name,
+                target_amount=(
+                    None
+                    if item.goal.target_amount is None
+                    else serialize_decimal(item.goal.target_amount)
+                ),
+                current_amount=(
+                    None
+                    if item.goal.current_amount is None
+                    else serialize_decimal(item.goal.current_amount)
+                ),
+                target_value_basis=target_value_basis,
+                assumptions=assumptions_response,
+                availability=item.availability,
+                impediment_code=item.impediment,
+                calculation_status=(
+                    None if item.calculation is None else item.calculation.status
+                ),
+                required_monthly_contribution=(
+                    None
+                    if item.calculation is None
+                    else serialize_decimal(
+                        item.calculation.required_monthly_contribution
+                    )
+                ),
+            )
+            for item in preview.items
+        )
     )
 
 

@@ -9,9 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from backend.api.dependencies.planning import CurrentPlanningUser, PlanningReadSession
 from backend.api.planning_errors import raise_planning_error
 from backend.api.planning_mapping import (
+    build_goal_batch_contribution_assumptions,
     build_projection_assumptions,
     build_user_initial_wealth_fact,
     map_forward_projection_result,
+    map_goal_batch_contribution_preview,
     map_goal_monitoring_overview,
     map_goal_progress,
     map_goal_planning_result,
@@ -22,6 +24,8 @@ from backend.api.planning_mapping import (
 )
 from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
+    GoalBatchContributionPreviewRequestDTO,
+    GoalBatchContributionPreviewResponseDTO,
     GoalMonitoringOverviewResponseDTO,
     GoalProgressResponseDTO,
     GoalPathCurrentAmountInitialWealthRequestDTO,
@@ -48,6 +52,10 @@ from backend.application.services.planning_portfolio_source_resolver import (
 from backend.domains.planning.assumptions import OutputMode, ProjectionAssumptions
 from backend.domains.planning.facts import InitialWealthFact
 from backend.domains.planning.goal_planning import GoalPlanningService
+from backend.domains.planning.goal_batch_contribution import (
+    GoalBatchContributionPreviewService,
+    GoalBatchContributionSelection,
+)
 from backend.domains.planning.goal_monitoring import build_goal_monitoring_overview
 from backend.domains.planning.goal_progress import calculate_goal_progress
 from backend.domains.planning.projection import ForwardProjectionEngine
@@ -135,6 +143,20 @@ PlanningGoalReadQueryDependency = Annotated[
 PlanningPortfolioSourceResolverDependency = Annotated[
     PlanningPortfolioSourceResolver,
     Depends(get_planning_portfolio_source_resolver),
+]
+
+
+def get_goal_batch_contribution_preview_service(
+    solver: RequiredContributionSolverDependency,
+) -> GoalBatchContributionPreviewService:
+    """Reuse the certified inverse solver inside the bounded batch orchestrator."""
+
+    return GoalBatchContributionPreviewService(solver)
+
+
+GoalBatchContributionPreviewServiceDependency = Annotated[
+    GoalBatchContributionPreviewService,
+    Depends(get_goal_batch_contribution_preview_service),
 ]
 
 
@@ -280,6 +302,61 @@ async def get_goal_overview(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Goal overview could not be loaded.",
         ) from None
+
+
+@router.post(
+    "/goals/batch-contribution-preview",
+    response_model=GoalBatchContributionPreviewResponseDTO,
+)
+async def batch_goal_contribution_preview(
+    request: GoalBatchContributionPreviewRequestDTO,
+    current_user: CurrentPlanningUser,
+    db: PlanningReadSession,
+    goal_reader: PlanningGoalReadQueryDependency,
+    service: GoalBatchContributionPreviewServiceDependency,
+) -> GoalBatchContributionPreviewResponseDTO:
+    """Calculate ordered Goal contributions through one owned batch read."""
+
+    try:
+        assumptions = build_goal_batch_contribution_assumptions(
+            request.assumptions
+        )
+        _require_matching_target_basis(
+            request.target_value_basis,
+            assumptions,
+        )
+        goal_facts = goal_reader.get_goals_by_ids(
+            db,
+            request.goal_ids,
+            current_user.id,
+        )
+        if len(goal_facts) != len(request.goal_ids) or any(
+            goal.user_id != current_user.id for goal in goal_facts
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="One or more Goals were not found.",
+            )
+
+        selections = tuple(
+            GoalBatchContributionSelection(
+                goal=goal,
+                initial_wealth_fact=(
+                    None
+                    if goal.current_amount is None or goal.current_amount < 0
+                    else goal_reader.current_amount_as_initial_wealth(goal)
+                ),
+            )
+            for goal in goal_facts
+        )
+        return map_goal_batch_contribution_preview(
+            service.preview(selections, assumptions),
+            request.target_value_basis,
+        )
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise_planning_error(error)
 
 
 @router.get(
