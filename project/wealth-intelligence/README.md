@@ -5,7 +5,7 @@
 **R5 technical checkpoint:** `COMMITTED / PUSHED` at
 `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`
 
-**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1 COMMITTED / PUSHED / R6.2 GOAL PROGRESS IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / R6.3+ NOT AUTHORIZED`
+**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1-R6.2 COMMITTED / PUSHED / R6.3 GOAL MONITORING IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / R6.4+ NOT AUTHORIZED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -34,11 +34,12 @@ R6 sequencing gate is satisfied. The earlier ADR-027 exception remains part of
 the historical record. R6.1 Goals → Planning is implemented, accepted for the
 scope tested, and committed/pushed at
 `1b0a1c6fa538ad69c415c29f77c8f91b68f4dd0b`. The project owner subsequently
-authorized the bounded R6.2 Goal Progress read model. It is implemented and
-focused-tested in the current worktree under
-`GOAL_PROGRESS_READ_MODEL_CONTRACT.md`, but is not staged, committed, pushed,
-or deployed. R6.3+, R7, Advisor, and Portfolio Intelligence remain
-unauthorized.
+authorized the bounded R6.2 Goal Progress read model, published at
+`7828f64a2d8d0a25605bcb2c459775e176f99292`. R6.3 now implements the explicitly
+authorized consolidated Goal Monitoring overview under
+`GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md`; focused tests pass, but the
+R6.3 checkpoint is not staged, committed, pushed, or deployed. R6.4+, R7,
+Advisor, and Portfolio Intelligence remain unauthorized.
 
 R2-A locks declared financial context, deterministic recurring-income
 candidates, human decisions, ownership, provenance, and feature-specific
@@ -152,6 +153,7 @@ owned by `CURRENT_STATE.md` and `IMPLEMENTATION_ROADMAP.md`.
 | External product inspiration | `PRODUCT_REFERENCES.md` |
 | R6.1 Goals → Planning microcontract | [PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md](PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md) |
 | R6.2 Goal Progress microcontract | [GOAL_PROGRESS_READ_MODEL_CONTRACT.md](GOAL_PROGRESS_READ_MODEL_CONTRACT.md) |
+| R6.3 Goal Monitoring microcontract | [GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md](GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md) |
 | R2 Smart Financial Context contract | [SMART_FINANCIAL_CONTEXT_CONTRACT.md](SMART_FINANCIAL_CONTEXT_CONTRACT.md) |
 | R2 implementation decomposition | [SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md](SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md) |
 | R3 External Context locked contract | [EXTERNAL_CONTEXT_CONTRACT.md](EXTERNAL_CONTEXT_CONTRACT.md) |
@@ -211,5 +213,5 @@ R2-B1 through R2-B8 Smart Financial Context implementation
 Do not begin the next phase merely because its documentation exists. Each phase
 requires an explicit task and its own contract/decomposition gate. R6.1 Goals →
 Planning began under the historical ADR-027 sequencing exception and is now
-published. R6.2 was later defined and explicitly authorized by its bounded
-microcontract; no later increment inherits that authorization.
+published. R6.2 and R6.3 were later defined and explicitly authorized by their
+bounded microcontracts; no later increment inherits either authorization.

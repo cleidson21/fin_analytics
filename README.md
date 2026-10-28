@@ -22,7 +22,8 @@ consume those capabilities without replacing their financial authority.
 - Wealth OS 10.R5: `IMPLEMENTED / AUTOMATED GATES PASSED / USER VISUAL ACCEPTANCE APPROVED FOR CURRENT BASELINE / CLOSED`
 - Wealth OS 10.R6 general gate: `SATISFIED`
 - Wealth OS 10.R6.1: `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED`
-- Wealth OS 10.R6.2: `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`
+- Wealth OS 10.R6.2: `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED`
+- Wealth OS 10.R6.3: `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`
 - Wealth Intelligence W2–W4.2: `IMPLEMENTED / ABSORBED INTO CLOSED R5 BASELINE / NOT AN R6 PHASE CLOSURE`
 
 The realignment is an incremental composition refactor. R2 now provides the
@@ -57,10 +58,11 @@ Important current limitations:
 - the W2–W4.2 Wealth Home, navigation, Planning/FIRE experience, transient
   result sharing, and R5 themes are published and user-accepted as the current
   baseline; broader manual matrix coverage remains future validation work;
-- R6.1 is published. R6.2 adds an authenticated, owned, read-only Goal progress
-  endpoint over cadastral Goal amounts; it is implemented and focused-tested in
-  the current worktree but remains uncommitted and unpublished. R6.3+ is not
-  authorized.
+- R6.1 and R6.2 are published. R6.3 adds an authenticated, owned, read-only
+  Goal monitoring overview that reuses R6.2 progress, classifies each Goal, and
+  summarizes counts without monetary aggregation; it is implemented and
+  focused-tested in the current worktree but remains uncommitted and
+  unpublished. R6.4+ is not authorized.
 
 See the verified current-state owner for exact detail.
 

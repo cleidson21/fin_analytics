@@ -1,5 +1,27 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-R6.3] — 2026-10-27 — Consolidated Goal Monitoring Read Model
+
+- Added the approved `GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md` and
+  authenticated `GET /api/v1/planning/goals/overview` over the existing owned,
+  ordered `PlanningGoalReadQuery.list_goals(...)` batch boundary.
+- Added one immutable domain transformation that calls the certified R6.2
+  calculation once per Goal, classifies mutually exclusive progress states,
+  emits factual null/zero-aware data flags, rejects duplicate identifiers, and
+  summarizes counts only. No monetary facts are aggregated.
+- Added Decimal-string response DTOs and mapper plus tests for authentication,
+  two-user isolation, all states/flags, stable order, one-query/no-write
+  behavior, generic failures, static FastAPI routing, OpenAPI, and preservation
+  of R6.1/R6.2 and all five Planning POSTs.
+- Direct R6.3/reader/R6.1/R6.2 validation passed `68` tests; the complete
+  focused Goals/Planning selection passed `634` tests. Existing warnings remain
+  non-blocking; no new failure was observed.
+- Reconciled R6.2 as `COMMITTED / PUSHED` at
+  `7828f64a2d8d0a25605bcb2c459775e176f99292`. R6.3 is `IMPLEMENTED / FOCUSED
+  TESTS PASSED / CHECKPOINT PENDING`; no staging, commit, push, deploy, frontend,
+  MyProfit/portfolio read, engine, persistence, migration, or R6.4+ work
+  occurred.
+
 ## [TSK-R6.2] — 2026-10-27 — Deterministic Goal Progress Read Model
 
 - Added the approved `GOAL_PROGRESS_READ_MODEL_CONTRACT.md` and authenticated
