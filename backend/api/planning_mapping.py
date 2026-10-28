@@ -7,6 +7,7 @@ from backend.application.services.planning_initial_wealth_fact_builder import (
 )
 from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
+    GoalProgressResponseDTO,
     GoalPlanningFactResponseDTO,
     GoalPlanningResponseDTO,
     InitialWealthFactResponseDTO,
@@ -36,6 +37,7 @@ from backend.domains.planning.required_contribution_solver import (
     RequiredContributionResult,
 )
 from backend.domains.planning.goal_planning import GoalPlanningResult
+from backend.domains.planning.goal_progress import GoalProgressResult
 from backend.domains.planning.scenario_comparison import (
     ScenarioComparisonEntry,
     ScenarioComparisonResult,
@@ -283,6 +285,38 @@ def map_planning_goal_context(
             else serialize_decimal(goal_fact.goal_planned_monthly_contribution)
         ),
         target_date=goal_fact.target_date,
+    )
+
+
+def map_goal_progress(
+    goal_fact: GoalPlanningFact,
+    progress: GoalProgressResult,
+) -> GoalProgressResponseDTO:
+    """Serialize the pure R6.2 result without legacy float/capping semantics."""
+
+    return GoalProgressResponseDTO(
+        goal_id=goal_fact.goal_id,
+        name=goal_fact.name,
+        target_amount=(
+            None
+            if progress.target_amount is None
+            else serialize_decimal(progress.target_amount)
+        ),
+        current_amount=(
+            None
+            if progress.current_amount is None
+            else serialize_decimal(progress.current_amount)
+        ),
+        gap_amount=(
+            None
+            if progress.gap_amount is None
+            else serialize_decimal(progress.gap_amount)
+        ),
+        completion_percent=(
+            None
+            if progress.completion_percent is None
+            else serialize_decimal(progress.completion_percent)
+        ),
     )
 
 

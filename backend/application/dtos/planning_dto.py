@@ -363,6 +363,17 @@ class PlanningGoalContextResponseDTO(BaseModel):
     target_date: Optional[date]
 
 
+class GoalProgressResponseDTO(BaseModel):
+    """Decimal-safe nominal cadastral progress for one owned Goal."""
+
+    goal_id: UUID
+    name: str
+    target_amount: Optional[str]
+    current_amount: Optional[str]
+    gap_amount: Optional[str]
+    completion_percent: Optional[str]
+
+
 class GoalPlanningResponseDTO(BaseModel):
     """Certified GoalPlanningResult without HTTP-side timing or solver logic."""
 

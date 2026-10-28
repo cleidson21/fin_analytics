@@ -12,6 +12,7 @@ from backend.api.planning_mapping import (
     build_projection_assumptions,
     build_user_initial_wealth_fact,
     map_forward_projection_result,
+    map_goal_progress,
     map_goal_planning_result,
     map_planning_goal_context,
     map_required_contribution_result,
@@ -20,6 +21,7 @@ from backend.api.planning_mapping import (
 )
 from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
+    GoalProgressResponseDTO,
     GoalPathCurrentAmountInitialWealthRequestDTO,
     GoalPlanningRequestDTO,
     GoalPlanningResponseDTO,
@@ -44,6 +46,7 @@ from backend.application.services.planning_portfolio_source_resolver import (
 from backend.domains.planning.assumptions import OutputMode, ProjectionAssumptions
 from backend.domains.planning.facts import InitialWealthFact
 from backend.domains.planning.goal_planning import GoalPlanningService
+from backend.domains.planning.goal_progress import calculate_goal_progress
 from backend.domains.planning.projection import ForwardProjectionEngine
 from backend.domains.planning.readers import PlanningGoalReadQuery
 from backend.domains.planning.required_contribution_solver import (
@@ -277,6 +280,39 @@ async def get_goal_context(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Planning context could not be loaded.",
+        ) from None
+
+
+@router.get(
+    "/goals/{goal_id}/progress",
+    response_model=GoalProgressResponseDTO,
+)
+async def get_goal_progress(
+    goal_id: UUID,
+    current_user: CurrentPlanningUser,
+    db: PlanningReadSession,
+    goal_reader: PlanningGoalReadQueryDependency,
+) -> GoalProgressResponseDTO:
+    """Return deterministic nominal cadastral progress for one owned Goal."""
+
+    try:
+        goal_fact = goal_reader.get_goal(db, goal_id, current_user.id)
+        if goal_fact is None or goal_fact.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Goal not found.",
+            )
+        progress = calculate_goal_progress(
+            goal_fact.target_amount,
+            goal_fact.current_amount,
+        )
+        return map_goal_progress(goal_fact, progress)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Goal progress could not be loaded.",
         ) from None
 
 
