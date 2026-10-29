@@ -28,13 +28,20 @@ async def get_current_user(
     )
     
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(
+            token, settings.JWT_SECRET, algorithms=["HS256"],
+            options={"require_exp": True},
+        )
+        # Transitional compatibility for still-valid pre-type access tokens.
+        # An explicit null/unknown/refresh type must never use that fallback.
+        if "type" in payload and payload["type"] != "access":
+            raise credentials_exception
         user_id_str: str = payload.get("sub")
-        if user_id_str is None:
+        if not isinstance(user_id_str, str):
             raise credentials_exception
         user_id = UUID(user_id_str)
-    except JWTError:
-        raise credentials_exception
+    except (JWTError, ValueError, TypeError):
+        raise credentials_exception from None
         
     user_repo = get_user_repository(session)
     user = await user_repo.get_by_id(user_id)

@@ -32,7 +32,8 @@ class JWTService(IJWTService):
             "sub": str(user_id),
             "exp": expire,
             "iat": now,
-            "jti": str(uuid.uuid4())
+            "jti": str(uuid.uuid4()),
+            "type": "access"
         }
         return jwt.encode(claims, self._secret, algorithm=self._algorithm)
 
