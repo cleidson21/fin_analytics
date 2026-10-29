@@ -266,6 +266,69 @@ export interface ScenarioComparisonResponse {
   target_value_basis: TargetValueBasis | null;
 }
 
+export type GoalBudgetScenarioId = "A" | "B";
+export type GoalBudgetImpediment =
+  | "TARGET_MISSING"
+  | "TARGET_NONPOSITIVE"
+  | "CURRENT_AMOUNT_MISSING"
+  | "CURRENT_AMOUNT_NEGATIVE";
+
+export interface GoalBudgetAssumptions {
+  as_of_date: ISODateString;
+  expected_return_rate: DecimalString;
+  return_type: "NOMINAL";
+  output_mode: "NOMINAL";
+  horizon_months: number;
+  rate_basis: RateBasis;
+  contribution_timing: ContributionTiming;
+}
+
+export interface GoalBudgetAllocation {
+  goal_id: string;
+  scenario_monthly_contribution: DecimalString;
+}
+
+export interface GoalBudgetScenario {
+  scenario_id: GoalBudgetScenarioId;
+  allocations: GoalBudgetAllocation[];
+}
+
+export interface GoalBudgetPreviewRequest {
+  goal_ids: string[];
+  monthly_budget: DecimalString;
+  assumptions: GoalBudgetAssumptions;
+  target_value_basis: "NOMINAL";
+  scenarios: [GoalBudgetScenario, GoalBudgetScenario];
+}
+
+export interface GoalBudgetScenarioSummary extends GoalBudgetScenario {
+  allocated_total: DecimalString;
+  unallocated_amount: DecimalString;
+  exceeded_amount: DecimalString;
+}
+
+export interface GoalBudgetItem {
+  goal_id: string;
+  name: string;
+  target_amount: DecimalString | null;
+  current_amount: DecimalString | null;
+  source_type: "USER_GOVERNED_GOAL";
+  goal_updated_at: ISODatetimeString | null;
+  initial_wealth_fact: InitialWealthFact | null;
+  availability: "AVAILABLE" | "UNAVAILABLE";
+  impediment_code: GoalBudgetImpediment | null;
+  comparison: ScenarioComparisonResponse | null;
+}
+
+export interface GoalBudgetPreviewResponse {
+  monthly_budget: DecimalString;
+  assumptions: GoalBudgetAssumptions & { inflation_rate: null };
+  target_value_basis: "NOMINAL";
+  reference_scenario_id: "A";
+  scenarios: [GoalBudgetScenarioSummary, GoalBudgetScenarioSummary];
+  results: GoalBudgetItem[];
+}
+
 function postPlanning<T>(path: string, payload: unknown): Promise<T | null> {
   return fetchFromAPI<T>(path, { method: "POST", body: JSON.stringify(payload) });
 }
@@ -294,4 +357,12 @@ export function getPlanningGoalContext(goalId: string) {
 
 export function comparePlanningScenarios(request: ScenarioComparisonRequest) {
   return postPlanning<ScenarioComparisonResponse>("/planning/scenarios/compare", request);
+}
+
+export function previewGoalBudget(request: GoalBudgetPreviewRequest, signal?: AbortSignal) {
+  return requestFromAPI<GoalBudgetPreviewResponse>("/planning/goals/budget-preview", {
+    method: "POST",
+    body: JSON.stringify(request),
+    signal,
+  });
 }

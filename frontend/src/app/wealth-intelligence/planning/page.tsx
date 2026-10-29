@@ -15,9 +15,10 @@ import {
 import type { Goal } from "@/app/goals/types";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchFromAPI } from "@/lib/api";
+import { AuthError, fetchFromAPI } from "@/lib/api";
 
 import { GoalPlanningCapability } from "./components/GoalPlanningCapability";
+import { GoalBudgetCapability } from "./components/GoalBudgetCapability";
 import { ProjectionCapability } from "./components/ProjectionCapability";
 import { RequiredContributionCapability } from "./components/RequiredContributionCapability";
 import { ScenarioComparisonCapability } from "./components/ScenarioComparisonCapability";
@@ -78,10 +79,15 @@ function PlanningPageContent() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loadingGoals, setLoadingGoals] = useState(true);
   const [goalsError, setGoalsError] = useState<string | null>(null);
+  const [goalsIdentity, setGoalsIdentity] = useState<string | null>(null);
+  const [goalsReload, setGoalsReload] = useState(0);
+  const [goalsExpiredIdentity, setGoalsExpiredIdentity] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     setGoals([]);
+    setGoalsIdentity(null);
     setGoalsError(null);
 
     if (authLoading) {
@@ -101,11 +107,17 @@ function PlanningPageContent() {
 
     async function loadGoals() {
       try {
-        const response = await fetchFromAPI<Goal[]>("/goals");
+        const response = await fetchFromAPI<Goal[]>("/goals", { signal: controller.signal });
         if (!response) throw new Error("Goals response is unavailable");
-        if (active) setGoals(response);
-      } catch {
-        if (active) setGoalsError("As metas não puderam ser carregadas. As análises com valor informado continuam disponíveis.");
+        if (active) {
+          setGoals(response);
+          setGoalsIdentity(identityKey);
+        }
+      } catch (caught) {
+        if (active) {
+          if (caught instanceof AuthError) setGoalsExpiredIdentity(identityKey);
+          else setGoalsError("As metas não puderam ser carregadas. As análises com valor informado continuam disponíveis.");
+        }
       } finally {
         if (active) setLoadingGoals(false);
       }
@@ -114,8 +126,9 @@ function PlanningPageContent() {
     void loadGoals();
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [authLoading, identityKey]);
+  }, [authLoading, identityKey, goalsReload]);
 
   useEffect(() => {
     if (!routeState.needsNormalization) return;
@@ -262,9 +275,13 @@ function PlanningPageContent() {
           {activeIntention === "objective" && objectiveMode === "target" ? <TargetCapability goals={goals} /> : null}
           {activeIntention === "objective" && objectiveMode === "required" ? <RequiredContributionCapability goals={goals} /> : null}
           {activeIntention === "objective" && objectiveMode === "goals" ? (
-            <GoalPlanningCapability
-              goals={goals}
-              loadingGoals={loadingGoals}
+            <GoalObjectiveEntry
+              key={identityKey ?? "signed-out"}
+              goals={goalsIdentity === identityKey && !authLoading ? goals : []}
+              loadingGoals={loadingGoals || (identityKey !== null && goalsIdentity !== identityKey && !goalsError)}
+              goalsError={goalsError}
+              sessionExpired={identityKey !== null && goalsExpiredIdentity === identityKey}
+              onRefreshGoals={() => setGoalsReload((version) => version + 1)}
               initialGoalId={routeState.goalId}
             />
           ) : null}
@@ -273,6 +290,28 @@ function PlanningPageContent() {
       </div>
     </PageLayout>
   );
+}
+
+function GoalObjectiveEntry(props: {
+  goals: Goal[];
+  loadingGoals: boolean;
+  goalsError: string | null;
+  sessionExpired: boolean;
+  onRefreshGoals: () => void;
+  initialGoalId: string | null;
+}) {
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  useEffect(() => { setBudgetOpen(false); }, [props.initialGoalId]);
+  return <div className="space-y-3">
+    <div className="flex justify-end">
+      <button type="button" aria-expanded={budgetOpen} aria-controls="goal-objective-content" onClick={() => setBudgetOpen((open) => !open)} className="min-h-11 rounded-lg px-3 text-sm font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        {budgetOpen ? "Voltar à meta individual" : "Distribuir orçamento"}
+      </button>
+    </div>
+    <div id="goal-objective-content">
+      {budgetOpen ? <GoalBudgetCapability {...props} /> : <GoalPlanningCapability goals={props.goals} loadingGoals={props.loadingGoals} initialGoalId={props.initialGoalId} />}
+    </div>
+  </div>;
 }
 
 function PlanningPageFallback() {

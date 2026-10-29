@@ -54,6 +54,11 @@ export async function requestFromAPI<T>(
     cache: "no-store",
   });
 
+  // Cancellable callers must not let an obsolete 401 clear a replacement session.
+  if (options.signal?.aborted || (options.signal && typeof window !== "undefined" && localStorage.getItem("fin_token") !== token)) {
+    throw new DOMException("Request belongs to an inactive session", "AbortError");
+  }
+
   if (response.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("fin_token");

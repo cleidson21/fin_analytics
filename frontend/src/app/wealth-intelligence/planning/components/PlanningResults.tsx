@@ -118,8 +118,8 @@ function ResultHero({
   );
 }
 
-export function PlanningStatusBadge({ status }: { status: string }) {
-  const style = statusBadgeStyles[status] ?? "border-border bg-muted/40 text-muted-foreground";
+export function PlanningStatusBadge({ status, neutral = false }: { status: string; neutral?: boolean }) {
+  const style = neutral ? "border-border bg-muted/40 text-foreground" : statusBadgeStyles[status] ?? "border-border bg-muted/40 text-muted-foreground";
   return (
     <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${style}`}>
       {statusLabels[status] ?? status}

@@ -1,0 +1,484 @@
+{
+  "monthly_budget": "0",
+  "assumptions": {
+    "as_of_date": "2026-10-28",
+    "expected_return_rate": "0",
+    "return_type": "NOMINAL",
+    "output_mode": "NOMINAL",
+    "inflation_rate": null,
+    "horizon_months": 2,
+    "rate_basis": "EFFECTIVE_ANNUAL",
+    "contribution_timing": "END_OF_MONTH"
+  },
+  "target_value_basis": "NOMINAL",
+  "reference_scenario_id": "A",
+  "scenarios": [
+    {
+      "scenario_id": "A",
+      "allocations": [
+        {
+          "goal_id": "00000000-0000-0000-0000-000000000001",
+          "scenario_monthly_contribution": "0"
+        }
+      ],
+      "allocated_total": "0",
+      "unallocated_amount": "0",
+      "exceeded_amount": "0"
+    },
+    {
+      "scenario_id": "B",
+      "allocations": [
+        {
+          "goal_id": "00000000-0000-0000-0000-000000000001",
+          "scenario_monthly_contribution": "0"
+        }
+      ],
+      "allocated_total": "0",
+      "unallocated_amount": "0",
+      "exceeded_amount": "0"
+    }
+  ],
+  "results": [
+    {
+      "goal_id": "00000000-0000-0000-0000-000000000001",
+      "name": "Reserva",
+      "target_amount": "100.00",
+      "current_amount": "0.00",
+      "source_type": "USER_GOVERNED_GOAL",
+      "goal_updated_at": "2026-10-28T00:00:00",
+      "initial_wealth_fact": {
+        "source": "GOAL_CURRENT_AMOUNT",
+        "amount": "0.00",
+        "scope": "GOAL",
+        "as_of": {
+          "reference_month": null,
+          "observed_at": "2026-10-28T00:00:00"
+        },
+        "provenance": {
+          "source_type": "USER_GOVERNED_GOAL",
+          "goal_id": "00000000-0000-0000-0000-000000000001",
+          "account_id": null,
+          "reference_month": null,
+          "run_id": null,
+          "created_at": "2026-01-01T00:00:00",
+          "updated_at": "2026-10-28T00:00:00"
+        }
+      },
+      "availability": "AVAILABLE",
+      "impediment_code": null,
+      "comparison": {
+        "reference_scenario_id": "A",
+        "entries": [
+          {
+            "scenario_id": "A",
+            "label": null,
+            "archetype": null,
+            "initial_wealth_fact": {
+              "source": "GOAL_CURRENT_AMOUNT",
+              "amount": "0.00",
+              "scope": "GOAL",
+              "as_of": {
+                "reference_month": null,
+                "observed_at": "2026-10-28T00:00:00"
+              },
+              "provenance": {
+                "source_type": "USER_GOVERNED_GOAL",
+                "goal_id": "00000000-0000-0000-0000-000000000001",
+                "account_id": null,
+                "reference_month": null,
+                "run_id": null,
+                "created_at": "2026-01-01T00:00:00",
+                "updated_at": "2026-10-28T00:00:00"
+              }
+            },
+            "assumptions": {
+              "as_of_date": "2026-10-28",
+              "scenario_monthly_contribution": "0",
+              "expected_return_rate": "0",
+              "return_type": "NOMINAL",
+              "output_mode": "NOMINAL",
+              "inflation_rate": null,
+              "horizon_months": 2,
+              "target_date": null,
+              "rate_basis": "EFFECTIVE_ANNUAL",
+              "contribution_timing": "END_OF_MONTH"
+            },
+            "projection_result": {
+              "initial_wealth_fact": {
+                "source": "GOAL_CURRENT_AMOUNT",
+                "amount": "0.00",
+                "scope": "GOAL",
+                "as_of": {
+                  "reference_month": null,
+                  "observed_at": "2026-10-28T00:00:00"
+                },
+                "provenance": {
+                  "source_type": "USER_GOVERNED_GOAL",
+                  "goal_id": "00000000-0000-0000-0000-000000000001",
+                  "account_id": null,
+                  "reference_month": null,
+                  "run_id": null,
+                  "created_at": "2026-01-01T00:00:00",
+                  "updated_at": "2026-10-28T00:00:00"
+                }
+              },
+              "assumptions": {
+                "as_of_date": "2026-10-28",
+                "scenario_monthly_contribution": "0",
+                "expected_return_rate": "0",
+                "return_type": "NOMINAL",
+                "output_mode": "NOMINAL",
+                "inflation_rate": null,
+                "horizon_months": 2,
+                "target_date": null,
+                "rate_basis": "EFFECTIVE_ANNUAL",
+                "contribution_timing": "END_OF_MONTH"
+              },
+              "effective_projection_annual_rate": "0",
+              "monthly_equivalent_rate": "0",
+              "periods": [
+                {
+                  "period": 1,
+                  "period_end": "2026-11-30",
+                  "opening_wealth": "0.00",
+                  "contribution": "0",
+                  "projected_return": "0.00",
+                  "ending_wealth": "0.00",
+                  "cumulative_contributions": "0.00",
+                  "cumulative_projected_growth": "0.00"
+                },
+                {
+                  "period": 2,
+                  "period_end": "2026-12-31",
+                  "opening_wealth": "0.00",
+                  "contribution": "0",
+                  "projected_return": "0.00",
+                  "ending_wealth": "0.00",
+                  "cumulative_contributions": "0.00",
+                  "cumulative_projected_growth": "0.00"
+                }
+              ],
+              "initial_wealth": "0.00",
+              "final_wealth": "0.00",
+              "total_contributions": "0.00",
+              "total_projected_growth": "0.00",
+              "as_of_date": "2026-10-28",
+              "horizon_months": 2
+            },
+            "target_achievement_result": {
+              "status": "UNREACHABLE",
+              "target_amount": "100.00",
+              "initial_wealth_fact": {
+                "source": "GOAL_CURRENT_AMOUNT",
+                "amount": "0.00",
+                "scope": "GOAL",
+                "as_of": {
+                  "reference_month": null,
+                  "observed_at": "2026-10-28T00:00:00"
+                },
+                "provenance": {
+                  "source_type": "USER_GOVERNED_GOAL",
+                  "goal_id": "00000000-0000-0000-0000-000000000001",
+                  "account_id": null,
+                  "reference_month": null,
+                  "run_id": null,
+                  "created_at": "2026-01-01T00:00:00",
+                  "updated_at": "2026-10-28T00:00:00"
+                }
+              },
+              "assumptions": {
+                "as_of_date": "2026-10-28",
+                "scenario_monthly_contribution": "0",
+                "expected_return_rate": "0",
+                "return_type": "NOMINAL",
+                "output_mode": "NOMINAL",
+                "inflation_rate": null,
+                "horizon_months": 2,
+                "target_date": null,
+                "rate_basis": "EFFECTIVE_ANNUAL",
+                "contribution_timing": "END_OF_MONTH"
+              },
+              "achievement_period": null,
+              "achievement_date": null,
+              "months_required": null,
+              "achieved_wealth": null,
+              "projection_result": {
+                "initial_wealth_fact": {
+                  "source": "GOAL_CURRENT_AMOUNT",
+                  "amount": "0.00",
+                  "scope": "GOAL",
+                  "as_of": {
+                    "reference_month": null,
+                    "observed_at": "2026-10-28T00:00:00"
+                  },
+                  "provenance": {
+                    "source_type": "USER_GOVERNED_GOAL",
+                    "goal_id": "00000000-0000-0000-0000-000000000001",
+                    "account_id": null,
+                    "reference_month": null,
+                    "run_id": null,
+                    "created_at": "2026-01-01T00:00:00",
+                    "updated_at": "2026-10-28T00:00:00"
+                  }
+                },
+                "assumptions": {
+                  "as_of_date": "2026-10-28",
+                  "scenario_monthly_contribution": "0",
+                  "expected_return_rate": "0",
+                  "return_type": "NOMINAL",
+                  "output_mode": "NOMINAL",
+                  "inflation_rate": null,
+                  "horizon_months": 2,
+                  "target_date": null,
+                  "rate_basis": "EFFECTIVE_ANNUAL",
+                  "contribution_timing": "END_OF_MONTH"
+                },
+                "effective_projection_annual_rate": "0",
+                "monthly_equivalent_rate": "0",
+                "periods": [
+                  {
+                    "period": 1,
+                    "period_end": "2026-11-30",
+                    "opening_wealth": "0.00",
+                    "contribution": "0",
+                    "projected_return": "0.00",
+                    "ending_wealth": "0.00",
+                    "cumulative_contributions": "0.00",
+                    "cumulative_projected_growth": "0.00"
+                  },
+                  {
+                    "period": 2,
+                    "period_end": "2026-12-31",
+                    "opening_wealth": "0.00",
+                    "contribution": "0",
+                    "projected_return": "0.00",
+                    "ending_wealth": "0.00",
+                    "cumulative_contributions": "0.00",
+                    "cumulative_projected_growth": "0.00"
+                  }
+                ],
+                "initial_wealth": "0.00",
+                "final_wealth": "0.00",
+                "total_contributions": "0.00",
+                "total_projected_growth": "0.00",
+                "as_of_date": "2026-10-28",
+                "horizon_months": 2
+              }
+            },
+            "final_wealth_delta": "0.00",
+            "total_contributions_delta": "0.00",
+            "total_projected_growth_delta": "0.00",
+            "months_saved_or_lost": null
+          },
+          {
+            "scenario_id": "B",
+            "label": null,
+            "archetype": null,
+            "initial_wealth_fact": {
+              "source": "GOAL_CURRENT_AMOUNT",
+              "amount": "0.00",
+              "scope": "GOAL",
+              "as_of": {
+                "reference_month": null,
+                "observed_at": "2026-10-28T00:00:00"
+              },
+              "provenance": {
+                "source_type": "USER_GOVERNED_GOAL",
+                "goal_id": "00000000-0000-0000-0000-000000000001",
+                "account_id": null,
+                "reference_month": null,
+                "run_id": null,
+                "created_at": "2026-01-01T00:00:00",
+                "updated_at": "2026-10-28T00:00:00"
+              }
+            },
+            "assumptions": {
+              "as_of_date": "2026-10-28",
+              "scenario_monthly_contribution": "0",
+              "expected_return_rate": "0",
+              "return_type": "NOMINAL",
+              "output_mode": "NOMINAL",
+              "inflation_rate": null,
+              "horizon_months": 2,
+              "target_date": null,
+              "rate_basis": "EFFECTIVE_ANNUAL",
+              "contribution_timing": "END_OF_MONTH"
+            },
+            "projection_result": {
+              "initial_wealth_fact": {
+                "source": "GOAL_CURRENT_AMOUNT",
+                "amount": "0.00",
+                "scope": "GOAL",
+                "as_of": {
+                  "reference_month": null,
+                  "observed_at": "2026-10-28T00:00:00"
+                },
+                "provenance": {
+                  "source_type": "USER_GOVERNED_GOAL",
+                  "goal_id": "00000000-0000-0000-0000-000000000001",
+                  "account_id": null,
+                  "reference_month": null,
+                  "run_id": null,
+                  "created_at": "2026-01-01T00:00:00",
+                  "updated_at": "2026-10-28T00:00:00"
+                }
+              },
+              "assumptions": {
+                "as_of_date": "2026-10-28",
+                "scenario_monthly_contribution": "0",
+                "expected_return_rate": "0",
+                "return_type": "NOMINAL",
+                "output_mode": "NOMINAL",
+                "inflation_rate": null,
+                "horizon_months": 2,
+                "target_date": null,
+                "rate_basis": "EFFECTIVE_ANNUAL",
+                "contribution_timing": "END_OF_MONTH"
+              },
+              "effective_projection_annual_rate": "0",
+              "monthly_equivalent_rate": "0",
+              "periods": [
+                {
+                  "period": 1,
+                  "period_end": "2026-11-30",
+                  "opening_wealth": "0.00",
+                  "contribution": "0",
+                  "projected_return": "0.00",
+                  "ending_wealth": "0.00",
+                  "cumulative_contributions": "0.00",
+                  "cumulative_projected_growth": "0.00"
+                },
+                {
+                  "period": 2,
+                  "period_end": "2026-12-31",
+                  "opening_wealth": "0.00",
+                  "contribution": "0",
+                  "projected_return": "0.00",
+                  "ending_wealth": "0.00",
+                  "cumulative_contributions": "0.00",
+                  "cumulative_projected_growth": "0.00"
+                }
+              ],
+              "initial_wealth": "0.00",
+              "final_wealth": "0.00",
+              "total_contributions": "0.00",
+              "total_projected_growth": "0.00",
+              "as_of_date": "2026-10-28",
+              "horizon_months": 2
+            },
+            "target_achievement_result": {
+              "status": "UNREACHABLE",
+              "target_amount": "100.00",
+              "initial_wealth_fact": {
+                "source": "GOAL_CURRENT_AMOUNT",
+                "amount": "0.00",
+                "scope": "GOAL",
+                "as_of": {
+                  "reference_month": null,
+                  "observed_at": "2026-10-28T00:00:00"
+                },
+                "provenance": {
+                  "source_type": "USER_GOVERNED_GOAL",
+                  "goal_id": "00000000-0000-0000-0000-000000000001",
+                  "account_id": null,
+                  "reference_month": null,
+                  "run_id": null,
+                  "created_at": "2026-01-01T00:00:00",
+                  "updated_at": "2026-10-28T00:00:00"
+                }
+              },
+              "assumptions": {
+                "as_of_date": "2026-10-28",
+                "scenario_monthly_contribution": "0",
+                "expected_return_rate": "0",
+                "return_type": "NOMINAL",
+                "output_mode": "NOMINAL",
+                "inflation_rate": null,
+                "horizon_months": 2,
+                "target_date": null,
+                "rate_basis": "EFFECTIVE_ANNUAL",
+                "contribution_timing": "END_OF_MONTH"
+              },
+              "achievement_period": null,
+              "achievement_date": null,
+              "months_required": null,
+              "achieved_wealth": null,
+              "projection_result": {
+                "initial_wealth_fact": {
+                  "source": "GOAL_CURRENT_AMOUNT",
+                  "amount": "0.00",
+                  "scope": "GOAL",
+                  "as_of": {
+                    "reference_month": null,
+                    "observed_at": "2026-10-28T00:00:00"
+                  },
+                  "provenance": {
+                    "source_type": "USER_GOVERNED_GOAL",
+                    "goal_id": "00000000-0000-0000-0000-000000000001",
+                    "account_id": null,
+                    "reference_month": null,
+                    "run_id": null,
+                    "created_at": "2026-01-01T00:00:00",
+                    "updated_at": "2026-10-28T00:00:00"
+                  }
+                },
+                "assumptions": {
+                  "as_of_date": "2026-10-28",
+                  "scenario_monthly_contribution": "0",
+                  "expected_return_rate": "0",
+                  "return_type": "NOMINAL",
+                  "output_mode": "NOMINAL",
+                  "inflation_rate": null,
+                  "horizon_months": 2,
+                  "target_date": null,
+                  "rate_basis": "EFFECTIVE_ANNUAL",
+                  "contribution_timing": "END_OF_MONTH"
+                },
+                "effective_projection_annual_rate": "0",
+                "monthly_equivalent_rate": "0",
+                "periods": [
+                  {
+                    "period": 1,
+                    "period_end": "2026-11-30",
+                    "opening_wealth": "0.00",
+                    "contribution": "0",
+                    "projected_return": "0.00",
+                    "ending_wealth": "0.00",
+                    "cumulative_contributions": "0.00",
+                    "cumulative_projected_growth": "0.00"
+                  },
+                  {
+                    "period": 2,
+                    "period_end": "2026-12-31",
+                    "opening_wealth": "0.00",
+                    "contribution": "0",
+                    "projected_return": "0.00",
+                    "ending_wealth": "0.00",
+                    "cumulative_contributions": "0.00",
+                    "cumulative_projected_growth": "0.00"
+                  }
+                ],
+                "initial_wealth": "0.00",
+                "final_wealth": "0.00",
+                "total_contributions": "0.00",
+                "total_projected_growth": "0.00",
+                "as_of_date": "2026-10-28",
+                "horizon_months": 2
+              }
+            },
+            "final_wealth_delta": "0.00",
+            "total_contributions_delta": "0.00",
+            "total_projected_growth_delta": "0.00",
+            "months_saved_or_lost": null
+          }
+        ],
+        "as_of_date": "2026-10-28",
+        "horizon_months": 2,
+        "output_mode": "NOMINAL",
+        "contribution_timing": "END_OF_MONTH",
+        "target_amount": "100.00",
+        "target_value_basis": "NOMINAL"
+      }
+    }
+  ]
+}
