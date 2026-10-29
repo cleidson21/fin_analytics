@@ -2,7 +2,7 @@
 
 **Status:** `ACTIVE OWNER — CURRENT RISKS + LOCKED DIRECTION`
 
-**Date:** 2026-10-02
+**Date:** 2026-10-29
 
 ## 1. Current verified state
 
@@ -21,6 +21,106 @@
 Do not infer universal endpoint protection or multi-tenant isolation from the
 local deployment model. Every new contract must verify its own authentication,
 ownership, and scope behavior.
+
+### TSK-SEC-JWT-01 — local remediation, not published (2026-10-29)
+
+At published baseline `0ac08c11ba4a05342641c0c9365977c9d2c727e6`, a
+synthetic, correctly signed refresh token returned HTTP 200 from the real
+Profile context router using the real `get_current_user`. A valid access token
+also returned 200; a signed `sub="not-a-uuid"` returned 500. The pre-fix run was
+`1 passed, 2 failed, 2 warnings`. Root cause: shared HS256 validation checked
+signature/expiry but not token purpose, and UUID parsing errors escaped the
+credential boundary. No personal user/token or live service was used.
+
+The local correction adds `type="access"` to newly issued access tokens;
+refresh tokens retain `type="refresh"`. Existing claims, lifetimes, HS256, configured
+secret, `IJWTService`, login response and `AuthTokenDTO` remain unchanged.
+The HTTP dependency alone owns the access-purpose policy after verified decode:
+explicit `access` is allowed; refresh, unknown, null and other invalid types
+return the existing uniform credential HTTP 401 with `WWW-Authenticate: Bearer`.
+Expiration is required and verified. Invalid/missing/non-UUID subjects return
+401, and UUID parsing cannot escape as 500. Missing tokens keep OAuth2's
+existing 401; nonexistent users keep 401 and inactive users keep the existing
+400 denial. No financial response or JWT payload is included in these errors.
+The generic JWT verifier still verifies both token kinds; it is not access
+authorization. No unverified claims grant access.
+
+`SEC-JWT-LEGACY — REMOVAL PENDING`: transitional compatibility accepts an absent
+`type` only through the same signature, required expiration, UUID and active-user
+checks. An explicit null or refresh type cannot enter this branch. No compatibility configuration was
+added. This branch does not switch off automatically: remove it in a bounded
+follow-up after publication/deployment and the maximum configured lifetime of
+the last pre-change access token (default 60 minutes), once all old issuers
+have stopped. Existing legitimate sessions need no mass invalidation. This is
+not a permanent promise to support untyped tokens.
+
+Checkpoint regression on 2026-10-29 reran the same 43-file selection in a
+single process: **1161 passed, 121 warnings, 0 failed, 0 errors, 0 skipped**
+in 28.29 seconds. It used the repository virtualenv, a new dedicated parent
+under the OS temporary directory, a new `pytest` child as `--basetemp`, and a
+dedicated disposable SQLite `TEST_DATABASE_URL`. The warnings were the same
+Pydantic, `datetime.utcnow()` and Goals AsyncMock categories described below.
+No production database, network, or model was used. Reproducible PowerShell:
+
+```powershell
+$jwtTempParent = Join-Path $env:TEMP ('finanalytics-sec-jwt-checkpoint-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $jwtTempParent -ErrorAction Stop | Out-Null
+$jwtTempBase = Join-Path $jwtTempParent 'pytest'
+$jwtTestDbPath = (Join-Path $jwtTempParent 'isolated-test.db').Replace('\','/')
+$env:TEST_DATABASE_URL = 'sqlite+aiosqlite:///' + $jwtTestDbPath
+$jwtRegressionFiles = @(rg --files tests/unit | Where-Object { $_ -match 'test_(jwt_|planning_|goal|profile_context_api|income_candidate_api|fire_|wealth_home_|smart_context_|smart_financial_context_|recurring_income_|database_bootstrap_safety)' } | Sort-Object)
+.\.venv\Scripts\python.exe -m pytest @jwtRegressionFiles -q -p no:cacheprovider "--basetemp=$jwtTempBase"
+```
+
+Two focused files (`tests/unit/test_jwt_service.py` and
+`tests/unit/test_jwt_auth_boundary.py`) cover issuance/expiry/jti/signatures,
+purpose and malformed claims, expired/absent/invalid/tampered/wrong-algorithm
+tokens, legacy access, absent/inactive users, login and DTO parity. Production
+Planning, Profile and Financial Context routes run through real authentication
+with mocked infrastructure; the Planning projection uses its certified engine.
+Captured DEBUG logs and error canaries contain no tested secret/token/password
+or private financial/identity payload. This is bounded test evidence, not a
+global logging or authentication security certification.
+
+Executed from repository root, using the existing Python 3.14 virtualenv:
+
+```powershell
+# Before correction, this file contained only the three reproduction cases:
+.\.venv\Scripts\python.exe -m pytest tests/unit/test_jwt_auth_boundary.py -q -p no:cacheprovider --basetemp=.pytest_tmp/tsk_sec_jwt_before
+# Final focused coverage: 66 passed, 11 warnings
+.\.venv\Scripts\python.exe -m pytest tests/unit/test_jwt_service.py tests/unit/test_jwt_auth_boundary.py -q -p no:cacheprovider --basetemp=.pytest_tmp/tsk_sec_jwt_focused_final
+# Expanded regression selection, including the 66 new cases:
+$jwtRegressionFiles = @(rg --files tests/unit | Where-Object { $_ -match 'test_(jwt_|planning_|goal|profile_context_api|income_candidate_api|fire_|wealth_home_|smart_context_|smart_financial_context_|recurring_income_|database_bootstrap_safety)' } | Sort-Object)
+.\.venv\Scripts\python.exe -m pytest @jwtRegressionFiles -q -p no:cacheprovider --basetemp=.pytest_tmp/tsk_sec_jwt_regression
+```
+
+The expanded run returned `1156 passed, 121 warnings, 5 errors`; all errors were
+`tmp_path` setup `WinError 3` because `.pytest_tmp` did not yet exist. Created
+that parent directory, then reran exactly the five affected nodes:
+
+```powershell
+New-Item -ItemType Directory -Path .pytest_tmp -Force | Out-Null
+.\.venv\Scripts\python.exe -m pytest tests/unit/test_database_bootstrap_safety.py::test_engine_uses_canonical_configured_database_url tests/unit/test_database_bootstrap_safety.py::test_runtime_engines_enable_sqlite_foreign_keys tests/unit/test_database_bootstrap_safety.py::test_backend_main_import_does_not_mutate_schema tests/unit/test_database_bootstrap_safety.py::test_backend_main_import_never_calls_create_all tests/unit/test_smart_context_migration.py::test_b1_migration_upgrade_downgrade_and_metadata_sync -q -p no:cacheprovider --basetemp=.pytest_tmp/tsk_sec_jwt_retry
+```
+
+Retry: `5 passed`, no warnings; all 1,161 distinct selected cases passed across
+these two runs, not a single 1,161-pass run. Observed warnings were existing
+Pydantic class-config deprecations, `datetime.utcnow()` deprecations and Goals
+AsyncMock unawaited-coroutine warnings. The first plain `python -m pytest`
+attempt selected system Python 3.12 without pytest; no dependency was installed.
+An intermediate focused run was `64 passed, 2 failed, 11 warnings` due solely
+to new tests using `nominal_final_wealth` instead of the existing `final_wealth`;
+the assertions were corrected before the final 66-pass run. Immediately after
+the production fix, the original three cases passed (`3 passed, 2 warnings`).
+
+Status: vulnerability reproduced, correction implemented and selected tests
+passed locally; remediation **IMPLEMENTED / VALIDATED / LOCAL CHECKPOINT /
+UNPUBLISHED / NOT DEPLOYED**. Functional commit:
+`79c7280ce6eb6a8ab362759ac4d884264b4be8ff`.
+No active database, internet, new migration/dependency, frontend, financial
+Engine, secret rotation, refresh endpoint/rotation, revocation or AI change.
+The existing security follow-up queue remains in `IMPLEMENTATION_ROADMAP.md`;
+global system security is not approved by this remediation.
 
 ## 2. Financial authority
 

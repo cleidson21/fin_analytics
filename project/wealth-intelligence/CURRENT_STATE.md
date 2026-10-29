@@ -2,11 +2,29 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-29 — R6.5-B published; R6.5-C user accepted; Journey A functionally accepted, publication pending
+**Updated:** 2026-10-29 — R6.5-C accepted/committed/pushed; Journey A functionally accepted/published; JWT remediation local/unpublished
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
 `IMPLEMENTATION_ROADMAP.md`.
+
+TSK-SEC-JWT-01 is `REPRODUCED / IMPLEMENTED / VALIDATED / LOCAL CHECKPOINT /
+UNPUBLISHED`; functional commit `79c7280ce6eb6a8ab362759ac4d884264b4be8ff`.
+The published baseline accepted refresh JWTs as
+access Bearers (HTTP 200) and returned 500 for malformed textual UUID subjects.
+New access tokens explicitly declare their purpose; the shared HTTP boundary
+rejects refresh/invalid types and malformed subjects with 401, retaining valid
+legacy access sessions and the existing inactive-user policy. Focused coverage
+passed 66 tests (11 warnings); expanded regressions passed 1,156 (121 warnings)
+with five temporary-directory setup errors, then those five passed on isolated
+retry. The checkpoint reran the same 43-file selection in one process:
+`1161 passed, 121 warnings, 0 failed, 0 errors, 0 skipped`; no full-suite or
+global-security approval is claimed. `SEC-JWT-LEGACY — REMOVAL PENDING` tracks
+the compatibility branch without an automatic cutoff. Reproduction,
+commands, limitations and legacy sunset policy are owned by
+`SECURITY_AND_GOVERNANCE.md`. The Journey A publication below predates this
+local security checkpoint; operational R4 remains separately gated, `LOCAL_ONLY`
+remains the default and R7 is not started.
 
 ## Current milestone
 
@@ -63,9 +81,9 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R6.4 Goal Batch Contribution Preview | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
 | 10.R6.5-A budget contract | `CONTRACT APPROVED` |
 | 10.R6.5-B budget backend | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
-| 10.R6.5-C product integration | `IMPLEMENTED / AUTOMATED GATES PASSED / USER ACCEPTED / PUBLICATION PENDING` |
+| 10.R6.5-C product integration | `IMPLEMENTED / AUTOMATED GATES PASSED / USER ACCEPTED / COMMITTED / PUSHED` |
 | Later R6 increments | `NOT AUTHORIZED` |
-| Wealth OS Realignment | R2 and R5 closed; R3 foundation independently approved; R4-A/B/C closed, operational R4 gated; R6.1–R6.5-B published; R6.5-A approved; C user accepted; Journey A functionally accepted/publication pending; R7 not started |
+| Wealth OS Realignment | R2 and R5 closed; R3 foundation independently approved; R4-A/B/C closed, operational R4 gated; R6.1–R6.5-B published; R6.5-A approved; C user accepted/committed/pushed; Journey A functionally accepted/published; R7 not started |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -316,9 +334,14 @@ covered per-Goal results against the API, navigation/deep links, responsive
 layouts, Light/Dark/System, keyboard and safe session cases including delayed
 401. No screenshots are claimed. This acceptance covers Goal selection, context,
 progress, individual and joint planning, required contributions, monthly budget,
-A/B comparisons and certified results. R6.5-C publication requires separate
-authorization; it does not imply deployment, operational AI, Health-derived
-assumptions, automatic Goal wealth linkage, Portfolio Intelligence or R7 closure.
+A/B comparisons and certified results. R6.5-C is now `USER ACCEPTED / COMMITTED /
+PUSHED` at `0ac08c11ba4a05342641c0c9365977c9d2c727e6` (functional parent
+`342c83ced47419269d4ae850345e5cd5a368a4c7`); at this task's preflight local
+`develop` and the existing `origin/develop` ref matched that checkpoint. Publication is confirmed by the
+owner's current task; no network refresh was performed. Journey A is
+`FUNCTIONALLY ACCEPTED / PUBLISHED`. Publication does not imply deployment,
+operational AI, Health-derived assumptions, automatic Goal wealth linkage,
+Portfolio Intelligence or R7 closure.
 No Health-derived future capacity or automatic Goal–FIRE/portfolio link exists.
 
 R1 locks a target information architecture but changes no route. Existing deep
@@ -694,7 +717,7 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   PASSED / COMMITTED / PUSHED`. R6.3 Goal Monitoring Overview is `IMPLEMENTED /
   FOCUSED TESTS PASSED / COMMITTED / PUSHED`. R6.4 Goal Batch Contribution
   Preview is `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED`.
-  R6.5-A's contract is approved; R6.5-B is committed/pushed; R6.5-C is user accepted, and Journey A is functionally accepted with publication pending;
+  R6.5-A's contract is approved; R6.5-B is committed/pushed; R6.5-C is user accepted/committed/pushed, and Journey A is functionally accepted/published;
   R7, Advisor, Portfolio Intelligence, and later increments remain gated.
 - `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` records the approved R6.1
   contract and implementation evidence and is included in the published

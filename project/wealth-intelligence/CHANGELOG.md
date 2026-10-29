@@ -1,5 +1,51 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-SEC-JWT-01-CHECKPOINT] — 2026-10-29 — Full selected regression
+
+- Reran the same 43-file JWT, Planning, Goals, Profile, Financial Context,
+  FIRE, Wealth Home, Smart Context and bootstrap selection in one isolated
+  process: `1161 passed, 121 warnings, 0 failed, 0 errors, 0 skipped`. A new
+  dedicated OS temporary directory held the pytest base and disposable test DB.
+  Command and warning categories are recorded in `SECURITY_AND_GOVERNANCE.md`.
+- `SEC-JWT-LEGACY — REMOVAL PENDING`: existing untyped access compatibility
+  has no automatic cutoff. Its later removal requires an adequate legacy-session
+  expiry window and evaluation of active-user impact. No policy changed here.
+- Functional commit `79c7280ce6eb6a8ab362759ac4d884264b4be8ff` is local;
+  SEC-JWT-01 is `IMPLEMENTED / VALIDATED / LOCAL CHECKPOINT / UNPUBLISHED`.
+  The prior task entry below records its then-uncommitted state. Journey A stays
+  functionally accepted/published; R4 is separately gated, `LOCAL_ONLY` is the
+  default and R7 is not started. No global-security approval or deploy is implied.
+
+## [TSK-SEC-JWT-01] — 2026-10-29 — Access/refresh JWT separation, local only
+
+- Reproduced on `0ac08c11ba4a05342641c0c9365977c9d2c727e6`: real Profile
+  router and JWT dependency accepted a synthetic refresh Bearer (200), and
+  malformed UUID identity returned 500. Pre-fix: `1 passed, 2 failed, 2 warnings`.
+- Added `type="access"` to issuance and an access-only check after verified
+  HTTP decode; required expiration, safe UUID parsing and uniform invalid-
+  credential 401 preserve signatures, lifetimes, login/DTO and inactive-user
+  policy. Valid legacy access without `type` remains temporarily compatible;
+  explicit null/unknown/refresh types cannot use that fallback. No new setting.
+- Added 66 focused unit/real-HTTP cases, all passed with 11 warnings. Expanded
+  Planning/Goals/FIRE/Profile/Financial Context/Wealth Home/Smart Context and
+  bootstrap selection returned `1156 passed, 121 warnings, 5 errors` (missing
+  temporary parent directory); those exact five passed after directory creation,
+  without warnings. This is 1,161 distinct passing cases across runs. Commands,
+  intermediate test/environment failures and sunset limits are recorded in
+  `SECURITY_AND_GOVERNANCE.md`; existing historical test counts are untouched.
+- Reconciled active R6.5-C owners to `USER ACCEPTED / COMMITTED / PUSHED` and
+  Journey A to `FUNCTIONALLY ACCEPTED / PUBLISHED`: functional parent
+  `342c83ced47419269d4ae850345e5cd5a368a4c7`, documentary checkpoint
+  `0ac08c11ba4a05342641c0c9365977c9d2c727e6`. Local `develop` and the existing
+  remote-tracking ref match; publication is owner-confirmed, not freshly fetched.
+  Earlier acceptance and pre-publication entries below remain historical.
+- Security correction is **IMPLEMENTED / TESTED LOCALLY / UNCOMMITTED /
+  UNPUBLISHED / NOT DEPLOYED**. No staging/commit/push, financial Engine,
+  frontend, migration/dependency, active database, internet, secret rotation,
+  refresh rotation/revocation or AI change. R4 remains separately gated; R7 is
+  not started. Global authentication/system security is not certified. Remaining
+  security labels and next SEC-DEP task stay in the existing roadmap.
+
 ## [TSK-R6.5-C-ACCEPTANCE-CHECKPOINT] — 2026-10-29 — Journey A functional acceptance
 
 - The responsible owner formally accepted R6.5-C and Journey A's functional

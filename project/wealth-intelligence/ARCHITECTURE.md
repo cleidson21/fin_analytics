@@ -38,7 +38,7 @@ Verified current facts:
   contracts/read-only registry/audit boundary, and R5 Wealth Home exist.
 - Operational AI adapters/dispatch and Portfolio Intelligence remain absent.
   R6.1–R6.5-B are published; the R6.5-C budget UI is implemented, tested and
-  user accepted. Journey A is functionally accepted; publication is pending.
+  user accepted/committed/pushed. Journey A is `FUNCTIONALLY ACCEPTED / PUBLISHED`.
   Exact present evidence is owned by `CURRENT_STATE.md`.
 
 ## 2. Target architecture

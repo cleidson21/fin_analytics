@@ -5,7 +5,7 @@
 **R5 technical checkpoint:** `COMMITTED / PUSHED` at
 `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`
 
-**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1-R6.5-B COMMITTED / PUSHED / R6.5-A CONTRACT APPROVED / R6.5-C IMPLEMENTED — AUTOMATED GATES PASSED — USER ACCEPTED — PUBLICATION PENDING`
+**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1-R6.5-B COMMITTED / PUSHED / R6.5-A CONTRACT APPROVED / R6.5-C IMPLEMENTED — AUTOMATED GATES PASSED — USER ACCEPTED — COMMITTED — PUSHED / JOURNEY A FUNCTIONALLY ACCEPTED — PUBLISHED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -57,7 +57,8 @@ distribution into Objetivo → Meta cadastrada, with exact string inputs,
 certified results and session/obsolete-response cleanup. Its 69 focused tests,
 292-test complete frontend suite, TypeScript, affected ESLint and 38-route build
 passed. On 2026-10-29 the owner accepted R6.5-C and Journey A's functional
-scope; remote publication requires separate authorization. Manual evidence is
+scope; the checkpoint is published at `0ac08c11ba4a05342641c0c9365977c9d2c727e6`
+(functional parent `342c83ced47419269d4ae850345e5cd5a368a4c7`). Manual evidence is
 user-reported, not directly observed by the agent; see `CURRENT_STATE.md`.
 R7 execution, Advisor, and Portfolio Intelligence remain gated.
 The 2026-10-28 realignment, traceability matrix, six product journeys, and next
