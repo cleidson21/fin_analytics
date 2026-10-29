@@ -14,6 +14,7 @@ from pydantic import (
     PlainSerializer,
     StrictInt,
     WithJsonSchema,
+    field_validator,
     model_validator,
 )
 
@@ -35,6 +36,7 @@ from backend.domains.planning.goal_batch_contribution import (
     GoalBatchContributionImpediment,
 )
 from backend.domains.planning.target_basis import TargetValueBasis
+from backend.domains.planning.goal_budget import require_budget_money
 from backend.domains.planning.target_solver import TargetAchievementStatus
 from backend.domains.planning.scenario_comparison import ScenarioArchetype
 from backend.domain.enums.goal_status import GoalStatus
@@ -233,6 +235,77 @@ class GoalBatchContributionPreviewRequestDTO(_PlanningRequestDTO):
     def reject_duplicate_goal_ids(self):
         if len(set(self.goal_ids)) != len(self.goal_ids):
             raise ValueError("goal_ids must not contain duplicates")
+        return self
+
+
+class GoalBudgetAssumptionsRequestDTO(_PlanningRequestDTO):
+    """One explicit nominal premise set shared by both distributions."""
+
+    as_of_date: StrictISODate
+    expected_return_rate: StrictDecimalString = Field(
+        description="Effective annual fraction greater than -1."
+    )
+    return_type: Literal[ReturnType.NOMINAL]
+    output_mode: Literal[OutputMode.NOMINAL]
+    horizon_months: StrictInt = Field(ge=1, le=1200)
+    rate_basis: Literal[RateBasis.EFFECTIVE_ANNUAL]
+    contribution_timing: Literal[ContributionTiming.END_OF_MONTH]
+
+    @field_validator("expected_return_rate")
+    @classmethod
+    def validate_rate(cls, value: Decimal) -> Decimal:
+        if value <= Decimal("-1"):
+            raise ValueError("expected_return_rate must be greater than -1")
+        return value
+
+
+class GoalBudgetAllocationRequestDTO(_PlanningRequestDTO):
+    goal_id: UUID
+    scenario_monthly_contribution: StrictDecimalString = Field(
+        description="Nonnegative money with at most two fractional digits."
+    )
+
+    @field_validator("scenario_monthly_contribution")
+    @classmethod
+    def validate_money(cls, value: Decimal) -> Decimal:
+        return require_budget_money(value)
+
+
+class GoalBudgetScenarioRequestDTO(_PlanningRequestDTO):
+    scenario_id: Literal["A", "B"]
+    allocations: tuple[GoalBudgetAllocationRequestDTO, ...] = Field(
+        min_length=1, max_length=GOAL_BATCH_CONTRIBUTION_MAX_GOALS
+    )
+
+
+class GoalBudgetPreviewRequestDTO(_PlanningRequestDTO):
+    """Exactly A/B over the same ordered owned Goal set and monthly budget."""
+
+    goal_ids: tuple[UUID, ...] = Field(
+        min_length=1, max_length=GOAL_BATCH_CONTRIBUTION_MAX_GOALS
+    )
+    monthly_budget: StrictDecimalString = Field(
+        description="Explicit nonnegative monthly budget, at most two fractional digits."
+    )
+    assumptions: GoalBudgetAssumptionsRequestDTO
+    target_value_basis: Literal[TargetValueBasis.NOMINAL]
+    scenarios: tuple[GoalBudgetScenarioRequestDTO, GoalBudgetScenarioRequestDTO]
+
+    @field_validator("monthly_budget")
+    @classmethod
+    def validate_money(cls, value: Decimal) -> Decimal:
+        return require_budget_money(value)
+
+    @model_validator(mode="after")
+    def validate_selection(self):
+        if len(set(self.goal_ids)) != len(self.goal_ids):
+            raise ValueError("goal_ids must not contain duplicates")
+        if tuple(s.scenario_id for s in self.scenarios) != ("A", "B"):
+            raise ValueError("scenarios must be ordered A then B")
+        for scenario in self.scenarios:
+            ids = tuple(a.goal_id for a in scenario.allocations)
+            if len(set(ids)) != len(ids) or set(ids) != set(self.goal_ids):
+                raise ValueError("each scenario must allocate to every selected Goal once")
         return self
 
 
@@ -519,3 +592,38 @@ class ScenarioComparisonResponseDTO(BaseModel):
     contribution_timing: ContributionTiming
     target_amount: Optional[str]
     target_value_basis: Optional[TargetValueBasis]
+
+
+class GoalBudgetAllocationResponseDTO(BaseModel):
+    goal_id: UUID
+    scenario_monthly_contribution: str
+
+
+class GoalBudgetScenarioResponseDTO(BaseModel):
+    scenario_id: Literal["A", "B"]
+    allocations: tuple[GoalBudgetAllocationResponseDTO, ...]
+    allocated_total: str
+    unallocated_amount: str
+    exceeded_amount: str
+
+
+class GoalBudgetItemResponseDTO(BaseModel):
+    goal_id: UUID
+    name: str
+    target_amount: Optional[str]
+    current_amount: Optional[str]
+    source_type: Literal["USER_GOVERNED_GOAL"]
+    goal_updated_at: Optional[datetime]
+    initial_wealth_fact: Optional[InitialWealthFactResponseDTO]
+    availability: GoalBatchContributionAvailability
+    impediment_code: Optional[GoalBatchContributionImpediment]
+    comparison: Optional[ScenarioComparisonResponseDTO]
+
+
+class GoalBudgetPreviewResponseDTO(BaseModel):
+    monthly_budget: str
+    assumptions: GoalBatchContributionAssumptionsResponseDTO
+    target_value_basis: Literal[TargetValueBasis.NOMINAL]
+    reference_scenario_id: Literal["A"]
+    scenarios: tuple[GoalBudgetScenarioResponseDTO, GoalBudgetScenarioResponseDTO]
+    results: tuple[GoalBudgetItemResponseDTO, ...]

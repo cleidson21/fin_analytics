@@ -313,6 +313,7 @@ def test_router_keeps_the_relative_prefix_and_only_approved_planning_routes():
     assert {route.path for route in router.routes} == {
         "/planning/goals/overview",
         "/planning/goals/batch-contribution-preview",
+        "/planning/goals/budget-preview",
         "/planning/goals/{goal_id}/context",
         "/planning/goals/{goal_id}/progress",
         "/planning/goals/{goal_id}/projection",
@@ -346,6 +347,7 @@ def test_app_starts_and_planning_openapi_has_no_fake_or_unapproved_operation():
     assert planning_paths == {
         "/api/v1/planning/goals/overview": ["get"],
         "/api/v1/planning/goals/batch-contribution-preview": ["post"],
+        "/api/v1/planning/goals/budget-preview": ["post"],
         "/api/v1/planning/goals/{goal_id}/context": ["get"],
         "/api/v1/planning/goals/{goal_id}/progress": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],

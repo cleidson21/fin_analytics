@@ -11,6 +11,11 @@ from backend.application.dtos.planning_dto import (
     GoalBatchContributionAssumptionsResponseDTO,
     GoalBatchContributionItemResponseDTO,
     GoalBatchContributionPreviewResponseDTO,
+    GoalBudgetAssumptionsRequestDTO,
+    GoalBudgetAllocationResponseDTO,
+    GoalBudgetItemResponseDTO,
+    GoalBudgetPreviewResponseDTO,
+    GoalBudgetScenarioResponseDTO,
     GoalMonitoringItemResponseDTO,
     GoalMonitoringOverviewResponseDTO,
     GoalMonitoringSummaryResponseDTO,
@@ -48,6 +53,7 @@ from backend.domains.planning.goal_batch_contribution import (
     GoalBatchContributionPreview,
 )
 from backend.domains.planning.goal_monitoring import GoalMonitoringOverview
+from backend.domains.planning.goal_budget import GoalBudgetPreview
 from backend.domains.planning.goal_progress import GoalProgressResult
 from backend.domains.planning.scenario_comparison import (
     ScenarioComparisonEntry,
@@ -100,6 +106,23 @@ def build_goal_batch_contribution_assumptions(
         inflation_rate=request.inflation_rate,
         horizon_months=request.horizon_months,
         target_date=None,
+        rate_basis=request.rate_basis,
+        contribution_timing=request.contribution_timing,
+    )
+
+
+def build_goal_budget_assumptions(
+    request: GoalBudgetAssumptionsRequestDTO,
+) -> ProjectionAssumptions:
+    """Build common certified nominal assumptions; allocations replace only flow."""
+
+    return ProjectionAssumptions(
+        as_of_date=request.as_of_date,
+        scenario_monthly_contribution=Decimal("0.00"),
+        expected_return_rate=request.expected_return_rate,
+        return_type=request.return_type,
+        output_mode=request.output_mode,
+        horizon_months=request.horizon_months,
         rate_basis=request.rate_basis,
         contribution_timing=request.contribution_timing,
     )
@@ -529,4 +552,70 @@ def map_scenario_comparison_result(
             else serialize_decimal(result.target_amount)
         ),
         target_value_basis=result.target_value_basis,
+    )
+
+
+def map_goal_budget_preview(preview: GoalBudgetPreview) -> GoalBudgetPreviewResponseDTO:
+    """Copy exact accounting and certified nested comparisons without calculation."""
+
+    assumptions = preview.assumptions
+    return GoalBudgetPreviewResponseDTO(
+        monthly_budget=serialize_decimal(preview.request.monthly_budget),
+        assumptions=GoalBatchContributionAssumptionsResponseDTO(
+            as_of_date=assumptions.as_of_date,
+            expected_return_rate=serialize_decimal(assumptions.expected_return_rate),
+            return_type=assumptions.return_type,
+            output_mode=assumptions.output_mode,
+            inflation_rate=None,
+            horizon_months=assumptions.resolved_horizon_months,
+            rate_basis=assumptions.rate_basis,
+            contribution_timing=assumptions.contribution_timing,
+        ),
+        target_value_basis=TargetValueBasis.NOMINAL,
+        reference_scenario_id="A",
+        scenarios=tuple(
+            GoalBudgetScenarioResponseDTO(
+                scenario_id=summary.scenario_id,
+                allocations=tuple(
+                    GoalBudgetAllocationResponseDTO(
+                        goal_id=allocation.goal_id,
+                        scenario_monthly_contribution=serialize_decimal(
+                            allocation.scenario_monthly_contribution
+                        ),
+                    )
+                    for allocation in summary.allocations
+                ),
+                allocated_total=serialize_decimal(summary.allocated_total),
+                unallocated_amount=serialize_decimal(summary.unallocated_amount),
+                exceeded_amount=serialize_decimal(summary.exceeded_amount),
+            )
+            for summary in preview.request.summaries
+        ),
+        results=tuple(
+            GoalBudgetItemResponseDTO(
+                goal_id=item.selection.goal.goal_id,
+                name=item.selection.goal.name,
+                target_amount=(
+                    None if item.selection.goal.target_amount is None
+                    else serialize_decimal(item.selection.goal.target_amount)
+                ),
+                current_amount=(
+                    None if item.selection.goal.current_amount is None
+                    else serialize_decimal(item.selection.goal.current_amount)
+                ),
+                source_type="USER_GOVERNED_GOAL",
+                goal_updated_at=item.selection.goal.updated_at,
+                initial_wealth_fact=(
+                    None if item.selection.initial_wealth_fact is None
+                    else map_initial_wealth_fact(item.selection.initial_wealth_fact)
+                ),
+                availability=item.availability,
+                impediment_code=item.impediment,
+                comparison=(
+                    None if item.comparison is None
+                    else map_scenario_comparison_result(item.comparison)
+                ),
+            )
+            for item in preview.items
+        ),
     )

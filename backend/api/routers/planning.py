@@ -10,10 +10,12 @@ from backend.api.dependencies.planning import CurrentPlanningUser, PlanningReadS
 from backend.api.planning_errors import raise_planning_error
 from backend.api.planning_mapping import (
     build_goal_batch_contribution_assumptions,
+    build_goal_budget_assumptions,
     build_projection_assumptions,
     build_user_initial_wealth_fact,
     map_forward_projection_result,
     map_goal_batch_contribution_preview,
+    map_goal_budget_preview,
     map_goal_monitoring_overview,
     map_goal_progress,
     map_goal_planning_result,
@@ -26,6 +28,8 @@ from backend.application.dtos.planning_dto import (
     ForwardProjectionResponseDTO,
     GoalBatchContributionPreviewRequestDTO,
     GoalBatchContributionPreviewResponseDTO,
+    GoalBudgetPreviewRequestDTO,
+    GoalBudgetPreviewResponseDTO,
     GoalMonitoringOverviewResponseDTO,
     GoalProgressResponseDTO,
     GoalPathCurrentAmountInitialWealthRequestDTO,
@@ -57,6 +61,12 @@ from backend.domains.planning.goal_batch_contribution import (
     GoalBatchContributionSelection,
 )
 from backend.domains.planning.goal_monitoring import build_goal_monitoring_overview
+from backend.domains.planning.goal_budget import (
+    GoalBudgetAllocation,
+    GoalBudgetPreviewService,
+    GoalBudgetRequest,
+    GoalBudgetScenario,
+)
 from backend.domains.planning.goal_progress import calculate_goal_progress
 from backend.domains.planning.projection import ForwardProjectionEngine
 from backend.domains.planning.readers import PlanningGoalReadQuery
@@ -157,6 +167,20 @@ def get_goal_batch_contribution_preview_service(
 GoalBatchContributionPreviewServiceDependency = Annotated[
     GoalBatchContributionPreviewService,
     Depends(get_goal_batch_contribution_preview_service),
+]
+
+
+def get_goal_budget_preview_service(
+    engine: ScenarioComparisonEngineDependency,
+) -> GoalBudgetPreviewService:
+    """Inject the existing certified comparison engine into budget orchestration."""
+
+    return GoalBudgetPreviewService(engine)
+
+
+GoalBudgetPreviewServiceDependency = Annotated[
+    GoalBudgetPreviewService,
+    Depends(get_goal_budget_preview_service),
 ]
 
 
@@ -357,6 +381,73 @@ async def batch_goal_contribution_preview(
         raise
     except Exception as error:
         raise_planning_error(error)
+
+
+@router.post(
+    "/goals/budget-preview",
+    response_model=GoalBudgetPreviewResponseDTO,
+)
+async def goal_budget_preview(
+    request: GoalBudgetPreviewRequestDTO,
+    current_user: CurrentPlanningUser,
+    db: PlanningReadSession,
+    goal_reader: PlanningGoalReadQueryDependency,
+    service: GoalBudgetPreviewServiceDependency,
+) -> GoalBudgetPreviewResponseDTO:
+    """Compare equal-total A/B allocations through one owned batch Goal read."""
+
+    try:
+        assumptions = build_goal_budget_assumptions(request.assumptions)
+        budget_request = GoalBudgetRequest(
+            goal_ids=request.goal_ids,
+            monthly_budget=request.monthly_budget,
+            scenarios=tuple(
+                GoalBudgetScenario(
+                    scenario_id=scenario.scenario_id,
+                    allocations=tuple(
+                        GoalBudgetAllocation(a.goal_id, a.scenario_monthly_contribution)
+                        for a in scenario.allocations
+                    ),
+                )
+                for scenario in request.scenarios
+            ),
+        )
+    except Exception as error:
+        raise_planning_error(error)
+
+    try:
+        goals = goal_reader.get_goals_by_ids(db, request.goal_ids, current_user.id)
+        if (
+            len(goals) != len(request.goal_ids)
+            or {goal.goal_id for goal in goals} != set(request.goal_ids)
+            or any(goal.user_id != current_user.id for goal in goals)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="One or more Goals were not found.",
+            )
+        by_id = {goal.goal_id: goal for goal in goals}
+        selections = tuple(
+            GoalBatchContributionSelection(
+                goal=by_id[goal_id],
+                initial_wealth_fact=(
+                    None
+                    if by_id[goal_id].current_amount is None
+                    or by_id[goal_id].current_amount < 0
+                    else goal_reader.current_amount_as_initial_wealth(by_id[goal_id])
+                ),
+            )
+            for goal_id in request.goal_ids
+        )
+        return map_goal_budget_preview(
+            service.preview(selections, assumptions, budget_request)
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        # After input validation, reader/engine/mapper failures are internal,
+        # including broken Decimal invariants. Never expose their detail as 422.
+        raise_planning_error(RuntimeError())
 
 
 @router.get(

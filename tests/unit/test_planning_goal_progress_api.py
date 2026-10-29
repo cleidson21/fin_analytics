@@ -282,6 +282,7 @@ def test_openapi_contract_and_existing_planning_operations_are_preserved():
     assert planning_operations == {
         "/api/v1/planning/goals/overview": ["get"],
         "/api/v1/planning/goals/batch-contribution-preview": ["post"],
+        "/api/v1/planning/goals/budget-preview": ["post"],
         "/api/v1/planning/goals/{goal_id}/context": ["get"],
         "/api/v1/planning/goals/{goal_id}/progress": ["get"],
         "/api/v1/planning/goals/{goal_id}/projection": ["post"],
