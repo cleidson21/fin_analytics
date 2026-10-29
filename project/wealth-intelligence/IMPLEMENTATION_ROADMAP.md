@@ -1,10 +1,388 @@
 # Implementation Roadmap — Wealth OS
-**Status:** `ACTIVE QUEUE — R5 CLOSED / R6 GENERAL GATE SATISFIED / R6.1-R6.3 COMMITTED / PUSHED / R6.4 IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING`
-**Date:** 2026-10-27
+**Status:** `ACTIVE QUEUE — R6.5-A CONTRACT APPROVED / R6.5-B IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / R6.5-C PLANNED / R4 SEPARATELY GATED — SEQUENCED / R7 NOT STARTED`
+**Date:** 2026-10-29
 
 ---
 
-## Active queue
+## Single delivery queue — 2026-10-28 realignment
+
+This is the only execution queue. The project owner authorized this documentary
+reconciliation and R6.5's functional objective on 2026-10-28, then separately
+authorized only R6.5-B backend implementation on 2026-10-29. Existing
+accepted ADRs and locked contracts remain binding. The phase inventory below
+is dependency/history context, not a competing queue. One main task runs at a
+time; an unmet gate stops that task rather than silently selecting another phase.
+
+### Next five concrete deliveries
+
+| Order | Existing ID / bounded work package | Deliverable and exit | State / next action |
+|---:|---|---|---|
+| 1 | R6.5-A — contract definition | D1–D3 approved; exact equal-total A/B nominal budget contract in `GOAL_BUDGET_PREVIEW_CONTRACT.md` | `CONTRACT APPROVED / READY FOR BACKEND`; documentary gate complete, no implementation |
+| 2 | R6.5-B — backend | One transient orchestration of owned Goals, explicit equal-total allocations, budget accounting, and certified per-Goal scenario effects | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`; 192 new tests and 946 relevant regression tests passed (192 included); no commit/push/deploy |
+| 3 | R6.5-C — product integration | Select Goals → distribute budget → compare effects → review transient result in the existing minimal journey | `PLANNED / NOT STARTED`; backend accepted plus explicit UI contract/task; manual acceptance, no new topbar or fourth Planning intention |
+| 4 | R4-C/F activation prerequisites + R4-G pilot specification | Resolve durable audit/retention/HMAC and pre-dispatch guard contract; fix the equivalent synthetic local/online fixture set, budgets, stop rules, and provider permissions | `CONTRACT REQUIRED`; no new persistence, provider call, or benchmark until separately authorized |
+| 5 | R4-D / D.3 — local adapter and bounded offline validation | One provider-neutral Ollama adapter; Qwen 3.5 4B baseline tested on certified synthetic Planning results; exact digest/config and failures recorded | `NOT STARTED` as adapter; separate code/call authorization; isolated adapter test is not product activation |
+
+Then, sequentially: R4-E Gemini adapter (mocks first) → R4-F guarded dispatch
+and approved durable audit implementation → R4-G equivalent offline/online
+pilot → bounded R6 Health/Smart Context and contextual AI integration → R7
+independent closure → 10.5-B contract lock → contracted 10.5 delivery → 10.6
+watchlist/conditions and 10.7 Market/news → full Copilot/10.9 briefing.
+Each arrow requires the preceding applicable gates and a bounded authorization.
+Online pilot execution follows its safety gates; it is not postponed until
+Portfolio Intelligence and cannot bypass R4-F just to satisfy a calendar.
+R4-D/E mocked adapter work can prepare without operational dispatch.
+
+The desired earlier AI tests after the R6.5 UI are represented by items 4–5:
+the real safety prerequisites, not another financial feature, are next. R4-G's
+protocol can be specified at item 4, but live comparison waits for its eligible
+adapters/guard. No R6.6/R6.7 or new R7 feature number is invented. Named work
+packages under an existing phase are not new normative phases.
+
+### Original vision → verified delivery matrix
+
+Historical 10.x mapping comes from the preserved phase records and product
+specification; Rn mapping denotes composition/dependencies, not equivalence or
+blanket authorization. Repository paths are relative to the repository root.
+
+| Original objective | Original phase | Current correspondence | Existing capability | Implementation evidence | Real gap | Dependency | Canonical status | Next delivery milestone |
+|---|---|---|---|---|---|---|---|---|
+| Metas: create and follow objectives | 10.1 | R6.1–R6.5 | CRUD, context/deep link, progress, count-only overview, required-contribution preview | `backend/api/routers/goals.py`; `backend/domains/planning/goal_progress.py`, `goal_monitoring.py`, `goal_batch_contribution.py`; `tests/unit/test_planning_goal_batch_contribution_api.py` | No limited-budget multi-Goal journey; cadastral progress is not synchronized investments | R6.5 contract | R6.1–R6.4 `COMMITTED/PUSHED` | A / R6.5 |
+| Saúde Financeira: understand receipts, spending and surplus | 10.2 | R2 + R6 | Observed cashflow, history, trends, anomalies | `backend/domains/health/service.py`; `backend/api/routers/financial_health.py` | Historical surplus does not certify future affordability | ADR-028; 10.3.7-A decision | Core `IMPLEMENTED/VALIDATED`; capacity `CONTRACT REQUIRED` | B / context presentation, then separate capacity decision |
+| Planning: test contribution alternatives | 10.3 | R6.1/R6.4/R6.5 | Five certified POSTs, R6.4 batch inverse solve and R6.5-B budget preview | `backend/api/routers/planning.py`; `backend/domains/planning/goal_budget.py`, `scenario_comparison.py` | Backend budget accounting/comparison implemented; minimal product integration remains absent | ADR-020/021/023/024; approved R6.5 microcontract | Core closed; R6.5-A approved; B `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` | A / R6.5-C after backend checkpoint/validation |
+| FIRE: understand independence conditions | 10.4 | R5 + R6 | Summary, projected date, required contribution; transient Home result | `backend/api/routers/fire.py`; `frontend/src/app/wealth-intelligence/fire/page.tsx`; `FIRE_CONTRACT.md` | No approved Goal wealth linkage or Health-inferred retirement spending | ADR-025; explicit separate amendment before financial linkage | Core `VALIDATED/CLOSED` | B / contextual navigation and explicit assumptions only |
+| Smart Context: reuse known facts | Later realignment; not an original numbered 10.x capability | R2 → R6/R4 | B5/B7 purpose-limited composition and consumer methods | `backend/application/services/smart_financial_context_service.py`, `smart_context_consumer_foundation.py`; related unit tests | Consumer foundations do not create effective solver inputs | ADR-028; consumer-specific contract | R2 `CLOSED` | B / source-aware context, no generic context API |
+| External Context: sourced economic references | 10.7 foundation | R3 → R6/Market | BCB/SGS ingestion/store and point-in-time reference service | `backend/domains/external_context/`; `backend/application/services/external_reference_context.py`; `tests/unit/test_external_reference_context.py` | No activated Market consumer; Focus deferred; yfinance remediation gated | ADR-029 purpose matrix; R3-G before yfinance admission | Foundation independently approved; later scope gated | E / approved Market consumer, never auto-return input |
+| IA local: usable private interpretation | 10.8 | R4-D/F/G | Provider-neutral contracts, fake, tools/audit; synthetic Ollama lab | `backend/integrations/ai/fake_provider.py`; `tests/unit/test_ai_runtime_contracts.py`; ignored lab reports cited in `AI_AND_LLM.md` | No operational Ollama adapter; factual/schema failures remain | ADR-030; adapter, guard, exact model evidence | `LAB TESTED`, not product-integrated | C / R4-D.3 |
+| IA online: governed remote option | 10.8 | R4-E/F/G | Approved Gemini direction; empty historical scaffold | `backend/integrations/gemini/classifier.py`, `models.py`, `prompts.py`; R4-A policy tests | No Gemini runtime or equivalent online pilot evidence | Remote authorization, paid-policy gate for real data, durable audit | `NOT STARTED` adapter | C / R4-E then guarded R4-G |
+| Portfolio Intelligence: understand composition/concentration | 10.5-A/B | R7 prerequisite, then 10.5-B | Operational Investments, certified aggregate investment wealth | `PORTFOLIO_INTELLIGENCE_CONTRACT_AUDIT.md`; `backend/application/services/planning_portfolio_source_resolver.py` | Position valuation completeness/reconciliation; no certified portfolio-analysis service | R7 closure; preserved `total_atual` decision | 10.5-A resolved; 10.5-B `PAUSED` | D / 10.5-B, not another audit |
+| Watchlist: track chosen assets | 10.6 | Post-R7/10.5, no new Rn assigned | Asset detail/market infrastructure only | `frontend/src/app/wealth/`; current-state absence record | No governed watchlist lifecycle/CRUD | 10.5 completion; ownership/persistence contract | `NOT STARTED` | E / 10.6 contract |
+| Mercado e notícias: sourced events and context | 10.7 | R3 foundation; later Market product | Existing yfinance and BCB/reference foundations, not news runtime | `backend/domains/external_context/`; ADR-006/012/029 | News acquisition, rights, sanitization, relevance and consumer contract | 10.5 completion for historical 10.7 product; R3-G only if yfinance admitted | Foundation exists; product `CONTRACT REQUIRED` | E / 10.7 |
+| Alertas: surface an explicit condition | 10.6, later 10.9 scheduling | Monitor after dependencies, no Rn invented | Health anomalies and Goal data flags only | Health service; `backend/domains/planning/goal_monitoring.py` | No persistent alert rules, delivery or acknowledgement lifecycle | Sourced facts; rule/lifecycle contract | `NOT STARTED` alert product | E / objective UI conditions before push/scheduler |
+| Copilot: ask and explain certified results | 10.8–10.10 vision | R4 foundation + bounded R6 entry; full product later | Five internal read-only tools; no conversational product | `backend/application/services/read_only_ai_tools.py`, `minimal_ai_context.py`; `tests/unit/test_ai_runtime_tools.py` | Adapter/guard, approved result/tool schema and user experience | R4 security/quality gates; domain capability must exist | `NOT STARTED` product | F / one bounded explanation before full Copilot |
+| Briefing: periodic attributable synthesis | 10.9 | Later Copilot/Monitor, no Rn invented | No generator/scheduler; legacy schema is scaffolding | `AI_AND_LLM.md`; R4-C audit boundary | Authorized sources, delivery, retention, staleness and schedule | R4 + accepted product scopes; 10.5 for portfolio briefing | `CONTRACT REQUIRED / NOT STARTED` | F / on-demand sourced briefing before scheduling |
+
+### Milestone cards and closure criteria
+
+Future implementation cards below are **planned work**, not authorization.
+R6.5-A's contract is approved; separately authorized R6.5-B is now implemented
+and tested with its checkpoint pending. Its UI remains unimplemented.
+`READY` requires its named contract, dependencies, and explicit task approval.
+`TESTED` requires recorded commands/results; `USER ACCEPTED` records actual
+scope of manual acceptance; `COMMITTED/PUSHED` requires separate Git evidence.
+No percentage of completion is used. Existing test reports are historical
+evidence, not tests rerun by this realignment.
+
+#### R6.5 — Journey A / contract, backend, then product
+
+- **User objective / concrete delivery:** allocate a limited explicit monthly
+  budget across selected Goals and compare certified effects; deliver the entry
+  contract below, bounded backend orchestration, then the existing minimal UI.
+- **Prerequisites / source / contract:** published R6.1–R6.4; owned Goal facts
+  plus user assumptions; approved D1–D3 and `GOAL_BUDGET_PREVIEW_CONTRACT.md`.
+  No Health or portfolio source.
+- **Main implementation:** existing batch reader and the R6.5-B orchestrator; compare
+  distributions per Goal through `ScenarioComparisonEngine`. No engine rewrite.
+- **Tests / manual validation:** budget arithmetic oracle, null/zero, ownership,
+  comparison equivalence, no writes/N+1, route compatibility; manually select two
+  Goals, edit allocations, exceed budget, compare, cancel edits and switch user.
+- **Acceptance / AI / state / next action:** exact certified results and visible
+  budget states with no recommendation or real-Goal changes; no AI dependency;
+  `R6.5-A CONTRACT APPROVED / B IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / C PLANNED — NOT STARTED`;
+  backend checkpoint requires separate authorization; R6.5-C follows backend
+  validation/publication under its own scoped UI task.
+
+#### R6 — Journey B / Health–Smart Context–Planning–FIRE composition
+
+- **User objective / delivery:** inspect observed monthly facts beside explicit
+  planning assumptions and navigate to FIRE without retyping eligible context.
+- **Prerequisites / source / contract:** R6.5 journey accepted; Health source
+  period/completeness, R2 B5/B7 allowlists and single-user guard; consumer contract
+  required. 10.3.7-A remains deferred; source expansion needs explicit approval.
+- **Implementation:** offer eligible facts through existing authorities, never
+  infer an effective budget, retirement spending or `GOAL_CURRENT_AMOUNT` for
+  FIRE. A Goal–FIRE financial link requires a separate ADR-025 reconciliation.
+- **Tests / manual:** partial/closed months, gross-vs-observed income, stale and
+  missing data, source switching, explicit Use/override, two identities; verify
+  that a reference is never represented as guaranteed forward affordability.
+- **Acceptance / AI / state / next:** provenance and assumptions remain distinct;
+  no AI required; `CONTRACT REQUIRED`; approve one bounded consumer task, not a
+  sustainable-capacity formula by implication.
+
+#### R4-C/F prerequisite — Journey C / operational safety contract
+
+- **User objective / delivery:** provider/tool execution can be refused safely
+  before data leaves the authorized boundary; define durable audit and HMAC
+  operations, retention, access, deletion, and recovery before choosing storage.
+- **Prerequisites / source / contract:** closed R4-A/B/C and ADR-030;
+  `MAT-R4C-01` and `INF-R4C-01`; separate persistence approval if needed. A
+  volatile test sink and legacy `ai_runs` are not an approved durable design.
+- **Implementation / tests:** later R4-F guard uses the existing audit port;
+  fault-inject sink outage, authorization failure, key failure and cancellation,
+  proving zero provider/tool dispatch when required audit cannot be guaranteed.
+- **Manual / acceptance / AI / state / next:** inspect redacted evidence and
+  refusal before any live operational call; no secrets/raw financial payloads;
+  prerequisite for operational AI; `CONTRACT REQUIRED`; obtain bounded approval.
+
+#### R4-D and D.3 — Journey C / local runtime candidate
+
+- **User objective / delivery:** explain a supplied certified synthetic result
+  offline through one Ollama adapter, with explicit unavailability on failure.
+- **Prerequisites / source / contract:** R4-A/C, approved assisted D checklist;
+  Qwen 3.5 4B initial baseline, exact runtime/digest/config verified at execution;
+  no installed-state assumption from old reports or automatic downloads.
+- **Implementation / tests:** adapter over `AIProvider`, bounded health/discovery,
+  generation/cancellation/closure; mocked errors and authorized offline fixture
+  replay, schema/numeric/source validation, resource and latency measurements.
+- **Manual / acceptance / AI / state / next:** verify cloud disabled/loopback and
+  operation offline; acceptance is a tested adapter and explicit limitations,
+  not real-data approval. R4-F still gates operational dispatch. `LAB TESTED /
+  ADAPTER NOT IMPLEMENTED`; authorize D.3 code and finite calls separately.
+
+#### R4-E — Journey C / online adapter
+
+- **User objective / delivery:** an explicit Gemini option, never automatic
+  fallback from offline mode; one adapter, not another Advisor architecture.
+- **Prerequisites / source / contract:** R4-A/C, remote policy, authorized
+  server-side configuration; official SDK/model/policy verification at execution.
+  Free-tier access never authorizes real financial data; no OpenAI default.
+- **Implementation / tests:** one `google-genai` adapter; mocked 429/quota/503,
+  deadline, cancellation, invalid output and SDK retry accounting. Live synthetic
+  calls require explicit budget/quota permission and applicable audit gates.
+- **Manual / acceptance / AI / state / next:** verify consent and provider identity,
+  no key in UI/logs; compatible strict response with safe failure; AI-specific;
+  `NOT STARTED`; approve adapter scope, then guarded online pilot.
+
+#### R4-F — Journey C / guarded dispatch and optional hybrid routing
+
+- **User objective / delivery:** predictable selection, bounded failures, and no
+  silent remote transmission; `LOCAL_ONLY` default and `HYBRID` opt-in.
+- **Prerequisites / source / contract:** D/E capability evidence, approved durable
+  audit implementation, pre-execution guard and policy; evidence registries, not
+  a model ranking guessed from lab pass totals.
+- **Implementation / tests:** one retry controller, deadlines/budgets, approved
+  read-only tools and mode gates; test consent/isolation, no provider fallback in
+  local mode, durable-sink failure before dispatch and no financial writes.
+- **Manual / acceptance / AI / state / next:** deliberately disable a provider
+  and audit sink and inspect safe refusal; security gates passed before live
+  product use; `BLOCKED` on prerequisites; implement only under a scoped task.
+
+#### R4-G — Journey C / comparative offline and online evidence
+
+- **User objective / delivery:** know which eligible configuration can faithfully
+  explain certified results; one comparable synthetic pilot, not endless audits.
+- **Prerequisites / source / contract:** approved call/token/cost ceilings and
+  stop rules; D/E adapters and F gates for runtime-path tests; reuse immutable
+  lab evidence and the test plan in `AI_AND_LLM.md`, not lab verdicts as certification.
+- **Implementation / tests:** equivalent versioned fixtures/expected outputs,
+  bounded runner and separate quality/security/availability/performance results;
+  use backend-certified synthetic R6.4/R6.5 outputs after R6.5 is tested.
+- **Manual / acceptance / AI / state / next:** review explanations blind where
+  useful, without overriding numerical failures; complete reproducible pilot or
+  explicit failed/inconclusive stop, never fabricated ranking. `EXECUTION NOT
+  AUTHORIZED`; specify at queue item 4, execute after safety/adapter readiness.
+
+#### R6 bounded AI entry and R4-H boundary — Journeys C/F
+
+- **User objective / delivery:** ask for an explanation of a selected certified
+  analysis, not a second chat per page or automatic financial recommendation.
+- **Prerequisites / source / contract:** accepted R4 safety and pilot evidence,
+  task-specific data approval, minimum certified result/source schema. R4-B's
+  five read tools do not currently authorize a Planning/FIRE calculation tool;
+  any registry extension requires its own contract. Historical Advisor proposals
+  remain proposals, including the zero-tool interpretation option.
+- **Implementation / tests:** one bounded contextual entry after authorization;
+  exact source/numeric fidelity, abstention, injection, identity clearing,
+  unavailable providers; no automatic scenario execution or persistence.
+- **Manual / acceptance / AI / state / next:** user verifies cited results and
+  limitations; `PRODUCT INTEGRATED` only after acceptance. `CONTRACT REQUIRED`;
+  R4-H personalization/memory is not implicitly activated and needs its own
+  disposition before declaring the selected R4 closure scope complete.
+
+#### R7 — transversal closure, not Portfolio implementation
+
+- **Journey / user objective / delivery:** A–C and bounded F; a coherent accepted
+  baseline with one fresh-context independent validation report.
+- **Prerequisites / source / contract:** R1–R6 closure evidence; operational R4
+  blockers resolved or an explicit separately approved scope/gate amendment.
+  A contract, lab pilot or endpoint alone never closes a product journey.
+- **Implementation / tests / manual:** no feature implementation; review financial
+  authority, context/provenance, auth/privacy, AI gates, regression evidence and
+  the agreed responsive/accessibility/manual matrix without inventing coverage.
+- **Acceptance / AI / state / next:** explicit closure decision with unresolved
+  blockers visible; R4 validation is required, full future Copilot/Portfolio is
+  not a circular prerequisite. `BLOCKED / NOT STARTED`; define the bounded
+  closure checklist after the preceding accepted journeys. Only then 10.5-B.
+
+#### 10.5-B and contracted 10.5 delivery — Journey D
+
+- **User objective / delivery:** understand certified composition/concentration;
+  first lock the preserved 10.5-A valuation and temporal contract, then implement
+  its separately approved MVP.
+- **Prerequisites / source / contract:** R7 closed; `total_atual` direction and
+  deferred performance decision remain resolved; complete position valuation,
+  ownership, currency and aggregate reconciliation rules still need contract.
+- **Implementation / tests / manual:** governed read model only after approval;
+  completeness, date mismatch, Decimal and ownership tests; manually inspect
+  source/unavailable disclosures. No inferred Goal allocation or double counting.
+- **Acceptance / AI / state / next:** source-backed composition without calling
+  wealth evolution performance; AI not required; `PAUSED / BLOCKED`; resume
+  10.5-B, do not repeat 10.5-A absent new contradictory evidence.
+
+#### 10.6 and 10.7 — Journey E / watchlist, market and alerts
+
+- **User objective / delivery:** follow chosen assets and sourced events; show
+  the exact condition, time and facts behind an alert. Separate bounded tasks
+  for watchlist, condition evaluation and Market/news; no bulk authorization.
+- **Prerequisites / source / contract:** historical 10.5 completion gate; R3
+  purposes/freshness, R3-G before eligible yfinance use, approved source rights,
+  watchlist/rule lifecycle and notification contracts. Focus remains deferred.
+- **Implementation / tests / manual:** reuse providers/read boundaries, no second
+  yfinance system; test stale/missing data, source attribution, ownership, news
+  injection and rule determinism; inspect UI-only conditions before any schedule.
+- **Acceptance / AI / state / next:** factual conditions, no invented causes or
+  trading advice; deterministic core has no AI dependency, summaries do;
+  `CONTRACT REQUIRED / NOT STARTED`; activate only after preceding gates.
+
+#### Copilot / 10.9 briefing / conditional 10.10 — Journey F
+
+- **User objective / delivery:** explain what changed across certified domains,
+  then an on-demand sourced briefing; scheduled delivery is a later bounded task.
+- **Prerequisites / source / contract:** accepted R4 and bounded R6 entry, domain
+  availability (10.5 for portfolio claims), Market for news claims; explicit
+  aggregation/minimization, retention, delivery and scheduling contracts.
+- **Implementation / tests / manual:** reuse one runtime and approved capabilities;
+  no arbitrary SQL or financial recomputation; test traceability, abstention,
+  permissions, injection, outages, freshness, and no unauthorized tool calls;
+  user checks explanation usefulness and cited evidence.
+- **Acceptance / AI / state / next:** attributable answer, no unsupported figures
+  or recommendation; AI required; `CONTRACT REQUIRED / NOT STARTED`. No scheduler
+  or memory by implication. 10.10 remains conditional on demonstrated need,
+  not the default way to build Copilot.
+
+### R6.5 approved contract and next executable task
+
+TSK-R6.5-A expressly approved D1–D3, adding exact equal allocated totals in A/B.
+The phase-specific owner is
+[`GOAL_BUDGET_PREVIEW_CONTRACT.md`](GOAL_BUDGET_PREVIEW_CONTRACT.md), including
+the complete R6.5-B implementation/test inventory. Its contract is compatible
+with the existing Planning boundaries: one owned batch read and one certified
+scenario comparison per Goal; no Engine changes. Separately authorized R6.5-B
+now implements that boundary and passed 192 new domain/API tests plus a
+946-test relevant regression selection (including those 192), on 2026-10-29.
+Its status is `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`.
+No commit, push or deploy occurred. R6.5-C is `PLANNED / NOT STARTED`.
+
+#### Historical R6.5 entry proposal — superseded by the approved microcontract
+
+The following proposal is preserved from the preceding realignment, not an
+active specification or pending approval request. The approved microcontract
+supersedes its provisional names, missing equal-total restriction and optional
+inverse-solve baseline. In particular, R6.5 projects chosen contributions;
+it does not execute the R6.4 required-contribution solve. Historical
+`PROPOSED / PENDING` wording below describes only the earlier decision point.
+
+**Authority:** objective and restrictions approved by the owner in
+TSK-PRODUCT-ROADMAP-REALIGNMENT. The details below are `PROPOSED / PENDING D1–D3`,
+not a locked API contract or permission to code. This section carries the entry
+decision in the existing owner; no competing roadmap or architecture file is
+created. After approval, the implementation task can lock a phase microcontract
+and link here rather than duplicating this proposal.
+
+**Reuse verified before choosing an API:** `GoalBatchContributionPreviewService`
+uses `RequiredContributionSolver` and deliberately accepts no allocated
+contribution: the inverse solver replaces its template contribution. Adding a
+budget to that request would not evaluate a distribution. The existing
+`POST /planning/scenarios/compare` accepts an optional **single shared target**;
+it cannot compare several different Goals as if they were that same target.
+Its `ScenarioComparisonEngine.compare` can, however, be invoked **once per
+Goal**, comparing reference/alternative allocations for that same Goal and
+preserving its certified deltas and target-achievement statuses.
+
+The inspected public APIs have no limited-budget response. Proposed additive
+endpoint: `POST /api/v1/planning/goals/budget-preview`; proposed DTOs:
+`GoalBudgetPreviewRequestDTO` / `GoalBudgetPreviewResponseDTO`. This is one
+orchestration, not another progress/context endpoint. Keep all R6.1–R6.4 and
+five original Planning contracts unchanged; use direct services, no internal HTTP.
+
+**Proposed bounded request:** ordered `goal_ids` (1–20 unique owned UUIDs),
+`monthly_budget`, shared explicit R6.4 assumption fields (`as_of_date`,
+`expected_return_rate`, `return_type`, `output_mode`, conditional
+`inflation_rate`, `horizon_months` 1–1200, `rate_basis=EFFECTIVE_ANNUAL`,
+`contribution_timing=END_OF_MONTH`), explicit `target_value_basis`, two ordered
+scenarios with unique `scenario_id`, explicit `reference_scenario_id`, and one
+`scenario_monthly_contribution` per selected `goal_id` per scenario. No target,
+current wealth, portfolio selector, or provenance supplied by the client.
+The rate is a finite Decimal annual fraction greater than -1, never an implicit
+percentage/default. Missing/extra/duplicate allocations reject the request;
+budget and allocations are finite nonnegative cent-scale Decimal strings,
+including explicit zero. Null is invalid for required assumptions.
+
+**Proposed output / arithmetic:** each scenario echoes its budget and ordered
+allocations and returns `allocated_monthly_amount = sum(explicit allocations)`,
+`remaining_monthly_amount = monthly_budget - allocated_monthly_amount` (signed),
+`available_monthly_amount = max(remaining, 0)` and
+`exceeded_monthly_amount = max(-remaining, 0)`, all Decimal strings. These are
+budget-accounting identities, not a new projection engine. The total includes
+allocations to an owned Goal whose projection is unavailable, so intended
+spending is never hidden. No Goal `current_amount`, projected wealth, or required
+contribution is summed into a portfolio/affordability total.
+
+Each Goal returns cadastral source/provenance, availability/impediment, R6.4's
+required contribution under the common assumptions, and each scenario's
+certified final wealth, target status/time and same-Goal deltas from the existing
+comparison result. No aggregate wealth ranking or automatic redistribution.
+Unavailable Goal target/current facts retain R6.4's reasons; projection values
+remain null, not zero. Missing or foreign IDs fail the whole request with the
+same non-enumerating 404. Invalid collection/assumptions yield 422; unexpected
+errors stay generic. Status/type facts do not acquire a new lifecycle rule.
+
+**Orchestration and cost:** one `get_goals_by_ids` SQL ownership-filtered read;
+reuse `current_amount_as_initial_wealth`; one R6.4 service invocation for the
+required-contribution baseline and one comparison invocation per calculable
+Goal. The proposed two-scenario cap bounds comparison work at 40 scenario
+evaluations for 20 Goals (solvers may perform additional projections), in
+addition to bounded inverse solves; it is a processing limit,
+not financial policy. Preserve source precision, local Decimal context and
+engine rounding; no formula duplication, writes, caches, migrations or external
+calls. `target_date` is not a horizon. Initial wealth is only each Goal's own
+`GOAL_CURRENT_AMOUNT`, never a combined Goal balance or MyProfit.
+
+**Material decisions to approve before code:**
+
+- **D1 — scenario envelope:** recommend exactly two distributions (reference
+  and alternative), same Goal set, monthly budget, as-of, horizon, return and
+  output basis; only allocation varies. More scenarios or per-Goal premises
+  require an explicitly bounded contract, not an implementation default.
+- **D2 — budget value basis:** recommend nominal-only V1 (`NOMINAL` return,
+  output and target basis; no inflation input), preserving constant nominal
+  allocations. If real output is required now, first define whether the budget
+  and contributions are fixed purchasing power or nominal cashflows and their
+  compatibility with the unchanged engine. Do not silently transform them.
+- **D3 — excess budget:** recommend returning an over-budget scenario and its
+  certified effects with explicit excess, rather than rejecting it or reducing
+  allocations automatically. It remains a hypothetical comparison, not a claim
+  of financial feasibility. Zero budget is valid and exposes any excess.
+
+**Health/capacity decision:** no automatic Health-derived budget in R6.5.
+The user's budget is an `ASSUMPTION`, not Profile gross income or certified
+sustainable capacity. 10.3.7-A remains `DEFERRED — INSUFFICIENT CONTRACT / DATA`:
+window, minimum history, partial months, deficits, anomalies, statistic,
+currency and missing/zero rules require separate approval. Journey B can first
+expose eligible references with provenance and explicit choice under its own
+consumer contract; it cannot quietly bypass R2's allowlists or ADR-025.
+
+**Acceptance tests:** independent Decimal budget oracle (under/equal/over,
+zero budget, cents and large values); equivalence to existing R6.4/comparison
+results per Goal; null/zero/unavailable facts; no cross-Goal target reuse;
+reference equality; duplicate/missing IDs/allocations; two-user isolation and
+uniform 404; rate/basis/horizon/collection limits; one Goal query; no writes,
+MyProfit, persistence or new engine; OpenAPI and all prior routes unchanged.
+The future UI must preserve edits/identity cleanup and transient result semantics,
+show exact backend values, and await explicit execution. No frontend arithmetic
+becomes financial authority. No LLM dependency, optimization or advice.
+
+## Foundation and phase inventory (not a second execution queue)
 
 | Order | Phase | Outcome | Status | Hard dependency |
 |---:|---|---|---|---|
@@ -12,12 +390,13 @@
 | 1 | 10.R3 | External Context Layer: adapters, normalization, observation store/cache, semantic class, freshness/status, macro/reference provider foundations | `R3-C CLOSED / R3-D CLOSED / R3-E1 CLOSED / R3-E2 CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I INDEPENDENTLY APPROVED` | R2 taxonomy and context boundary; ADR-029 |
 | 3 | 10.R4 | AI Runtime Foundation: provider abstraction, approved read-only tools, privacy, auditability, errors/timeouts/cost telemetry, minimal surface | `R4.0 CONTRACT APPROVED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / LATER OPERATIONAL INCREMENTS GATED` | R2 + R3 context semantics and deterministic tools; ADR-030 |
 | 4 | 10.R5 | Design, navigation, and theme: semantic tokens, System/Light/Dark, shell/IA, responsive analytical and interactive patterns | `IMPLEMENTED / AUTOMATED GATES PASSED / TECHNICAL CHECKPOINT COMMITTED / PUSHED / USER VISUAL ACCEPTANCE APPROVED FOR CURRENT BASELINE / CLOSED` | R1 IA; R2/R3 context presentation requirements |
-| 5 | 10.R6 general gate | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `SEQUENCING GATE SATISFIED / READY FOR EXPLICITLY CONTRACTED INCREMENTS` | R2–R5 foundations satisfied; each increment still requires a contract/decomposition and authorization |
+| 5 | 10.R6 general gate | Experience recomposition: Wealth Home, Goals, Planning, FIRE, and appropriate Profile/Settings integration | `SEQUENCING GATE SATISFIED / READY FOR EXPLICITLY CONTRACTED INCREMENTS` | R5 closed; relevant R2/R3 foundations available; operational AI still requires remaining R4 gates; every increment needs its own contract and authorization |
 | 5.1 | 10.R6.1 | Goals → Planning integration governed by `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED` | Historical project-owner sequencing exception; approved microcontract; all financial/security/auth/ownership/test gates preserved |
 | 5.2 | 10.R6.2 | Deterministic Goal Progress read model governed by `GOAL_PROGRESS_READ_MODEL_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` | R5 closed; R6 gate satisfied; explicit project-owner authorization; existing owned Goal reader |
 | 5.3 | 10.R6.3 | Consolidated Goal Monitoring read model governed by `GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` | R6.2 published; explicit project-owner authorization; existing owned Goal batch reader and certified R6.2 calculation |
-| 5.4 | 10.R6.4 | Joint Goal contribution preview governed by `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` | R6.3 published; explicit project-owner authorization; owned batch Goal reader and certified Required Contribution solver |
-| 5.5 | 10.R6.5+ | Remaining R6 increments | `NOT SPECIFIED / NOT AUTHORIZED` | Explicit contract, decomposition, and authorization required; no inheritance from R6.4 |
+| 5.4 | 10.R6.4 | Joint Goal contribution preview governed by `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md` | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` | Published at `40a23566b3b068e26cb8bd3ae94bc7ed060ec4b0` |
+| 5.5 | 10.R6.5-A/B/C | Limited monthly budget across owned Goals | A `CONTRACT APPROVED / READY FOR BACKEND`; B `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`; C `PLANNED / NOT STARTED` | `GOAL_BUDGET_PREVIEW_CONTRACT.md`; B separately authorized; no publication |
+| — | Later R6 increments | Remaining bounded recomposition | `NOT AUTHORIZED` | Explicit contract and scoped task; no authorization inherited from R6.5 |
 | 6 | 10.R7 | Fresh-context independent product, architecture, contract, privacy, UX, and regression validation | `NOT STARTED` | R1–R6 complete |
 | 7 | 10.5-B | Resume Portfolio Intelligence contract lock using the realigned architecture | `PAUSED / PENDING WEALTH OS REALIGNMENT` | R7 closure; preserve 10.5-A |
 
@@ -37,9 +416,10 @@ backlog without claiming an exhaustive browser, viewport, state, or manual
 accessibility matrix. R5 is closed and the general R6 gate is satisfied. This
 does not satisfy the R7 gate or authorize 10.5-B.
 
-The main implementation path remains sequential. R3 provider research and R5
-token/visual audits may run in parallel after their inputs are stable, but no
-parallel activity changes the official dependency gates.
+The main implementation path follows the single delivery queue above. Published
+deterministic R6 capabilities do not prove operational R4 completion. R4's
+remaining adapter/security/test gates must be addressed before R7 closure;
+research cannot change an authorization or dependency gate.
 
 **R5 → R6 sequencing exception (2026-10-25):** the project owner explicitly
 authorized only R6.1 Goals → Planning to begin before R5 visual acceptance. The
@@ -79,8 +459,9 @@ to the certified Required Contribution solver using only
 `GOAL_CURRENT_AMOUNT`. It returns ordered individual previews and factual
 unavailable states, with no Goal-date horizon inference, Goal-wealth
 aggregation, portfolio/MyProfit read, recommendation, persistence, migration,
-or frontend. Focused Goals/Planning tests pass; its checkpoint is pending.
-R6.5+ remains unauthorized.
+or frontend. Focused Goals/Planning tests pass; its checkpoint is published at
+`40a23566b3b068e26cb8bd3ae94bc7ed060ec4b0`. The later 2026-10-28 task authorizes
+R6.5's objective and contract definition only, as recorded above.
 
 R2 implementation is decomposed in
 `SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md` as B1 declared-context
@@ -321,7 +702,7 @@ it does not independently authorize implementation.
 | 10.3 | Planning & Projection | **VALIDATED / CLOSED.** 10.3.7-A remains deferred; 10.3.8 automated validation passed with Swagger smoke deferred; 10.3.10A contract locked; 10.3.10B complete; 10.3.11–10.3.12 validated. | 10.1, 10.2 | Generic deterministic projections, target solvers, Goals integration, explicit scenarios |
 | 10.4 | Retirement & Financial Independence (FIRE) | **VALIDATED / CLOSED** — A/B/C complete; D1–D5 implemented/validated; D6 validated/stabilized; D7 validated/closed | 10.3 | Deterministic real-basis FIRE semantics over reusable 10.3 engines |
 | 10.R0 | Wealth OS Product Realignment Audit | **AUDIT COMPLETE** | 10.4, 10.5-A | Cross-product evidence, target IA, ownership and dependency order |
-| 10.R1–R7 | Wealth OS Realignment | R1 ARCHITECTURE / DOCUMENTATION LOCKED; R2 CLOSED; R3-C/D/E1/E2/E3 CLOSED; R3-E4 INDEPENDENTLY APPROVED; R4-A/B/C CLOSED; R5 USER-ACCEPTED/CLOSED; R6 GENERAL GATE SATISFIED; R6.1-R6.3 COMMITTED / PUSHED; R6.4 IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING; R6.5+ NOT AUTHORIZED; R7 NOT STARTED | 10.R0 | Architecture/docs, Smart Context, external context, AI runtime, design/navigation, product recomposition, independent validation |
+| 10.R1–R7 | Wealth OS Realignment | R2 and R5 CLOSED; R3 foundation independently approved; R4-A/B/C CLOSED, operational R4 gated; R6.1–R6.4 COMMITTED/PUSHED; R6.5-A CONTRACT APPROVED, B IMPLEMENTED/TESTED/CHECKPOINT PENDING; R7 NOT STARTED | 10.R0 | Actual execution order is owned by the single delivery queue above |
 | 10.5 | Portfolio Intelligence | **10.5-A COMPLETE; 10.5-B PAUSED / PENDING WEALTH OS REALIGNMENT** | existing Investments, 10.4, 10.R7 before resumption | Certified composition and concentration facts; exact MVP pending contract lock |
 | 10.6 | Rebalancing & Watchlist | NOT_STARTED | 10.5 | Target allocation, watchlist |
 | 10.7 | External Market Intelligence | NOT_STARTED | 10.5, BCB/News research | BCB, news, fundamentals |
@@ -402,7 +783,15 @@ separate backend mini-contracts and do not block UX-B1–UX-B7.
 
 ---
 
-## Phase Contracts
+## Preserved phase records and historical scopes
+
+The records below retain accepted core contracts and historical proposals.
+They are **not another execution queue**. For 10.6 onward, scope lists and
+dependency/package suggestions are historical inputs requiring a current
+contract before implementation. In particular, the old 10.8 provider list,
+automatic Ollama-to-Gemini fallback, and raw `ai_runs` reuse proposals are superseded
+by ADR-030 and `AI_AND_LLM.md`; 10.9 does not authorize scheduling/persistence.
+Nothing here supersedes a locked financial contract or the R7 → 10.5-B gate.
 
 ---
 

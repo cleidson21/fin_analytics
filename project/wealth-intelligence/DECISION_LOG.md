@@ -696,6 +696,67 @@ legacy Goals API change, frontend, R6.3+, R7, Advisor, or Portfolio
 Intelligence. This subsequent authorization does not modify ADR-023, ADR-024,
 ADR-025, ADR-027, or any locked contract.
 
+**Product queue reconciliation — TSK-PRODUCT-ROADMAP-REALIGNMENT
+(2026-10-28):** The project owner reaffirmed the original Wealth OS direction:
+limited-budget multi-Goal planning; Health/Smart Context/Planning/FIRE
+composition; effective governed local and online AI testing; later Portfolio,
+Market/alerts, Copilot and briefing. The historical product specification is
+input, not higher execution authority. R5 remains closed and R6.1–R6.4 are
+published at the baseline ending `40a23566b3b068e26cb8bd3ae94bc7ed060ec4b0`.
+
+This documentary task authorizes R6.5's **functional objective and contract
+definition only**, not code. `IMPLEMENTATION_ROADMAP.md` remains the single
+queue and now carries its bounded entry proposal and material D1–D3 questions.
+The user has not approved those proposed choices merely by requesting a plan.
+No new numbered R6 increment or parallel architecture is introduced.
+
+The actual execution history is reconciled without rewriting the earlier
+macro dependency decision: deterministic R6 delivery does not establish R4
+operational completion. The roadmap schedules R6.5 contract/backend/journey,
+then remaining R4 safety, local/online adapters and finite equivalent synthetic
+tests, followed by bounded composition and R7. Every implementation, call,
+expense, persistence decision and real-data use retains its separate gate.
+R4-C/F durable audit and pre-execution guard requirements are not waived.
+
+Health-derived sustainable contribution capacity remains the separate deferred
+10.3.7-A contract, not a renamed user budget. FIRE does not gain Goal wealth or
+Health-inferred spending. ADR-023/024/025/028/029/030, all locked contracts, the
+historical R6.1 exception, and the R7 → 10.5-B dependency are unchanged.
+No code, provider activation, benchmark, installation, Git publication or
+deployment is authorized by this record.
+
+**R6.5 budget decisions — TSK-R6.5-A (2026-10-28):** The project owner
+expressly approved D1–D3 after the realignment proposal above. These approvals
+close `GOAL_BUDGET_PREVIEW_CONTRACT.md` without changing a higher contract:
+
+- **D1 APPROVED:** exactly scenarios A/B, the same authenticated Goals and
+  server-read current/target facts, common explicit horizon, hypothetical rate,
+  nominal basis and monthly budget. Only per-Goal contributions vary, and the
+  total allocated monthly amount must be **exactly equal** in A and B. This
+  equal-total condition is an additional explicit restriction on the proposal.
+  A is the reference, not a recommendation; no optimization is authorized.
+- **D2 APPROVED:** nominal planning only. No real conversion, inflation input
+  or hidden premise. Existing rate, timing, projection and rounding semantics
+  remain authoritative.
+- **D3 APPROVED:** allow allocation above the user budget and show the exact
+  excess. No automatic redistribution, rejection solely for excess, or claim
+  that either scenario is sustainable/recommended. Budget is a user scenario
+  assumption, not certified Health capacity.
+
+The executable contract uses one authenticated batch Goal read and the existing
+`ScenarioComparisonEngine` per Goal, preserving its certified forward outputs,
+target states and deltas. Required contribution and chosen allocation are
+distinct operations: the earlier provisional inverse-solve baseline is not
+part of R6.5's minimal execution. R6.4 remains unchanged and available.
+
+`R6.5-A = CONTRACT APPROVED / READY FOR BACKEND`;
+`R6.5-B = READY / NOT STARTED`; `R6.5-C = PLANNED / NOT STARTED`.
+This task records approval and prepares implementation; it does not authorize
+code, frontend, tests execution, persistence, providers, commit or push.
+The existing R4 local/online safety, pilot and adapter sequence is preserved;
+`LOCAL_ONLY` remains default. R5, the R6 general gate, R6.1–R6.4 publication,
+all locked contracts and the R7 → 10.5-B dependency are unchanged.
+
 **Portfolio gate:** 10.5-A remains authoritative. 10.5-B remains
 `PAUSED / PENDING WEALTH OS REALIGNMENT` and resumes only after R7 closure unless
 an explicit later decision changes the gate.

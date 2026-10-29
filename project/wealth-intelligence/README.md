@@ -5,7 +5,7 @@
 **R5 technical checkpoint:** `COMMITTED / PUSHED` at
 `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`
 
-**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1-R6.3 COMMITTED / PUSHED / R6.4 BATCH CONTRIBUTION PREVIEW IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / R6.5+ NOT AUTHORIZED`
+**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1-R6.4 COMMITTED / PUSHED / R6.5-A CONTRACT APPROVED / R6.5-B IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / R6.5-C PLANNED — NOT STARTED`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -41,9 +41,20 @@ Goal Monitoring overview is published at
 authenticated joint Goal contribution preview governed by
 `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md`. It reuses the certified Required
 Contribution solver for each owned Goal, performs one batch Goal read, and
-persists nothing. Focused tests pass, but the R6.4 checkpoint is not staged,
-committed, pushed, or deployed. R6.5+, R7, Advisor, and Portfolio Intelligence
-remain unauthorized.
+persists nothing. Its two-commit checkpoint is published at
+`40a23566b3b068e26cb8bd3ae94bc7ed060ec4b0`; publication does not imply deploy.
+R6.5-A records the owner's D1–D3 approval in
+`GOAL_BUDGET_PREVIEW_CONTRACT.md`: exactly A/B, equal allocated totals, nominal
+premises and explicit permitted excess. Separately authorized R6.5-B now adds
+the authenticated budget-preview POST, strict DTOs, one owned batch read and
+certified per-Goal comparison, without financial writes or Engine changes.
+Its final new suites passed 192 tests; the relevant regression selection passed
+946 tests (including those 192). R6.5-B is `IMPLEMENTED / FOCUSED TESTS PASSED /
+CHECKPOINT PENDING`, uncommitted/unpublished. R6.5-C is `PLANNED / NOT STARTED`.
+R7 execution, Advisor, and Portfolio Intelligence remain gated.
+The 2026-10-28 realignment, traceability matrix, six product journeys, and next
+five deliveries are owned solely by `IMPLEMENTATION_ROADMAP.md`. R4's remaining
+local/online adapter and safety work is explicit there; R4 is not closed.
 
 R2-A locks declared financial context, deterministic recurring-income
 candidates, human decisions, ownership, provenance, and feature-specific
@@ -159,6 +170,7 @@ owned by `CURRENT_STATE.md` and `IMPLEMENTATION_ROADMAP.md`.
 | R6.2 Goal Progress microcontract | [GOAL_PROGRESS_READ_MODEL_CONTRACT.md](GOAL_PROGRESS_READ_MODEL_CONTRACT.md) |
 | R6.3 Goal Monitoring microcontract | [GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md](GOAL_MONITORING_OVERVIEW_READ_MODEL_CONTRACT.md) |
 | R6.4 Goal Batch Contribution microcontract | [GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md](GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md) |
+| R6.5 Goal Budget microcontract / executable backend task | [GOAL_BUDGET_PREVIEW_CONTRACT.md](GOAL_BUDGET_PREVIEW_CONTRACT.md) |
 | R2 Smart Financial Context contract | [SMART_FINANCIAL_CONTEXT_CONTRACT.md](SMART_FINANCIAL_CONTEXT_CONTRACT.md) |
 | R2 implementation decomposition | [SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md](SMART_FINANCIAL_CONTEXT_IMPLEMENTATION_PLAN.md) |
 | R3 External Context locked contract | [EXTERNAL_CONTEXT_CONTRACT.md](EXTERNAL_CONTEXT_CONTRACT.md) |
@@ -203,7 +215,14 @@ configuration surface. Planning remains the deterministic engine/tool. FIRE
 remains a specialized Planning consumer. Goals remains objective lifecycle.
 Portfolio Intelligence remains paused.
 
-## Active phase sequence
+## Macro dependencies and active sequence
+
+The following is the preserved macro dependency map, not a claim that every
+R4 increment preceded the already published R5/R6 work. For actual execution,
+use the journey milestones and single active queue in `IMPLEMENTATION_ROADMAP.md`.
+Remaining operational R4 gates must close before R7; no deterministic R6
+feature implicitly activates AI. Historical contract checkpoint labels are
+time-specific; `CURRENT_STATE.md` owns subsequent publication evidence.
 
 ```text
 R2-B1 through R2-B8 Smart Financial Context implementation

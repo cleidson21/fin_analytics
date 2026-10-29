@@ -2,13 +2,17 @@
 
 **Status:** `10.R4-C CLOSED / PUSHED`
 
-**Date:** 2026-10-24
+**Date:** 2026-10-28 — runtime status and governed evaluation plan reconciled
 
 **Canonical responsibility:** current AI-runtime truth, AI authority/privacy
 boundaries, and high-level provider/tool direction. Phase 10.R4 owns the exact
 runtime and implementation contract.
 
 ## 1. Verified current state
+
+Status and evaluation evidence below were reconciled on 2026-10-28. Execution
+order is owned only by `IMPLEMENTATION_ROADMAP.md`; this owner defines the AI
+boundary and tests, not a parallel roadmap. No provider was called in this task.
 
 No AI runtime is currently operating in the application.
 
@@ -471,9 +475,9 @@ and the telemetry contract precedes persistence and real execution, with no
 implicit database or migration.
 
 R4-A through R4-H were approved as planned increments, not as one automatic
-implementation authorization. R4-A and R4-B are `CLOSED / PUSHED`; R4-C is
-`INDEPENDENTLY APPROVED / CHECKPOINT PENDING`. R4-D through R4-H remain
-`NOT IMPLEMENTED` and require their own gates.
+implementation authorization. R4-A, R4-B and R4-C are `CLOSED / PUSHED`.
+R4-D through R4-H runtime implementations remain `NOT IMPLEMENTED` and require
+their own gates; local laboratory execution is a separate evidence category.
 
 ## 18. R4-A implementation record
 
@@ -631,3 +635,108 @@ selection was rerun with `77 passed`. R4-C is therefore `CLOSED / PUSHED`.
 The R4-F pre-execution durable-audit guard and future HMAC key operations remain
 separately gated activation requirements; they are not retroactively part of
 the isolated no-persistence R4-C closure.
+
+## 21. Product realignment — evaluation and activation gates (2026-10-28)
+
+### Evidence, not provider certification
+
+The inspected production paths contain R4-A's fake provider and R4-C's
+in-memory sink, not an Ollama/Gemini adapter. R4-A structural validation still
+reports `FactualValidationStatus.NOT_PERFORMED`; strict JSON alone is not
+financial fidelity. R4-B exposes exactly five read-only context/Goal tools,
+not a registered Planning/FIRE solver tool. Neither successful laboratory tool
+calling nor a proposed Advisor architecture extends that registry.
+
+Historical local evidence remains immutable and ignored by Git:
+
+- `experiments/llm-benchmarks/reports/consolidated.md`: synthetic local pilot,
+  tool-calling, security and context experiments with known methodological
+  limits. It explicitly does not implement official R4-G or elect a global
+  winner. Its Ollama 0.40.6 evidence is later than the 0.40.5 setup snapshot.
+- `experiments/llm-benchmarks/reports/stage_q1_hr_corrected_consolidation_v2.md`:
+  20 completed assisted human reviews and additive corrections; not independent
+  replication, not an override of objective financial/schema failures.
+- `experiments/llm-benchmarks/reports/stage_q1_thinking_t0_final.md`: 5/8 calls,
+  stopped after output truncation with no final answer; incomplete pairs and
+  zero T1 eligibility. No off/on superiority or production readiness follows.
+
+These are local evidence paths, not required runtime dependencies or requests
+to version the laboratories. This reconciliation neither reruns nor edits them.
+Qwen 3.5 4B remains the first local evaluation baseline under the owner's
+direction; its exact installed digest, license, configuration and eligibility
+must be checked at an authorized execution. Other previously tested candidates
+may be compared only with equivalent fixtures/configuration and explicit scope.
+Gemini online equivalence is not established by the inspected reports.
+
+Track five independent gates per provider/model/task/configuration:
+
+- `LAB TESTED`: a bounded synthetic run with reproducible evidence, including
+  failed/inconclusive outcomes. Local evidence exists; equivalent Gemini evidence
+  was not found in the inspected reports.
+- `RUNTIME IMPLEMENTED`: the provider-neutral adapter and orchestration exist
+  and pass integration tests. Neither real provider has reached this state.
+- `SECURITY GATES PASSED`: pre-dispatch policy/audit, ownership, minimization,
+  injection, secret handling and failure tests pass for the actual execution path.
+  R4-A/B/C internal tests do not establish this end-to-end state.
+- `APPROVED FOR REAL DATA`: separate task-specific human authorization after
+  safety, privacy and factual-fidelity evidence. Not established for either path.
+  Gemini additionally requires the paid-project/policy/opt-in gates of ADR-030.
+- `PRODUCT INTEGRATED`: an authorized user-facing journey is implemented,
+  tested and accepted. No AI journey currently has this status.
+
+### Bounded local/online test plan — not an execution authorization
+
+R4-G owns the comparison protocol; R4-D.3/E own adapter validation and R4-F
+owns operational safety. The next pilot must reuse the historical cases that
+answer the task, adding only missing synthetic R6.4/R6.5 result coverage.
+Do not start by rebuilding the laboratory or repeating every old matrix.
+
+1. Freeze a versioned set of synthetic certified Goal/planning outputs,
+   including explicit budget allocations, under/equal/over-budget cases,
+   null/zero, unavailable sources and nominal/real labels as actually contracted.
+   Generate expected numbers with certified backend services and independent
+   test oracles, never model answers. R6.5 fixtures wait for its accepted contract
+   and tested implementation. No production database or personal record export.
+2. Pin model revision/digest, runtime/SDK, prompt and schema version, seed when
+   supported, temperature, context/output limits, Thinking configuration and
+   tool mode. Same semantic fixtures and source references go to both providers;
+   provider-specific tokenizers/controls are reported, not asserted equivalent.
+3. Separate precomputed-result explanation from tool-calling trials. The first
+   measures exact Decimal-string/source/premise fidelity and abstention; the
+   second measures allowed selection, typed arguments, wrong-user/unknown-tool
+   refusal, call budgets, and handling of unavailable tool results. Use approved
+   tools or synthetic test doubles; no production registry extension by testing.
+4. Exercise prompt injection through Goal names, external text and tool output;
+   attempted source/value substitution; unrelated data requests; secret echo;
+   malformed JSON, invalid enum/schema, invented numerical claims, missing
+   provenance and output truncation. Preserve separate structure, numeric,
+   provenance, abstention and security verdicts. `REVIEW`/incomplete/truncated
+   output cannot become `PASS` or a successful financial explanation.
+5. Mock timeout, cancellation, absent local model, offline network, Gemini
+   authentication/quota/429/503, provider outage and audit-sink failure. Verify
+   bounded total attempts/deadline/token/cost budget and no silent cloud fallback.
+   A live outage or a good textual answer never bypasses an authorization gate.
+6. Record sample count, cold/warm and first-token/end-to-end latency, p50/p95
+   only where the sample supports them, tokens (or explicit unknown), local
+   resource usage and remote estimated/actual Decimal cost (or unavailable).
+   Keep availability separate from quality; do not invent zero cost because an
+   account advertises free access. Alternate candidate order and retain hashes
+   and configuration lineage; no cross-version aggregate winner.
+7. Before any call, approve exact models, number of conditions/repetitions,
+   maximum HTTP calls including tool rounds/retries, token and monetary ceilings,
+   schedule and output location. Start with a finite pilot; stop on privacy/tool
+   escape, audit failure, input/output truncation or the approved budget ceiling.
+   Diagnose a failed technical gate before another separately authorized run.
+8. Review usefulness and cited facts manually without overriding objective
+   failures. Promote only the tested task/configuration when the required gates
+   pass; record limitations. No benchmark result alone authorizes real data,
+   provider activation, persistent memory, operational advice or a scheduler.
+
+The initial online target is one Gemini adapter, not OpenAI by default. At its
+implementation gate verify the current official SDK/model and data-use terms;
+this document makes no current price, quota or remote-policy claim. Synthetic
+online tests still need explicit network/cost authorization. Real financial
+data remains prohibited on the free Gemini tier under the project policy.
+`LOCAL_ONLY` remains default; `HYBRID` is explicit opt-in. Operational remote or
+tool-enabled execution needs `DURABLE` audit and the validated pre-execution
+guard. Isolated lab tests must never be relabeled as that operational proof.

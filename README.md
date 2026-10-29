@@ -23,7 +23,10 @@ consume those capabilities without replacing their financial authority.
 - Wealth OS 10.R6 general gate: `SATISFIED`
 - Wealth OS 10.R6.1: `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED`
 - Wealth OS 10.R6.2: `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED`
-- Wealth OS 10.R6.3: `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`
+- Wealth OS 10.R6.3–R6.4: `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED`
+- Wealth OS 10.R6.5-A: `CONTRACT APPROVED / READY FOR BACKEND`
+- Wealth OS 10.R6.5-B: `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`
+- Wealth OS 10.R6.5-C: `PLANNED / NOT STARTED`
 - Wealth Intelligence W2–W4.2: `IMPLEMENTED / ABSORBED INTO CLOSED R5 BASELINE / NOT AN R6 PHASE CLOSURE`
 
 The realignment is an incremental composition refactor. R2 now provides the
@@ -58,11 +61,20 @@ Important current limitations:
 - the W2–W4.2 Wealth Home, navigation, Planning/FIRE experience, transient
   result sharing, and R5 themes are published and user-accepted as the current
   baseline; broader manual matrix coverage remains future validation work;
-- R6.1 and R6.2 are published. R6.3 adds an authenticated, owned, read-only
-  Goal monitoring overview that reuses R6.2 progress, classifies each Goal, and
-  summarizes counts without monetary aggregation; it is implemented and
-  focused-tested in the current worktree but remains uncommitted and
-  unpublished. R6.4+ is not authorized.
+- R6.1–R6.4 are published at checkpoint
+  `40a23566b3b068e26cb8bd3ae94bc7ed060ec4b0`. Their context, progress,
+  count-only overview, and required-contribution batch preview do not yet form
+  a complete limited-budget multi-Goal journey. R6.5-A now closes its approved
+  [budget contract](project/wealth-intelligence/GOAL_BUDGET_PREVIEW_CONTRACT.md);
+  its backend now compares equal-total nominal A/B allocations through certified
+  per-Goal comparisons, with exact budget/excess accounting and no writes.
+  R6.5-B passed focused tests and awaits its checkpoint; product integration
+  remains unstarted and requires its own scoped task.
+
+The single journey-oriented queue and the next R6.5-C task live in
+[IMPLEMENTATION_ROADMAP.md](project/wealth-intelligence/IMPLEMENTATION_ROADMAP.md).
+Local/online AI development is explicitly included, without activating providers
+or promoting laboratory evidence to real-data approval.
 
 See the verified current-state owner for exact detail.
 

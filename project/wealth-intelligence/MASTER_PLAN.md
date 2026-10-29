@@ -1,8 +1,8 @@
 # Master Plan — FINANALYTICS Wealth OS
 
-**Status:** `ARCHITECTURE LOCKED / IMPLEMENTATION NEXT`
+**Status:** `ARCHITECTURE LOCKED / JOURNEY-ORIENTED INCREMENTAL DELIVERY`
 
-**Updated:** 2026-10-03 — Phase 10.R2-A contract lock
+**Updated:** 2026-10-28 — Product roadmap realignment; no implementation authorization
 
 ## Product vision
 
@@ -96,6 +96,38 @@ Exact URLs and widgets remain implementation decisions for later contracts.
 
 ## Incremental realignment
 
+### Product outcomes reaffirmed on 2026-10-28
+
+The project owner reaffirmed six connected journeys, not a new architecture:
+
+- **A — Goals and integrated planning:** distribute an explicit limited monthly
+  budget across owned Goals, compare user-defined alternatives, and understand
+  their certified consequences. R6.1–R6.4 are reusable foundations, not yet this
+  complete multi-Goal experience.
+- **B — Contribution capacity:** relate observed Health and declared Smart
+  Context to planning with source, period, completeness, and explicit user
+  choice. Historical surplus is not certified sustainable future capacity.
+- **C — Local and online AI:** test and integrate one governed R4 runtime,
+  initially evaluating Qwen 3.5 4B locally and Gemini remotely with synthetic
+  equivalent fixtures. Local-first, remote opt-in, and financial authority
+  remain binding; laboratory success is not production approval.
+- **D — Portfolio Intelligence:** after R7, resume 10.5-B using the preserved
+  10.5-A decisions, without conflating investment wealth with net worth or
+  automatically attributing the same investments to several Goals.
+- **E — Market and alerts:** sourced market/news/event context, watchlists and
+  explicit objective conditions, under their own data and lifecycle contracts.
+- **F — Copilot and briefing:** explain certified results and orchestrate only
+  authorized capabilities; periodic briefings require a separate lifecycle and
+  scheduling gate. Neither the LLM nor the browser owns financial mathematics.
+
+R6.5-A closes the approved contract in `GOAL_BUDGET_PREVIEW_CONTRACT.md`;
+R6.5-B is ready but not implemented. No code is authorized by the contract task.
+The sole executable queue, original-to-current traceability matrix, milestone
+acceptance gates, and the link to R6.5's executable contract are in
+`IMPLEMENTATION_ROADMAP.md`. That owner orders remaining work by actual
+dependencies; the historical macro sequence below is not a claim that R4
+operational integration has already closed. No new R6.x IDs are allocated here.
+
 The official strategy is **incremental composition refactor**:
 
 1. lock architecture and documentation ownership;
@@ -116,11 +148,11 @@ migrates them. Deep links must not be broken incidentally.
 |---|---|---|
 | 10.R0 | Product and documentation audit | `AUDIT COMPLETE` |
 | 10.R1 | Product architecture and documentation consolidation | `ARCHITECTURE / DOCUMENTATION LOCKED` |
-| 10.R2 | Smart Financial Context | `CONTRACT LOCKED / IMPLEMENTATION READY` |
-| 10.R3 | External Context Layer | `NOT STARTED` |
-| 10.R4 | AI Runtime Foundation | `NOT STARTED` |
-| 10.R5 | Design, navigation, and System/Light/Dark | `NOT STARTED` |
-| 10.R6 | Goals, Planning, FIRE, and Wealth Home recomposition | `NOT STARTED` |
+| 10.R2 | Smart Financial Context | `IMPLEMENTED / VALIDATED / CLOSED` |
+| 10.R3 | External Context Layer | BCB/reference foundation independently approved; R3-G separately gated; R3-H deferred |
+| 10.R4 | AI Runtime Foundation | R4-A/B/C `CLOSED / PUSHED`; real adapters/router not implemented |
+| 10.R5 | Design, navigation, and System/Light/Dark | `USER ACCEPTED / CLOSED` for the current baseline |
+| 10.R6 | Goals, Planning, FIRE, and Wealth Home recomposition | R6.1–R6.4 `COMMITTED / PUSHED`; R6.5-A `CONTRACT APPROVED`; R6.5-B `READY / NOT STARTED`; R6.5-C planned; R6 not closed |
 | 10.R7 | Independent product/architecture validation | `NOT STARTED` |
 | 10.5-B | Portfolio Intelligence contract lock | `PAUSED / PENDING WEALTH OS REALIGNMENT` |
 

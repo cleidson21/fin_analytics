@@ -1,8 +1,8 @@
 # Frontend & UX Direction — Wealth OS
 
-**Status:** `10.R1 PRINCIPLES LOCKED / R5 IMPLEMENTATION NOT STARTED`
+**Status:** `10.R1 PRINCIPLES LOCKED / R5 USER-ACCEPTED BASELINE CLOSED`
 
-**Date:** 2026-10-02
+**Date:** 2026-10-28 — status reconciliation only; no new UI specification
 
 **Canonical responsibility:** cross-product frontend and UX principles. Product
 area ownership lives in `ARCHITECTURE.md`; exact Planning behavior remains in
@@ -135,9 +135,10 @@ Migration is incremental and token-based:
 5. validate contrast, meaning, printing/export where relevant, and reduced
    motion in both themes.
 
-The current presence of light/dark CSS variables does not mean theme support is
-implemented; the live shell and many components still use hard-coded dark
-utilities. R5 owns the exact design contract and implementation.
+R5 implemented the bounded System/Light/Dark baseline and received user
+acceptance on 2026-10-27. This is not a claim of repository-wide theme migration
+or an exhaustive manual browser/viewport/accessibility matrix. Broader visual
+refinements remain backlog; this realignment reopens no design work.
 
 ## 7. Analytical layout principles
 

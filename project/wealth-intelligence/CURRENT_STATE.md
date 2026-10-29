@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-27 — R6.4 Goal batch contribution preview implemented; focused tests passed; checkpoint pending
+**Updated:** 2026-10-29 — R6.5-B backend implemented/focused-tested; checkpoint pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -60,9 +60,12 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R6.1 Goals → Planning | `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE REPORTED / COMMITTED / PUSHED` |
 | 10.R6.2 Goal Progress | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
 | 10.R6.3 Goal Monitoring Overview | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
-| 10.R6.4 Goal Batch Contribution Preview | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` |
-| 10.R6.5+ | `NOT SPECIFIED / NOT AUTHORIZED` |
-| Wealth OS Realignment | `ARCHITECTURE LOCKED / R2 CLOSED / R3-D CLOSED / R3-E3 CLOSED / R3-E4 INDEPENDENTLY APPROVED / R3-F1 CLOSED / R3-I DOCUMENTATION RECONCILED / R4-A CLOSED / R4-B CLOSED / R4-C CLOSED / R5 CLOSED / R6 GENERAL GATE SATISFIED / R6.1-R6.3 COMMITTED / PUSHED / R6.4 FOCUSED-TESTED / CHECKPOINT PENDING` |
+| 10.R6.4 Goal Batch Contribution Preview | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
+| 10.R6.5-A budget contract | `CONTRACT APPROVED / READY FOR BACKEND` |
+| 10.R6.5-B budget backend | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` |
+| 10.R6.5-C product integration | `PLANNED / NOT STARTED` |
+| Later R6 increments | `NOT AUTHORIZED` |
+| Wealth OS Realignment | R2 and R5 closed; R3 foundation independently approved; R4-A/B/C closed, operational R4 gated; R6.1–R6.4 published; R6.5-A approved, B implemented/tested/checkpoint pending; R7 not started |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -252,7 +255,30 @@ contribution for each explicitly selected owned Goal. It performs one batch
 read, uses only each Goal's cadastral target/current amount, and delegates every
 calculable item to the certified Required Contribution solver. Missing or
 invalid facts remain unavailable rather than becoming invented zeroes. Focused
-validation passed; the R6.4 checkpoint remains pending. R6.5+ is not authorized.
+validation passed. R6.4's functional commit is
+`7827f8a3820b23dbe42ab93040cccf1161af192d` and its documentary commit is
+`40a23566b3b068e26cb8bd3ae94bc7ed060ec4b0`. Publication was confirmed in the
+preceding controlled push; this documentary task verified local HEAD and the
+local `origin/develop` reference at that SHA without a new remote query.
+R6.2–R6.4 remain backend capabilities, not an implemented multi-Goal UI.
+R6.5-A now records the owner's D1–D3 approval in
+`GOAL_BUDGET_PREVIEW_CONTRACT.md`: exactly A/B with equal allocated totals,
+common nominal premises and permitted explicit excess. The contract defines
+the additive authenticated budget preview and direct reuse of the certified
+scenario comparator per owned Goal, not an inverse required-contribution solve.
+R6.5-B is `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` under the
+explicit TSK-R6.5-B authorization. `POST /api/v1/planning/goals/budget-preview`
+performs one owned batch read, exact local-Decimal budget accounting, and one
+certified `ScenarioComparisonEngine.compare` call per available Goal. A/B have
+equal allocated totals and common nominal premises; excess is permitted and
+shown. Missing facts preserve null comparisons. No inverse solve, write,
+external/AI call, Engine change or simulation persistence is introduced.
+Final validation on 2026-10-29: new domain/API suites `192 passed, 3 warnings`;
+Planning/Goals/FIRE/Profile regression selection `946 passed, 113 warnings`,
+including those 192 tests. Warnings originate in existing Pierre/Goals code.
+Commands and scope are recorded in the microcontract implementation evidence.
+R6.5-B remains uncommitted/unpublished. R6.5-C is `PLANNED / NOT STARTED`.
+No Health-derived future capacity, automatic Goal–FIRE/portfolio link or R6.5 UI exists.
 
 R1 locks a target information architecture but changes no route. Existing deep
 links remain operational until R5/R6 explicitly implement migration.
@@ -303,6 +329,27 @@ is limited:
   storage UI.
 
 ## AI current state
+
+**Evidence reconciliation (2026-10-28):** the historical local laboratory is
+present under ignored `experiments/llm-benchmarks/` and the four historical
+`benchmark/finanalytics_benchmark*` directories (not a blanket benchmark ignore).
+Its `reports/consolidated.md` records synthetic local experiments, not official
+R4-G completion. Qwen 3.5 4B remains the initial evaluation baseline, not a
+production selection. The later lab records Ollama 0.40.6; the 0.40.5 setup
+record below remains dated evidence, not today's environment inventory.
+`stage_q1_hr_corrected_consolidation_v2.md` preserves 20 completed assisted
+human reviews without converting textual quality into objective correctness.
+`stage_q1_thinking_t0_final.md` records 5/8 calls and an interrupted,
+methodologically failed battery, with no T1 eligibility. No experiment was
+rerun and no installed-model/service state was probed in this task.
+
+For local AI: `LAB TESTED` with limitations; operational `RUNTIME IMPLEMENTED`,
+end-to-end `SECURITY GATES PASSED`, `APPROVED FOR REAL DATA`, and
+`PRODUCT INTEGRATED` are not established. For Gemini: no equivalent online
+fixture evidence was found in the inspected lab reports; adapter and product
+integration are absent, and real-data approval is absent. R4-A/B/C tests prove
+their internal boundaries only. The governed comparison plan lives in
+`AI_AND_LLM.md`; its order and gates live in `IMPLEMENTATION_ROADMAP.md`.
 
 There is **no production AI runtime**.
 
@@ -605,8 +652,9 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   COMMITTED / PUSHED`. R6.2 Goal Progress is `IMPLEMENTED / FOCUSED TESTS
   PASSED / COMMITTED / PUSHED`. R6.3 Goal Monitoring Overview is `IMPLEMENTED /
   FOCUSED TESTS PASSED / COMMITTED / PUSHED`. R6.4 Goal Batch Contribution
-  Preview is `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`; R6.5+,
-  R7, Advisor, and Portfolio Intelligence remain gated.
+  Preview is `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED`.
+  R6.5-A's contract is approved; R6.5-B is implemented/focused-tested with its checkpoint pending;
+  R7, Advisor, Portfolio Intelligence, and later increments remain gated.
 - `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` records the approved R6.1
   contract and implementation evidence and is included in the published
   checkpoint. The new GET is authenticated, owned, Decimal-safe,
@@ -648,8 +696,9 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   existing tests require undeclared `pytest-asyncio`; dependency remediation
   remains a separate unauthorized task.
 - There is no certified sustainable contribution-capacity engine, portfolio
-  performance engine, rebalancing engine, watchlist, BCB/news integration,
-  Docker deployment, or AI runtime.
+  performance engine, rebalancing engine, watchlist, news integration,
+  Docker deployment, or operational AI runtime. BCB/SGS provider and internal
+  reference foundations do exist; a Market product consumer is not activated.
 
 Historical phase-by-phase execution evidence remains in `CHANGELOG.md`,
 `TESTING_STRATEGY.md`, accepted ADRs, and locked contracts. It is intentionally

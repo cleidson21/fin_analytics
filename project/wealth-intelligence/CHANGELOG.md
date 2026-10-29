@@ -1,5 +1,73 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-R6.5-B] — 2026-10-29 — Backend Goal budget comparison
+
+- Implemented authenticated `POST /api/v1/planning/goals/budget-preview`, strict
+  `GoalBudgetPreviewRequestDTO`/`GoalBudgetPreviewResponseDTO`, pure mapping and
+  immutable transient `GoalBudgetPreviewService` orchestration.
+- D1–D3 remain unchanged: exactly ordered A/B with equal allocated totals and
+  shared nominal premises; explicit over-budget allocations remain valid.
+  Locally sized Decimal accounting preserves cent differences and large values.
+- Reused one owned batch Goal read and `ScenarioComparisonEngine` per available
+  Goal, with existing nested projection/target/delta serializers. Unavailable
+  facts remain explicit/null, and their allocations still participate in budget
+  totals. No inverse solve, Engine/reader change, financial write or persistence.
+- Added two test files and adjusted only nine affected exact route/OpenAPI
+  allowlists. Final execution: new suites `192 passed, 3 warnings`; relevant
+  Planning/Goals/FIRE/Profile regression selection `946 passed, 113 warnings`
+  (including those 192). Existing Pierre/Goals warnings remain; commands and
+  SQL/read-only/parity evidence are in the microcontract's implementation record.
+- Preserved the prior ten-document realignment and R6.5-A approval. R6.5-B is
+  `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`; R6.5-C remains
+  `PLANNED / NOT STARTED`, and R4 AI separately gated. No frontend, migration,
+  dependency, provider/LLM, laboratory, staging, commit, push or deploy work.
+
+## [TSK-R6.5-A] — 2026-10-28 — Budget contract approved; backend ready
+
+- Recorded the owner's explicit D1–D3 approval under ADR-027, including the
+  additional exact-equal-total restriction for scenarios A/B; nominal-only
+  planning and visible permitted excess are approved, not proposed defaults.
+- Added `GOAL_BUDGET_PREVIEW_CONTRACT.md` with exact request/response DTOs,
+  authenticated `POST /api/v1/planning/goals/budget-preview`, Decimal budget
+  accounting, ownership/availability/errors, and certified same-Goal comparison.
+  Required contribution is distinct from chosen allocation and is not solved
+  again here; R6.4 and all certified Engines/contracts remain unchanged.
+- Prepared the single R6.5-B backend task in that microcontract, with explicit
+  code/test paths, reuse boundaries, unit/API/regression and acceptance gates.
+  R6.5-A is `CONTRACT APPROVED / READY FOR BACKEND`; B is `READY / NOT STARTED`;
+  C is `PLANNED / NOT STARTED`. Neither backend nor frontend was implemented.
+- Preserved the ten-document realignment baseline, the historical entry
+  proposal and the sequenced separately gated R4 local/online work. Updated only
+  required decision/state/queue/index summaries; no parallel roadmap was added.
+- Validation is documentary/Git only, including new-file whitespace. No product
+  tests, LLM, benchmark, staging, commit, push or deploy occurred.
+
+## [TSK-PRODUCT-ROADMAP-REALIGNMENT] — 2026-10-28 — Single journey-oriented queue
+
+- Reconciled the published R6.4 checkpoint at
+  `40a23566b3b068e26cb8bd3ae94bc7ed060ec4b0` (functional parent
+  `7827f8a3820b23dbe42ab93040cccf1161af192d`), preserved R5 closure and
+  R6.1–R6.3 publication, and corrected stale current-status summaries.
+- Kept vision in Master Plan and one execution queue in Implementation Roadmap;
+  added the original-to-current evidence matrix, six product journeys,
+  dependency/acceptance cards and five bounded next deliveries. Historical
+  proposals, including old automatic remote fallback, are non-authorizing.
+- Recorded R6.5's authorized objective and proposed limited-budget entry scope,
+  with three explicit material decisions before code. Reuse is per-Goal R6.4
+  inverse solve and certified scenario comparison, not a second financial engine.
+  Sustainable Health-derived capacity remains separately contracted.
+- Reconciled real R4 adapter absence with historical local laboratory evidence;
+  Qwen 3.5 4B is an evaluation baseline, not production certification. Added the
+  governed equivalent synthetic Ollama/Gemini test plan, distinct laboratory,
+  runtime, security, real-data and product gates, and mandatory audit/consent
+  prerequisites. No lab result is promoted to operational approval.
+- Preserved all locked contracts, ADR history, R7/10.5-B gating and laboratory
+  files. Updated architecture/UX current-status text only where stale; no new
+  architecture, API implementation or visual refinement was introduced.
+- Validation is documentary/Git only; historical test counts were not rerun.
+  No backend/frontend changes, provider calls, benchmarks, models, installs,
+  staging, commits, push or deploy occurred.
+
 ## [TSK-R6.4] — 2026-10-27 — Joint Goal Contribution Preview
 
 - Added the approved `GOAL_BATCH_CONTRIBUTION_PREVIEW_CONTRACT.md` and

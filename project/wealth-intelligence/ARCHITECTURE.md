@@ -2,7 +2,7 @@
 
 **Status:** `10.R1 ARCHITECTURE LOCKED / 10.R2-A CONTEXT BOUNDARY LOCKED`
 
-**Date:** 2026-10-03
+**Date:** 2026-10-28 — current-state/dependency reconciliation; locked boundaries unchanged
 
 **Canonical responsibility:** cross-cutting system architecture, target product
 information architecture, capability placement, and migration boundaries.
@@ -28,14 +28,17 @@ Verified current facts:
 - Investments contains operational import, position, asset, allocation,
   dividend, evolution, and performance-like surfaces; those surfaces are not a
   certified Portfolio Intelligence engine.
-- Profile is browser-local and only four non-sensitive extended fields persist.
+- Profile has the governed R2 declared-income and recurring-evidence review
+  APIs; four non-sensitive extended presentation fields remain browser-local.
 - Settings is the existing configuration surface but most controls are
   placeholders.
 - yfinance is provider-specific market context, not a shared External Context
   Layer.
-- There is no Smart Context service, normalized external-context layer,
-  provider-aware AI runtime, tool registry, integrated Wealth Home, or
-  Portfolio Intelligence runtime today.
+- R2 Smart Context, R3 BCB/reference foundations, the R4-A/B/C internal
+  contracts/read-only registry/audit boundary, and R5 Wealth Home exist.
+- Operational AI adapters/dispatch and Portfolio Intelligence remain absent.
+  R6.1–R6.4 are published; limited-budget multi-Goal planning is not implemented.
+  Exact present evidence is owned by `CURRENT_STATE.md`.
 
 ## 2. Target architecture
 
@@ -84,7 +87,7 @@ core. It does not collapse the layers into one service.
 
 ### Smart Financial Context placement (ADR-028)
 
-R2 implementation will introduce one internal, feature-specific composition boundary between
+R2 implements one internal, feature-specific composition boundary between
 governed sources and consumers. It exposes only context approved for the named
 feature and authenticated user; it is not a global user dump, a second
 financial engine, an AI memory, or an arbitrary database facade.
@@ -196,7 +199,8 @@ widget specifications.
 - **Purpose:** global conversational interpretation and orchestration.
 - **Primary question:** What do my approved facts and tools say about this
   question?
-- **Reuse:** none today; future read-only deterministic capabilities.
+- **Reuse:** R4-B internal read-only tools and deterministic capabilities;
+  no user-facing Copilot exists today.
 - **Future:** global entry, contextual Ask AI, briefing, and smart-form help.
 - **Dependencies:** R4 provider abstraction, tool registry, privacy, audit, and
   context minimization.
@@ -301,11 +305,12 @@ explicitly chooses that authority.
 
 ## 8. AI placement
 
-The future runtime is provider-aware and may support OpenAI, Gemini, and Ollama
-through an abstraction. R1 does not lock an interface, required parity, default
-provider, fallback order, model, or deployment. AI calls capabilities such as
-read context or run certified Planning/FIRE services; it does not reproduce
-their calculations.
+The future runtime is provider-aware. The subsequent ADR-030 governs local
+Ollama, Gemini policy, default `LOCAL_ONLY`, explicit remote consent and
+non-silent fallback. OpenAI is not a default provider for the current queue.
+R4-B currently exposes read-only context/Goal tools; certified Planning/FIRE
+calculation tools require explicit registry contracts before activation.
+AI never reproduces their mathematics.
 
 Detailed runtime, tool, audit, timeout, error, cost, and provider contracts
 belong to R4 and `AI_AND_LLM.md`.
@@ -324,7 +329,7 @@ belong to R4 and `AI_AND_LLM.md`.
 
 ## 10. Migration and dependency order
 
-The deterministic main path is:
+The preserved macro dependency map is:
 
 ```text
 R1 architecture/docs
@@ -344,6 +349,10 @@ with late R3/R4 work, but its implementation must preserve the locked IA and
 context contracts. R6 follows the foundations to avoid recomposing flows twice.
 R7 closes the transversal gate before Portfolio Intelligence resumes.
 
-Parallel research is permitted where dependencies are absent; the official
-implementation queue remains sequential and is owned by
-`IMPLEMENTATION_ROADMAP.md`.
+The map is not proof of phase completion. R5 is closed and R6.1–R6.4 were
+published while operational R4 remained gated. The 2026-10-28 reconciliation
+keeps one sequential delivery queue in `IMPLEMENTATION_ROADMAP.md`: R6.5
+contract/backend/journey first, then governed R4 local/online readiness and
+remaining bounded composition before R7. No financial feature implicitly
+activates AI, no complete future Copilot is a circular prerequisite for
+Portfolio, and 10.5-B still requires R7 closure. Research changes no gate.
