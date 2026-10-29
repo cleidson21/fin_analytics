@@ -2,7 +2,7 @@
 
 **Status:** `ARCHITECTURE LOCKED / JOURNEY-ORIENTED INCREMENTAL DELIVERY`
 
-**Updated:** 2026-10-28 — Product roadmap realignment; no implementation authorization
+**Updated:** 2026-10-29 — status reconciliation only; product direction unchanged
 
 ## Product vision
 
@@ -121,7 +121,10 @@ The project owner reaffirmed six connected journeys, not a new architecture:
   scheduling gate. Neither the LLM nor the browser owns financial mathematics.
 
 R6.5-A closes the approved contract in `GOAL_BUDGET_PREVIEW_CONTRACT.md`;
-R6.5-B is ready but not implemented. No code is authorized by the contract task.
+That contract task authorized no code. R6.5-B was subsequently implemented and
+published; R6.5-C is implemented, automated-tested and user accepted, as
+recorded by `CURRENT_STATE.md`. Journey A is functionally accepted; publication
+remains pending separate authorization.
 The sole executable queue, original-to-current traceability matrix, milestone
 acceptance gates, and the link to R6.5's executable contract are in
 `IMPLEMENTATION_ROADMAP.md`. That owner orders remaining work by actual
@@ -152,7 +155,7 @@ migrates them. Deep links must not be broken incidentally.
 | 10.R3 | External Context Layer | BCB/reference foundation independently approved; R3-G separately gated; R3-H deferred |
 | 10.R4 | AI Runtime Foundation | R4-A/B/C `CLOSED / PUSHED`; real adapters/router not implemented |
 | 10.R5 | Design, navigation, and System/Light/Dark | `USER ACCEPTED / CLOSED` for the current baseline |
-| 10.R6 | Goals, Planning, FIRE, and Wealth Home recomposition | R6.1–R6.4 `COMMITTED / PUSHED`; R6.5-A `CONTRACT APPROVED`; R6.5-B `READY / NOT STARTED`; R6.5-C planned; R6 not closed |
+| 10.R6 | Goals, Planning, FIRE, and Wealth Home recomposition | R6.1–R6.5-B `COMMITTED / PUSHED`; R6.5-A `CONTRACT APPROVED`; R6.5-C user accepted, publication pending; Journey A functionally accepted; later R6 not closed |
 | 10.R7 | Independent product/architecture validation | `NOT STARTED` |
 | 10.5-B | Portfolio Intelligence contract lock | `PAUSED / PENDING WEALTH OS REALIGNMENT` |
 

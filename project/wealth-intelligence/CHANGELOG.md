@@ -1,5 +1,55 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-R6.5-C-ACCEPTANCE-CHECKPOINT] — 2026-10-29 — Journey A functional acceptance
+
+- The responsible owner formally accepted R6.5-C and Journey A's functional
+  scope on 2026-10-29. **USER-REPORTED MANUAL PASS — NOT DIRECTLY OBSERVED BY AGENT.**
+  C1 reported 1,200 allocated and 300 available; C2 300 excess without
+  redistribution; C3 rejection of unequal totals and invalidation of the old
+  result; C4 acceptance of explicit zeros. The owner also reported successful
+  API/result comparisons, navigation and deep links, responsive layouts,
+  Light/Dark/System, keyboard and safe session cases including delayed 401.
+- Prior implementation evidence: 69 focused tests and 292 Vitest tests in 34
+  files passed, as did TypeScript, affected-file ESLint and the 38-route Next.js
+  build. The preexisting Recharts prerender dimensions warning remains. These
+  are prior results, not tests rerun for this checkpoint.
+- R6.5-C is `IMPLEMENTED / AUTOMATED GATES PASSED / USER ACCEPTED / PUBLICATION
+  PENDING`; Journey A is `FUNCTIONALLY ACCEPTED / PUBLICATION PENDING`.
+  Publication requires separate authorization. R4 remains separately gated,
+  `LOCAL_ONLY` remains default and R7 remains not started. Security review
+  leads remain in the existing roadmap; no operational AI or deployment follows
+  from this acceptance.
+
+## [TSK-R6.5-C] — 2026-10-29 — Monthly budget A/B experience
+
+- Integrated the published Goal budget preview into the existing
+  `Objetivo → Meta cadastrada → Distribuir orçamento` flow. The three primary
+  intentions and existing Goal deep links remain; no global route/topbar,
+  additional tab bar or fourth intention was introduced.
+- Added exact TypeScript contracts and one Planning-client POST, string-only
+  pt-BR input adaptation, explicit 1–20 Goal selection, budget/horizon/return
+  and independent A/B allocations. Equal-total and financial validation remain
+  backend-owned; no local sums, redistribution, default return or Health budget.
+- Added responsive A/B cards for certified budget, projection, target states,
+  deltas, unavailable facts and source/update context. Edits and session/list
+  changes invalidate results; cancellation prevents late responses and an old
+  401 from clearing a replacement session. Missing/foreign 404 requires refresh.
+- Validation executed in this task: 69 focused tests; complete frontend Vitest
+  292 passed in 34 files; TypeScript, affected-file ESLint and Next.js build
+  passed with 38 routes. The existing Recharts prerender dimensions warning
+  remains. Vitest needed scoped elevation after esbuild sandbox access denial.
+  Two synthetic JSON fixtures use existing certified services; no backend
+  suite, active financial database, external provider or LLM was run.
+- Reconciled active R6.5-B status to `IMPLEMENTED / FOCUSED TESTS PASSED /
+  COMMITTED / PUSHED`: functional `754a9dedf3fe57590c0af3f524573a14b6dfe961`,
+  documentary `b59e2af63fbc6a093bafa4a50a375571a1877ab6`, remote confirmed in the
+  preceding controlled push. Earlier dated pre-checkpoint records are retained.
+- R6.5-C is `IMPLEMENTED / AUTOMATED GATES PASSED / USER MANUAL ACCEPTANCE
+  PENDING / CHECKPOINT PENDING`. Desktop/tablet/mobile, Light/Dark/System,
+  actual authenticated API flow and keyboard/session manual acceptance remain
+  pending; Journey A is not closed. No backend/Engine/migration/dependency,
+  locked normative contract, R4 runtime or R6.6+ change; no commit/push/deploy.
+
 ## [TSK-R6.5-B] — 2026-10-29 — Backend Goal budget comparison
 
 - Implemented authenticated `POST /api/v1/planning/goals/budget-preview`, strict

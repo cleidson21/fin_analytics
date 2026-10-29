@@ -1,6 +1,6 @@
 # Goal Budget Preview — R6.5 microcontract
 
-**Status:** `R6.5-A CONTRACT APPROVED / R6.5-B IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING / R6.5-C PLANNED — NOT STARTED`
+**Status:** `R6.5-A CONTRACT APPROVED / R6.5-B IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED / R6.5-C IMPLEMENTED — AUTOMATED GATES PASSED — USER ACCEPTED — PUBLICATION PENDING`
 
 **Date approved:** 2026-10-28
 
@@ -14,9 +14,11 @@ supersedes its provisional field names, optional inverse-solve baseline and
 unresolved decisions. No accepted ADR or existing locked contract is amended.
 
 R6.5-A approved the contract only. R6.5-B was separately authorized and is now
-`IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`; see section 12 for
-execution evidence. R6.5-C is `PLANNED / NOT STARTED`. No frontend, persistence,
-provider call, commit or push is authorized by the backend task.
+`IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED`; see section 12 for
+dated implementation evidence and section 13 for later publication/integration.
+R6.5-C was separately authorized, implemented, automated-tested and user accepted;
+publication requires separate authorization. The backend task itself did not
+authorize frontend, persistence, provider calls, commits or publication.
 
 ## 1. Objective and approved decisions
 
@@ -315,7 +317,8 @@ certified Engines, public legacy Goals DTOs, ADRs or locked contracts.
 
 ## 9. R6.5-B — single executable backend task
 
-**State:** `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`.
+**State at implementation completion (historical; current state in section 13):**
+`IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING`.
 Contract readiness was not permission to implement during R6.5-A. The separately
 authorized R6.5-B task follows the unchanged scope below: implement only
 the endpoint/DTO/orchestration and tests below, stopping after documentation of
@@ -480,3 +483,20 @@ plus four untracked paths (this contract and the three new code/test files).
 `git diff --check`, explicit whitespace/single-EOF checks for all 26 paths and
 `git diff --no-index --check` for all four untracked files passed. No protected
 Engine/reader, locked contract, migration, frontend or historical lab changed.
+
+## 13. Publication and frontend status — 2026-10-29
+
+R6.5-B was subsequently committed and pushed as functional
+`754a9dedf3fe57590c0af3f524573a14b6dfe961` followed by documentary
+`b59e2af63fbc6a093bafa4a50a375571a1877ab6`; the controlled push confirmed the
+latter as the real remote `develop` SHA. Section 12 retains the implementation
+task's pre-checkpoint facts rather than rewriting its chronology.
+
+R6.5-C now consumes this exact API under the separately authorized frontend
+task. Its effective state is `IMPLEMENTED / AUTOMATED GATES PASSED / USER
+ACCEPTED / PUBLICATION PENDING`; Journey A is functionally accepted. Current
+implementation/tests/manual acceptance evidence is owned by
+`CURRENT_STATE.md`; the single queue and the unchanged separately gated R4
+safety/audit/local/online sequence remain in `IMPLEMENTATION_ROADMAP.md`.
+D1–D3, financial input/output semantics, Engine boundaries and errors in
+sections 1–8 are unchanged. No later phase is authorized by this status record.

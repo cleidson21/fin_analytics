@@ -5,7 +5,7 @@
 **R5 technical checkpoint:** `COMMITTED / PUSHED` at
 `1fae590fb316b4f9d9584aad23cdde4fe8f3af9b`
 
-**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1-R6.4 COMMITTED / PUSHED / R6.5-A CONTRACT APPROVED / R6.5-B IMPLEMENTED — FOCUSED TESTS PASSED — CHECKPOINT PENDING / R6.5-C PLANNED — NOT STARTED`
+**Sequencing gate:** `R6 GENERAL GATE SATISFIED / R6.1-R6.5-B COMMITTED / PUSHED / R6.5-A CONTRACT APPROVED / R6.5-C IMPLEMENTED — AUTOMATED GATES PASSED — USER ACCEPTED — PUBLICATION PENDING`
 
 This directory is the canonical architectural and product documentation area
 for FINANALYTICS Wealth Intelligence. FINANALYTICS is evolving into a personal
@@ -50,7 +50,15 @@ the authenticated budget-preview POST, strict DTOs, one owned batch read and
 certified per-Goal comparison, without financial writes or Engine changes.
 Its final new suites passed 192 tests; the relevant regression selection passed
 946 tests (including those 192). R6.5-B is `IMPLEMENTED / FOCUSED TESTS PASSED /
-CHECKPOINT PENDING`, uncommitted/unpublished. R6.5-C is `PLANNED / NOT STARTED`.
+COMMITTED / PUSHED` at documentary checkpoint
+`b59e2af63fbc6a093bafa4a50a375571a1877ab6` (functional parent
+`754a9dedf3fe57590c0af3f524573a14b6dfe961`). R6.5-C now integrates budget
+distribution into Objetivo → Meta cadastrada, with exact string inputs,
+certified results and session/obsolete-response cleanup. Its 69 focused tests,
+292-test complete frontend suite, TypeScript, affected ESLint and 38-route build
+passed. On 2026-10-29 the owner accepted R6.5-C and Journey A's functional
+scope; remote publication requires separate authorization. Manual evidence is
+user-reported, not directly observed by the agent; see `CURRENT_STATE.md`.
 R7 execution, Advisor, and Portfolio Intelligence remain gated.
 The 2026-10-28 realignment, traceability matrix, six product journeys, and next
 five deliveries are owned solely by `IMPLEMENTATION_ROADMAP.md`. R4's remaining

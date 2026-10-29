@@ -2,7 +2,7 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-29 — R6.5-B backend implemented/focused-tested; checkpoint pending
+**Updated:** 2026-10-29 — R6.5-B published; R6.5-C user accepted; Journey A functionally accepted, publication pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
@@ -61,11 +61,11 @@ This document describes what exists now. Future product architecture belongs to
 | 10.R6.2 Goal Progress | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
 | 10.R6.3 Goal Monitoring Overview | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
 | 10.R6.4 Goal Batch Contribution Preview | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
-| 10.R6.5-A budget contract | `CONTRACT APPROVED / READY FOR BACKEND` |
-| 10.R6.5-B budget backend | `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` |
-| 10.R6.5-C product integration | `PLANNED / NOT STARTED` |
+| 10.R6.5-A budget contract | `CONTRACT APPROVED` |
+| 10.R6.5-B budget backend | `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` |
+| 10.R6.5-C product integration | `IMPLEMENTED / AUTOMATED GATES PASSED / USER ACCEPTED / PUBLICATION PENDING` |
 | Later R6 increments | `NOT AUTHORIZED` |
-| Wealth OS Realignment | R2 and R5 closed; R3 foundation independently approved; R4-A/B/C closed, operational R4 gated; R6.1–R6.4 published; R6.5-A approved, B implemented/tested/checkpoint pending; R7 not started |
+| Wealth OS Realignment | R2 and R5 closed; R3 foundation independently approved; R4-A/B/C closed, operational R4 gated; R6.1–R6.5-B published; R6.5-A approved; C user accepted; Journey A functionally accepted/publication pending; R7 not started |
 
 R3-B now has an approved and locked contract, official five-series BCB/SGS
 registry, implementation decomposition, and accepted ADR-029. R3-B.1 replaced
@@ -266,7 +266,7 @@ R6.5-A now records the owner's D1–D3 approval in
 common nominal premises and permitted explicit excess. The contract defines
 the additive authenticated budget preview and direct reuse of the certified
 scenario comparator per owned Goal, not an inverse required-contribution solve.
-R6.5-B is `IMPLEMENTED / FOCUSED TESTS PASSED / CHECKPOINT PENDING` under the
+R6.5-B is `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED` under the
 explicit TSK-R6.5-B authorization. `POST /api/v1/planning/goals/budget-preview`
 performs one owned batch read, exact local-Decimal budget accounting, and one
 certified `ScenarioComparisonEngine.compare` call per available Goal. A/B have
@@ -277,8 +277,49 @@ Final validation on 2026-10-29: new domain/API suites `192 passed, 3 warnings`;
 Planning/Goals/FIRE/Profile regression selection `946 passed, 113 warnings`,
 including those 192 tests. Warnings originate in existing Pierre/Goals code.
 Commands and scope are recorded in the microcontract implementation evidence.
-R6.5-B remains uncommitted/unpublished. R6.5-C is `PLANNED / NOT STARTED`.
-No Health-derived future capacity, automatic Goal–FIRE/portfolio link or R6.5 UI exists.
+R6.5-B's functional commit is `754a9dedf3fe57590c0af3f524573a14b6dfe961`;
+the documentary commit is `b59e2af63fbc6a093bafa4a50a375571a1877ab6`.
+The preceding controlled push confirmed the latter as the real remote
+`develop` SHA with `git ls-remote`; this frontend task did not repeat that push.
+Earlier checkpoint-pending/uncommitted statements in dated phase evidence
+describe the pre-publication state and do not override this current record.
+
+R6.5-C now integrates `Objetivo → Meta cadastrada → Distribuir orçamento` in
+the existing Planning route, without a fourth intention or additional tab bar.
+Users explicitly select 1–20 owned Goals, enter a monthly budget, horizon,
+hypothetical annual return and independent A/B allocations, then request the
+comparison. Existing lexical pt-BR adapters retain financial strings; the
+backend alone validates equal totals, accounts for budget/excess and calculates
+projections/deltas. Selection uses only Goal identity/name/status; legacy
+numeric Goal amounts are not Planning facts or automatic presets.
+
+Responsive cards show returned budget summaries and A/B results per Goal,
+including unavailable projections, target states, signed certified deltas and
+source/update context. Inputs/results remain memory-only. Edits, Goal refresh,
+401, logout, identity/token changes and unmount invalidate old requests/results.
+The shared cancellable HTTP path rejects obsolete responses before an old 401
+can clear a replacement session. A missing/foreign Goal requires explicit list
+refresh; missing selections are never silently removed from the simulation.
+
+R6.5-C automated validation on 2026-10-29: focused form/component/client/page
+tests `69 passed`; complete frontend Vitest `292 passed` in 34 files;
+TypeScript `--noEmit`, affected-file ESLint and Next.js build passed (38 routes).
+The existing Recharts prerender width/height warning remains. Two synthetic
+JSON fixtures were generated through the existing certified backend services;
+no backend suite, active database, provider or LLM was executed for this task.
+On 2026-10-29 the responsible owner formally accepted R6.5-C and Journey A's
+functional scope. **USER-REPORTED MANUAL PASS — NOT DIRECTLY OBSERVED BY AGENT.**
+The owner reported C1 (1,200 allocated, 300 available), C2 (300 excess, no
+redistribution), C3 (unequal totals rejected and prior result invalidated), and
+C4 (explicit zero budget and contributions accepted). Reported checks also
+covered per-Goal results against the API, navigation/deep links, responsive
+layouts, Light/Dark/System, keyboard and safe session cases including delayed
+401. No screenshots are claimed. This acceptance covers Goal selection, context,
+progress, individual and joint planning, required contributions, monthly budget,
+A/B comparisons and certified results. R6.5-C publication requires separate
+authorization; it does not imply deployment, operational AI, Health-derived
+assumptions, automatic Goal wealth linkage, Portfolio Intelligence or R7 closure.
+No Health-derived future capacity or automatic Goal–FIRE/portfolio link exists.
 
 R1 locks a target information architecture but changes no route. Existing deep
 links remain operational until R5/R6 explicitly implement migration.
@@ -653,7 +694,7 @@ No Portfolio Intelligence service, endpoint, engine, or page has been created.
   PASSED / COMMITTED / PUSHED`. R6.3 Goal Monitoring Overview is `IMPLEMENTED /
   FOCUSED TESTS PASSED / COMMITTED / PUSHED`. R6.4 Goal Batch Contribution
   Preview is `IMPLEMENTED / FOCUSED TESTS PASSED / COMMITTED / PUSHED`.
-  R6.5-A's contract is approved; R6.5-B is implemented/focused-tested with its checkpoint pending;
+  R6.5-A's contract is approved; R6.5-B is committed/pushed; R6.5-C is user accepted, and Journey A is functionally accepted with publication pending;
   R7, Advisor, Portfolio Intelligence, and later increments remain gated.
 - `PLANNING_GOAL_CONTEXT_READ_MODEL_PROPOSAL.md` records the approved R6.1
   contract and implementation evidence and is included in the published

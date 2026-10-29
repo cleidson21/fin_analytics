@@ -2,7 +2,7 @@
 
 **Status:** `10.R1 ARCHITECTURE LOCKED / 10.R2-A CONTEXT BOUNDARY LOCKED`
 
-**Date:** 2026-10-28 — current-state/dependency reconciliation; locked boundaries unchanged
+**Date:** 2026-10-29 — current implementation status reconciliation; locked boundaries unchanged
 
 **Canonical responsibility:** cross-cutting system architecture, target product
 information architecture, capability placement, and migration boundaries.
@@ -37,7 +37,8 @@ Verified current facts:
 - R2 Smart Context, R3 BCB/reference foundations, the R4-A/B/C internal
   contracts/read-only registry/audit boundary, and R5 Wealth Home exist.
 - Operational AI adapters/dispatch and Portfolio Intelligence remain absent.
-  R6.1–R6.4 are published; limited-budget multi-Goal planning is not implemented.
+  R6.1–R6.5-B are published; the R6.5-C budget UI is implemented, tested and
+  user accepted. Journey A is functionally accepted; publication is pending.
   Exact present evidence is owned by `CURRENT_STATE.md`.
 
 ## 2. Target architecture
