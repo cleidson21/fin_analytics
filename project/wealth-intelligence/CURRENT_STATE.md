@@ -8,6 +8,18 @@ This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
 `IMPLEMENTATION_ROADMAP.md`.
 
+When remote `develop` confirms the isolated publication commit containing this
+reconciliation, SEC-AUTH-LEGACY-ROUTES is
+`PARTIALLY MITIGATED / INDEPENDENTLY REVIEWED / COMMITTED / PUSHED / OWNERSHIP PENDING`;
+until then publication remains pending. The isolated line reapplies the security
+commits, excludes launcher commit `b754e6e`, and leaves original local checkpoint
+`8578307` intact. The histories require separate future reconciliation; local
+`develop` is not thereby synchronized. The five operations remain blocked,
+ownership is not certified, `INF-SEC-LEGACY-01` remains open, and no deploy or
+global security approval follows. See `SECURITY_AND_GOVERNANCE.md` for details.
+
+The following paragraph records the prior local checkpoint state:
+
 TSK-SEC-AUTH-LEGACY-ROUTES is **PARTIALLY MITIGATED / OWNERSHIP PENDING**.
 When both authorized local checkpoint commits exist, its state is
 `PARTIALLY MITIGATED / INDEPENDENTLY REVIEWED / COMMITTED LOCALLY / PUBLICATION PENDING / OWNERSHIP PENDING`;

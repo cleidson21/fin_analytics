@@ -24,6 +24,27 @@ ownership, and scope behavior.
 
 ### TSK-SEC-AUTH-LEGACY-ROUTES — 2026-10-30
 
+#### Isolated publication reconciliation
+
+When remote `develop` confirms the commit containing this reconciliation, the
+state is `PARTIALLY MITIGATED / INDEPENDENTLY REVIEWED / COMMITTED / PUSHED / OWNERSHIP PENDING`.
+Until that confirmation, publication remains pending. The isolated publication
+line reapplies the two security commits with provenance, as
+`13fc8fa8f216021939d519739c1c80d74617f734` and
+`e90e58571fd47d70a7496157b3664b2bfb54d0a3`, directly on base
+`0803511d490dfc9746e0792ddc899f1abbbc9c8d`. Their seven blobs matched original
+checkpoint `85783071068b86f5150298bd5c722c8213a70cf4` before this documentation
+reconciliation. The reapplied SHAs differ from the original local commits.
+Original local `develop` and its checkpoint remain intact; launcher commit
+`b754e6e3665bb0a644d7c06edd1cb79473633468` is not in this publication line.
+These two histories require a separately authorized future reconciliation.
+
+The independent approval and three informational findings reported by the owner
+remain as recorded below. Ownership is not certified; all five operations
+remain blocked for authenticated users, and adjacent routes in
+`INF-SEC-LEGACY-01` still require treatment. Publication does not imply deploy
+or global multi-user security approval. No deploy was performed in this task.
+
 **SEC-AUTH-LEGACY-ROUTES = PARTIALLY MITIGATED / OWNERSHIP PENDING.**
 Local authentication and fail-closed containment are implemented and validated;
 safe authenticated operation is not enabled. No global security approval follows.

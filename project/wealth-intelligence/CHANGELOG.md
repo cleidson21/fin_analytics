@@ -1,5 +1,21 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-SEC-AUTH-ISOLATED-PUBLICATION] — 2026-10-30 — Isolated publication
+
+- Upon remote confirmation of this commit, status is `PARTIALLY MITIGATED /
+  INDEPENDENTLY REVIEWED / COMMITTED / PUSHED / OWNERSHIP PENDING`. Until then,
+  publication is pending; no deploy occurred.
+- Reapplied security commits `13fc8fa8f216021939d519739c1c80d74617f734` and
+  `e90e58571fd47d70a7496157b3664b2bfb54d0a3` on `0803511`; their seven blobs
+  matched original local checkpoint `85783071068b86f5150298bd5c722c8213a70cf4`.
+  The new SHAs differ from the originals. The original local checkpoint is
+  intact and launcher commit `b754e6e` is excluded from this publication line;
+  the two histories need separately authorized reconciliation.
+- Independent approval with three informational findings is preserved.
+  Ownership remains uncertified, all five operations remain blocked for
+  authenticated users, and adjacent routes in `INF-SEC-LEGACY-01` require
+  treatment. No global isolation approval is implied.
+
 ## [TSK-SEC-AUTH-LEGACY-ROUTES-CHECKPOINT] — 2026-10-30 — Local checkpoint
 
 - Containment covers the five mounted legacy operations; ownership remains
