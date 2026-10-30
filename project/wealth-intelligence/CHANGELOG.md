@@ -1,5 +1,42 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-SEC-AUTH-LEGACY-ROUTES-CHECKPOINT] — 2026-10-30 — Local checkpoint
+
+- Containment covers the five mounted legacy operations; ownership remains
+  pending and authenticated operation remains unavailable. The prior task's
+  evidence is 54 new tests, 120 focused passes and 1339 regression passes;
+  these tests were not rerun for this checkpoint.
+- The project owner reports independent review **APPROVED WITH INFORMATIONAL
+  FINDINGS / APPROVED FOR LOCAL CHECKPOINT**: 0 blocking, 0 material, 0 minor,
+  3 informational (`INF-SEC-LEGACY-01`, `INF-SEC-LEGACY-02`,
+  `INF-SEC-LEGACY-03`). The security owner records their details and limitations.
+- Upon creation of both authorized local commits, the checkpoint is
+  `PARTIALLY MITIGATED / INDEPENDENTLY REVIEWED / COMMITTED LOCALLY / PUBLICATION PENDING / OWNERSHIP PENDING`.
+  Before both commits exist, it is incomplete. No remote publication or deploy
+  is authorized by this checkpoint.
+
+## [TSK-SEC-AUTH-LEGACY-ROUTES] — 2026-10-30 — Local fail-closed containment
+
+- Reproduced HTTP 200 without credentials and with invalid Bearer on the five
+  mounted Pierre legacy operations using disposable SQLite and a fake import
+  pipeline. The similarly named API account/transaction routers are not mounted.
+- Added a shared router dependency that authenticates with existing
+  get_current_user, then denies uncertified legacy financial scope with 403.
+  Missing/invalid/refresh credentials return 401; inactive-user 400 and legacy
+  JWT compatibility are preserved. No user ownership was invented. Both reads
+  and import remain unavailable pending an explicit scope decision.
+- Added 54 synthetic HTTP/security tests with real persisted users, real JWT
+  authentication, read-only request SQL, immutable fixture snapshots and
+  pipeline/connector tripwires. Focused JWT+legacy: 120 passed, 104 warnings;
+  expanded 56-file regression: 1339 passed, 218 warnings, no failures/errors/skips.
+- OpenAPI keeps 61 paths / 65 operations and unchanged schemas/contracts;
+  only the five OAuth2 security requirements change. Consumer availability
+  impact and evidence are recorded in SECURITY_AND_GOVERNANCE.md.
+- Status: **PARTIALLY MITIGATED / OWNERSHIP PENDING**, local/uncommitted.
+  Preserved HEAD b754e6e, launcher bytes/line endings and empty index. No
+  real provider/import/database, migration, Engine, frontend, runtime, CORS,
+  session, R4, model execution, staging, commit, push or deploy change.
+
 ## [TSK-SEC-DEP-C] — 2026-10-30 — Clean Python 3.14 manifest validated locally
 
 - Preserved all seven pending A/B paths, their evidence and both parser test

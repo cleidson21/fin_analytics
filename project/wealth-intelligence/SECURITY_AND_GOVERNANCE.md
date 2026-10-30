@@ -2,7 +2,7 @@
 
 **Status:** `ACTIVE OWNER — CURRENT RISKS + LOCKED DIRECTION`
 
-**Date:** 2026-10-29
+**Date:** 2026-10-30
 
 ## 1. Current verified state
 
@@ -21,6 +21,210 @@
 Do not infer universal endpoint protection or multi-tenant isolation from the
 local deployment model. Every new contract must verify its own authentication,
 ownership, and scope behavior.
+
+### TSK-SEC-AUTH-LEGACY-ROUTES — 2026-10-30
+
+**SEC-AUTH-LEGACY-ROUTES = PARTIALLY MITIGATED / OWNERSHIP PENDING.**
+Local authentication and fail-closed containment are implemented and validated;
+safe authenticated operation is not enabled. No global security approval follows.
+
+#### Independent review and checkpoint
+
+The project owner reports that Gemini 4 Argon independently reviewed this
+containment and returned **APPROVED WITH INFORMATIONAL FINDINGS** and
+**APPROVED FOR LOCAL CHECKPOINT**: **0 BLOCKING, 0 MATERIAL, 0 MINOR,
+3 INFORMATIONAL**. The review also confirmed structural OpenAPI equivalence to
+the baseline after removing the five intentional OAuth2 requirements. This is
+the owner's report of the review; the review artifact and auditor-generated
+file hashes were not supplied in this checkpoint session.
+
+- **INF-SEC-LEGACY-01:** Adjacent authenticated routes can still read or modify
+  legacy-ledger data without certified ownership. This preexisting risk is outside
+  the five-route containment and blocks global multi-user isolation certification;
+  it does not invalidate the approved local containment.
+- **INF-SEC-LEGACY-02:** Expired tokens are covered by the shared JWT suite.
+  Adding them directly to the five-route parameterized matrix is optional
+  complementary coverage, not a demonstrated failure.
+- **INF-SEC-LEGACY-03:** Frontend handling can turn a 403 into a generic empty
+  state, limiting UX and diagnosis. No fabricated balance or improper financial
+  write was evidenced by this finding.
+
+The intended state after both authorized local commits succeed is
+`PARTIALLY MITIGATED / INDEPENDENTLY REVIEWED / COMMITTED LOCALLY / PUBLICATION PENDING / OWNERSHIP PENDING`.
+Until both commits exist, the checkpoint is not complete. This does not reopen
+the five operations, certify their ownership or approve global security. The
+earlier preflight and validation below describe their original point in time.
+
+#### Preflight and actual exposure
+
+Branch `develop`, HEAD `b754e6e3665bb0a644d7c06edd1cb79473633468`, local
+`origin/develop` ref `0803511d490dfc9746e0792ddc899f1abbbc9c8d`, empty index,
+one local commit ahead of that ref. No live remote refresh was performed.
+HEAD contains only README.md and scripts/start_dev.ps1 changes. The only
+preexisting dirty path was scripts/start_dev.ps1: no textual diff, Git reports
+`i/lf w/mixed`, and warns about LF-to-CRLF conversion. Its SHA-256 before and
+after this task is
+`390ddb77d74a623da9b2025f5e636f78409f1e472d00a2eb299f1fd87d68dd1c`.
+The launcher and README were not edited; no line-ending correction was made.
+
+`backend/main.py` actually mounts these five operations under `/api/v1`:
+
+- `GET /accounts`, `/transactions`, `/categories`, `/dashboard`: owned by
+  `backend/domains/pierre/read_router.py`.
+- `POST /pierre/import`: owned by `backend/domains/pierre/router.py`.
+
+The separate `backend/api/routers/accounts.py` and `transactions.py` are not
+mounted by this app. Their authenticated signatures do not protect the mounted
+legacy handlers. They were inspected but neither substituted nor modified.
+Dashboard subpaths belong to a separate router; this task does not change them.
+
+Before the fix, real TestClient requests to all five mounted operations returned
+**200 both without Authorization and with an invalid Bearer**: ten expected
+credential-gate failures (`10 failed, 44 deselected, 36 warnings`). All data
+was synthetic. For POST, the real pipeline class was replaced at its router
+binding with a fake async pipeline returning empty counts; no real import ran.
+The pre-fix OpenAPI also had no `security` requirement on those five operations.
+
+#### Authentication risk A and ownership risk B
+
+Risk A was absent authentication on the two legacy routers. Risk B is independent:
+`AccountService`, `TransactionService` and `CategoryService` call repository
+`list_all`, which executes unfiltered table reads. Dashboard counts accounts
+and categories and aggregates the whole transactions table. No handler received
+an authenticated data scope. Legacy Account is keyed by `(provider, external_id)`;
+Transaction links to that composite account key; Category is keyed by
+`(provider, name)`. None has `user_id` or a certified user-to-account relation.
+The audit log's reserved `changed_by` field is not ownership.
+
+The real `PierreImportPipeline` fetches through `PierreConnector`, maps rows,
+then calls account save, category save-if-absent and transaction save. Those
+services commit independently; the endpoint therefore has financial-write
+potential, including partial persistence on a later error. This was established
+by code inspection only; no provider, real pipeline or financial import ran.
+
+ADR-023 certifies a guarded MyProfit snapshot source, not Pierre raw account
+ownership. R2's locked contract section 19 authorizes the single-user bridge
+for observed income; it does not authorize these raw lists, aggregates or writes.
+ADR-017's consolidated Health semantics likewise cannot grant these routes
+ownership. No applicable explicit single-tenant authorization was found for
+these five operations. Counting one user, checking role or accepting a provider
+identifier cannot establish ownership here.
+
+#### Implemented containment and pending decision
+
+Both routers now require the shared
+`backend/api/dependencies/legacy_financial.py::require_certified_legacy_financial_scope`.
+It first depends on the existing `get_current_user`, then unconditionally
+denies the uncertified financial scope with a generic **403**. It does not
+inspect financial tables, construct services/pipelines, assign ownership or
+create a second JWT validator. Request handlers and financial DTOs are unchanged.
+
+For each of the five operations: missing/invalid Bearer, refresh-as-access and
+nonexistent user return **401** with `WWW-Authenticate: Bearer`; inactive users
+retain the existing authentication dependency's **400** denial. Valid typed
+and transitional untyped access tokens authenticate and then receive **403**.
+Even a database containing exactly one application user remains denied.
+This intentionally makes these capabilities unavailable to authenticated users.
+
+**Decision required before reopening:** approve a route-specific, enforceable
+local-tenant contract (including import authorization and failure conditions),
+or separately design certified account/transaction/category ownership and
+import scope, with explicit authorization for any schema/migration work. No
+such domain or schema change was made here. `SEC-JWT-LEGACY — REMOVAL PENDING`
+remains independent; its policy and token issuance were not changed.
+
+#### Frontend consumers and availability impact
+
+Source inspection excluded `frontend/src/all_files.txt`, which is a snapshot:
+
+- `/accounts`: `useAccounts.ts` feeds `app/accounts/page.tsx`;
+  `app/transactions/page.tsx` also loads account filter options.
+- `/categories`: transaction filter options and `useCategoriesAdmin.ts`, used
+  by `CategoriesTab.tsx` under `app/governance/data/categories/page.tsx`.
+- `/transactions`: category drilldown in `app/categories/page.tsx` and period
+  drilldown in `components/dashboard/DashboardPage.tsx`. `useTransactions.ts`
+  is an unused stub, not an active API consumer.
+- `/dashboard`: no direct request to the exact legacy aggregate path was found
+  in current executable frontend source. DashboardPage uses `/dashboard/*`
+  subpaths and `/governance/transactions`, which are distinct operations.
+- `/pierre/import`: DashboardPage's explicit import action on `app/page.tsx`.
+
+The four legacy GET handlers declare no query parameters. Accounts, transactions
+and categories return flat arrays of AccountOut, TransactionOut and CategoryOut;
+dashboard returns total_accounts/categories/transactions/amount. Frontend filters
+such as is_active/type, dates/category and limit/offset do not create server
+scope; the legacy handlers ignore them. The category admin consumer's expected
+paginated envelope is also an existing mismatch. POST accepts only optional
+start_date/end_date and returns success/counts, not an ownership selector.
+No frontend fix is included. `lib/api.ts` already sends Bearer when present,
+redirects on 401 and handles other failures as API errors/null through
+fetchFromAPI. The new 403 can therefore appear as unavailable/empty lists,
+filters, drilldowns or failed import. Human visual acceptance was not performed.
+
+#### Local validation, OpenAPI and reproducibility
+
+Runtime: the existing approved external
+`%LOCALAPPDATA%/FinAnalytics/runtimes/sec-dep-c-py314-0803511/Scripts/python.exe`,
+CPython 3.14.0 AMD64. No runtime, .venv or dependencies were modified.
+All pytest commands ran from repository root. Root conftest selects isolated
+SQLite before application imports. New HTTP fixtures additionally create their
+own disposable SQLite database with real persisted synthetic users, accounts,
+categories and transactions, real async user repository and real JWT dependency.
+Financial scopes are intentionally not attributed to the synthetic users.
+
+The new 54 tests cover the five-operation credential matrix, two active users,
+current/legacy access tokens, single-user denial, import bodies, and OAuth2
+metadata. For blocked requests, service and pipeline constructors are not called
+and the fake pipeline is never awaited. SQL is limited to user SELECTs; SQLite
+query_only and statement checks prohibit writes, and complete before/after
+synthetic database dumps match. Real connector construction and external
+create_connection calls are tripwired. Per-user financial isolation cannot be
+certified without ownership; denial for both users proves containment only.
+
+Focused: **120 passed, 104 warnings** (54 new + 66 JWT).
+Expanded: **1339 passed, 218 warnings**, 56 files, 36.80 seconds, zero
+failures/errors/skips, in one process. Selection: the prior 51-file JWT /
+Planning / Goals / Profile / observed income / Smart Context / FIRE / Wealth
+Home / bootstrap / multipart / Health selection plus this new file, Pierre
+client/import-service, Starlette limits and Python 3.14 compatibility tests.
+Providers in regression tests are mocked. Synthetic persistence/rollback tests
+in the wider suite do not imply a real financial import; new route HTTP tests
+write no financial rows after fixture seeding. Warnings remain visible:
+Pydantic Config, datetime/dateutil, Goals AsyncMock, multipart and
+Starlette/HTTPX/AnyIO deprecations. No full backend-suite claim is made.
+
+OpenAPI remains **61 paths / 65 operations**. Parsed complete JSON comparison
+proves the only delta is `security: [{"OAuth2PasswordBearer": []}]` added to
+the five operations; schemas, operation IDs, response metadata and other paths
+are identical. No identical-hash gate is imposed on this authorized change:
+before `99bd6b774646a55fb84c30b36c21ac840fe79d5b5a865612bfdd43cd254d2176`,
+after `588c7f974f3e1cba17a82a129d0118f81e5f74131125155c3669ced07621dc4d`.
+
+Artifacts (synthetic only) are retained outside the repository under
+`%TEMP%/finanalytics-sec-auth-legacy-b754e6e`: pre/post OpenAPI JSON,
+disposable pytest directories, regression file list and output. The earlier
+`.pytest_tmp/tsk_sec_jwt_retry` evidence was preserved. Reproduce final coverage:
+
+```powershell
+$legacyPython = Join-Path $env:LOCALAPPDATA 'FinAnalytics/runtimes/sec-dep-c-py314-0803511/Scripts/python.exe'
+$legacyRunRoot = Join-Path $env:TEMP ('finanalytics-sec-auth-legacy-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $legacyRunRoot -ErrorAction Stop | Out-Null
+$env:PYTHONDONTWRITEBYTECODE = '1'
+$env:JWT_SECRET = 'synthetic-legacy-regression-secret-only'
+$env:TEST_DATABASE_URL = 'sqlite+aiosqlite:///' + (Join-Path $legacyRunRoot 'regression.db').Replace('\','/')
+$legacyJwtFiles = @(rg --files tests/unit | Where-Object { $_ -match 'test_(jwt_|planning_|goal|profile_context_api|income_candidate_api|fire_|wealth_home_|smart_context_|smart_financial_context_|recurring_income_|database_bootstrap_safety)' } | Sort-Object)
+$legacyRegressionFiles = @($legacyJwtFiles) + @('tests/unit/test_multipart_security_compatibility.py') + @(rg --files backend/tests/domains/health | Where-Object { $_ -match '\.py$' } | Sort-Object) + @('tests/unit/test_legacy_financial_route_security.py', 'tests/unit/test_pierre_client.py', 'tests/unit/test_pierre_import_service.py', 'tests/unit/test_starlette_form_limits.py', 'tests/unit/test_python314_dependency_compatibility.py')
+& $legacyPython -m pytest @legacyRegressionFiles -q -p no:cacheprovider "--basetemp=$legacyRunRoot/regression-pytest"
+```
+
+Changed scope: three production files (shared containment dependency and the
+two legacy routers), one HTTP test file, and this owner plus CURRENT_STATE and
+CHANGELOG. Index remains empty; HEAD and the preexisting launcher bytes are
+preserved. No staging, commit, push, deploy, migration, personal data, Engine,
+frontend, CORS/session work, R4 or product-model execution. Other exposed
+routers were not remediated or globally certified by this bounded task.
+Independent security review is recommended for the dependency ordering,
+scope decision and consumer availability impact before any reopening/publication.
 
 ### TSK-SEC-JWT-01 — published remediation (2026-10-29)
 

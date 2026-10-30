@@ -2,11 +2,37 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-30 — SEC-DEP-C clean Python 3.14 manifest validated locally; checkpoint pending; JWT/Journey A published
+**Updated:** 2026-10-30 — legacy financial routes contained locally; ownership pending; SEC-DEP-C/JWT history below
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
 `IMPLEMENTATION_ROADMAP.md`.
+
+TSK-SEC-AUTH-LEGACY-ROUTES is **PARTIALLY MITIGATED / OWNERSHIP PENDING**.
+When both authorized local checkpoint commits exist, its state is
+`PARTIALLY MITIGATED / INDEPENDENTLY REVIEWED / COMMITTED LOCALLY / PUBLICATION PENDING / OWNERSHIP PENDING`;
+until then, the checkpoint is incomplete. At the original implementation
+preflight, the changes were local and uncommitted on `develop` at
+`b754e6e3665bb0a644d7c06edd1cb79473633468`.
+The five actually mounted legacy operations (GET accounts, transactions,
+categories, dashboard; POST pierre/import) reproduced unauthenticated and
+invalid-Bearer HTTP 200 on synthetic fixtures. Both routers now reuse
+`get_current_user` and deny authenticated access with 403 because their raw
+ledger/import scope has no certified ownership contract. Missing/invalid/
+refresh credentials return 401; inactive users retain existing 400 behavior.
+No ownership or schema was invented. These capabilities are intentionally
+unavailable pending an explicit scope decision; existing frontend consumers
+are affected. New HTTP coverage: 54 tests; with JWT: 120 passed; expanded
+56-file regression: 1339 passed, 218 warnings, zero failures/errors/skips.
+OpenAPI changes only five OAuth2 security requirements; 61 paths / 65 operations
+and financial schemas are preserved. The prior launcher line-ending deviation
+and bytes remained intact at implementation validation. No real provider/import/
+database, Engine, frontend, runtime, push or deploy change occurred in that task.
+The owner reports independent approval with three informational findings:
+`INF-SEC-LEGACY-01`, `INF-SEC-LEGACY-02`, and `INF-SEC-LEGACY-03`.
+Ownership, review details, consumer impact, reproducible evidence and limits are owned by
+`SECURITY_AND_GOVERNANCE.md`; global security is not approved and
+SEC-JWT-LEGACY remains independent.
 
 TSK-SEC-JWT-01 is `REPRODUCED / IMPLEMENTED / VALIDATED / COMMITTED / PUSHED`;
 functional commit `79c7280ce6eb6a8ab362759ac4d884264b4be8ff`, documentary
