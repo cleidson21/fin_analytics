@@ -2,15 +2,15 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-29 — R6.5-C accepted/committed/pushed; Journey A functionally accepted/published; JWT remediation local/unpublished
+**Updated:** 2026-10-30 — SEC-DEP-C clean Python 3.14 manifest validated locally; checkpoint pending; JWT/Journey A published
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
 `IMPLEMENTATION_ROADMAP.md`.
 
-TSK-SEC-JWT-01 is `REPRODUCED / IMPLEMENTED / VALIDATED / LOCAL CHECKPOINT /
-UNPUBLISHED`; functional commit `79c7280ce6eb6a8ab362759ac4d884264b4be8ff`.
-The published baseline accepted refresh JWTs as
+TSK-SEC-JWT-01 is `REPRODUCED / IMPLEMENTED / VALIDATED / COMMITTED / PUSHED`;
+functional commit `79c7280ce6eb6a8ab362759ac4d884264b4be8ff`, documentary
+commit `1684ecc57dd66ff0280a31bb6d5688645b26c503`. The pre-fix baseline accepted refresh JWTs as
 access Bearers (HTTP 200) and returned 500 for malformed textual UUID subjects.
 New access tokens explicitly declare their purpose; the shared HTTP boundary
 rejects refresh/invalid types and malformed subjects with 401, retaining valid
@@ -23,8 +23,63 @@ global-security approval is claimed. `SEC-JWT-LEGACY — REMOVAL PENDING` tracks
 the compatibility branch without an automatic cutoff. Reproduction,
 commands, limitations and legacy sunset policy are owned by
 `SECURITY_AND_GOVERNANCE.md`. The Journey A publication below predates this
-local security checkpoint; operational R4 remains separately gated, `LOCAL_ONLY`
+published security checkpoint; operational R4 remains separately gated, `LOCAL_ONLY`
 remains the default and R7 is not started.
+
+SEC-DEP-C is `VALIDATED / CHECKPOINT PENDING`, with local uncommitted manifest
+changes. The owner's runtime decision retains ordinary CPython 3.14.0 Windows
+AMD64. Selected pins: FastAPI 0.139.2, Starlette 1.3.1, Pydantic 2.13.4,
+settings 2.14.2, pandas 2.3.3, SQLAlchemy 2.0.44, multipart 0.0.31,
+pytest 9.0.3 (separately authorized) and pytest-asyncio 1.4.0. All other direct
+pins are retained. A newly created outside-repo venv installed the complete
+manifest without copying main packages: 77 wheel distributions plus bootstrap
+pip, `pip check` clean. Runtime/app/TestClient imports and lifespan passed.
+Focused validation returned `133 passed, 26 warnings`; the exact 51-file
+regression returned `1243 passed, 125 warnings` in one process. Both have
+0 failed/errors/skipped. The unchanged nine Starlette tests pass, including
+urlencoded rejection; four new canaries preserve pandas provider behavior and
+sync/async SQLite Decimal/transaction behavior. Complete OpenAPI JSON matches
+the fresh baseline (61 paths / 65 operations), not only its counts.
+
+The main venv remains unchanged at the same 117 distribution versions; its
+Starlette 1.1.0 remains vulnerable pending separately authorized rollout.
+Candidate OSV queried 78 distributions: 16 alias records / 8 GHSA records across
+the already-known ecdsa, python-jose and bootstrap pip findings; no matches for
+the altered families. Existing applicability qualifications and A's 122-match
+inventory remain preserved. SEC-DEP overall remains `PARTIALLY REMEDIATED /
+LOCAL CHANGES`, not global security approval. No stage, commit, push, deploy,
+financial code/schema, frontend, JWT or main-env change occurred. Details and
+commands are in `SECURITY_AND_GOVERNANCE.md`.
+
+At SEC-DEP-B's historical checkpoint the state was `BLOCKED / REQUIRES DECISION`.
+Both proposed framework combinations
+resolve their framework-only subsets, but full clean Python 3.14 installations
+fail building the unchanged pandas 2.1.1 pin (no matching wheel; Meson cannot
+find Visual Studio's vswhere.exe). The unchanged SQLAlchemy 2.0.21 pin also
+fails a standalone import under Python 3.14. No framework/Pydantic/scientific
+pin was promoted into requirements.txt; the prior multipart 0.0.31 edit and
+multipart test remain byte-identical to SEC-DEP-A's preflight snapshot.
+The new nine-case Starlette regression reproduces two failures on main 1.1.0
+and passes all nine on a fresh framework-only 1.3.1 probe. This is component
+evidence, not application/OpenAPI/51-file validation. Those gates were not run
+because the clean full-manifest gate failed. The main venv remains unchanged;
+the dependency/runtime decision matrix is in `SECURITY_AND_GOVERNANCE.md`.
+
+At SEC-DEP-A's historical checkpoint, SEC-DEP was `PARTIALLY REMEDIATED /
+LOCAL UNCOMMITTED CHANGE`: only the declared
+multipart pin changes from vulnerable `0.0.6` to `0.0.31`, the lowest version
+outside all nine current maintainer/GHSA advisory ranges. The main virtualenv
+already contains `0.0.32` and remains unchanged. A disposable Python 3.14 clone
+preserved all 117 installed distribution versions except multipart, and passed
+`pip check`, 80 focused tests (12 warnings), and 1,243 selected regressions in
+51 files (122 warnings; 0 failures/errors/skips), including the prior 43-file
+JWT selection and Health. OpenAPI is identical: 61 paths / 65 operations.
+This validates the installed-stack replica, not a clean requirements install:
+the declared Pydantic/settings pins remain unsatisfiable. A bounded probe also
+confirmed Starlette 1.1.0 ignores urlencoded field/part limits. Neither that
+framework finding nor the other OSV version matches is remediated here.
+Evidence, sources, distribution-only inventory, applicability and next approval
+boundary are owned by `SECURITY_AND_GOVERNANCE.md`; SEC-DEP is not closed.
 
 ## Current milestone
 

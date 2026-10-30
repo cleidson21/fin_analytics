@@ -1,5 +1,99 @@
 # Changelog — FINANALYTICS Wealth Intelligence
 
+## [TSK-SEC-DEP-C] — 2026-10-30 — Clean Python 3.14 manifest validated locally
+
+- Preserved all seven pending A/B paths, their evidence and both parser test
+  modules. The owner retained CPython 3.14 Windows and separately authorized
+  pytest 9.0.3. Reconciled FastAPI 0.139.2, Pydantic 2.13.4, pandas 2.3.3 and
+  SQLAlchemy 2.0.44; explicitly pinned Starlette 1.3.1 and pytest-asyncio 1.4.0.
+  Settings 2.14.2, multipart 0.0.31 and all other direct pins remain unchanged.
+- A new outside-repo Python 3.14.0 AMD64/GIL venv installed the entire candidate
+  manifest first, without copying main packages: 77 resolved wheel distributions
+  plus bootstrap pip; pip check clean. Runtime, pandas, SQLAlchemy, application
+  lifespan and TestClient imports passed. The actual transitive inventory and
+  differences from the main environment are recorded in the security owner;
+  no future immutable transitive-lock claim is made.
+- Added four synthetic canaries for sync/async SQLite Decimal commit/rollback
+  and existing pandas-backed provider history dates/order/numeric/empty results.
+  Nine focused files passed `133 tests, 26 warnings`, including all nine
+  Starlette cases, fourteen multipart cases and JWT/login regressions. The exact
+  prior 51-file selection independently passed `1243 tests, 125 warnings` in
+  one process. Both runs had zero failures/errors/skips; no existing financial
+  expectation was changed. Full OpenAPI JSON equals the fresh baseline:
+  61 paths / 65 operations and identical canonical SHA-256.
+- OSV checked all 78 candidate distributions: 16 alias records corresponding
+  to eight GHSA records in the previously known ecdsa, python-jose and bootstrap
+  pip findings; no matches for changed families. Their applicability limits and
+  the historical 122-match main inventory remain explicit. Main's Starlette
+  1.1.0 is still affected until separately authorized rollout.
+- SEC-DEP-C is `VALIDATED / CHECKPOINT PENDING`; SEC-DEP overall remains
+  `PARTIALLY REMEDIATED / LOCAL CHANGES`, not global security approval.
+  Main venv still has the same 117 distribution versions. No financial code,
+  Engine, migration, real DB, DTO/JWT, frontend, staging, commit, push, deploy,
+  R4/R7 or model execution change. SEC-JWT remains published; legacy removal
+  remains pending. Commands, sources and limitations belong to the security owner.
+
+## [TSK-SEC-DEP-B] — 2026-10-29 — Clean-install gate blocked
+
+- Preserved all six preexisting SEC-DEP-A paths and the multipart 0.0.31 pin.
+  Compared temporary candidates A (FastAPI 0.133.1 / Pydantic 2.12.5) and B
+  (0.139.2 / 2.13.4), both with Starlette 1.3.1, settings 2.14.2 and multipart
+  0.0.31. A's framework-only normal dry-run resolved; B's framework-only clean
+  installation and pip check passed without copying main-venv distributions.
+- Added nine tiny real-parser HTTP cases in `test_starlette_form_limits.py`.
+  The unchanged main Starlette 1.1.0 produced 7 passes / 2 expected failures
+  (excess urlencoded fields/size accepted with HTTP 200). The final same test
+  module passed all nine on the isolated 1.3.1 probe. An intermediate boundary
+  assertion was corrected only after source inspection established that
+  urlencoded size counts encoded name plus value; multipart counts part data.
+  TestClient emitted one HTTPX deprecation warning; no financial test changed.
+- Full installs of both candidate manifests into two additional empty Python
+  3.14 venvs failed on pandas 2.1.1 source metadata/build: missing vswhere.exe.
+  Separate installation of the existing SQLAlchemy 2.0.21 pin succeeded in the
+  diagnostic venv, but its import failed with TypingOnly AssertionError.
+  Neither old pin was upgraded. Runtime/build/scientific/test-dependency scope
+  therefore needs an explicit decision before broadening the manifest.
+- OSV checked 21 public name/version pairs from the two framework resolutions:
+  no matches for the 20 runtime pairs; pip 25.2 retained its previously recorded
+  matches. This is not a full application/transitive audit or a security approval.
+  The existing 122-match inventory remains intact. No current application
+  OpenAPI or 51-file regression result is claimed; the prior 1,243-pass record
+  belongs solely to SEC-DEP-A. SEC-DEP-B is `BLOCKED / REQUIRES DECISION`, not
+  checkpoint-ready. Commands, metadata and the decision matrix are in the
+  existing security owner. No main-venv, financial code, schema, JWT, frontend,
+  staging, commit, push, deploy, R4/R7 or model execution change.
+
+## [TSK-SEC-DEP] — 2026-10-29 — Minimal multipart manifest remediation
+
+- Compared all 18 declared pins with 117 installed distributions: ten pins
+  differ. The main Python 3.14 virtualenv already has multipart 0.0.32 and
+  passes `pip check`; it was not changed. Current official GHSA and OSV records
+  identify nine multipart advisories; 0.0.31 is the lowest version outside all
+  affected ranges and has no runtime dependencies. Changed only that pin.
+- Copied the installed package snapshot into a disposable virtualenv and
+  installed only multipart 0.0.31 there. Version comparison proves no other
+  distribution changed; imports and `pip check` passed. Added 14 bounded parser,
+  real upload-route and OpenAPI canaries with synthetic inputs and mocked writes.
+  Focused multipart/JWT: `80 passed, 12 warnings`. The previous 43-file selection
+  plus multipart and all Health tests: `1243 passed, 122 warnings`, zero
+  failed/errors/skips in 51 files. OpenAPI is byte-identical (61 paths/65 ops).
+- Full-manifest dry-run failed with `ResolutionImpossible`: Pydantic 2.4.2
+  conflicts with settings 2.14.2 requiring >=2.7.0. No Pydantic/framework pin
+  changed. OSV queried the public names/versions only; post-fix multipart has
+  zero matches. Other matches remain explicit investigation leads. An 11-byte
+  Starlette probe confirmed ignored urlencoded form limits; fixing the framework
+  requires separate scope authorization. SEC-DEP is `PARTIALLY REMEDIATED`, not
+  a global dependency-security approval or a reproducible-manifest approval.
+- Reconciled SEC-JWT-01 publication from the previous controlled push:
+  `79c7280ce6eb6a8ab362759ac4d884264b4be8ff` ->
+  `1684ecc57dd66ff0280a31bb6d5688645b26c503`, confirmed remotely then.
+  `SEC-JWT-LEGACY — REMOVAL PENDING` remains. R4 is separately gated,
+  `LOCAL_ONLY` default, R7 not started. Prior dated evidence below is retained.
+- No financial/auth/frontend code, database schema, active data or main venv
+  change; no staging, commit, push, deploy or model execution. Detailed audit
+  provenance, commands, inventory and residual findings remain in the existing
+  security owner and queue.
+
 ## [TSK-SEC-JWT-01-CHECKPOINT] — 2026-10-29 — Full selected regression
 
 - Reran the same 43-file JWT, Planning, Goals, Profile, Financial Context,

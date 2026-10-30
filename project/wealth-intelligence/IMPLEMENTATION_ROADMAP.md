@@ -26,15 +26,39 @@ time; an unmet gate stops that task rather than silently selecting another phase
 
 The separately authorized TSK-SEC-JWT-01 reproduced access/refresh confusion
 and malformed-identity HTTP 500; the bounded correction is `IMPLEMENTED /
-VALIDATED / LOCAL CHECKPOINT`, not published. Evidence and transitional
+VALIDATED / COMMITTED / PUSHED` at `1684ecc57dd66ff0280a31bb6d5688645b26c503`.
+Evidence and transitional
 legacy-token policy belong to
 `SECURITY_AND_GOVERNANCE.md`. The remaining security queue is preserved:
 SEC-DEP (dependency advisories/compatible fixes), SEC-BOOT (administrative
 bootstrap/default credentials), SEC-CORS (origins by environment), SEC-SESSION
 (global stale-401 handling/session storage), and SEC-REPO (branch protection,
 CI and historical secret checks). These remaining leads are not confirmed
-exploitable vulnerabilities here. Next security task: SEC-DEP, under separate
-authorization. Applicable security assessment precedes public deployment;
+exploitable vulnerabilities without their own applicability evidence.
+At SEC-DEP-A's checkpoint, `PARTIALLY REMEDIATED / LOCAL UNCOMMITTED CHANGE`, the vulnerable
+multipart manifest pin is corrected and tested on an isolated installed-stack
+replica; manifest resolution and additional dependency findings remain open.
+SEC-DEP-B attempted that continuation and recorded `BLOCKED / REQUIRES DECISION`:
+full clean Python 3.14 installs are blocked by the old pandas build, and the
+declared SQLAlchemy version separately fails import. Framework-only Starlette
+limit tests pass on 1.3.1, but no full-manifest checkpoint is validated. Review
+the runtime/build/scientific/test-dependency matrix in the existing security
+owner before expanding pins; no automatic stack alignment or new phase follows.
+The owner then retained ordinary Python 3.14 and authorized SEC-DEP-C's bounded
+pandas 2.x / SQLAlchemy 2.0.x / test-dependency reconciliation, including a
+separate pytest 9.0.3 approval. C is now `VALIDATED / CHECKPOINT PENDING`: complete
+clean-manifest installation and pip check passed, Starlette 1.3.1 limits passed,
+133 focused tests and the exact 51-file/1243-test regression passed with no
+failures/errors/skips, and the full OpenAPI matches. Main venv remains unchanged.
+Next approval is a controlled local checkpoint review, followed only under
+separate authorization by publication/environment rollout. SEC-DEP overall
+remains `PARTIALLY REMEDIATED / LOCAL CHANGES`; the prior 122-match inventory and
+candidate ecdsa/python-jose/bootstrap-pip residuals require their own triage.
+SEC-JWT-LEGACY remains `REMOVAL PENDING`. No new phase, security-global approval,
+main-env update or R4 activation follows from the dependency tests.
+Detailed version,
+advisory and safe-probe evidence belongs to `SECURITY_AND_GOVERNANCE.md`.
+Applicable security assessment precedes public deployment;
 this record authorizes none of these follow-on remediations or provider execution.
 
 Then, sequentially: R4-E Gemini adapter (mocks first) → R4-F guarded dispatch
