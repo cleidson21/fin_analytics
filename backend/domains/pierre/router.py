@@ -1,10 +1,14 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 
+from backend.api.dependencies.legacy_financial import require_certified_legacy_financial_scope
 from backend.domains.pierre.pipeline import PierreImportPipeline
 
-router = APIRouter(prefix="/pierre", tags=["Pierre Integration"])
+router = APIRouter(
+    prefix="/pierre", tags=["Pierre Integration"],
+    dependencies=[Depends(require_certified_legacy_financial_scope)],
+)
 
 class ImportRequest(BaseModel):
     start_date: Optional[str] = None

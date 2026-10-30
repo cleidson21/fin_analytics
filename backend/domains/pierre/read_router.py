@@ -3,12 +3,13 @@ Sprint 2 — Read Models
 Expõe os dados persistidos no SQLite para o Frontend.
 Nenhuma regra de negócio. Apenas leitura.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal
 
+from backend.api.dependencies.legacy_financial import require_certified_legacy_financial_scope
 from backend.domains.pierre.service import (
     AccountService,
     TransactionService,
@@ -17,7 +18,10 @@ from backend.domains.pierre.service import (
 from backend.database.session import SessionLocal
 from backend.domains.pierre.models import Transaction
 
-router = APIRouter(tags=["Read Models"])
+router = APIRouter(
+    tags=["Read Models"],
+    dependencies=[Depends(require_certified_legacy_financial_scope)],
+)
 
 
 # ──────────────────────────── Response Schemas ──────────────────────────────
