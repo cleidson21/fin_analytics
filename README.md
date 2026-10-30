@@ -102,11 +102,54 @@ inputs, not current vision or roadmap authorities.
 
 ## Run locally
 
-Backend, from the repository root:
+### Windows runtime (default)
+
+The validated Python 3.14 runtime lives outside the repository:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8080
+$Py = Join-Path $env:LOCALAPPDATA 'FinAnalytics\runtimes\sec-dep-c-py314-0803511\Scripts\python.exe'
 ```
+
+Backend, from the repository root (127.0.0.1:8080, no reload):
+
+```powershell
+& $Py -m uvicorn backend.main:app --host 127.0.0.1 --port 8080
+```
+
+Or use the launcher, which resolves the runtime itself, refuses to start if
+port 8080 is taken, and also starts the frontend:
+
+```powershell
+.\scripts\start_dev.ps1
+```
+
+Set `FINANALYTICS_PYTHON` to override the interpreter explicitly. The script
+never falls back to `.venv`. Add `--reload` manually to the command above only
+when you need it.
+
+Check the port (read-only):
+
+```powershell
+Get-NetTCPConnection -LocalPort 8080 -State Listen | Select-Object LocalAddress, LocalPort, OwningProcess
+```
+
+Stop a backend you started manually: press `Ctrl+C` in its terminal, or, after
+confirming the PID belongs to it, `Stop-Process -Id <PID>`.
+
+Rollback to the legacy environment (temporary, explicit):
+
+```powershell
+$env:FINANALYTICS_PYTHON = (Resolve-Path .\.venv\Scripts\python.exe).Path
+.\scripts\start_dev.ps1
+```
+
+The legacy `.venv` is no longer the recommended default: it predates the
+dependency remediation (SEC-DEP) and does not match the validated runtime.
+It is kept only for rollback.
+
+In Antigravity, run `Python: Select Interpreter` and pick (or enter manually)
+the runtime `python.exe` above. This is a local `.vscode/` preference, not
+versioned, and does not change commands that name the interpreter explicitly.
 
 Frontend:
 
@@ -117,10 +160,10 @@ npm.cmd run dev
 
 ## Validate
 
-Backend tests run from the repository root:
+Backend tests run from the repository root with the approved runtime:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest
+& $Py -m pytest
 ```
 
 Frontend validation commands are defined in `frontend/package.json` and in the
