@@ -24,9 +24,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import { formatCurrency } from "@/lib/utils";
 import { getCurrentMonth, getMonthBounds } from "@/lib/period";
+import type { RawData, GovernanceData } from "@/components/governance/TransactionGovernanceModal";
 
 interface Transaction {
   id: string;
@@ -37,6 +38,8 @@ interface Transaction {
   subnatureza: string;
   account: string;
   amount: number | string;
+  economic_classification?: string | null;
+  governance_status?: string;
 }
 
 interface TransactionListResponse {
@@ -255,16 +258,16 @@ function TransactionsPageBody() {
           query.set("economic_classification", natureza);
         }
 
-        const data = await fetchFromAPI<{ items: any[]; total: number }>(
+        const data = await fetchFromAPI<{ items: { raw: RawData; governance: GovernanceData }[]; total: number }>(
           `/governance/transactions?${query.toString()}`
         );
 
         if (!active) return;
 
-        const items: any[] = data?.items || [];
+        const items = data?.items || [];
 
         // Mapeia do formato { raw: {...}, governance: {...} } para Transaction
-        const mappedItems = items.map((t: any) => ({
+        const mappedItems = items.map((t) => ({
           id: `${t.raw?.provider}::${t.raw?.external_id}`,
           // Trunca para YYYY-MM-DD (descarta componente de hora se vier como DateTime)
           date: (t.raw?.date ?? "").slice(0, 10),
@@ -314,7 +317,7 @@ function TransactionsPageBody() {
         setTotal(0);
         setTotalPages(0);
         setSummary({ income: 0, expense: 0, balance: 0 });
-        setError("Não foi possível carregar o extrato.");
+        setError(err instanceof Error ? err.message : "Falha ao carregar extrato");
       } finally {
         if (active) setLoading(false);
       }
@@ -455,6 +458,8 @@ function TransactionsPageBody() {
     setMessage(result.message);
     cancelReclassification();
   };
+
+  if (error) return <PageLayout title="Transações"><p role="alert" className="p-4 text-sm text-red-400">{error}</p></PageLayout>;
 
   return (
     <PageLayout title="Transacoes" subtitle="Extrato classificado com filtros e indicadores de governanca." hideTitle={true}>
@@ -732,8 +737,8 @@ function TransactionsPageBody() {
                         : rawDate || "—";
 
                     // Cor/badge pela classification de governança
-                    const ec = (tx as any).economic_classification as string;
-                    const isPending = (tx as any).governance_status === "PENDING";
+                    const ec = tx.economic_classification;
+                    const isPending = tx.governance_status === "PENDING";
                     const isEntrada = ec === "ENTRADA";
                     const isSaida   = ec === "SAIDA";
                     const isIgnorar = ec === "IGNORAR";

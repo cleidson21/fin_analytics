@@ -1,6 +1,6 @@
 # Architecture Decision Records — Lote 10.0
 **Document:** Decision Log
-**Updated:** 2026-10-25
+**Updated:** 2026-10-31
 
 ---
 
@@ -38,6 +38,7 @@
 | ADR-028 | Smart Financial Context and Declared/Observed Income Boundary | ACCEPTED | 10.R2-A |
 | ADR-029 | External Context Observation, Temporal, and Provider Boundary | ACCEPTED / LOCKED | 10.R3-B |
 | ADR-030 | Hybrid AI Runtime Foundation and Assisted Local Setup | ACCEPTED | 10.R4.0 |
+| ADR-031 | Certified Personal-Local Pierre Ledger Scope | ACCEPTED DIRECTION / LOCAL ACTIVATION PENDING | SEC-LEDGER-OWNERSHIP-A |
 
 ---
 
@@ -1483,3 +1484,34 @@ ADR-023, ADR-027, ADR-028, ADR-029, or any locked R2/R3 contract. R3-I remains
 documentation only and authorizes no code, dependency, installation, model
 download, API-key test, Gemini call, benchmark, database access, migration,
 endpoint, frontend, scheduler, commit, or push.
+
+## ADR-031: Certified Personal-Local Pierre Ledger Scope
+
+**Status:** ACCEPTED ARCHITECTURAL DIRECTION / LOCAL CERTIFICATION AND OPERATIONAL ACCEPTANCE PENDING
+
+**Date:** 2026-10-31
+
+**Authority:** The owner explicitly approved Alternative A and bounded
+implementation in TSK-SEC-LEDGER-OWNERSHIP-A-RESTORE. This is not retrospective
+approval of financial records, global security or multi-user isolation.
+
+**Decision:** Permit personal-local Pierre capabilities only under explicit,
+versioned, revocable certification of the user, installation/database, connection
+and reviewed account universe. Alternative C remains denial when certification
+is unavailable. Alternative B remains the direction before multi-user use.
+Counting one user or attributing an import run never establishes ownership.
+No historical rows/authors may be assigned by assumption. Both Pierre import
+endpoints must share the certified boundary and preserve atomic financial effects,
+RAW identities, governance, audit and Decimal values.
+
+**Canonical contract:** `SECURITY_AND_GOVERNANCE.md`, section
+TSK-SEC-LEDGER-OWNERSHIP-A-RESTORE, owns certification, capabilities, route coverage,
+operator review/activation/revocation and security limits. CURRENT_STATE.md owns
+the local implementation/validation state. Automated validation does not establish
+that the owner's real connection/accounts are certified or that import works in
+the operational environment.
+
+**Preserved boundaries:** ADR-023 remains specific to MyProfit/Planning; ADR-017,
+R2's locked ownership bridge and financial Engines are unchanged. No multi-user
+schema, financial migration, JWT change, runtime/launcher change, real provider
+import, commit, push, deploy or R4 activation follows from this decision.

@@ -26,6 +26,8 @@ from backend.domains.pierre.repository import (
 )
 from backend.domains.pierre.models import Transaction, GovernanceAuditLog, Account
 from backend.api.dependencies.auth import get_current_user
+from backend.api.dependencies.legacy_financial import require_certified_legacy_financial_scope
+from backend.application.services.local_ledger_scope import CertifiedLedgerScope, LedgerScopeDenied
 from backend.application.dtos.user_response_dto import UserResponseDTO
 
 router = APIRouter(prefix="/governance", tags=["Governance"])
@@ -190,13 +192,14 @@ def list_transactions(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Lista transações com dados RAW + governança.
     Filtro de período usa transactions.date (data da API), não governed_at.
     """
     tx_repo = TransactionRepository()
-    db = SessionLocal()
+    db = scope.db
     try:
         items, total = tx_repo.list_with_governance(
             db,
@@ -246,6 +249,7 @@ def get_transaction_detail(
     provider: str,
     external_id: str,
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Detalhe completo de uma transação: dados RAW + governança + histórico de eventos de auditoria.
@@ -253,7 +257,7 @@ def get_transaction_detail(
     tx_repo = TransactionRepository()
     gov_repo = GovernanceRepository()
 
-    db = SessionLocal()
+    db = scope.db
     try:
         tx = tx_repo.get_by_external_id(db, provider, external_id)
         if not tx:
@@ -276,6 +280,7 @@ def classify_transaction(
     external_id: str,
     payload: ClassifyRequest,
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Classifica manualmente uma transação.
@@ -287,8 +292,9 @@ def classify_transaction(
     """
     tx_repo = TransactionRepository()
 
-    db = SessionLocal()
+    db = scope.db
     try:
+        scope.begin_write("governance.write")
         tx = tx_repo.classify(
             db,
             provider=provider,
@@ -297,16 +303,22 @@ def classify_transaction(
             investment_name=payload.investment_name,
             notes=payload.notes,
             reason=payload.reason,
+            changed_by=str(scope.certificate.user_id),
         )
+        db.flush()
+        scope.revalidate("governance.write")
         db.commit()
         result = TransactionGovernanceOut(raw=_tx_to_raw(tx), governance=_tx_to_gov(tx))
         db.expunge_all()
+    except LedgerScopeDenied:
+        db.rollback()
+        raise
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao classificar: {e}")
+        raise HTTPException(status_code=500, detail="Classificação não concluída; alterações revertidas") from None
     finally:
         db.close()
 
@@ -318,6 +330,7 @@ def get_history(
     provider: str,
     external_id: str,
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Histórico completo de eventos de governança para uma transação.
@@ -327,8 +340,10 @@ def get_history(
     Não usar numeração de versão — pode ser confusa quando ROLLBACKs são intercalados.
     """
     gov_repo = GovernanceRepository()
-    db = SessionLocal()
+    db = scope.db
     try:
+        if TransactionRepository().get_by_external_id(db, provider, external_id) is None:
+            raise HTTPException(status_code=404, detail="Transação não encontrada")
         events = gov_repo.get_audit_log(db, provider, external_id)
         result = [_audit_to_out(ev) for ev in events]
         db.expunge_all()
@@ -344,6 +359,7 @@ def rollback_to_event(
     audit_id: int,
     reason: Optional[str] = Query(None),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Restaura o estado de governança para o snapshot 'before_json' do evento especificado.
@@ -351,24 +367,31 @@ def rollback_to_event(
     """
     gov_repo = GovernanceRepository()
 
-    db = SessionLocal()
+    db = scope.db
     try:
+        scope.begin_write("governance.write")
         tx = gov_repo.rollback_to_event(
             db,
             provider=provider,
             external_id=external_id,
             audit_id=audit_id,
             reason=reason,
+            changed_by=str(scope.certificate.user_id),
         )
+        db.flush()
+        scope.revalidate("governance.write")
         db.commit()
         result = TransactionGovernanceOut(raw=_tx_to_raw(tx), governance=_tx_to_gov(tx))
         db.expunge_all()
+    except LedgerScopeDenied:
+        db.rollback()
+        raise
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro no rollback: {e}")
+        raise HTTPException(status_code=500, detail="Rollback não concluído; alterações revertidas") from None
     finally:
         db.close()
 
@@ -382,6 +405,7 @@ def get_financial_summary(
     economic_classification: Optional[str] = Query(None, description="ENTRADA | SAIDA | IGNORAR — filtra os totais"),
     category: Optional[str] = Query(None, description="Nome da categoria RAW"),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Totais financeiros baseados em classificações governadas.
@@ -392,7 +416,7 @@ def get_financial_summary(
     pending_count sempre reflete o período completo (sem filtro de tipo/categoria).
     """
     query = GovernedFinancialQuery()
-    db = SessionLocal()
+    db = scope.db
     try:
         summary = query.get_summary(
             db,
@@ -413,6 +437,7 @@ def get_global_audit_log(
     action: Optional[str] = Query(None, description="Filtrar por ação: CREATE_CLASSIFICATION, UPDATE_CLASSIFICATION, ROLLBACK"),
     provider: Optional[str] = Query(None, description="Filtrar por provedor"),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Histórico global de eventos de governança (governance_audit_log).
@@ -424,7 +449,7 @@ def get_global_audit_log(
     IMPORTANTE: Este endpoint expõe o audit_log de GOVERNANÇA (classificações, rollbacks).
     Não confundir com logs de importação — esses são um conceito separado.
     """
-    db = SessionLocal()
+    db = scope.db
     try:
         q = db.query(GovernanceAuditLog)
         if action:

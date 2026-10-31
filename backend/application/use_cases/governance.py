@@ -4,13 +4,18 @@ from sqlalchemy.future import select
 from sqlalchemy import desc, func
 
 from backend.infrastructure.persistence.models.sync_log import SyncLogModel, SyncStatus
+from uuid import UUID
+
+def _owner_values(user_id):
+    owner = UUID(str(user_id))
+    return (str(owner), owner.hex)
 
 class GetGovernanceDashboardUseCase:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def execute(self) -> Dict[str, Any]:
-        result = await self.session.execute(select(SyncLogModel))
+    async def execute(self, user_id) -> Dict[str, Any]:
+        result = await self.session.execute(select(SyncLogModel).where(func.lower(SyncLogModel.user_id).in_(_owner_values(user_id))))
         logs = list(result.scalars().all())
         
         total_runs = len(logs)
@@ -39,13 +44,13 @@ class GetGovernanceImportsUseCase:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def execute(self, limit: int = 10) -> Dict[str, Any]:
+    async def execute(self, user_id, limit: int = 10) -> Dict[str, Any]:
         result = await self.session.execute(
-            select(SyncLogModel).order_by(desc(SyncLogModel.start_time)).limit(limit)
+            select(SyncLogModel).where(func.lower(SyncLogModel.user_id).in_(_owner_values(user_id))).order_by(desc(SyncLogModel.start_time)).limit(limit)
         )
         logs = list(result.scalars().all())
         
-        count_result = await self.session.execute(select(func.count(SyncLogModel.id)))
+        count_result = await self.session.execute(select(func.count(SyncLogModel.id)).where(func.lower(SyncLogModel.user_id).in_(_owner_values(user_id))))
         total = count_result.scalar() or 0
         
         items = []

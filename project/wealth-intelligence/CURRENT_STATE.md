@@ -2,11 +2,77 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-30 — legacy financial routes contained locally; ownership pending; SEC-DEP-C/JWT history below
+**Updated:** 2026-10-31 — certified personal-local Pierre implementation; activation pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
 `IMPLEMENTATION_ROADMAP.md`.
+
+TSK-SEC-LEDGER-OWNERSHIP-A-RESTORE implements the owner's explicitly approved
+Alternative A without a financial schema migration. The local state is
+`SEC-LEDGER-OWNERSHIP-A = INDEPENDENTLY REVIEWED / MINOR-01 REMEDIATED / COMMITTED LOCALLY / LOCAL CERTIFICATION PENDING`;
+`SEC-AUTH-LEGACY-ROUTES = CONDITIONAL ACCESS ONLY / OWNERSHIP REQUIRED`.
+The versioned offline-reviewed certificate binds user, installation/database file,
+connection and exact account keys; absent/inconsistent certification fails closed.
+Both mounted Pierre import routes now share authorization, complete-set validation
+and one atomic RAW/governance-preserving ledger + provenance-run transaction.
+Read/Governance paths are conditional; installments remain denied pending a
+scoped provider contract, and Pierre run rollback cannot pretend to undo imports.
+The frontend import button propagates authorization/failure and only records a
+successful sync after success. No real certificate, import, login, migration,
+runtime/launcher/JWT change, push or deploy occurred. The local checkpoint was
+separately authorized by TSK-SEC-LEDGER-A-MINOR01-CHECKPOINT. Operator procedure,
+limits and route ownership are in `SECURITY_AND_GOVERNANCE.md`; ADR-031 records
+the architectural approval only. Synthetic validation and operational acceptance
+are separate; the latter remains pending.
+
+The owner reported the independent review as APPROVED WITH CONDITIONS (0 blocking,
+0 material, 2 minor, 2 informational); that review was not rerun here. MINOR-01
+now treats explicit null like omission for account_name, account_type, category
+and original_description, preserving existing values and reviewed account
+fallbacks without inventing new ownership. MINOR-02 remains deferred and is
+nonblocking for operational certification by the owner's decision.
+Checkpoint validation: **22 new regression cases passed**; **171 passed,
+1 deselected, 194 deprecation warnings** across test_local_ledger_restore,
+test_legacy_financial_route_security, test_pierre_client and
+test_pierre_import_service. The offline CLI procedure test was deliberately
+deselected: no init/prepare/certify/revoke action was executed in this checkpoint.
+Tests used disposable synthetic SQLite and fake providers, with the real mounted
+FastAPI authorization boundary. No frontend change was made in this checkpoint;
+the earlier frontend evidence below is retained, not reexecuted.
+`PIERRE IMPORT = IMPLEMENTED / REAL OPERATIONAL ACCEPTANCE PENDING`.
+
+Validation on 2026-10-31 used the existing approved Python 3.14 runtime:
+**242 passed, 181 warnings, 0 failed/errors/skipped** across 10 selected backend
+files, including 67 new local-certification/restore cases. The actual mounted
+FastAPI application retained real JWT and certification dependencies; only
+disposable database boundaries and provider transports were replaced. Selection:
+`test_local_ledger_restore`, `test_legacy_financial_route_security`,
+`test_pierre_import_service`, `test_pierre_client`, `test_smart_context_ownership`,
+`test_jwt_service`, `test_jwt_auth_boundary`, `test_database_bootstrap_safety`,
+`test_recurring_income_ledger_reader`, and `test_wealth_home_api` under
+`tests/unit/`, with `python -m pytest -q -x -p no:cacheprovider` and dedicated
+workspace-local `--basetemp=.pytest_tmp/ledger_restore_verified`.
+Warnings remain visible (Pydantic Config, datetime/dateutil and
+Starlette/HTTPX/AnyIO deprecations); this is not a full-backend-suite claim.
+The complete frontend suite passed **301 tests / 36 files**, including nine new
+rendered-button/catalog/history cases. The final focused frontend rerun passed
+all nine. TypeScript and the webpack production build passed with 38 generated
+pages; the preexisting Recharts SSR size warning remains. Affected-file ESLint
+passed with **0 errors / 22 warnings** (existing unused symbols/effect dependencies).
+No dependency installation or historical 1339-test rerun occurred.
+
+Real `.env` files were not edited and the operational database was not queried
+or imported by this implementation task. An attempted read-only SHA-256 check of
+`database/fin_analytics.db` was blocked by an existing file-in-use condition; no
+process was stopped and no SQLite access was attempted to work around it. Thus
+there is no claim of a complete before/after byte-hash verification of the active
+database. Financial-preservation evidence here is synthetic transaction rollback,
+idempotence, RAW/Decimal/governance/audit assertions and isolated test configuration,
+not an operational import or a live-data certification.
+
+The following publication paragraph is historical evidence predating runtime
+history reconciliation and this local implementation:
 
 When remote `develop` confirms the isolated publication commit containing this
 reconciliation, SEC-AUTH-LEGACY-ROUTES is

@@ -27,7 +27,7 @@ class PierreMapper:
             "subtype": raw_tx.get("account_subtype"),
             "bank": raw_tx.get("item_bank_name"),
             "connector": raw_tx.get("connector_name"),
-            "credit_metadata_json": json.dumps(raw_tx.get("account_credit_data")) if raw_tx.get("account_credit_data") else None
+            "credit_metadata_json": json.dumps(raw_tx.get("account_credit_data"), default=str) if raw_tx.get("account_credit_data") else None
         }
 
         # 2. Map Category
@@ -96,7 +96,7 @@ class PierreMapper:
             "payer_name": payer.get("name"),
             
             "manual_transaction": raw_tx.get("manual_transaction", False),
-            "extra_json": json.dumps(extra_fields) if extra_fields else None
+            "extra_json": json.dumps(extra_fields, default=str) if extra_fields else None
         }
 
         return account_data, transaction_data, category_data

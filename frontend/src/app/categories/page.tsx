@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Cell, Pie, PieChart } from "recharts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import { getCategoryColor } from "@/lib/colors";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -30,14 +30,20 @@ export default function CategoriesPage() {
   const [month, setMonth] = useState<string>(getCurrentMonth);
   const [data, setData] = useState<CategoryBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async (m: string) => {
     setLoading(true);
-    const result = await fetchFromAPI<CategoryBreakdown[]>(
+    setError(null);
+    try {
+      const result = await fetchFromAPI<CategoryBreakdown[]>(
       `/dashboard/categories?month=${m}`
     );
-    setData(result ?? []);
-    setLoading(false);
+      setData(result ?? []);
+    } catch (err) {
+      setData([]);
+      setError(err instanceof Error ? err.message : "Não foi possível carregar categorias");
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -62,6 +68,8 @@ export default function CategoriesPage() {
     value: c.total,
     color: getCategoryColor(c.category, i),
   }));
+
+  if (error) return <PageLayout title="Categorias"><p role="alert" className="p-4 text-sm text-red-400">{error}</p></PageLayout>;
 
   return (
     <PageLayout

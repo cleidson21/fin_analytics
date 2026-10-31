@@ -5,11 +5,21 @@ import { useRouter } from "next/navigation";
 import { Line, LineChart } from "recharts";
 
 import { PageLayout } from "@/components/layout/PageLayout";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI, isLedgerAuthorizationError, LEDGER_AUTHORIZATION_PENDING } from "@/lib/ledgerApi";
 import { getCategoryColor } from "@/lib/colors";
 import { addMonths, getCurrentMonth, getMonthBounds } from "@/lib/period";
 import { formatCurrency, colorForValue } from "@/lib/utils";
 import { DeltaBadge } from "@/components/ui/DeltaBadge";
+import type { RawData, GovernanceData } from "@/components/governance/TransactionGovernanceModal";
+
+interface PierreImportResponse {
+  success: boolean;
+  transactions: number;
+  skipped?: number;
+  errors?: number;
+  status?: string;
+  error_message?: string;
+}
 
 interface KpiItem {
   current: number;
@@ -167,17 +177,21 @@ export function DashboardPage() {
   const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [authorizationError, setAuthorizationError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const importBusy = useRef(false);
 
   useEffect(() => {
     setLastSyncAt(localStorage.getItem("pierre_last_sync"));
   }, []);
 
   const handleImportPierre = useCallback(async () => {
-    if (importStatus === "loading") return;
+    if (importBusy.current) return;
+    importBusy.current = true;
     setImportStatus("loading");
     setImportResult(null);
     try {
-      const result = await fetchFromAPI<any>("/pierre/import", {
+      const result = await fetchFromAPI<PierreImportResponse>("/pierre/import", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -186,27 +200,37 @@ export function DashboardPage() {
       });
       if (!result) throw new Error("Sem resposta do servidor");
       
-      const success = result.success === true;
+      const success = result.success === true && (result.errors ?? 0) === 0
+        && Number.isSafeInteger(result.transactions) && result.transactions >= 0
+        && result.status !== "partial" && result.status !== "failed";
       const mappedResult: ImportResult = {
         status: success ? "success" : "failed",
         imported: result.transactions || 0,
-        skipped: 0,
+        skipped: result.skipped ?? 0,
         errors: success ? 0 : 1,
-        error_message: result.error_message || undefined
+        error_message: result.error_message || (success ? undefined : "Importação não concluída; confirme o resultado antes de tentar novamente")
       };
       
       setImportResult(mappedResult);
       setImportStatus(success ? "success" : "error");
       if (success) {
+        setAuthorizationError(null);
+        setRefreshKey((value) => value + 1);
         const now = new Date().toLocaleString("pt-BR");
         setLastSyncAt(now);
         if (typeof window !== "undefined") localStorage.setItem("pierre_last_sync", now);
       }
     } catch (err) {
-      setImportResult({ status: "failed", imported: 0, skipped: 0, errors: 1, error_message: String(err) });
+      if (isLedgerAuthorizationError(err)) {
+        setAuthorizationError(LEDGER_AUTHORIZATION_PENDING);
+        setLastSyncAt(null);
+      }
+      setImportResult({ status: "failed", imported: 0, skipped: 0, errors: 1, error_message: err instanceof Error ? err.message : "Importação não concluída" });
       setImportStatus("error");
+    } finally {
+      importBusy.current = false;
     }
-  }, [importStatus]);
+  }, []);
 
   useEffect(() => {
     const resize = () => {
@@ -237,10 +261,23 @@ export function DashboardPage() {
         fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${currentMonth}`),
         fetchFromAPI<CategoryBreakdown[]>(`/dashboard/categories?month=${prevMonth}`),
         // Usa governance/transactions para ter dados reais com nome de conta e data correta
-        fetchFromAPI<{ items: Array<any>; total: number }>("/governance/transactions?page_size=5"),
+        fetchFromAPI<{ items: { raw: RawData; governance: GovernanceData }[]; total: number }>("/governance/transactions?page_size=5"),
       ]);
 
       if (!active) {
+        return;
+      }
+
+      const denied = [summaryData, pacingData, heatmapData, categoriesCurrent, categoriesPrev, recentTransactions]
+        .some((result) => result.status === "rejected" && isLedgerAuthorizationError(result.reason));
+      const failed = [summaryData, pacingData, heatmapData, categoriesCurrent, categoriesPrev, recentTransactions]
+        .some((result) => result.status === "rejected");
+      setAuthorizationError(denied ? LEDGER_AUTHORIZATION_PENDING : failed ? "Dados financeiros indisponíveis. Tente novamente." : null);
+      if (failed) {
+        setSummary(null); setPacing(null); setHeatmap(null);
+        setCatsCurrent(null); setCatsPrev(null); setRecentTxs(null);
+        setLastSyncAt(null);
+        setLoading({ summary: false, pacing: false, heatmap: false, categories: false, transactions: false });
         return;
       }
 
@@ -255,7 +292,7 @@ export function DashboardPage() {
 
       // Mapeia do formato governance {raw, governance} para TransactionItem
       const rawTxs = getValue(recentTransactions)?.items ?? [];
-      const mappedTxs: TransactionItem[] = rawTxs.map((t: any) => ({
+      const mappedTxs: TransactionItem[] = rawTxs.map((t) => ({
         id: `${t.raw?.provider}::${t.raw?.external_id}`,
         date: (t.raw?.date ?? "").slice(0, 10),
         description: t.raw?.description ?? "",
@@ -281,7 +318,7 @@ export function DashboardPage() {
     return () => {
       active = false;
     };
-  }, [currentMonth, prevMonth]);
+  }, [currentMonth, prevMonth, refreshKey]);
 
   const pushTransactionsRange = (startDate: string, endDate: string, category?: string) => {
     const base = `/transactions?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
@@ -354,6 +391,20 @@ export function DashboardPage() {
   }, [heatmap]);
 
   const resolvedChartWidth = chartWidth > 0 ? chartWidth : 320;
+
+  if (authorizationError) {
+    return (
+      <PageLayout title="Visão Geral" subtitle={`Dados do mês: ${currentMonth}`} hideTitle={true}>
+        <div role="alert" className="rounded-xl border border-white/10 p-4 text-sm text-neutral-300">
+          <p>{authorizationError}</p>
+          <button type="button" onClick={handleImportPierre} disabled={importStatus === "loading"} className="mt-3 rounded-lg border border-white/10 px-3 py-2">
+            {importStatus === "loading" ? "Importando…" : "Importar Dados"}
+          </button>
+          {importStatus === "error" && importResult && <p className="mt-2">{importResult.error_message ?? "Importação não concluída"}</p>}
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout title="Visão Geral" subtitle={`Dados do mês: ${currentMonth}`} hideTitle={true}>

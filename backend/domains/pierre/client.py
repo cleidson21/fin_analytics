@@ -1,4 +1,5 @@
 import httpx
+from decimal import Decimal
 from typing import Optional
 from backend.core.config import settings
 
@@ -22,7 +23,7 @@ class PierreHTTPClient:
             try:
                 response = await client.get(url, headers=self.headers, params=params)
                 response.raise_for_status()
-                return response.json()
+                return response.json(parse_float=Decimal)
                 
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 401:

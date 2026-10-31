@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import { Button } from "@/components/ui/button";
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, Clock, ChevronRight, Loader2, RefreshCcw } from "lucide-react";
 import { AuthRequiredCard } from "@/components/ui/AuthRequiredCard";
@@ -23,18 +23,21 @@ export default function ImportsHubPage() {
   const [items, setItems] = useState<ImportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function loadData() {
     setLoading(true);
     setIsUnauthorized(false);
+    setError(null);
     try {
       const data = await fetchFromAPI<{items: ImportItem[], total: number}>("/governance/imports?limit=50");
       if (data && data.items) {
         setItems(data.items);
       }
-    } catch (e: any) {
-      if (e.name === "AuthError") setIsUnauthorized(true);
-      console.error(e);
+    } catch (e: unknown) {
+      setItems([]);
+      if (e instanceof Error && e.name === "AuthError") setIsUnauthorized(true);
+      else setError(e instanceof Error ? e.message : "Falha ao carregar importações");
     }
     setLoading(false);
   }
@@ -46,6 +49,7 @@ export default function ImportsHubPage() {
   if (isUnauthorized) {
     return <AuthRequiredCard title="Importações" />;
   }
+  if (error) return <PageLayout title="Importações"><p role="alert" className="p-4 text-sm text-red-400">{error}</p></PageLayout>;
 
   function StatusBadge({ status }: { status: string }) {
     if (status === 'CONFIRMED' || status === 'SUCCESS') {

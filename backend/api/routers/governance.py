@@ -7,6 +7,10 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from backend.api.dependencies.auth import get_current_user
+from backend.api.dependencies.ledger_import_history import (
+    require_history_for_owned_pierre_runs, require_owned_run, require_pierre_history,
+)
+from backend.domain.enums.provider_type import ProviderType
 from backend.api.dependencies.database import get_db_session
 from backend.application.dtos.user_response_dto import UserResponseDTO
 from backend.application.use_cases.governance import (
@@ -36,8 +40,9 @@ async def get_governance_dashboard(
     current_user: UserResponseDTO = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session)
 ):
+    await require_history_for_owned_pierre_runs(session, current_user.id)
     use_case = GetGovernanceDashboardUseCase(session)
-    return await use_case.execute()
+    return await use_case.execute(user_id=current_user.id)
 
 
 # ---------------------------------------------------------------------------
@@ -50,8 +55,9 @@ async def get_governance_imports(
     current_user: UserResponseDTO = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session)
 ):
+    await require_history_for_owned_pierre_runs(session, current_user.id)
     use_case = GetGovernanceImportsUseCase(session)
-    return await use_case.execute(limit=limit)
+    return await use_case.execute(user_id=current_user.id, limit=limit)
 
 
 @router.get("/imports/{run_id}", response_model=Dict[str, Any])
@@ -65,6 +71,7 @@ async def get_import_detail(
         select(SyncLogModel).where(SyncLogModel.id == run_id)
     )
     log = result.scalar_one_or_none()
+    require_owned_run(log, current_user.id)
 
     if log is None:
         raise HTTPException(status_code=404, detail="Run não encontrado")
@@ -125,6 +132,7 @@ async def get_staging_items(
         select(SyncLogModel).where(SyncLogModel.id == run_id)
     )
     log = result.scalar_one_or_none()
+    require_owned_run(log, current_user.id)
 
     if log is None:
         raise HTTPException(status_code=404, detail="Run não encontrado")
@@ -208,6 +216,9 @@ async def upload_import(
     current_user: UserResponseDTO = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session)
 ):
+    if source_type.upper() == "PIERRE":
+        require_pierre_history(current_user.id)
+        raise HTTPException(status_code=422, detail="Use a importação Pierre certificada, não o upload genérico")
     if not file and not raw_text:
         raise HTTPException(status_code=400, detail="É necessário enviar um arquivo ou texto.")
 
@@ -248,6 +259,7 @@ async def confirm_import(
         # Descobre o tipo primeiro
         result = await session.execute(select(SyncLogModel).where(SyncLogModel.id == run_id))
         log = result.scalar_one_or_none()
+        require_owned_run(log, current_user.id)
         if not log:
             raise ValueError(f"Importação {run_id} não encontrada")
             
@@ -290,6 +302,8 @@ async def confirm_import(
             await session.commit()
 
         return {"success": True, "report": report}
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -312,6 +326,9 @@ async def rollback_import(
     """Marca uma importação como CANCELLED sem reverter dados já persistidos."""
     result = await session.execute(select(SyncLogModel).where(SyncLogModel.id == run_id))
     log = result.scalar_one_or_none()
+    require_owned_run(log, current_user.id)
+    if log.provider == ProviderType.PIERRE:
+        raise HTTPException(status_code=409, detail="Reversão financeira Pierre não está disponível; o histórico foi preservado")
 
     if log is None:
         raise HTTPException(status_code=404, detail="Run não encontrado")

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Clock, History, ShieldCheck, RefreshCcw, Loader2, ArrowUpRight } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import { Button } from "@/components/ui/button";
 
 // ==========================================================================
@@ -72,15 +72,21 @@ function ClassificationValue({ json }: { json: Record<string, unknown> | null })
 export default function AuditPage() {
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ActionFilter>("ALL");
 
   async function load(f: ActionFilter = filter) {
     setLoading(true);
     const params = new URLSearchParams({ limit: "200" });
     if (f !== "ALL") params.set("action", f);
-    const data = await fetchFromAPI<AuditEvent[]>(`/governance/audit-log?${params.toString()}`);
-    if (data) setEvents(data);
-    setLoading(false);
+    setError(null);
+    try {
+      const data = await fetchFromAPI<AuditEvent[]>(`/governance/audit-log?${params.toString()}`);
+      setEvents(data);
+    } catch (err) {
+      setEvents([]);
+      setError(err instanceof Error ? err.message : "Falha ao carregar auditoria");
+    } finally { setLoading(false); }
   }
 
   useEffect(() => { load(); }, []);
@@ -96,6 +102,8 @@ export default function AuditPage() {
     { id: "UPDATE_CLASSIFICATION", label: "Atualizados" },
     { id: "ROLLBACK", label: "Rollbacks" },
   ];
+
+  if (error) return <PageLayout title="Auditoria"><p role="alert" className="p-4 text-sm text-red-400">{error}</p></PageLayout>;
 
   return (
     <PageLayout title="Auditoria" hideTitle={true}>

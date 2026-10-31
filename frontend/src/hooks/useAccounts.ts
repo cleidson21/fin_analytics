@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import { AccountDTO } from "@/types/entities";
 
 /**

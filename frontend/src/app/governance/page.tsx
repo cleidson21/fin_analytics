@@ -7,7 +7,7 @@ import {
   ShieldCheck, Database, History, ArrowRight,
 } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import { Button } from "@/components/ui/button";
 
 // ==========================================================================
@@ -38,15 +38,23 @@ function fmt(v: number) {
 export default function GovernanceDashboardPage() {
   const [summary, setSummary] = useState<GovernanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   async function loadSummary() {
     setLoading(true);
-    const data = await fetchFromAPI<GovernanceSummary>("/governance/summary");
-    if (data) setSummary(data);
-    setLoading(false);
+    setError(null);
+    try {
+      const data = await fetchFromAPI<GovernanceSummary>("/governance/summary");
+      setSummary(data);
+    } catch (err) {
+      setSummary(null);
+      setError(err instanceof Error ? err.message : "Falha ao carregar governança");
+    } finally { setLoading(false); }
   }
 
   useEffect(() => { loadSummary(); }, []);
+
+  if (error) return <PageLayout title="Governança"><p role="alert" className="p-4 text-sm text-red-400">{error}</p></PageLayout>;
 
   return (
     <PageLayout title="Governança" hideTitle={true}>

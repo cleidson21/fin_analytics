@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Category } from "@/types/entities";
-import { PaginatedResponse } from "@/types/dto";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 
 export interface CategoryFilters {
   limit: number;
@@ -25,25 +24,28 @@ export function useCategoriesAdmin(filters: CategoryFilters) {
       queryParams.set("limit", filters.limit.toString());
       queryParams.set("offset", filters.offset.toString());
 
-      const response = await fetchFromAPI<PaginatedResponse<Category>>(
+      const response = await fetchFromAPI<{ provider: string; name: string; normalized_name?: string; transaction_count: number }[]>(
         `/categories?${queryParams.toString()}`
       );
 
-      if (response && response.data) {
-        let filteredItems = response.data;
+      if (response) {
+        let filteredItems = response.map((item) => ({
+          ...item, id: `${item.provider}::${item.name}`, categoria: item.name,
+          slug: item.normalized_name ?? item.name, quantidade_transacoes: item.transaction_count,
+        }));
         
         // Fase 5 - Busca Local (Frontend)
         if (filters.search) {
           const searchLower = filters.search.toLowerCase();
-          filteredItems = response.data.filter((item: Category) =>
+          filteredItems = filteredItems.filter((item: Category) =>
             item.categoria.toLowerCase().includes(searchLower)
           );
         }
 
-        setData(filteredItems);
+        setData(filteredItems.slice(filters.offset, filters.offset + filters.limit));
         // Quando tem busca, o total é o tamanho da lista filtrada. 
         // Quando não tem, usa o total do backend.
-        setTotal(filters.search ? filteredItems.length : response.total || 0);
+        setTotal(filteredItems.length);
       }
     } catch (err: unknown) {
       if (err instanceof Error) setError(err);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI } from "@/lib/ledgerApi";
 
 export interface AuditRun {
   id: string;
@@ -97,25 +98,27 @@ export function useAuditRunDetail(runId: string) {
   const [data, setData] = useState<AuditRun | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
     const fetchRun = async () => {
       setIsLoading(true);
       setIsUnauthorized(false);
+      setError(null);
       try {
-        const result = await fetchFromAPI<AuditRun>(`/governance/imports/${runId}`);
+        const result = await requestLedgerFromAPI<AuditRun>(`/governance/imports/${runId}`);
         if (mounted) {
           setData(result);
           setIsLoading(false);
         }
       } catch (e: unknown) {
         if (mounted) {
+          setData(null);
           if (e instanceof Error && e.name === "AuthError") {
             setIsUnauthorized(true);
           } else {
-            console.error(e);
-            setData(null);
+            setError(e instanceof Error ? e.message : "Falha ao carregar importação");
           }
           setIsLoading(false);
         }
@@ -127,5 +130,5 @@ export function useAuditRunDetail(runId: string) {
     return () => { mounted = false; };
   }, [runId]);
 
-  return { data, isLoading, isUnauthorized };
+  return { data, isLoading, isUnauthorized, error };
 }

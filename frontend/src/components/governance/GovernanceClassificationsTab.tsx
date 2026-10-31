@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Filter, Pencil, ChevronLeft, ChevronRight, AlertTriangle, Loader2,
 } from "lucide-react";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import {
   TransactionGovernanceModal,
   type RawData,
@@ -105,6 +105,7 @@ export function GovernanceClassificationsTab() {
   const [loading, setLoading] = useState(false);
   const [modalTx, setModalTx] = useState<TransactionDetail | null>(null);
   const [loadingModal, setLoadingModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (p: number = page) => {
     setLoading(true);
@@ -117,9 +118,14 @@ export function GovernanceClassificationsTab() {
     if (filterEndDate) params.set("end_date", filterEndDate);
     if (filterCategory) params.set("category", filterCategory);
     params.set("sort_dir", filterSortDir);
+    setError(null);
+    try {
     const data = await fetchFromAPI<GovernanceListResponse>(`/governance/transactions?${params.toString()}`);
     if (data) { setItems(data.items); setTotal(data.total); }
-    setLoading(false);
+    } catch (err) {
+      setItems([]); setTotal(0); setModalTx(null);
+      setError(err instanceof Error ? err.message : "Falha ao carregar governança");
+    } finally { setLoading(false); }
   }, [page, filterStatus, filterClassification, filterStartDate, filterEndDate, filterCategory, filterSortDir]);
 
   useEffect(() => { load(1); setPage(1); }, [filterStatus, filterClassification, filterStartDate, filterEndDate, filterCategory, filterSortDir]);
@@ -127,13 +133,19 @@ export function GovernanceClassificationsTab() {
 
   async function openModal(tx: GovernanceTransaction) {
     setLoadingModal(true);
+    try {
     const detail = await fetchFromAPI<TransactionDetail>(`/governance/transactions/${tx.raw.provider}/${tx.raw.external_id}`);
     if (detail) setModalTx(detail);
-    setLoadingModal(false);
+    } catch (err) {
+      setModalTx(null); setItems([]); setTotal(0);
+      setError(err instanceof Error ? err.message : "Falha ao carregar governança");
+    } finally { setLoadingModal(false); }
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pendingCount = items.filter(t => t.governance.governance_status === "PENDING").length;
+
+  if (error) return <p role="alert" className="p-4 text-sm text-red-400">{error}</p>;
 
   return (
     <div>

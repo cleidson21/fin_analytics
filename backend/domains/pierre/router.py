@@ -4,6 +4,7 @@ from typing import Optional
 
 from backend.api.dependencies.legacy_financial import require_certified_legacy_financial_scope
 from backend.domains.pierre.pipeline import PierreImportPipeline
+from backend.application.services.local_ledger_scope import CertifiedLedgerScope, LedgerScopeDenied
 
 router = APIRouter(
     prefix="/pierre", tags=["Pierre Integration"],
@@ -15,21 +16,18 @@ class ImportRequest(BaseModel):
     end_date: Optional[str] = None
 
 @router.post("/import")
-async def import_pierre_data(request: ImportRequest):
+async def import_pierre_data(
+    request: ImportRequest,
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
+):
     try:
-        pipeline = PierreImportPipeline()
+        pipeline = PierreImportPipeline(scope)
         result = await pipeline.run(start_date=request.start_date, end_date=request.end_date)
         
-        return {
-            "success": True,
-            "accounts": result.get("accounts", 0),
-            "categories": result.get("categories", 0),
-            "transactions": result.get("transactions", 0)
-        }
+        return {"success": True, **result}
+    except LedgerScopeDenied:
+        raise
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
-        error_str = str(e).lower()
-        if "authentication error" in error_str or "unauthorized" in error_str or "401" in error_str:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(status_code=422, detail="Importação recusada: dados incompletos ou inconsistentes") from None
+    except Exception:
+        raise HTTPException(status_code=502, detail="Importação não concluída; nenhuma gravação financeira foi confirmada") from None

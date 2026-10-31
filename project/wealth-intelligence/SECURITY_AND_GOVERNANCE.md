@@ -2,7 +2,7 @@
 
 **Status:** `ACTIVE OWNER — CURRENT RISKS + LOCKED DIRECTION`
 
-**Date:** 2026-10-30
+**Date:** 2026-10-31
 
 ## 1. Current verified state
 
@@ -22,7 +22,205 @@ Do not infer universal endpoint protection or multi-tenant isolation from the
 local deployment model. Every new contract must verify its own authentication,
 ownership, and scope behavior.
 
-### TSK-SEC-AUTH-LEGACY-ROUTES — 2026-10-30
+### TSK-SEC-LEDGER-OWNERSHIP-A-RESTORE — 2026-10-31
+
+The owner explicitly approved Alternative A in this task: a certified personal
+local Pierre scope. Alternative C remains the automatic denial policy without
+valid certification; Alternative B remains future multi-user work. This approval
+does not certify existing financial accounts, activate the local installation,
+approve multi-user isolation, or authorize deployment. ADR-031 records only the
+architectural direction; ADR-023 remains limited to MyProfit/Planning.
+
+**Local implementation:** `SEC-LEDGER-OWNERSHIP-A = INDEPENDENTLY REVIEWED / MINOR-01 REMEDIATED / COMMITTED LOCALLY / LOCAL CERTIFICATION PENDING`.
+**Local route policy:** `SEC-AUTH-LEGACY-ROUTES = CONDITIONAL ACCESS ONLY / OWNERSHIP REQUIRED`.
+The owner separately authorized a local checkpoint in
+TSK-SEC-LEDGER-A-MINOR01-CHECKPOINT, with no publication or activation. Independent
+review approval/conditions are owner-reported; MINOR-02 remains deferred and
+nonblocking by that decision. No real certificate, provider call, import, login,
+database migration, or operational acceptance occurred in these tasks.
+
+#### Certification contract and trust boundary
+
+`local_ledger_scope.py` owns the bounded certificate verification, using the
+existing `SingleTenantUserScopeGuard` for user identity/count checks. The
+certificate grants capabilities, not a second login or an ownership model for
+other domains. `get_current_user`, token issuance/validation and the inactive-user
+policy are unchanged. `LOCAL_LEDGER_ENABLED` defaults to false. Development mode
+and explicit personal-local configuration are mandatory; loopback alone is not
+ownership proof.
+
+V1 is a private, versioned, signed sidecar outside the financial database. It
+binds the operator-reviewed user UUID, installation UUID/generation, actual
+SQLite file identity (resolved path, filesystem device/file ID), Pierre connection
+fingerprint, exact account keys, per-account evidence, connection evidence,
+reviewed inventory digest, capabilities, issue time and expiry. Certificate and
+connection HMACs are domain-separated using the existing server secret; neither
+that secret nor the provider key is persisted in the certificate or sent to the
+frontend. Rotation invalidates the binding and requires review again.
+
+The complete local ledger must be Pierre-only and internally consistent: every
+transaction resolves to a reviewed account, every governance event resolves to a
+transaction, and all category providers belong to the same local Pierre context.
+Both historical writer namespaces (`pierre` and `PIERRE`) are accepted exactly
+as stored, without case normalization or identity rewriting. Duplicate external
+account or transaction IDs across those namespaces are ambiguous and deny
+certification: they require separately authorized historical reconciliation.
+Names, bank labels, run authors and the mere existence of one user never assign
+financial ownership. Existing historical authors remain unknown where absent.
+
+Each HTTP operation authenticates first and checks the required capability:
+`read`, `import`, `governance.write` or `history`. Reads share the checked SQLite
+snapshot with their handler. Mutations recheck the certificate and complete
+inventory under `BEGIN IMMEDIATE`, and recheck before commit. Missing, expired,
+revoked, forged, wrong-user, wrong-file, wrong-connection, ambiguous or incomplete
+certification denies access. Generation rotation revokes earlier certificates.
+The filesystem/configuration and operator account remain trusted; this is not
+protection from an administrator able to replace files and server secrets.
+The application must be stopped for operator certification/revocation changes.
+
+#### Shared import and financial preservation
+
+Both `POST /api/v1/pierre/import` (the existing frontend button) and
+`POST /api/v1/dashboard/import-pierre` delegate to the same certified
+`PierreImportPipeline`. The former keeps its success/count response and the
+latter keeps `SyncResultDTO`. The old application service/adapters are no longer
+reachable through either mounted import endpoint. They were not substituted
+for the RAW pipeline because their conversion loses RAW fields and their commits
+are independent.
+
+The shared importer authorizes before constructing the connector, completes the
+fetch, validates the entire response/account set and rejects explicit partial,
+paginated, inconsistent, conflicting-duplicate or invalid monetary input before
+financial writes. It cannot infer provider completeness when the upstream omits
+all completeness metadata; real provider compatibility remains an operational
+gate, not evidence supplied by synthetic tests.
+
+The existing RAW mapper/repositories are reused. Incoming numeric JSON is parsed
+as Decimal; finite cent-scale amounts are validated without float conversion.
+Transactions retain their existing exact provider/external identity; new rows
+use the reviewed account namespace. Account reassignments are permitted only
+between reviewed accounts in this one certified context. Unknown accounts are
+rejected, not silently enrolled. Existing optional RAW attributes are preserved
+when omitted. MINOR-01 also treats explicit null as omission for account_name,
+account_type, category and original_description. Existing reviewed account values
+are the only fallback for name/type; new transactions may retain nullable RAW
+category/original_description, while required missing values are rejected.
+Supplied non-null RAW corrections remain updates. Governance fields
+are never imported, historical audit rows are not rewritten, and new transactions
+start PENDING. Repeated imports do not duplicate financial transactions.
+
+Account/category/transaction effects and the successful `SyncLogModel` run commit
+in one existing SQLite transaction. The run records authenticated actor,
+certificate/version, connection, counts and an identity/action effect journal
+without amounts/descriptions. Failure rolls back all ledger/run effects; no
+partial run is advertised as success. This uses existing tables/JSON metadata,
+not schema changes. The schema's existing Numeric(12,2) monetary boundary remains
+unchanged; no new engine or general precision certification is claimed.
+
+#### Route coverage and remaining boundaries
+
+The four legacy reads, monthly Dashboard reads, classification/detail/history,
+summary and global governance audit now require the certified context. New
+classification/rollback events record the authenticated actor and remain atomic.
+Category responses remain a flat private catalog, adding scoped label transaction
+counts for the existing admin presentation; its hook now consumes the actual DTO.
+No aggregate is reclassified as certified wealth or investment performance.
+
+Import-run list/statistics are restricted to the authenticated run author.
+Access to Pierre runs additionally requires the certified history capability;
+run authorship alone never grants account ownership. Run-specific routes return
+404 for another author. These operational checks do not certify MyProfit account
+ownership. Other MyProfit financial surfaces and Health/Planning/R2 contracts are
+not covered or silently changed by this certificate.
+
+Pierre upload through the generic file endpoint is refused. Pierre run rollback
+returns 409: the existing endpoint does not reverse financial effects, and must
+not mark a committed import discarded. Governance rollback remains separately
+available with its capability. The installments proxy remains 403 even with a
+valid certificate: its provider-global aggregates lack an approved account-scoped
+payload contract. No provider request occurs on that proxy.
+
+HTTP: existing credential failures remain 401, inactive users remain 400,
+uncertified/unauthorized financial access is 403, missing/foreign identified
+resources are 404, invalid import data is 422, and unsuccessful fetch/persistence
+is a sanitized non-success response. An authorization error never becomes an
+empty catalog or zero balance. The frontend ledger client propagates failures,
+keeps sessions on 403, hides denied/stale financial results and shows authorization
+pending. The existing button updates its last-success time only after an explicit
+successful import response, and refreshes data after success.
+
+#### Operator activation procedure — pending, never run against real data here
+
+Stop the application first. Use the approved external Python from the repository
+root. In the operator's own PowerShell session, set private absolute sidecar paths
+outside the repository (restrict the directory ACL to the operator/service):
+
+```powershell
+$Py = Join-Path $env:LOCALAPPDATA 'FinAnalytics/runtimes/sec-dep-c-py314-0803511/Scripts/python.exe'
+$LedgerPrivate = Join-Path $env:LOCALAPPDATA 'FinAnalytics/security/personal-ledger'
+$env:LOCAL_LEDGER_INSTALLATION_FILE = Join-Path $LedgerPrivate 'installation.json'
+$env:LOCAL_LEDGER_CERTIFICATE_FILE = Join-Path $LedgerPrivate 'certificate-v1.json'
+$LedgerReview = Join-Path $LedgerPrivate 'review-v1.json'
+& $Py -m scripts.certify_local_ledger init
+& $Py -m scripts.certify_local_ledger prepare --review $LedgerReview
+```
+
+`prepare` opens the configured existing SQLite file read-only; it never creates
+tables or calls Pierre. In that private review file, verify the user UUID,
+installation/database identity, connection binding, every exact account key/name
+and historical inventory counts. Independently confirm the provider connection
+and accounts in the owner's own records/provider interface. Replace every
+`PENDING OWNER REVIEW` evidence field, including `connection_evidence`, with a
+brief non-secret basis for that confirmation. Do not put credentials, CPF,
+financial amounts or copied provider payloads into evidence. Do not share the
+review with the agent or commit it. If anything is unknown or ambiguous, stop;
+no automatic historical attribution or cleanup is authorized.
+
+After that human review, explicitly issue only the capabilities intended:
+
+```powershell
+& $Py -m scripts.certify_local_ledger certify --review $LedgerReview --days 30 `
+  --confirm-reviewed-accounts --confirm-reviewed-connection `
+  --capability read --capability import --capability history --capability governance.write
+$env:LOCAL_LEDGER_ENABLED = 'true'
+```
+
+All CLI exit codes must be 0 before proceeding. Existing installation, review
+and certificate files are never overwritten by init/prepare/certify; choose new
+review/certificate filenames for renewal and retain prior evidence privately.
+Start the unchanged launcher from this same configured session; persist these
+non-secret settings only through the owner's separately reviewed local setup.
+Neither the launcher nor `.env` was edited by this task. The configured existing
+server credentials are read internally; no credential is requested as CLI input.
+Lifetime is 1–30 days. To revoke, stop the application, run:
+
+```powershell
+& $Py -m scripts.certify_local_ledger revoke
+```
+
+This rotates the installation generation without modifying SQLite. Reissuing
+requires fresh review. A changed database file, connection, account set, new
+application user or namespace ambiguity requires review again. V1 deliberately
+does not provision previously unknown financial accounts. That requires a later
+bounded enrollment/reconciliation task, not manual edits to the financial DB.
+Before the first real import: verify backup/recovery arrangements, private ACLs,
+the intended configured database/runtime, certificate validity and then conduct
+the owner's separately supervised operational acceptance. No real-import success
+is claimed here. R4, deploy, JWT legacy sunset and global security remain gated.
+
+#### Synthetic evidence
+
+Mounted FastAPI tests keep real JWT and financial guard dependencies; only the
+database boundary points to disposable synthetic SQLite. Fake Pierre and mocked
+HTTP transport prevent external calls. The suites cover both import endpoints,
+idempotence, Decimal, partial/provider/persistence failures, rollback of all
+effects, retained governance/audit, user/capability/revocation/expiry/integrity
+denials, namespace compatibility, adjacent routes, run access and offline review.
+Frontend tests exercise the rendered import button and private catalog hooks.
+Exact final validation results are recorded in CURRENT_STATE.md. No historical
+1339-test ritual, real database access by tests, or provider call is evidence here.
+
+### TSK-SEC-AUTH-LEGACY-ROUTES — 2026-10-30 (historical containment)
 
 #### Isolated publication reconciliation
 

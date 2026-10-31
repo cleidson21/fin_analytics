@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, ChevronDown, RotateCcw, Save, Loader2 } from "lucide-react";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 
 // ==========================================================================
 // TYPES
@@ -12,6 +12,7 @@ export interface RawData {
   provider: string;
   external_id: string;
   account_external_id: string;
+  account_name?: string | null;
   description: string;
   original_description?: string;
   category?: string;
@@ -155,7 +156,7 @@ export function TransactionGovernanceModal({ raw, governance, history, onClose, 
       );
       onSaved();
     } catch (e) {
-      setError("Erro ao salvar. Tente novamente.");
+      setError(e instanceof Error ? e.message : "Erro ao salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -171,7 +172,7 @@ export function TransactionGovernanceModal({ raw, governance, history, onClose, 
       );
       onSaved();
     } catch (e) {
-      setError("Erro ao reverter. Tente novamente.");
+      setError(e instanceof Error ? e.message : "Erro ao reverter. Tente novamente.");
     } finally {
       setRollingBack(null);
     }
@@ -419,7 +420,7 @@ export function TransactionGovernanceModal({ raw, governance, history, onClose, 
                 ))}
               </div>
               <p style={{ color: "#475569", fontSize: "10px", marginTop: "8px", fontStyle: "italic" }}>
-                "Restaurar antes" reverte ao estado que existia ANTES de cada evento. O rollback também é registrado no histórico.
+                &quot;Restaurar antes&quot; reverte ao estado que existia ANTES de cada evento. O rollback também é registrado no histórico.
               </p>
             </div>
           )}

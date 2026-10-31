@@ -21,7 +21,7 @@ export function CategoriesTab() {
   
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  const { data, total, isLoading, refetch } = useCategoriesAdmin({
+  const { data, total, isLoading, error, refetch } = useCategoriesAdmin({
     limit,
     offset,
     search: activeSearch,
@@ -81,6 +81,8 @@ export function CategoriesTab() {
   if (!user || (!isAdmin && !isViewer)) {
     return <div className="pt-8"><AuthRequiredCard title="Governança de Categorias" /></div>;
   }
+
+  if (error) return <p role="alert" className="p-4 text-sm text-red-400">{error.message}</p>;
 
   return (
     <div className="pt-4">

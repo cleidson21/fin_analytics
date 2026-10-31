@@ -27,7 +27,7 @@ import { AuthRequiredCard } from "@/components/ui/AuthRequiredCard";
 
 export default function AuditRunPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const { data: run, isLoading, isUnauthorized } = useAuditRunDetail(resolvedParams.id);
+  const { data: run, isLoading, isUnauthorized, error } = useAuditRunDetail(resolvedParams.id);
   const router = useRouter();
 
   const [isReprocessing, setIsReprocessing] = useState(false);
@@ -36,6 +36,7 @@ export default function AuditRunPage({ params }: { params: Promise<{ id: string 
   if (isUnauthorized) {
     return <AuthRequiredCard title="Auditoria" />;
   }
+  if (error) return <p role="alert" className="p-4 text-sm text-red-400">{error}</p>;
 
   const handleReprocess = async () => {
     // Reprocess is currently not supported for all import types natively.

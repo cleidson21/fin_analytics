@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { fetchFromAPI } from "@/lib/api";
+import { requestLedgerFromAPI as fetchFromAPI } from "@/lib/ledgerApi";
 import { AuthRequiredCard } from "@/components/ui/AuthRequiredCard";
 
 interface ImportRunDetail {
@@ -62,6 +62,7 @@ function ReviewContent() {
   const [parsedLog, setParsedLog] = useState<{ warnings: string[], errors: string[], missing_columns?: string[], ignored_columns?: string[], required_columns?: string[], optional_columns?: string[] } | null>(null);
   const [filter, setFilter] = useState<string>("ALL");
   const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   // MyProfit Ativos specific states
   const [accountId, setAccountId] = useState<string>("");
@@ -72,15 +73,10 @@ function ReviewContent() {
   const isMyProfitProventos = runData?.source_type === "MYPROFIT_PROVENTOS";
 
 
-  useEffect(() => {
-    if (runId) {
-      loadRunDetails(runId);
-    }
-  }, [runId]);
-
-  async function loadRunDetails(id: string) {
+  const loadRunDetails = useCallback(async (id: string) => {
     setLoading(true);
     setIsUnauthorized(false);
+    setLoadError(null);
     try {
       const data = await fetchFromAPI<ImportRunDetail>(`/governance/imports/${id}`);
       setRunData(data);
@@ -95,21 +91,22 @@ function ReviewContent() {
         }
       }
 
-      try {
-        const sData = await fetchFromAPI<StagingData>(`/governance/imports/${id}/staging-items`);
-        setStagingData(sData);
-      } catch {
-        console.error("Erro ao buscar itens do staging");
-      }
-    } catch (e: any) {
-      if (e.name === "AuthError") {
+      const sData = await fetchFromAPI<StagingData>(`/governance/imports/${id}/staging-items`);
+      setStagingData(sData);
+    } catch (e: unknown) {
+      setRunData(null); setStagingData(null); setParsedLog(null);
+      if (e instanceof Error && e.name === "AuthError") {
         setIsUnauthorized(true);
       } else {
-        console.error("Failed to load run details", e);
+        setLoadError(e instanceof Error ? e.message : "Falha ao carregar importação");
       }
     }
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    if (runId) void loadRunDetails(runId);
+  }, [runId, loadRunDetails]);
 
   async function handleConfirm() {
     if (!runData) return;
@@ -125,7 +122,7 @@ function ReviewContent() {
     setConfirming(true);
     setConfirmMessage(null);
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, string> = {
         account_id: accountId
       };
       if (isMyProfitAtivos) {
@@ -148,8 +145,8 @@ function ReviewContent() {
       setTimeout(() => {
         router.push('/governance/imports');
       }, 1500);
-    } catch (e: any) {
-      setConfirmMessage("Erro ao confirmar: " + e.message);
+    } catch (e: unknown) {
+      setConfirmMessage("Erro ao confirmar: " + (e instanceof Error ? e.message : "Falha na confirmação"));
     } finally {
       setConfirming(false);
     }
@@ -164,8 +161,8 @@ function ReviewContent() {
     try {
       await fetchFromAPI(`/governance/imports/${runData.id}/rollback`, { method: "POST" });
       router.push('/governance');
-    } catch (e: any) {
-      setConfirmMessage("Erro ao cancelar: " + e.message);
+    } catch (e: unknown) {
+      setConfirmMessage("Erro ao cancelar: " + (e instanceof Error ? e.message : "Falha no cancelamento"));
       setConfirming(false);
     }
   }
@@ -193,6 +190,8 @@ function ReviewContent() {
   if (isUnauthorized) {
     return <AuthRequiredCard title="Revisão de Importação" />;
   }
+
+  if (loadError) return <PageLayout title="Importação"><p role="alert" className="p-4 text-sm text-red-400">{loadError}</p></PageLayout>;
 
   return (
     <PageLayout title="Revisão de Importação" subtitle="" hideTitle={true}>

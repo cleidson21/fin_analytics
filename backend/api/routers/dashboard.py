@@ -1,19 +1,14 @@
 from datetime import date
-from typing import List, Optional, Any, Dict
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
+from backend.api.dependencies.legacy_financial import require_certified_legacy_financial_scope
+from backend.application.services.local_ledger_scope import CertifiedLedgerScope, LedgerScopeDenied
+from backend.domains.pierre.pipeline import PierreImportPipeline
 
 from backend.api.dependencies.auth import get_current_user
-from backend.core.container import (
-    get_categories_summary_use_case,
-    get_pierre_import_service,
-    get_installments_use_case,
-)
 from backend.application.dtos.user_response_dto import UserResponseDTO
 from backend.application.dtos.transaction import CategoryBreakdownDTO
-from backend.application.use_cases.transactions import GetCategoriesSummaryUseCase
-from backend.application.use_cases.get_installments import GetInstallmentsUseCase
-from backend.application.services.pierre_import_service import PierreImportService
 from backend.application.dtos.sync_result_dto import SyncResultDTO
 
 # GovernedFinancialQuery e SessionLocal importados de forma lazy
@@ -31,6 +26,7 @@ def _current_month() -> str:
 def get_dashboard_summary_v2(
     month: str = Query(None, description="YYYY-MM"),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     KPIs do Dashboard: receitas, despesas, saldo_líquido, patrimônio.
@@ -42,9 +38,8 @@ def get_dashboard_summary_v2(
         month = _current_month()
 
     from backend.domains.pierre.repository import GovernedFinancialQuery
-    from backend.database.session import SessionLocal
     q = GovernedFinancialQuery()
-    db = SessionLocal()
+    db = scope.db
     try:
         result = q.get_monthly_kpis(db, month=month)
         db.expunge_all()
@@ -57,6 +52,7 @@ def get_dashboard_summary_v2(
 def get_dashboard_pacing_v2(
     month: str = Query(None, description="YYYY-MM"),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Ritmo de Gastos diário — gráfico de linha mês atual vs mês anterior.
@@ -67,9 +63,8 @@ def get_dashboard_pacing_v2(
         month = _current_month()
 
     from backend.domains.pierre.repository import GovernedFinancialQuery
-    from backend.database.session import SessionLocal
     q = GovernedFinancialQuery()
-    db = SessionLocal()
+    db = scope.db
     try:
         result = q.get_pacing_data(db, month=month)
         db.expunge_all()
@@ -82,6 +77,7 @@ def get_dashboard_pacing_v2(
 def get_dashboard_heatmap(
     month: str = Query(None, description="YYYY-MM"),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Mapa de Calor de gastos diários.
@@ -93,9 +89,8 @@ def get_dashboard_heatmap(
         month = _current_month()
 
     from backend.domains.pierre.repository import GovernedFinancialQuery
-    from backend.database.session import SessionLocal
     q = GovernedFinancialQuery()
-    db = SessionLocal()
+    db = scope.db
     try:
         result = q.get_heatmap_data(db, month=month)
         db.expunge_all()
@@ -108,6 +103,7 @@ def get_dashboard_heatmap(
 def get_categories_summary(
     month: str = Query(None, description="YYYY-MM"),
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """
     Retorna o breakdown de gastos por categoria para o Dashboard e Página de Categorias.
@@ -116,10 +112,9 @@ def get_categories_summary(
         month = _current_month()
 
     from backend.domains.pierre.repository import GovernedFinancialQuery
-    from backend.database.session import SessionLocal
     
     q = GovernedFinancialQuery()
-    db = SessionLocal()
+    db = scope.db
     try:
         result = q.get_categories_breakdown(db, month=month)
         db.expunge_all()
@@ -140,20 +135,28 @@ async def import_pierre_data(
         description="Data de fim da importação (YYYY-MM-DD). Padrão: hoje.",
     ),
     current_user: UserResponseDTO = Depends(get_current_user),
-    service: PierreImportService = Depends(get_pierre_import_service),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """Importa transações do Pierre Finance para o banco de dados local."""
-    result = await service.import_transactions(
-        user_id=current_user.id,
-        start_date=start_date,
-        end_date=end_date,
-    )
-    return result
+    try:
+        result = await PierreImportPipeline(scope).run(start_date, end_date)
+        return SyncResultDTO(
+            status="success", imported=result["transactions"], skipped=result["skipped"], errors=0,
+            accounts_synced=result["accounts"], duration_seconds=result["duration_seconds"],
+            date_range_start=result["date_range_start"], date_range_end=result["date_range_end"],
+        )
+    except LedgerScopeDenied:
+        raise
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Importação recusada: dados incompletos ou inconsistentes") from None
+    except Exception:
+        raise HTTPException(status_code=502, detail="Importação não concluída; nenhuma gravação financeira foi confirmada") from None
 
 
 @router.get("/import-status", response_model=dict)
 async def get_import_status(
     current_user: UserResponseDTO = Depends(get_current_user),
+    scope: CertifiedLedgerScope = Depends(require_certified_legacy_financial_scope),
 ):
     """Retorna informações básicas sobre o estado atual da importação Pierre."""
     from backend.core.config import settings

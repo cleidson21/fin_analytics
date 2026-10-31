@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     
     # Integrations
     PIERRE_API_KEY: Optional[str] = None
+    # Explicit personal-local opt-in; certificates live outside the financial DB.
+    LOCAL_LEDGER_ENABLED: bool = False
+    LOCAL_LEDGER_CERTIFICATE_FILE: Optional[str] = None
+    LOCAL_LEDGER_INSTALLATION_FILE: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     MYPROFIT_USERNAME: Optional[str] = None
