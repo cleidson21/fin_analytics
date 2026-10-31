@@ -62,7 +62,7 @@ Write-Host "Backend started: PID=$($backend.Id) at http://${BackendHost}:${Backe
 try {
     Push-Location (Join-Path $ProjectRoot 'frontend')
     try {
-        npm.cmd run dev
+        npm.cmd run dev -- --hostname 127.0.0.1
     } finally {
         Pop-Location
     }
