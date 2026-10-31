@@ -10,7 +10,8 @@ from decimal import Decimal
 import uuid
 from datetime import datetime
 
-from backend.database.session import AsyncSessionLocal
+from backend.core.config import settings
+from backend.database.disposable import disposable_script_async_session
 from backend.infrastructure.persistence.models.user import UserModel
 from backend.domain.entities.institution import Institution
 from backend.domain.entities.account import Account
@@ -24,7 +25,7 @@ from backend.application.queries.get_accounts import GetAccountsQuery
 async def seed_accounts():
     # Schema creation is an explicit Alembic operation. This utility only seeds
     # a database that has already been migrated.
-    async with AsyncSessionLocal() as session:
+    async with disposable_script_async_session(settings.DATABASE_URL) as session:
         # Bootstrap admin if needed
         from backend.core.container import get_bootstrap_admin
         await get_bootstrap_admin(session).execute()

@@ -3,9 +3,8 @@ import uuid
 from decimal import Decimal
 from datetime import date, datetime
 
-from sqlalchemy.ext.asyncio import async_sessionmaker
-
-from backend.database.engine import engine
+from backend.core.config import settings
+from backend.database.disposable import disposable_script_async_session
 from backend.domain.entities.category import Category
 from backend.domain.entities.transaction import Transaction
 from backend.infrastructure.persistence.repositories.category_repository import SQLAlchemyCategoryRepository
@@ -22,9 +21,7 @@ current_year = date.today().year
 current_month = date.today().month
 
 async def seed():
-    AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
-    
-    async with AsyncSessionLocal() as session:
+    async with disposable_script_async_session(settings.DATABASE_URL) as session:
         cat_repo = SQLAlchemyCategoryRepository(session)
         tx_repo = SQLAlchemyTransactionRepository(session)
         
@@ -79,6 +76,7 @@ async def seed():
         # 3. Create transactions
         transactions = [
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("5000.00"),
@@ -93,6 +91,7 @@ async def seed():
                 category_id=cat_ids["Salário"]
             ),
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("150.00"),
@@ -107,6 +106,7 @@ async def seed():
                 category_id=cat_ids["Alimentação"]
             ),
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("80.00"),
@@ -121,6 +121,7 @@ async def seed():
                 category_id=cat_ids["Transporte"]
             ),
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("200.00"),
@@ -135,6 +136,7 @@ async def seed():
                 category_id=cat_ids["Saúde"]
             ),
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("45.90"),
@@ -149,6 +151,7 @@ async def seed():
                 category_id=cat_ids["Lazer"]
             ),
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("1000.00"),
@@ -163,6 +166,7 @@ async def seed():
                 category_id=cat_ids["Moradia"]
             ),
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("500.00"),
@@ -178,6 +182,7 @@ async def seed():
             ),
             # Parcelada
             Transaction(
+                user_id=user_id,
                 provider="seed",
                 account_id=account_id,
                 amount=Decimal("100.00"),

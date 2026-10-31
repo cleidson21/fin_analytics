@@ -12,38 +12,62 @@ Execução:
 """
 
 import pytest
-import sqlite3
-import sys
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from decimal import Decimal
 
-# Ajuste de path para importar o backend como módulo
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.orm import sessionmaker
 
 from backend.domains.pierre.repository import TransactionRepository, GovernanceRepository
-from backend.database.session import SessionLocal
+from backend.domains.pierre.models import Account, LegacyBase, Transaction
+
+
+@pytest.fixture
+def sessions(tmp_path):
+    """Each test starts with one synthetic Pierre transaction and no history."""
+    engine = create_engine(f"sqlite:///{(tmp_path / 'governance.db').as_posix()}")
+
+    @event.listens_for(engine, "connect")
+    def _foreign_keys(connection, _record):
+        connection.execute("PRAGMA foreign_keys=ON")
+
+    LegacyBase.metadata.create_all(engine)
+    with engine.connect() as connection:
+        actual = connection.execute(text("PRAGMA database_list")).fetchone()[2]
+        assert actual == str((tmp_path / "governance.db").resolve())
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with factory.begin() as db:
+        db.add(Account(provider="pierre", external_id="synthetic-account", name="Synthetic", type="BANK"))
+        db.add(Transaction(
+            provider="pierre", external_id="synthetic-transaction",
+            account_provider="pierre", account_external_id="synthetic-account",
+            description="Synthetic RAW", amount=Decimal("-42.00"), currency="BRL",
+            date=datetime(2026, 7, 5), status="POSTED", type="DEBIT",
+        ))
+    try:
+        yield factory
+    finally:
+        engine.dispose()
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def get_first_transaction():
-    """Retorna (provider, external_id) da primeira transação no banco."""
-    db = SessionLocal()
+def get_first_transaction(sessions):
+    """Return the synthetic transaction created by the per-test fixture."""
+    db = sessions()
     try:
-        from backend.domains.pierre.models import Transaction
-        tx = db.query(Transaction).first()
-        if tx is None:
-            pytest.skip("Nenhuma transação no banco — rode o sync primeiro.")
+        txs = db.query(Transaction).all()
+        assert len(txs) == 1
+        tx = txs[0]
         return tx.provider, tx.external_id
     finally:
         db.close()
 
 
-def get_transaction(provider: str, external_id: str):
+def get_transaction(sessions, provider: str, external_id: str):
     """Retorna o objeto Transaction do banco."""
-    db = SessionLocal()
+    db = sessions()
     try:
         repo = TransactionRepository()
         return repo.get_by_external_id(db, provider, external_id)
@@ -51,9 +75,9 @@ def get_transaction(provider: str, external_id: str):
         db.close()
 
 
-def classify_transaction(provider: str, external_id: str, classification: str, reason: str):
+def classify_transaction(sessions, provider: str, external_id: str, classification: str, reason: str):
     """Classifica a transação e retorna o objeto atualizado."""
-    db = SessionLocal()
+    db = sessions()
     try:
         repo = TransactionRepository()
         tx = repo.classify(
@@ -70,12 +94,12 @@ def classify_transaction(provider: str, external_id: str, classification: str, r
         db.close()
 
 
-def upsert_raw_update(provider: str, external_id: str, new_description: str, new_category: str):
+def upsert_raw_update(sessions, provider: str, external_id: str, new_description: str, new_category: str):
     """
     Simula o que o sync faz: tenta atualizar campos RAW.
     Usa upsert() do TransactionRepository (mesmo método usado pelo pipeline).
     """
-    db = SessionLocal()
+    db = sessions()
     try:
         repo = TransactionRepository()
         tx_data = {
@@ -86,7 +110,7 @@ def upsert_raw_update(provider: str, external_id: str, new_description: str, new
             "category": new_category,
             "original_category": new_category,
             # campos RAW adicionais que podem mudar via API
-            "amount": -42.00,
+            "amount": Decimal("-42.00"),
             "currency": "BRL",
             "date": datetime(2026, 7, 5, 19, 19, 49),  # deve ser objeto datetime
             "status": "POSTED",
@@ -107,7 +131,7 @@ class TestGovernanceSyncPreservation:
     Critério #4: sync preserva campos de governança.
     """
 
-    def test_classify_then_raw_update_preserves_governance(self):
+    def test_classify_then_raw_update_preserves_governance(self, sessions):
         """
         Fluxo completo:
         1. Obter transação existente
@@ -116,17 +140,17 @@ class TestGovernanceSyncPreservation:
         4. Verificar que governance_status e economic_classification foram preservados
         5. Verificar que description/category foram atualizados (RAW pode mudar)
         """
-        provider, external_id = get_first_transaction()
+        provider, external_id = get_first_transaction(sessions)
 
         # PASSO 1: Classificar
         classify_transaction(
-            provider, external_id,
+            sessions, provider, external_id,
             classification="IGNORAR",
             reason="Teste #4 — classificar antes do sync"
         )
 
         # Verificar estado ANTES do sync
-        tx_before = get_transaction(provider, external_id)
+        tx_before = get_transaction(sessions, provider, external_id)
         assert tx_before is not None, "Transação não encontrada após classificar"
         assert tx_before.governance_status == "CLASSIFIED", (
             f"Esperado CLASSIFIED, obtido: {tx_before.governance_status}"
@@ -138,10 +162,10 @@ class TestGovernanceSyncPreservation:
         # PASSO 2: Simular sync (atualizar campos RAW)
         new_description = "Descrição ATUALIZADA pelo sync"
         new_category = "Categoria ATUALIZADA pelo sync"
-        upsert_raw_update(provider, external_id, new_description, new_category)
+        upsert_raw_update(sessions, provider, external_id, new_description, new_category)
 
         # PASSO 3: Verificar APÓS o sync
-        tx_after = get_transaction(provider, external_id)
+        tx_after = get_transaction(sessions, provider, external_id)
         assert tx_after is not None
 
         # Governança DEVE estar preservada
@@ -172,14 +196,14 @@ class TestGovernanceSyncPreservation:
         print(f"   description:           {tx_after.description}  <- atualizado pelo sync")
         print(f"   category:              {tx_after.category}  <- atualizado pelo sync")
 
-    def test_identity_fields_not_changed(self):
+    def test_identity_fields_not_changed(self, sessions):
         """
         IDENTITY_FIELDS (provider, external_id) nunca podem mudar.
         """
-        provider, external_id = get_first_transaction()
+        provider, external_id = get_first_transaction(sessions)
 
         # Tentar atualizar com campos extras via upsert (provider/external_id são identity)
-        db = SessionLocal()
+        db = sessions()
         try:
             repo = TransactionRepository()
             tx_data = {
@@ -197,12 +221,20 @@ class TestGovernanceSyncPreservation:
         finally:
             db.close()
 
-        tx = get_transaction(provider, external_id)
+        tx = get_transaction(sessions, provider, external_id)
         assert tx is not None
         assert tx.provider == provider, "provider foi alterado!"
         assert tx.external_id == external_id, "external_id foi alterado!"
 
         print(f"\nCRITERIO #4-identity - PASS: provider e external_id imutaveis")
+
+    def test_repeated_raw_update_keeps_one_transaction_and_no_audit(self, sessions):
+        provider, external_id = get_first_transaction(sessions)
+        for _ in range(2):
+            upsert_raw_update(sessions, provider, external_id, "Synthetic update", "Synthetic category")
+        with sessions() as db:
+            assert db.query(Transaction).count() == 1
+            assert GovernanceRepository().get_audit_log(db, provider, external_id) == []
 
     def test_governance_fields_not_in_allowed_raw(self):
         """
@@ -238,46 +270,34 @@ class TestFullGovernanceFlow:
     PENDING → IGNORAR → ENTRADA+KNCR11 → ROLLBACK → IGNORAR
     """
 
-    def test_full_audit_flow(self):
+    def test_full_audit_flow(self, sessions):
         """
         Testa o fluxo completo:
         CREATE_CLASSIFICATION → UPDATE_CLASSIFICATION → ROLLBACK
         """
-        provider, external_id = get_first_transaction()
+        provider, external_id = get_first_transaction(sessions)
         tx_repo = TransactionRepository()
         gov_repo = GovernanceRepository()
 
-        # PASSO 1: Garantir estado PENDING
-        db = SessionLocal()
-        try:
-            from backend.domains.pierre.models import Transaction
-            tx = db.query(Transaction).filter(
-                Transaction.provider == provider,
-                Transaction.external_id == external_id
-            ).first()
-            # Reset para PENDING para garantir estado inicial limpo
-            tx.governance_status = "PENDING"
-            tx.economic_classification = None
-            tx.investment_name = None
-            tx.notes = None
-            db.commit()
-        finally:
-            db.close()
+        # PASSO 1: A fixture cria a transação em estado PENDING sem auditoria.
+        tx = get_transaction(sessions, provider, external_id)
+        assert tx.governance_status == "PENDING"
+        assert tx.economic_classification is None
 
         # PASSO 2: CREATE_CLASSIFICATION — PENDING → IGNORAR
-        db = SessionLocal()
+        db = sessions()
         try:
             tx_repo.classify(db, provider, external_id, "IGNORAR", reason="Evento 1 — IGNORAR")
             db.commit()
         finally:
             db.close()
 
-        tx = get_transaction(provider, external_id)
+        tx = get_transaction(sessions, provider, external_id)
         assert tx.governance_status == "CLASSIFIED"
         assert tx.economic_classification == "IGNORAR"
 
         # PASSO 3: UPDATE_CLASSIFICATION — IGNORAR → ENTRADA + KNCR11
-        db = SessionLocal()
+        db = sessions()
         try:
             tx_repo.classify(db, provider, external_id, "ENTRADA",
                              investment_name="KNCR11", reason="Evento 2 — ENTRADA KNCR11")
@@ -285,24 +305,22 @@ class TestFullGovernanceFlow:
         finally:
             db.close()
 
-        tx = get_transaction(provider, external_id)
+        tx = get_transaction(sessions, provider, external_id)
         assert tx.economic_classification == "ENTRADA"
         assert tx.investment_name == "KNCR11"
 
         # PASSO 4: Verificar histórico (deve ter 2 eventos)
-        db = SessionLocal()
+        db = sessions()
         try:
             history = gov_repo.get_audit_log(db, provider, external_id)
-            # Filtra apenas eventos desta sequência (pode haver eventos anteriores)
-            recent = history[:2]  # os mais recentes primeiro
         finally:
             db.close()
 
-        assert len(history) >= 2, f"Esperado >= 2 eventos no histórico, obtido {len(history)}"
+        assert len(history) == 2, f"Esperado 2 eventos no histórico, obtido {len(history)}"
 
         # Evento mais recente: UPDATE_CLASSIFICATION
         latest_event = history[0]
-        assert latest_event.action in ("UPDATE_CLASSIFICATION", "CREATE_CLASSIFICATION"), (
+        assert latest_event.action == "UPDATE_CLASSIFICATION", (
             f"Ação inesperada: {latest_event.action}"
         )
 
@@ -310,7 +328,7 @@ class TestFullGovernanceFlow:
         # Isso restaura o estado BEFORE desse evento, que é IGNORAR (CLASSIFIED)
         # O evento[0] é o mais recente = UPDATE_CLASSIFICATION (ENTRADA+KNCR11)
         rollback_event_id = history[0].id  # UPDATE_CLASSIFICATION — before é IGNORAR
-        db = SessionLocal()
+        db = sessions()
         try:
             gov_repo.rollback_to_event(db, provider, external_id,
                                         rollback_event_id, reason="Evento 3 — rollback para IGNORAR")
@@ -319,7 +337,7 @@ class TestFullGovernanceFlow:
             db.close()
 
         # Verificar estado final — deve ser IGNORAR (CLASSIFIED, não PENDING)
-        tx_final = get_transaction(provider, external_id)
+        tx_final = get_transaction(sessions, provider, external_id)
         assert tx_final.governance_status == "CLASSIFIED", (
             f"Após rollback deveria ser CLASSIFIED: {tx_final.governance_status}. "
             "O rollback restaura o before_json do evento UPDATE (que era IGNORAR/CLASSIFIED)."
@@ -329,13 +347,13 @@ class TestFullGovernanceFlow:
         )
 
         # Verificar que o rollback criou novo evento de auditoria
-        db = SessionLocal()
+        db = sessions()
         try:
             final_history = gov_repo.get_audit_log(db, provider, external_id)
         finally:
             db.close()
 
-        assert len(final_history) >= 3, "Rollback deve gerar nova entrada no audit log"
+        assert len(final_history) == 3, "Rollback deve gerar uma terceira entrada no audit log"
         rollback_event = final_history[0]  # mais recente
         assert rollback_event.action == "ROLLBACK", (
             f"Evento de rollback deve ter action=ROLLBACK: {rollback_event.action}"

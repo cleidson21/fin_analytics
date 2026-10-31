@@ -9,6 +9,8 @@ import asyncio
 import uuid
 from decimal import Decimal
 from datetime import datetime
+from pathlib import Path
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -62,16 +64,12 @@ VXUS,"0,45","R$ 438,49",Outros
 TEST_ACCOUNT_ID = "test-myprofit-account-001"
 TEST_ACCOUNT_ID_2 = "test-myprofit-account-002"
 
-PASSED = []
-FAILED = []
-
 def test(name, condition, detail=""):
-    if condition:
-        print(f"  [OK] {name}")
-        PASSED.append(name)
-    else:
-        print(f"  [FAIL] {name}" + (f": {detail}" if detail else ""))
-        FAILED.append((name, detail))
+    assert condition, name + (f": {detail}" if detail else "")
+    print(f"  [OK] {name}")
+
+
+test.__test__ = False  # assertion recorder, not a pytest test
 
 
 # --------------------------------------------------------------------------
@@ -158,7 +156,8 @@ def test_parser():
 # TESTES DE PERSISTENCIA (A-L)
 # --------------------------------------------------------------------------
 
-async def test_persistence():
+@pytest.mark.asyncio
+async def test_persistence(tmp_path: Path):
     print("\n== PERSISTENCIA - Testes A-L ==\n")
 
     from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -170,223 +169,248 @@ async def test_persistence():
     from backend.application.use_cases.confirm_myprofit_ativos import ConfirmMyProfitAtivosSyncUseCase
     from backend.domain.enums.provider_type import ProviderType
     from backend.database.url import async_database_url
+    from backend.database.disposable import require_disposable_sqlite_url
+    from backend.database.base import Base
 
-    test_database_url = os.environ.get("TEST_DATABASE_URL")
-    if not test_database_url:
-        raise RuntimeError(
-            "TEST_DATABASE_URL must identify a provisioned disposable database"
-        )
+    database_path = tmp_path / "myprofit-ativos.db"
+    test_database_url = f"sqlite+aiosqlite:///{database_path.as_posix()}"
+    require_disposable_sqlite_url(test_database_url, allow_memory=False)
     engine = create_async_engine(async_database_url(test_database_url), echo=False)
-    AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    try:
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with engine.begin() as connection:
+            await connection.run_sync(
+                Base.metadata.create_all,
+                tables=[AssetModel.__table__, PositionSnapshotModel.__table__, SyncLogModel.__table__],
+            )
 
-    # Limpar dados de teste anteriores
-    async with AsyncSessionLocal() as session:
-        for ticker in ["TEST_PETR3", "TEST_VALE3", "TEST_MXRF11", "TEST_BTC"]:
-            result = await session.execute(select(AssetModel).where(AssetModel.ticker == ticker))
-            asset = result.scalar_one_or_none()
-            if asset:
-                snaps = await session.execute(
-                    select(PositionSnapshotModel).where(PositionSnapshotModel.asset_id == asset.id)
-                )
-                for snap in snaps.scalars().all():
-                    await session.delete(snap)
-                await session.delete(asset)
-        await session.commit()
-    print("  [INFO] Dados de teste anteriores limpos.\n")
+        async def create_sync_log(session, rows, source_type="MYPROFIT_ATIVOS"):
+            log = SyncLogModel(
+                id=str(uuid.uuid4()),
+                user_id="test-user-001",
+                provider=ProviderType.MYPROFIT_ATIVOS,
+                status=SyncStatus.RUNNING,
+                transactions_synced=len(rows),
+                start_time=datetime.utcnow(),
+                provider_metadata={
+                    "source_type": source_type,
+                    "filename": "test.csv",
+                    "staging_rows": rows,
+                }
+            )
+            session.add(log)
+            await session.commit()
+            return log.id
 
-    async def create_sync_log(session, rows, source_type="MYPROFIT_ATIVOS"):
-        log = SyncLogModel(
-            id=str(uuid.uuid4()),
-            user_id="test-user-001",
-            provider=ProviderType.MYPROFIT_ATIVOS,
-            status=SyncStatus.RUNNING,
-            transactions_synced=len(rows),
-            start_time=datetime.utcnow(),
-            provider_metadata={
-                "source_type": source_type,
-                "filename": "test.csv",
-                "staging_rows": rows,
-            }
-        )
-        session.add(log)
-        await session.commit()
-        return log.id
+        rows_ago = [
+            {"ticker": "TEST_PETR3", "quantity": 100.0, "avg_price": 41.33, "sector": "Petroleo"},
+            {"ticker": "TEST_VALE3", "quantity": 50.0, "avg_price": 72.12, "sector": "Materiais Basicos"},
+            {"ticker": "TEST_MXRF11", "quantity": 552.0, "avg_price": 10.21, "sector": "Papeis"},
+        ]
+        rows_ago_updated = [
+            {"ticker": "TEST_PETR3", "quantity": 120.0, "avg_price": 41.33, "sector": "Petroleo"},
+            {"ticker": "TEST_VALE3", "quantity": 50.0, "avg_price": 72.12, "sector": "Materiais Basicos"},
+        ]
+        rows_set = [
+            {"ticker": "TEST_PETR3", "quantity": 120.0, "avg_price": 41.33, "sector": "Petroleo"},
+            {"ticker": "TEST_VALE3", "quantity": 55.0, "avg_price": 72.12, "sector": "Materiais Basicos"},
+        ]
 
-    rows_ago = [
-        {"ticker": "TEST_PETR3", "quantity": 100.0, "avg_price": 41.33, "sector": "Petroleo"},
-        {"ticker": "TEST_VALE3", "quantity": 50.0, "avg_price": 72.12, "sector": "Materiais Basicos"},
-        {"ticker": "TEST_MXRF11", "quantity": 552.0, "avg_price": 10.21, "sector": "Papeis"},
-    ]
-    rows_ago_updated = [
-        {"ticker": "TEST_PETR3", "quantity": 120.0, "avg_price": 41.33, "sector": "Petroleo"},
-        {"ticker": "TEST_VALE3", "quantity": 50.0, "avg_price": 72.12, "sector": "Materiais Basicos"},
-    ]
-    rows_set = [
-        {"ticker": "TEST_PETR3", "quantity": 120.0, "avg_price": 41.33, "sector": "Petroleo"},
-        {"ticker": "TEST_VALE3", "quantity": 55.0, "avg_price": 72.12, "sector": "Materiais Basicos"},
-    ]
+        # --- Teste A: Primeira importacao ---
+        async with AsyncSessionLocal() as session:
+            run_id = await create_sync_log(session, rows_ago)
+            use_case = ConfirmMyProfitAtivosSyncUseCase(session)
+            report = await use_case.execute(run_id, TEST_ACCOUNT_ID, "2026-08-31")
 
-    # --- Teste A: Primeira importacao ---
-    async with AsyncSessionLocal() as session:
-        run_id = await create_sync_log(session, rows_ago)
-        use_case = ConfirmMyProfitAtivosSyncUseCase(session)
-        report = await use_case.execute(run_id, TEST_ACCOUNT_ID, "2026-08-31")
+        test("A1 - 3 snapshots inseridos (primeira importacao)", report["snapshots_inserted"] == 3, str(report))
+        test("A2 - 0 atualizados", report["snapshots_updated"] == 0)
+        test("A3 - assets criados + reutilizados = 3", report["assets_created"] + report["assets_reused"] == 3)
 
-    test("A1 - 3 snapshots inseridos (primeira importacao)", report["snapshots_inserted"] == 3, str(report))
-    test("A2 - 0 atualizados", report["snapshots_updated"] == 0)
-    test("A3 - assets criados + reutilizados = 3", report["assets_created"] + report["assets_reused"] == 3)
+        # --- Teste B: Reimportacao identica ---
+        async with AsyncSessionLocal() as session:
+            run_id2 = await create_sync_log(session, rows_ago)
+            use_case = ConfirmMyProfitAtivosSyncUseCase(session)
+            report2 = await use_case.execute(run_id2, TEST_ACCOUNT_ID, "2026-08-31")
 
-    # --- Teste B: Reimportacao identica ---
-    async with AsyncSessionLocal() as session:
-        run_id2 = await create_sync_log(session, rows_ago)
-        use_case = ConfirmMyProfitAtivosSyncUseCase(session)
-        report2 = await use_case.execute(run_id2, TEST_ACCOUNT_ID, "2026-08-31")
+        test("B1 - 0 inseridos (reimportacao identica)", report2["snapshots_inserted"] == 0, str(report2))
+        test("B2 - 3 atualizados (UPSERT)", report2["snapshots_updated"] == 3)
+        test("B3 - 0 assets criados (reutilizados)", report2["assets_created"] == 0)
 
-    test("B1 - 0 inseridos (reimportacao identica)", report2["snapshots_inserted"] == 0, str(report2))
-    test("B2 - 3 atualizados (UPSERT)", report2["snapshots_updated"] == 3)
-    test("B3 - 0 assets criados (reutilizados)", report2["assets_created"] == 0)
+        # --- Teste C: Alteracao de quantidade ---
+        async with AsyncSessionLocal() as session:
+            run_id3 = await create_sync_log(session, rows_ago_updated)
+            use_case = ConfirmMyProfitAtivosSyncUseCase(session)
+            report3 = await use_case.execute(run_id3, TEST_ACCOUNT_ID, "2026-08-31")
 
-    # --- Teste C: Alteracao de quantidade ---
-    async with AsyncSessionLocal() as session:
-        run_id3 = await create_sync_log(session, rows_ago_updated)
-        use_case = ConfirmMyProfitAtivosSyncUseCase(session)
-        report3 = await use_case.execute(run_id3, TEST_ACCOUNT_ID, "2026-08-31")
+        async with AsyncSessionLocal() as session:
+            petr3_asset = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
+            if petr3_asset:
+                snap = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == petr3_asset.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-08-31",
+                    )
+                )).scalar_one_or_none()
+                test("C1 - PETR3 qty atualizado para 120", snap and float(snap.quantity) == 120.0, str(snap and snap.quantity))
+            else:
+                test("C1 - TEST_PETR3 encontrado", False, "asset nao encontrado")
 
-    async with AsyncSessionLocal() as session:
-        petr3_asset = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
-        if petr3_asset:
-            snap = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == petr3_asset.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-08-31",
-                )
-            )).scalar_one_or_none()
-            test("C1 - PETR3 qty atualizado para 120", snap and float(snap.quantity) == 120.0, str(snap and snap.quantity))
-        else:
-            test("C1 - TEST_PETR3 encontrado", False, "asset nao encontrado")
+        # --- Teste D: Nova data nao altera agosto ---
+        async with AsyncSessionLocal() as session:
+            run_id4 = await create_sync_log(session, rows_set)
+            use_case = ConfirmMyProfitAtivosSyncUseCase(session)
+            report4 = await use_case.execute(run_id4, TEST_ACCOUNT_ID, "2026-09-30")
 
-    # --- Teste D: Nova data nao altera agosto ---
-    async with AsyncSessionLocal() as session:
-        run_id4 = await create_sync_log(session, rows_set)
-        use_case = ConfirmMyProfitAtivosSyncUseCase(session)
-        report4 = await use_case.execute(run_id4, TEST_ACCOUNT_ID, "2026-09-30")
+        async with AsyncSessionLocal() as session:
+            petr3_a = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
+            if petr3_a:
+                snap_ago = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == petr3_a.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-08-31",
+                    )
+                )).scalar_one_or_none()
+                snap_set = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == petr3_a.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-09-30",
+                    )
+                )).scalar_one_or_none()
+                test("D1 - Snapshot agosto intacto (qty=120)", snap_ago and float(snap_ago.quantity) == 120.0, str(snap_ago and snap_ago.quantity))
+                test("D2 - Snapshot setembro criado", snap_set is not None)
+                test("D3 - Snapshots de agosto e setembro coexistem", snap_ago is not None and snap_set is not None)
 
-    async with AsyncSessionLocal() as session:
-        petr3_a = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
-        if petr3_a:
-            snap_ago = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == petr3_a.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-08-31",
-                )
-            )).scalar_one_or_none()
-            snap_set = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == petr3_a.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-09-30",
-                )
-            )).scalar_one_or_none()
-            test("D1 - Snapshot agosto intacto (qty=120)", snap_ago and float(snap_ago.quantity) == 120.0, str(snap_ago and snap_ago.quantity))
-            test("D2 - Snapshot setembro criado", snap_set is not None)
-            test("D3 - Snapshots de agosto e setembro coexistem", snap_ago is not None and snap_set is not None)
+        # --- Teste E: Ativo ausente em setembro nao apaga agosto ---
+        async with AsyncSessionLocal() as session:
+            mxrf_a = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_MXRF11"))).scalar_one_or_none()
+            if mxrf_a:
+                snap_mxrf_ago = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == mxrf_a.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-08-31",
+                    )
+                )).scalar_one_or_none()
+                snap_mxrf_set = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == mxrf_a.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-09-30",
+                    )
+                )).scalar_one_or_none()
+                test("E1 - MXRF11 snapshot agosto preservado (ausente em set)", snap_mxrf_ago is not None)
+                test("E2 - MXRF11 sem snapshot em setembro (correto)", snap_mxrf_set is None)
+            else:
+                test("E - TEST_MXRF11 encontrado", False)
 
-    # --- Teste E: Ativo ausente em setembro nao apaga agosto ---
-    async with AsyncSessionLocal() as session:
-        mxrf_a = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_MXRF11"))).scalar_one_or_none()
-        if mxrf_a:
-            snap_mxrf_ago = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == mxrf_a.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-08-31",
-                )
-            )).scalar_one_or_none()
-            snap_mxrf_set = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == mxrf_a.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-09-30",
-                )
-            )).scalar_one_or_none()
-            test("E1 - MXRF11 snapshot agosto preservado (ausente em set)", snap_mxrf_ago is not None)
-            test("E2 - MXRF11 sem snapshot em setembro (correto)", snap_mxrf_set is None)
-        else:
-            test("E - TEST_MXRF11 encontrado", False)
+        # --- Teste F: Duas contas ---
+        async with AsyncSessionLocal() as session:
+            run_id5 = await create_sync_log(session, [
+                {"ticker": "TEST_PETR3", "quantity": 999.0, "avg_price": 41.33, "sector": "Petroleo"}
+            ])
+            use_case = ConfirmMyProfitAtivosSyncUseCase(session)
+            report5 = await use_case.execute(run_id5, TEST_ACCOUNT_ID_2, "2026-08-31")
 
-    # --- Teste F: Duas contas ---
-    async with AsyncSessionLocal() as session:
-        run_id5 = await create_sync_log(session, [
-            {"ticker": "TEST_PETR3", "quantity": 999.0, "avg_price": 41.33, "sector": "Petroleo"}
-        ])
-        use_case = ConfirmMyProfitAtivosSyncUseCase(session)
-        report5 = await use_case.execute(run_id5, TEST_ACCOUNT_ID_2, "2026-08-31")
+        async with AsyncSessionLocal() as session:
+            petr3_f = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
+            if petr3_f:
+                snap_acc1 = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == petr3_f.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-08-31",
+                    )
+                )).scalar_one_or_none()
+                snap_acc2 = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == petr3_f.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID_2,
+                        PositionSnapshotModel.reference_date == "2026-08-31",
+                    )
+                )).scalar_one_or_none()
+                test("F1 - Conta A preserva posicao (qty=120)", snap_acc1 and float(snap_acc1.quantity) == 120.0, str(snap_acc1 and snap_acc1.quantity))
+                test("F2 - Conta B tem posicao propria (qty=999)", snap_acc2 and float(snap_acc2.quantity) == 999.0, str(snap_acc2 and snap_acc2.quantity))
+            else:
+                test("F - TEST_PETR3 encontrado", False)
 
-    async with AsyncSessionLocal() as session:
-        petr3_f = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
-        if petr3_f:
-            snap_acc1 = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == petr3_f.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-08-31",
-                )
-            )).scalar_one_or_none()
-            snap_acc2 = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == petr3_f.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID_2,
-                    PositionSnapshotModel.reference_date == "2026-08-31",
-                )
-            )).scalar_one_or_none()
-            test("F1 - Conta A preserva posicao (qty=120)", snap_acc1 and float(snap_acc1.quantity) == 120.0, str(snap_acc1 and snap_acc1.quantity))
-            test("F2 - Conta B tem posicao propria (qty=999)", snap_acc2 and float(snap_acc2.quantity) == 999.0, str(snap_acc2 and snap_acc2.quantity))
-        else:
-            test("F - TEST_PETR3 encontrado", False)
+        # --- Teste L: Protecao de edicao manual ---
+        async with AsyncSessionLocal() as session:
+            petr3_l = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
+            if petr3_l:
+                snap_l = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == petr3_l.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-08-31",
+                    )
+                )).scalar_one_or_none()
+                if snap_l:
+                    snap_l.is_manual = 1
+                    snap_l.quantity = Decimal("999")
+                    await session.commit()
+                    print("  [INFO] is_manual=1 e qty=999 setados para TEST_PETR3/agosto")
 
-    # --- Teste L: Protecao de edicao manual ---
-    async with AsyncSessionLocal() as session:
-        petr3_l = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
-        if petr3_l:
-            snap_l = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == petr3_l.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-08-31",
-                )
-            )).scalar_one_or_none()
-            if snap_l:
-                snap_l.is_manual = 1
-                snap_l.quantity = Decimal("999")
-                await session.commit()
-                print("  [INFO] is_manual=1 e qty=999 setados para TEST_PETR3/agosto")
+        # Reimportar com qty diferente — deve preservar
+        async with AsyncSessionLocal() as session:
+            run_id_l = await create_sync_log(session, [
+                {"ticker": "TEST_PETR3", "quantity": 50.0, "avg_price": 41.33, "sector": "Petroleo"}
+            ])
+            use_case = ConfirmMyProfitAtivosSyncUseCase(session)
+            report_l = await use_case.execute(run_id_l, TEST_ACCOUNT_ID, "2026-08-31")
 
-    # Reimportar com qty diferente — deve preservar
-    async with AsyncSessionLocal() as session:
-        run_id_l = await create_sync_log(session, [
-            {"ticker": "TEST_PETR3", "quantity": 50.0, "avg_price": 41.33, "sector": "Petroleo"}
-        ])
-        use_case = ConfirmMyProfitAtivosSyncUseCase(session)
-        report_l = await use_case.execute(run_id_l, TEST_ACCOUNT_ID, "2026-08-31")
+        async with AsyncSessionLocal() as session:
+            petr3_lf = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
+            if petr3_lf:
+                snap_final = (await session.execute(
+                    select(PositionSnapshotModel).where(
+                        PositionSnapshotModel.asset_id == petr3_lf.id,
+                        PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
+                        PositionSnapshotModel.reference_date == "2026-08-31",
+                    )
+                )).scalar_one_or_none()
+                test("L1 - Posicao manual (qty=999) preservada apos reimportacao", snap_final and float(snap_final.quantity) == 999.0, str(snap_final and snap_final.quantity))
+                test("L2 - is_manual permanece 1", snap_final and snap_final.is_manual == 1)
+                test("L3 - Relatorio informa preservacao (snapshots_preserved_manual=1)", report_l["snapshots_preserved_manual"] == 1, str(report_l))
+                test("L4 - Warning gerado com detalhes", len(report_l.get("row_warnings", [])) > 0)
+            else:
+                test("L - TEST_PETR3 encontrado", False)
+    finally:
+        await engine.dispose()
 
-    async with AsyncSessionLocal() as session:
-        petr3_lf = (await session.execute(select(AssetModel).where(AssetModel.ticker == "TEST_PETR3"))).scalar_one_or_none()
-        if petr3_lf:
-            snap_final = (await session.execute(
-                select(PositionSnapshotModel).where(
-                    PositionSnapshotModel.asset_id == petr3_lf.id,
-                    PositionSnapshotModel.account_id == TEST_ACCOUNT_ID,
-                    PositionSnapshotModel.reference_date == "2026-08-31",
-                )
-            )).scalar_one_or_none()
-            test("L1 - Posicao manual (qty=999) preservada apos reimportacao", snap_final and float(snap_final.quantity) == 999.0, str(snap_final and snap_final.quantity))
-            test("L2 - is_manual permanece 1", snap_final and snap_final.is_manual == 1)
-            test("L3 - Relatorio informa preservacao (snapshots_preserved_manual=1)", report_l["snapshots_preserved_manual"] == 1, str(report_l))
-            test("L4 - Warning gerado com detalhes", len(report_l.get("row_warnings", [])) > 0)
-        else:
-            test("L - TEST_PETR3 encontrado", False)
+
+@pytest.mark.asyncio
+async def test_persistence_independent_repetitions(tmp_path: Path):
+    # An earlier assertion failure and the parser must not contaminate either run.
+    with pytest.raises(AssertionError):
+        test("Synthetic prior failure", False)
+    test_parser()
+    for name in ("first", "second"):
+        directory = tmp_path / name
+        directory.mkdir()
+        await test_persistence(directory)
+
+
+@pytest.mark.asyncio
+async def test_persistence_disposes_engine_on_assertion(tmp_path: Path, monkeypatch):
+    from sqlalchemy.ext.asyncio import AsyncEngine
+    original = AsyncEngine.dispose
+    disposed = []
+
+    async def tracked(engine, *args, **kwargs):
+        disposed.append(engine)
+        return await original(engine, *args, **kwargs)
+
+    def fail_assertion(*args, **kwargs):
+        raise AssertionError("synthetic assertion after real disposable persistence")
+
+    monkeypatch.setattr(AsyncEngine, "dispose", tracked)
+    monkeypatch.setattr(sys.modules[__name__], "test", fail_assertion)
+    with pytest.raises(AssertionError, match="synthetic assertion"):
+        await test_persistence(tmp_path)
+    assert len(disposed) == 1
 
 
 # --------------------------------------------------------------------------
@@ -401,16 +425,14 @@ if __name__ == "__main__":
     test_parser()
 
     print("\n" + "-" * 60)
-    asyncio.run(test_persistence())
+    from backend.database.disposable import create_disposable_root
+    root = create_disposable_root()
+    directory = root.path / "myprofit"
+    directory.mkdir()
+    asyncio.run(test_persistence(directory))
 
     print("\n" + "=" * 60)
-    print(f"RESULTADO: {len(PASSED)} passaram, {len(FAILED)} falharam")
-    if FAILED:
-        print("\nFALHAS:")
-        for name, detail in FAILED:
-            print(f"   - {name}: {detail}")
-    else:
-        print("\nTodos os testes passaram!")
+    print("Todos os testes passaram!")
     print("=" * 60)
 
-    sys.exit(0 if not FAILED else 1)
+    sys.exit(0)

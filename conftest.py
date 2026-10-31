@@ -2,19 +2,24 @@
 
 Set the canonical database URL before test modules import ``backend.main`` or
 database session globals. A caller may choose an explicit disposable database
-through ``TEST_DATABASE_URL``; otherwise each pytest process gets a unique file
-under the operating-system temporary directory.
+through an inherited, verified disposable-root capability. Each pytest process
+creates its own dedicated root and tmp_path tree, independent of TEMP/TMP.
 """
 
 import os
-import tempfile
-from pathlib import Path
+import sys
+from backend.database.disposable import (
+    ROOT_ENVIRONMENT_VARIABLE,
+    adopt_disposable_root,
+    create_disposable_root,
+    require_disposable_sqlite_path,
+    require_disposable_sqlite_url,
+)
 
-from sqlalchemy.engine import make_url
 
-
-PROJECT_ROOT = Path(__file__).resolve().parent
-ACTIVE_DATABASE_PATH = (PROJECT_ROOT / "database" / "fin_analytics.db").resolve()
+if descriptor := os.environ.get(ROOT_ENVIRONMENT_VARIABLE):
+    adopt_disposable_root(descriptor)
+_pytest_root = create_disposable_root()
 
 
 def _isolated_test_database_url() -> str:
@@ -22,25 +27,28 @@ def _isolated_test_database_url() -> str:
     if configured:
         return configured
 
-    path = Path(tempfile.gettempdir()) / f"finanalytics-pytest-{os.getpid()}.db"
+    path = _pytest_root.path / "pytest.db"
     return f"sqlite+aiosqlite:///{path.as_posix()}"
 
 
-def _assert_not_active_database(database_url: str) -> None:
-    url = make_url(database_url)
-    if url.get_backend_name() != "sqlite":
-        raise RuntimeError("Pytest DATABASE_URL must identify an isolated SQLite database")
-    if url.database in {None, "", ":memory:"}:
-        return
-
-    database_path = Path(url.database)
-    if not database_path.is_absolute():
-        database_path = PROJECT_ROOT / database_path
-    if database_path.resolve() == ACTIVE_DATABASE_PATH:
-        raise RuntimeError("Refusing to run pytest against database/fin_analytics.db")
+def _guard_sqlite_connection(event: str, args: tuple[object, ...]) -> None:
+    if event == "sqlite3.connect":
+        require_disposable_sqlite_path(args[0])
 
 
 _test_database_url = _isolated_test_database_url()
-_assert_not_active_database(_test_database_url)
+require_disposable_sqlite_url(_test_database_url)
 os.environ["DATABASE_URL"] = _test_database_url
 os.environ["TEST_DATABASE_URL"] = _test_database_url
+os.environ[ROOT_ENVIRONMENT_VARIABLE] = _pytest_root.export()
+sys.addaudithook(_guard_sqlite_connection)
+
+
+def pytest_configure(config) -> None:
+    basetemp = config.getoption("basetemp")
+    if basetemp:
+        # An arbitrary --basetemp never widens SQLite authority or permits pytest
+        # to remove a root's creation marker. Previous .pytest_tmp is untouched.
+        require_disposable_sqlite_path(basetemp)
+    else:
+        config.option.basetemp = str(_pytest_root.path / "pytest")
