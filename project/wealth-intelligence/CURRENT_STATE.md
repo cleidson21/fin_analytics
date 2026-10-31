@@ -2,14 +2,78 @@
 
 **Status:** `VERIFIED CURRENT TRUTH`
 
-**Updated:** 2026-10-31 — certified personal-local Pierre implementation; activation pending
+**Updated:** 2026-10-31 — account identity compatibility fixed; operational certification pending
 
 This document describes what exists now. Future product architecture belongs to
 `MASTER_PLAN.md` and `ARCHITECTURE.md`; execution order belongs to
 `IMPLEMENTATION_ROADMAP.md`.
 
+TSK-SEC-LEDGER-A-ACCOUNT-IDENTITY-COLLISIONS now has state
+`SEC-LEDGER-OWNERSHIP-A = COLLISION FIX COMMITTED LOCALLY / OPERATIONAL CERTIFICATION PENDING`.
+`PIERRE IMPORT = SYNTHETICALLY VALIDATED / REAL ACCEPTANCE PENDING`.
+The base was confirmed as clean `develop`, empty index, HEAD
+`684f2532c4208194330edea8a409b321483c58a4`. The owner authorized exactly one local
+commit of the nine paths in TSK-SEC-LEDGER-A-COLLISION-CHECKPOINT, with that HEAD
+as its direct parent and message `fix(security): support composite Pierre account identities`.
+No push or deploy was performed. The operational database and private sidecars were not
+opened or modified. Operational counts and relationships supplied by the owner
+are user-reported evidence only; they are not independently verified or certified
+by this task.
+
+Confirmed cause: `inventory()` incorrectly required globally unique account
+external IDs despite the existing `(provider, external_id)` primary key. Removing
+that check alone would expose the importer's last-wins map by ID. The fix keeps
+every exact key, requires individual account evidence plus an explicit signed
+same/distinct decision for every colliding pair, and requires a separate exact
+namespace binding for import. Equivalence never merges keys or moves historical
+transactions. Unknown accounts, incomplete decisions, tampering, revocation,
+transaction-ID ambiguity, orphan references and foreign category namespaces
+remain denied. Both mounted imports use the corrected pipeline; governance
+filters reject ambiguous ID-only account selection, and read DTOs expose the
+account namespace. The existing name/classification/audit lookups already use
+composite keys. No schema, migration, Engine, JWT, runtime or launcher change was
+needed. The complete contract, offline procedure and residual limits are owned
+by `SECURITY_AND_GOVERNANCE.md`, account identity collision compatibility section.
+
+Final synthetic validation: **226 passed, 331 deprecation warnings, no failures,
+errors or skips**, including **134 local-ledger cases (45 added cases)** plus
+legacy financial-route security, Pierre client, historical import service and
+recurring-income ledger-reader regressions. All financial fixtures are disposable
+SQLite; provider/HTTP boundaries are simulated. Seven identities, two equivalent
+pairs, one distinct pair, an additional unrelated-by-contract account, lowercase
+history, empty uppercase accounts, linked audits, RAW/governance preservation,
+idempotence and complete rollback are covered. Offline prepare/certify tests
+verify unchanged synthetic database bytes; CLI actions were never run against
+the operational environment. `git diff --check` passed. No general audit or
+frontend suite was repeated for this backend-only change.
+
+The collision checkpoint reuses those 226 passing tests, including 45 new cases;
+the complete nine-file diff and identity/certification gates were reviewed without
+a concrete discrepancy requiring another test run. Only the two canonical
+documents were adjusted for checkpoint status and exact offline resumption
+instructions; the validated implementation and tests are unchanged. The remote
+develop SHA was directly confirmed as
+`3fb97d3f9f033764b1b2d477650de6fea888f32d` before committing. The checkpoint does
+not execute init, prepare, certify or revoke and does not activate import.
+
+Validation command, from the repository root with the existing approved Python
+3.14 runtime:
+
+```powershell
+& "$env:LOCALAPPDATA/FinAnalytics/runtimes/sec-dep-c-py314-0803511/Scripts/python.exe" -m pytest tests/unit/test_local_ledger_restore.py tests/unit/test_legacy_financial_route_security.py tests/unit/test_pierre_client.py tests/unit/test_pierre_import_service.py tests/unit/test_recurring_income_ledger_reader.py -q -p no:cacheprovider --basetemp=.pytest_tmp/account_identity_final
+```
+
+Next operational step remains pending: with the application stopped, retain the
+existing installation marker and prepare a **new** private review file; do not
+run init again. The owner must review all seven keys and all three collisions,
+confirm the connection's import namespace independently for each repeated ID,
+and leave the seventh account's broader relationship uncertified. If connection
+routing cannot be established, import remains unavailable. No real certificate
+or real financial import has been validated.
+
 TSK-SEC-LEDGER-OWNERSHIP-A-RESTORE implements the owner's explicitly approved
-Alternative A without a financial schema migration. The local state is
+Alternative A without a financial schema migration. Before the identity fix,
+the checkpoint state was
 `SEC-LEDGER-OWNERSHIP-A = INDEPENDENTLY REVIEWED / MINOR-01 REMEDIATED / COMMITTED LOCALLY / LOCAL CERTIFICATION PENDING`;
 `SEC-AUTH-LEGACY-ROUTES = CONDITIONAL ACCESS ONLY / OWNERSHIP REQUIRED`.
 The versioned offline-reviewed certificate binds user, installation/database file,

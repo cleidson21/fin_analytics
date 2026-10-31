@@ -18,7 +18,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from backend.application.services.local_ledger_scope import (
-    CAPABILITIES, LedgerCertificate, LedgerScopeDenied, ReviewedAccount,
+    CAPABILITIES, LedgerCertificate, LedgerScopeDenied, ReviewedAccount, ReviewedAccountCollision,
+    collision_ids, validate_collision_reviews,
     connection_fingerprint, database_identity, fingerprint, inventory,
 )
 from backend.application.services.single_tenant_user_scope import SingleTenantUserScopeGuard
@@ -64,7 +65,9 @@ def reviewed_inventory(db: Session) -> dict:
 
 def issue_certificate(db: Session, review: dict, *, days: int, capabilities: set[str]) -> LedgerCertificate:
     current = reviewed_inventory(db)
-    reviewed = {k: v for k, v in review.items() if k not in {"account_confirmations", "connection_evidence"}}
+    reviewed = {k: v for k, v in review.items() if k not in {
+        "account_confirmations", "connection_evidence", "account_collision_confirmations"
+    }}
     if current != reviewed or not 1 <= days <= 30 or not capabilities or not capabilities <= CAPABILITIES:
         raise ValueError("Review is stale/inconsistent, lifetime invalid, or capabilities invalid")
     confirmations = review.get("account_confirmations", [])
@@ -76,12 +79,18 @@ def issue_certificate(db: Session, review: dict, *, days: int, capabilities: set
     if ([{"provider": a.provider, "external_id": a.external_id, "name": a.name} for a in accounts] != expected
             or any(not a.evidence.strip() or a.evidence == "PENDING OWNER REVIEW" for a in accounts)):
         raise ValueError("Explicit evidence is required for every reviewed account")
+    collisions = tuple(ReviewedAccountCollision.model_validate(c)
+                       for c in review.get("account_collision_confirmations", []))
+    validate_collision_reviews(accounts, collisions)
+    if "import" in capabilities and any(c.import_provider is None for c in collisions):
+        raise ValueError("Explicit connection import namespace is required for every collision")
     now = datetime.now(timezone.utc)
     return LedgerCertificate(
         version=1, certificate_id=uuid4(), installation_id=UUID(current["installation_id"]),
         generation=UUID(current["generation"]), user_id=UUID(current["user_id"]),
         database_identity=current["database_identity"], connection_id=uuid4(),
         connection_fingerprint=current["connection_fingerprint"], accounts=accounts,
+        account_collision_confirmations=collisions,
         connection_evidence=connection_evidence,
         capabilities=frozenset(capabilities),
         reviewed_inventory_digest=fingerprint("local-ledger-review-v1", current),
@@ -137,6 +146,12 @@ def main(argv=None) -> int:
                         review["connection_evidence"] = "PENDING OWNER REVIEW"
                         review["account_confirmations"] = [
                             {**a, "evidence": "PENDING OWNER REVIEW"} for a in review["inventory"]["accounts"]
+                        ]
+                        review["account_collision_confirmations"] = [
+                            {"external_id": i, "relationship": "PENDING OWNER REVIEW",
+                             "evidence": "PENDING OWNER REVIEW", "import_provider": None}
+                            for i in sorted(collision_ids({(a["provider"], a["external_id"])
+                                                           for a in review["inventory"]["accounts"]}))
                         ]
                         write_new(args.review, review)
                     else:

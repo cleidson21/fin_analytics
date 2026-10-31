@@ -42,6 +42,7 @@ class RawDataOut(BaseModel):
     provider: str
     external_id: str
     account_external_id: str
+    account_provider: str
     account_name: Optional[str] = None       # nome legível da conta (ex: Nubank)
     description: str
     original_description: Optional[str] = None
@@ -133,6 +134,7 @@ def _tx_to_raw(tx: Transaction, account_name: Optional[str] = None) -> RawDataOu
         provider=tx.provider,
         external_id=tx.external_id,
         account_external_id=tx.account_external_id or "",
+        account_provider=tx.account_provider,
         account_name=account_name,
         description=tx.description,
         original_description=tx.original_description,
@@ -185,6 +187,7 @@ def list_transactions(
     governance_status: Optional[str] = Query(None, description="PENDING | CLASSIFIED"),
     economic_classification: Optional[str] = Query(None, description="ENTRADA | SAIDA | IGNORAR"),
     account_external_id: Optional[str] = Query(None),
+    account_provider: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
     start_date: Optional[str] = Query(None, description="YYYY-MM-DD — usa transactions.date"),
     end_date: Optional[str] = Query(None, description="YYYY-MM-DD — usa transactions.date"),
@@ -206,6 +209,7 @@ def list_transactions(
             governance_status=governance_status,
             economic_classification=economic_classification,
             account_external_id=account_external_id,
+            account_provider=account_provider,
             category=category,
             start_date=start_date,
             end_date=end_date,
@@ -233,6 +237,8 @@ def list_transactions(
             for tx in items
         ]
         db.expunge_all()
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Account filter requires an exact provider and external_id") from None
     finally:
         db.close()
 

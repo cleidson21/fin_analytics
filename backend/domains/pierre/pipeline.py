@@ -41,7 +41,16 @@ class PierreImportPipeline:
         if "total" in payload and payload["total"] != len(raw_rows):
             raise ValueError("Incomplete provider response")
         allowed = {(a.provider, a.external_id) for a in self.scope.certificate.accounts}
-        accounts_by_external_id = {i: p for p, i in allowed}
+        # Never collapse a colliding set with last-wins dict construction.
+        accounts_by_external_id = {}
+        for provider, external_id in allowed:
+            candidates = {p for p, i in allowed if i == external_id}
+            if len(candidates) == 1:
+                accounts_by_external_id[external_id] = provider
+        for collision in self.scope.certificate.account_collision_confirmations:
+            if collision.import_provider is None:
+                raise LedgerScopeDenied(DENIED)
+            accounts_by_external_id[collision.external_id] = collision.import_provider
         prepared = {}
         for raw in raw_rows:
             if not isinstance(raw, dict) or not all(raw.get(k) is not None for k in (
@@ -119,6 +128,10 @@ class PierreImportPipeline:
                 existing_transactions[transaction["external_id"]] = existing
                 if existing and (existing.account_provider, existing.account_external_id) not in allowed:
                     raise LedgerScopeDenied(DENIED)
+                if existing and existing.account_provider != transaction["account_provider"]:
+                    # Even confirmed financial equivalence grants no permission
+                    # to move historical transactions across stored namespaces.
+                    raise LedgerScopeDenied(DENIED)
                 if existing is not None:
                     transaction["provider"] = existing.provider
             inserted = updated = skipped = 0
@@ -162,7 +175,8 @@ class PierreImportPipeline:
                 id=run_id, user_id=str(self.scope.certificate.user_id), provider=ProviderType.PIERRE,
                 status=SyncStatus.SUCCESS, start_time=started_at,
                 end_time=datetime.now(timezone.utc).replace(tzinfo=None),
-                duration_seconds=duration, accounts_synced=len({r[1]["account_external_id"] for r in prepared.values()}),
+                duration_seconds=duration, accounts_synced=len({(r[1]["account_provider"], r[1]["account_external_id"])
+                                                               for r in prepared.values()}),
                 transactions_synced=len(prepared), categories_synced=len({r[2]["name"] for r in prepared.values()}),
                 inserted=inserted, updated=updated, ignored=skipped,
                 provider_metadata={
@@ -179,7 +193,7 @@ class PierreImportPipeline:
             db.rollback()
             raise
         return {
-            "accounts": len({r[1]["account_external_id"] for r in prepared.values()}),
+            "accounts": len({(r[1]["account_provider"], r[1]["account_external_id"]) for r in prepared.values()}),
             "categories": len({r[2]["name"] for r in prepared.values()}),
             "transactions": inserted + updated, "inserted": inserted, "updated": updated,
             "skipped": skipped, "run_id": run_id, "duration_seconds": duration,

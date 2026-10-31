@@ -44,6 +44,7 @@ class TransactionOut(BaseModel):
     provider: str
     external_id: str
     account_external_id: str
+    account_provider: str
     description: str
     original_description: Optional[str] = None
     category: Optional[str] = None

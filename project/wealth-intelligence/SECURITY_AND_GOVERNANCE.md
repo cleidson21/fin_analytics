@@ -31,7 +31,8 @@ does not certify existing financial accounts, activate the local installation,
 approve multi-user isolation, or authorize deployment. ADR-031 records only the
 architectural direction; ADR-023 remains limited to MyProfit/Planning.
 
-**Local implementation:** `SEC-LEDGER-OWNERSHIP-A = INDEPENDENTLY REVIEWED / MINOR-01 REMEDIATED / COMMITTED LOCALLY / LOCAL CERTIFICATION PENDING`.
+**Local implementation:** `SEC-LEDGER-OWNERSHIP-A = COLLISION FIX COMMITTED LOCALLY / OPERATIONAL CERTIFICATION PENDING`.
+**Import acceptance:** `PIERRE IMPORT = SYNTHETICALLY VALIDATED / REAL ACCEPTANCE PENDING`.
 **Local route policy:** `SEC-AUTH-LEGACY-ROUTES = CONDITIONAL ACCESS ONLY / OWNERSHIP REQUIRED`.
 The owner separately authorized a local checkpoint in
 TSK-SEC-LEDGER-A-MINOR01-CHECKPOINT, with no publication or activation. Independent
@@ -62,9 +63,12 @@ The complete local ledger must be Pierre-only and internally consistent: every
 transaction resolves to a reviewed account, every governance event resolves to a
 transaction, and all category providers belong to the same local Pierre context.
 Both historical writer namespaces (`pierre` and `PIERRE`) are accepted exactly
-as stored, without case normalization or identity rewriting. Duplicate external
-account or transaction IDs across those namespaces are ambiguous and deny
-certification: they require separately authorized historical reconciliation.
+as stored, without case normalization or identity rewriting. Account identity is
+always `(provider, external_id)`. Repeated account external IDs across namespaces
+are inventoried completely and require the signed collision review below;
+coincidence alone grants no authorization. Duplicate **transaction** external IDs
+across namespaces remain denied because the upstream transaction identifier is
+unqualified; resolving that different ambiguity requires a separate contract.
 Names, bank labels, run authors and the mere existence of one user never assign
 financial ownership. Existing historical authors remain unknown where absent.
 
@@ -99,7 +103,9 @@ The existing RAW mapper/repositories are reused. Incoming numeric JSON is parsed
 as Decimal; finite cent-scale amounts are validated without float conversion.
 Transactions retain their existing exact provider/external identity; new rows
 use the reviewed account namespace. Account reassignments are permitted only
-between reviewed accounts in this one certified context. Unknown accounts are
+between reviewed accounts within the same exact namespace in this one certified
+context. Import cannot move history across account namespaces, even when the
+owner declares financial equivalence. Unknown accounts are
 rejected, not silently enrolled. Existing optional RAW attributes are preserved
 when omitted. MINOR-01 also treats explicit null as omission for account_name,
 account_type, category and original_description. Existing reviewed account values
@@ -161,6 +167,7 @@ $LedgerPrivate = Join-Path $env:LOCALAPPDATA 'FinAnalytics/security/personal-led
 $env:LOCAL_LEDGER_INSTALLATION_FILE = Join-Path $LedgerPrivate 'installation.json'
 $env:LOCAL_LEDGER_CERTIFICATE_FILE = Join-Path $LedgerPrivate 'certificate-v1.json'
 $LedgerReview = Join-Path $LedgerPrivate 'review-v1.json'
+# First installation only; skip init when installation.json already exists.
 & $Py -m scripts.certify_local_ledger init
 & $Py -m scripts.certify_local_ledger prepare --review $LedgerReview
 ```
@@ -175,6 +182,60 @@ brief non-secret basis for that confirmation. Do not put credentials, CPF,
 financial amounts or copied provider payloads into evidence. Do not share the
 review with the agent or commit it. If anything is unknown or ambiguous, stop;
 no automatic historical attribution or cleanup is authorized.
+
+For colliding account IDs, also complete `account_collision_confirmations` as
+specified below. An existing installation must **not** run `init` again. To resume
+the interrupted preparation, keep its marker and private certificates untouched,
+choose a new private review filename and run only `prepare`, with the application
+stopped and the intended existing SQLite configuration verified by the operator.
+
+For the already initialized installation in TSK-SEC-LEDGER-A-COLLISION-CHECKPOINT,
+the following is an instruction for the operator's later execution, not an
+action performed by the checkpoint. Use the same approved configuration/session
+for the operational database, server secret and Pierre connection; verify its
+database target privately without displaying credentials. With the application
+already stopped, run from PowerShell:
+
+```powershell
+Set-Location -LiteralPath 'C:\Users\Cleidson\Pictures\fin_analytics_v2'
+$Py = Join-Path $env:LOCALAPPDATA 'FinAnalytics/runtimes/sec-dep-c-py314-0803511/Scripts/python.exe'
+$LedgerPrivate = Join-Path $env:LOCALAPPDATA 'FinAnalytics/security/personal-ledger'
+$env:LOCAL_LEDGER_INSTALLATION_FILE = Join-Path $LedgerPrivate 'installation.json'
+if (-not (Test-Path -LiteralPath $env:LOCAL_LEDGER_INSTALLATION_FILE -PathType Leaf)) {
+    throw 'Existing installation marker not found; stop without running init.'
+}
+$LedgerReview = Join-Path $LedgerPrivate ('review-collisions-' + [guid]::NewGuid().ToString('N') + '.json')
+& $Py -m scripts.certify_local_ledger prepare --review $LedgerReview
+if ($LASTEXITCODE -ne 0) { throw 'Prepare failed; stop without certifying or activating import.' }
+$LedgerReview
+```
+
+`review-v1.json` was not successfully created according to the owner; this
+procedure neither depends on it nor overwrites any existing review. Exclusive
+file creation also refuses a destination that already exists. `prepare` opens
+the existing SQLite with `mode=ro`, inventories every account (seven keys and
+three repeated-ID pairs for the reported unchanged operational baseline), and
+writes only the new private review file. It neither emits a certificate nor
+activates any capability. Actual seven-key/three-pair output must be checked by
+the operator; the checkpoint does not claim to have observed the real inventory.
+
+Preserve the generated inventory/identity fields and account order. In
+`account_confirmations`, retain each exact `provider`, `external_id`, and `name`,
+and replace its `evidence` placeholder with individual owner evidence (1–500
+characters, nonblank). Replace top-level `connection_evidence` with the owner's
+nonblank connection evidence (1–500 characters). No evidence may remain
+`PENDING OWNER REVIEW`. In each of the three generated
+`account_collision_confirmations` entries retain its actual `external_id` and
+complete `relationship`, `evidence` and, before requesting import,
+`import_provider` exactly as defined below. The reported equivalent groups 1 and
+2 correspond to `SAME_FINANCIAL_ACCOUNT`; the reported distinct group 3
+corresponds to `DISTINCT_FINANCIAL_ACCOUNTS`. The operator must identify the actual
+IDs privately and independently confirm the routing namespace; this document
+does not assign IDs or select `pierre`/`PIERRE` for any real pair. There is no
+additional distinct-account boolean or CLI collision flag. Future certification
+requires the existing `--confirm-reviewed-accounts`,
+`--confirm-reviewed-connection` and explicit `--capability` flags. None is needed
+for prepare, and no certification or activation command is executed here.
 
 After that human review, explicitly issue only the capabilities intended:
 
@@ -200,7 +261,7 @@ Lifetime is 1–30 days. To revoke, stop the application, run:
 
 This rotates the installation generation without modifying SQLite. Reissuing
 requires fresh review. A changed database file, connection, account set, new
-application user or namespace ambiguity requires review again. V1 deliberately
+application user or unreviewed namespace collision requires review again. V1 deliberately
 does not provision previously unknown financial accounts. That requires a later
 bounded enrollment/reconciliation task, not manual edits to the financial DB.
 Before the first real import: verify backup/recovery arrangements, private ACLs,
@@ -219,6 +280,70 @@ denials, namespace compatibility, adjacent routes, run access and offline review
 Frontend tests exercise the rendered import button and private catalog hooks.
 Exact final validation results are recorded in CURRENT_STATE.md. No historical
 1339-test ritual, real database access by tests, or provider call is evidence here.
+
+#### Account identity collision compatibility — 2026-10-31
+
+TSK-SEC-LEDGER-A-ACCOUNT-IDENTITY-COLLISIONS reconciles the prior global account-ID
+uniqueness requirement with the existing composite schema. `inventory()` no
+longer rejects accounts merely because their external IDs coincide. Composite
+uniqueness, allowed namespaces, exact transaction-to-account references, category
+namespace checks and exact audit-to-transaction references remain enforced.
+The importer's former last-wins map by account ID was unsafe once this inventory
+restriction was removed; it now constructs an unambiguous signed binding.
+
+Every stored account still requires individual evidence in
+`account_confirmations`, including zero-history rows and similarly named rows.
+In addition, `prepare` emits one pending `account_collision_confirmations` entry
+for each external ID present under both exact namespaces. Each entry binds that
+ID to **both** keys already listed in the complete account inventory and requires:
+
+- `relationship`: `SAME_FINANCIAL_ACCOUNT` or `DISTINCT_FINANCIAL_ACCOUNTS`;
+- `evidence`: the owner's non-secret basis for that specific relationship;
+- `import_provider`: exactly `pierre` or `PIERRE`, selecting the stored account
+  represented by this certified connection's unqualified `account_id`. This is
+  mandatory when requesting `import`; it may remain null for a read-only review.
+
+Missing, pending, repeated, extraneous or invalid collision decisions deny
+issuance and runtime validation. All decisions and routing selections are inside
+the HMAC-signed certificate. This is an additive V1 field: preexisting certificates
+without account collisions remain compatible; a certificate covering colliding
+accounts without all decisions is refused. No private sidecar is upgraded or
+rewritten automatically. Changes require a fresh offline review and issuance.
+
+Equivalence records a human assertion only: both keys, RAW rows, classifications
+and audit history remain independent and preserved. Distinct accounts require
+the same individual proof and routing decision. Neither names nor existing
+transaction volume select a namespace. The seventh similarly named account with
+a different external ID remains individually reviewed, with no inferred
+equivalence to any pair. Unconfirmed pair relationships block certification;
+unconfirmed routing blocks import capability. If the provider uses the same
+unqualified ID for two genuinely distinct accounts within this connection, this
+format cannot safely import both: stop and establish a separately governed,
+qualified upstream identity contract. Do not use a routing choice to conceal
+unresolved upstream ambiguity.
+
+For an existing transaction, the importer retains its exact transaction key and
+refuses a different destination account namespace before any write. Reads expose
+`account_provider` alongside `account_external_id`; the governance account filter
+accepts an explicit pair and returns 422 for an ambiguous ID-only filter. The
+existing account-name lookup and transaction classification/history/rollback
+repositories already use composite identities. The mapper's default `pierre`
+is replaced only by the certified binding, never by a caller-supplied namespace.
+Category normalization concerns labels only, not account/provider identity.
+The older application import service/adapters still use their historical fixed
+namespace, but neither mounted import route invokes them; no new authority is
+granted to those paths. Their future reuse would require explicit scope review.
+
+Operational evidence supplied by the owner (seven accounts, 1,533 transactions,
+51 categories, 1,579 audit events, one active user; two equivalent pairs, one
+distinct pair and an additional account with an uncertified relationship) is
+**USER-REPORTED MANUAL PASS — NOT DIRECTLY OBSERVED BY AGENT** for the reported
+inspection only. It is not signed certification or real-import acceptance. This
+task did not open the operational database or private certification files, call
+Pierre, run migrations, or perform any operational CLI action. Synthetic fixtures
+use seven keys and deliberately reduced history counts, preserving both empty
+uppercase accounts and lowercase historical/audit links. Verification and the
+remaining operational gate are recorded in CURRENT_STATE.md.
 
 ### TSK-SEC-AUTH-LEGACY-ROUTES — 2026-10-30 (historical containment)
 

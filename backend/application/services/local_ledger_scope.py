@@ -39,6 +39,33 @@ class ReviewedAccount(BaseModel):
     evidence: str = Field(min_length=1, max_length=500)
 
 
+class ReviewedAccountCollision(BaseModel):
+    """Owner decision for both exact namespaces sharing this external ID.
+
+    Equivalence never merges keys. Import routing is a separate, explicit
+    binding of this connection's unqualified account_id to one stored key.
+    """
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    external_id: str = Field(min_length=1)
+    relationship: Literal["SAME_FINANCIAL_ACCOUNT", "DISTINCT_FINANCIAL_ACCOUNTS"]
+    evidence: str = Field(min_length=1, max_length=500)
+    import_provider: Literal["pierre", "PIERRE"] | None = None
+
+
+def collision_ids(keys: set[tuple[str, str]]) -> set[str]:
+    return {i for _, i in keys if sum(other == i for _, other in keys) > 1}
+
+
+def validate_collision_reviews(accounts, collisions) -> None:
+    keys = {(a.provider, a.external_id) for a in accounts}
+    if (len({c.external_id for c in collisions}) != len(collisions)
+            or {c.external_id for c in collisions} != collision_ids(keys)
+            or any(not c.evidence.strip() or c.evidence.strip() == "PENDING OWNER REVIEW"
+                   or (c.import_provider is not None and (c.import_provider, c.external_id) not in keys)
+                   for c in collisions)):
+        raise ValueError("Explicit relationship evidence is required for every account collision")
+
+
 class LedgerCertificate(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     version: Literal[1]
@@ -51,6 +78,8 @@ class LedgerCertificate(BaseModel):
     connection_fingerprint: str
     connection_evidence: str = Field(min_length=1, max_length=500)
     accounts: tuple[ReviewedAccount, ...]
+    # Additive V1 field: existing certificates without collisions stay valid.
+    account_collision_confirmations: tuple[ReviewedAccountCollision, ...] = ()
     capabilities: frozenset[str]
     reviewed_inventory_digest: str
     issued_at: datetime
@@ -96,8 +125,7 @@ def inventory(db: Session) -> dict:
     """
     accounts = db.execute(select(Account.provider, Account.external_id, Account.name)).all()
     keys = {(p, i) for p, i, _ in accounts}
-    if (not keys or len(keys) != len(accounts) or any(p not in PIERRE_NAMESPACES or not i for p, i in keys)
-            or len({i for _, i in keys}) != len(keys)):
+    if not keys or len(keys) != len(accounts) or any(p not in PIERRE_NAMESPACES or not i for p, i in keys):
         raise LedgerScopeDenied(DENIED)
     transactions = db.execute(select(Transaction.provider, Transaction.external_id,
                                      Transaction.account_provider, Transaction.account_external_id)).all()
@@ -131,6 +159,9 @@ def read_certificate() -> LedgerCertificate:
         ):
             raise LedgerScopeDenied(DENIED)
         cert = LedgerCertificate.model_validate(envelope["payload"])
+        validate_collision_reviews(cert.accounts, cert.account_collision_confirmations)
+        if "import" in cert.capabilities and any(c.import_provider is None for c in cert.account_collision_confirmations):
+            raise LedgerScopeDenied(DENIED)
         installation = json.loads(configured_path(settings.LOCAL_LEDGER_INSTALLATION_FILE).read_text(encoding="utf-8"))
         now = datetime.now(timezone.utc)
         if (cert.revoked or cert.issued_at.tzinfo is None or cert.expires_at.tzinfo is None

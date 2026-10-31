@@ -225,6 +225,7 @@ class TransactionRepository:
         governance_status: Optional[str] = None,
         economic_classification: Optional[str] = None,
         account_external_id: Optional[str] = None,
+        account_provider: Optional[str] = None,
         category: Optional[str] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -240,7 +241,15 @@ class TransactionRepository:
         if economic_classification:
             q = q.filter(Transaction.economic_classification == economic_classification)
         if account_external_id:
-            q = q.filter(Transaction.account_external_id == account_external_id)
+            if account_provider is None:
+                candidates = db.query(Account.provider).filter(Account.external_id == account_external_id).all()
+                if len(candidates) != 1:
+                    raise ValueError("Account filter requires an exact provider and external_id")
+                account_provider = candidates[0][0]
+            q = q.filter(Transaction.account_provider == account_provider,
+                         Transaction.account_external_id == account_external_id)
+        elif account_provider is not None:
+            raise ValueError("Account filter requires an exact provider and external_id")
         if category:
             q = q.filter(Transaction.category == category)
         if start_date:
