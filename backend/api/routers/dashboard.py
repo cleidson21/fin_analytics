@@ -144,6 +144,7 @@ async def import_pierre_data(
             status="success", imported=result["transactions"], skipped=result["skipped"], errors=0,
             accounts_synced=result["accounts"], duration_seconds=result["duration_seconds"],
             date_range_start=result["date_range_start"], date_range_end=result["date_range_end"],
+            out_of_range=result["out_of_range"],
         )
     except LedgerScopeDenied:
         raise

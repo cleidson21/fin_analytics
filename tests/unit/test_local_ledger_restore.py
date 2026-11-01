@@ -1,5 +1,6 @@
 """Mounted HTTP + real JWT/financial guards, synthetic SQLite and fake Pierre only."""
 import json
+import os
 import socket
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -54,6 +55,9 @@ def ledger(tmp_path, monkeypatch):
     SyncLogModel.__table__.create(engine)
     sessions = sessionmaker(bind=engine)
     with sessions() as db:
+        # Prove the actual opened destination, independently of URL settings.
+        actual = db.connection().exec_driver_sql("PRAGMA database_list").fetchone()[2]
+        assert os.path.normcase(actual) == os.path.normcase(str(path.resolve()))
         db.add(user(OWNER))
         db.add_all([Account(provider="pierre", external_id="account-a", name="Reviewed A", type="BANK"),
                     Account(provider="pierre", external_id="account-b", name="Reviewed B", type="BANK"),
@@ -100,13 +104,14 @@ def ledger(tmp_path, monkeypatch):
     assert auth.get_current_user not in app.dependency_overrides
     assert legacy_financial.require_certified_legacy_financial_scope not in app.dependency_overrides
     state = SimpleNamespace(payload={"success": True, "data": [raw("existing", "12.34"), raw("new")]},
-                            calls=[], failure=None, hook=None)
+                            calls=[], date_requests=[], failure=None, hook=None)
 
     class FakePierre:
         def __init__(self):
             state.calls.append("constructed")
         async def get_transactions(self, *_args, **_kwargs):
             state.calls.append("fetched")
+            state.date_requests.append((_args, _kwargs))
             if state.hook:
                 state.hook()
             if state.failure:
@@ -800,3 +805,235 @@ def test_collision_inventory_keeps_other_integrity_guards(collision_ledger, viol
     before = ledger.snapshot()
     assert import_request(ledger, IMPORTS[0]).status_code == 403
     assert ledger.snapshot() == before and ledger.state.calls == []
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+def test_date_filter_reproduces_276_rows_with_eight_older_rows(ledger, endpoint):
+    # Entirely synthetic: reproduce observed counts and distances, never real RAW.
+    inside = [raw(f"inside-{i}") for i in range(268)]
+    outside = [{**raw(f"outside-{i}"), "date": (datetime(2026, 1, 1) - timedelta(days=days)).isoformat(),
+                "account_name": "Must not update reviewed account", "category": "Outside only"}
+               for i, days in enumerate((28, 28, 28, 20, 21, 28, 28, 28))]
+    ledger.state.payload = {"success": True, "data": inside + outside, "count": 276}
+    response = import_request(ledger, endpoint)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result.get("transactions", result.get("imported")) == 268
+    assert result["out_of_range"] == 8 and result["skipped"] == 0
+    assert result.get("success", result.get("status") == "success")
+    assert ledger.state.date_requests == [(("2026-01-01", "2026-01-31"), {})]
+    with ledger.sessions() as db:
+        assert db.query(Transaction).count() == 269  # Existing history plus 268.
+        assert db.query(Transaction).filter(Transaction.external_id.like("outside-%")).count() == 0
+        assert db.query(Category).filter_by(name="Outside only").count() == 0
+        assert db.get(Account, ("pierre", "account-a")).name == "Reviewed A"
+        run = db.query(SyncLogModel).one()
+        assert run.transactions_synced == 268
+        assert run.provider_metadata["date_filter"] == {
+            "basis": "raw.date/civil-date-as-supplied", "inclusive": True,
+            "start": "2026-01-01", "end": "2026-01-31", "received_rows": 276,
+            "validated_unique_transactions": 276, "selected_transactions": 268,
+            "excluded_out_of_range": 8,
+        }
+        assert all(e["external_id"].startswith("inside-") for e in run.provider_metadata["effects"])
+        assert db.get(Transaction, ("pierre", "inside-0")).amount == Decimal("0.10")
+    repeated = import_request(ledger, endpoint)
+    assert repeated.status_code == 200
+    assert repeated.json()["skipped"] == 268 and repeated.json()["out_of_range"] == 8
+    with ledger.sessions() as db:
+        assert db.query(Transaction).count() == 269
+        assert db.query(GovernanceAuditLog).count() == 1
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+@pytest.mark.parametrize("raw_date,included", [
+    ("2026-01-01", True), ("2026-01-31", True),
+    ("2026-01-01T00:00:00Z", True), ("2026-01-31T23:59:59.999999Z", True),
+    ("2026-01-01T00:00:00+14:00", True), ("2026-01-31T23:59:59-12:00", True),
+    ("2025-12-31T23:59:59-03:00", False), ("2026-02-01T00:00:00+14:00", False),
+    ("2026-01-12T12:30:00", True),
+])
+def test_date_filter_uses_inclusive_raw_civil_date_without_timezone_shift(ledger, endpoint, raw_date, included):
+    # purchaseDate deliberately disagrees; it must never determine inclusion.
+    purchase = "2025-12-01T10:00:00-03:00" if included else "2026-01-12T10:00:00-03:00"
+    ledger.state.payload["data"] = [{**raw("boundary"), "date": raw_date,
+                                     "credit_card_data": {"purchaseDate": purchase},
+                                     "synthetic_raw": {"untouched": "original-text"}}]
+    response = import_request(ledger, endpoint)
+    assert response.status_code == 200, response.text
+    assert response.json()["out_of_range"] == int(not included)
+    with ledger.sessions() as db:
+        tx = db.get(Transaction, ("pierre", "boundary"))
+        assert (tx is not None) == included
+        if included:
+            assert tx.date == datetime.fromisoformat(raw_date.replace("Z", "+00:00")).replace(tzinfo=None)
+            assert tx.purchase_date == datetime.fromisoformat(purchase).replace(tzinfo=None)
+            assert tx.amount == Decimal("0.10")
+            assert json.loads(tx.extra_json)["synthetic_raw"] == {"untouched": "original-text"}
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+def test_date_filter_empty_selection_preserves_existing_raw_and_governance(ledger, endpoint):
+    with ledger.sessions() as db:
+        financial_before = [(t.external_id, t.description, t.amount, t.date, t.economic_classification)
+                            for t in db.query(Transaction)]
+    ledger.state.payload["data"] = [{**raw("existing", "88.88"), "date": "2025-12-31"},
+                                     {**raw("future"), "date": "2026-02-01"}]
+    response = import_request(ledger, endpoint)
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result.get("transactions", result.get("imported")) == 0
+    assert result["out_of_range"] == 2 and result["skipped"] == 0
+    with ledger.sessions() as db:
+        assert [(t.external_id, t.description, t.amount, t.date, t.economic_classification)
+                for t in db.query(Transaction)] == financial_before
+        assert db.query(GovernanceAuditLog).count() == 1
+        run = db.query(SyncLogModel).one()
+        assert run.transactions_synced == run.accounts_synced == run.categories_synced == 0
+        assert run.provider_metadata["effects"] == []
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+@pytest.mark.parametrize("failure", ["date", "purchase-date", "unknown-account", "money", "float",
+                                     "missing-field", "duplicate-outside", "duplicate-inside"])
+def test_date_filter_never_hides_invalid_or_conflicting_outside_rows(ledger, endpoint, failure):
+    outside = {**raw("outside"), "date": "2025-12-31"}
+    if failure == "date":
+        outside["date"] = "invalid"
+    elif failure == "purchase-date":
+        outside["credit_card_data"] = {"purchaseDate": "invalid"}
+    elif failure == "unknown-account":
+        outside["account_id"] = "unknown"
+    elif failure == "money":
+        outside["amount"] = "NaN"
+    elif failure == "float":
+        outside["amount"] = 0.1
+    elif failure == "missing-field":
+        outside.pop("status")
+    elif failure == "duplicate-inside":
+        outside["id"] = "new"
+    else:
+        ledger.state.payload["data"].append({**outside, "amount": "0.20"})
+    ledger.state.payload["data"].append(outside)
+    before = ledger.snapshot()
+    response = import_request(ledger, endpoint)
+    assert response.status_code == (403 if failure == "unknown-account" else 422), response.text
+    assert ledger.snapshot() == before
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+@pytest.mark.parametrize("metadata", [
+    {"partial": True}, {"has_more": True}, {"next_cursor": "synthetic"}, {"next_page": 2},
+    {"errors": ["synthetic"]}, {"success": False}, {"total": 9}, {"count": 9}, {"count": True},
+])
+def test_date_filter_keeps_complete_response_gates(ledger, endpoint, metadata):
+    ledger.state.payload["data"].append({**raw("outside"), "date": "2025-12-31"})
+    ledger.state.payload.update(metadata)
+    before = ledger.snapshot()
+    assert import_request(ledger, endpoint).status_code == 422
+    assert ledger.snapshot() == before
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+def test_date_filter_mixed_response_rolls_back_all_effects_on_failure(ledger, monkeypatch, endpoint):
+    ledger.state.payload["data"].append({**raw("outside"), "date": "2025-12-31"})
+    original = TransactionRepository.upsert
+    def broken(self, db, data):
+        if data["external_id"] == "new":
+            raise RuntimeError("Synthetic failure after existing RAW update")
+        return original(self, db, data)
+    monkeypatch.setattr(TransactionRepository, "upsert", broken)
+    before = ledger.snapshot()
+    assert import_request(ledger, endpoint).status_code == 502
+    assert ledger.snapshot() == before
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+def test_date_filter_preserves_three_signed_namespace_routes(collision_ledger, endpoint):
+    ledger = collision_ledger
+    ledger.state.payload["data"] = [
+        {**raw(f"new-{account}"), "account_id": account} for account in ("account-a", "account-b", "account-c")
+    ] + [{**raw("outside"), "account_id": "account-c", "date": "2025-12-31"}]
+    response = import_request(ledger, endpoint)
+    assert response.status_code == 200, response.text
+    assert response.json()["out_of_range"] == 1
+    with ledger.sessions() as db:
+        assert db.query(Account).count() == 7
+        for account in ("account-a", "account-b", "account-c"):
+            tx = db.get(Transaction, ("pierre", f"new-{account}"))
+            assert (tx.account_provider, tx.account_external_id) == ("pierre", account)
+            assert db.get(Transaction, ("PIERRE", f"new-{account}")) is None
+        assert db.get(Transaction, ("pierre", "outside")) is None
+    assert import_request(ledger, endpoint).json()["skipped"] == 3
+
+
+def test_date_filter_does_not_hide_existing_namespace_conflict(collision_ledger):
+    ledger = collision_ledger
+    ledger.review["account_collision_confirmations"][0]["import_provider"] = "PIERRE"
+    with ledger.sessions() as db:
+        ledger.save_cert(issue_certificate(db, ledger.review, days=30, capabilities=set(CAPABILITIES)))
+    ledger.state.payload["data"] = [{**raw("existing"), "date": "2025-12-31"}]
+    before = ledger.snapshot()
+    assert import_request(ledger, IMPORTS[0]).status_code == 403
+    assert ledger.snapshot() == before
+
+
+def test_connector_sends_documented_date_query_parameters(monkeypatch):
+    import asyncio
+    import httpx
+    from backend.domains.pierre.connector import PierreConnector
+    from backend.domains.pierre import client as client_module
+    monkeypatch.setattr(settings, "PIERRE_API_KEY", "synthetic-only-not-real")
+    observed = []
+    def handle(request):
+        observed.append(request)
+        return httpx.Response(200, json={"success": True, "data": [], "count": 0})
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(client_module.httpx, "AsyncClient", lambda **kwargs: original_client(
+        **kwargs, transport=httpx.MockTransport(handle)))
+    result = asyncio.run(PierreConnector().get_transactions("2026-01-01", "2026-01-31"))
+    assert result["success"] is True
+    assert len(observed) == 1 and observed[0].method == "GET"
+    assert observed[0].url.path == "/tools/api/get-transactions"
+    assert dict(observed[0].url.params) == {"format": "raw", "startDate": "2026-01-01", "endDate": "2026-01-31"}
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+def test_date_filter_default_window_is_sent_to_provider(ledger, monkeypatch, endpoint):
+    from datetime import date
+    class FixedDate(date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 11, 1)
+    monkeypatch.setattr(pipeline, "date", FixedDate)
+    ledger.state.payload["data"] = [{**raw("inside"), "date": "2026-08-03T00:00:00Z"}]
+    response = ledger.client.post(endpoint, headers=ledger.headers,
+                                  **({"json": {"start_date": None, "end_date": None}}
+                                     if endpoint.endswith("/import") else {}))
+    assert response.status_code == 200, response.text
+    assert ledger.state.date_requests == [(("2026-08-03", "2026-11-01"), {})]
+    assert response.json()["date_range_start"] == "2026-08-03"
+    assert response.json()["date_range_end"] == "2026-11-01"
+
+
+def test_date_filter_counts_validated_unique_ids_separately_from_received_rows(ledger):
+    outside = {**raw("outside"), "date": "2025-12-31"}
+    ledger.state.payload = {"success": True, "data": [raw("new"), outside, outside.copy()], "count": 3}
+    result = import_request(ledger, IMPORTS[0])
+    assert result.status_code == 200, result.text
+    assert result.json()["transactions"] == 1 and result.json()["out_of_range"] == 1
+    with ledger.sessions() as db:
+        metadata = db.query(SyncLogModel).one().provider_metadata["date_filter"]
+        assert metadata["received_rows"] == 3 and metadata["validated_unique_transactions"] == 2
+
+
+@pytest.mark.parametrize("endpoint", IMPORTS)
+@pytest.mark.parametrize("reverse", [False, True])
+def test_date_filter_rejects_same_id_and_instant_with_conflicting_civil_dates(ledger, endpoint, reverse):
+    # These datetimes compare equal in Python but fall in different civil months.
+    rows = [{**raw("same-id"), "date": value} for value in (
+        "2025-12-31T23:00:00-03:00", "2026-01-01T02:00:00Z")]
+    ledger.state.payload["data"] = list(reversed(rows)) if reverse else rows
+    before = ledger.snapshot()
+    assert import_request(ledger, endpoint).status_code == 422
+    assert ledger.snapshot() == before

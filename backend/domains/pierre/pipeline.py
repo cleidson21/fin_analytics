@@ -17,6 +17,16 @@ from backend.infrastructure.persistence.models.sync_log import SyncLogModel, Syn
 
 
 class PierreImportPipeline:
+    """Import the inclusive civil-date interval of RAW ``date``, not purchaseDate.
+
+    Pierre documents YYYY-MM-DD filters, but its raw response can include older
+    transactions even while echoing the requested filters (observed 2026-11-01).
+    For ISO timestamps, retain the date in the supplied offset, as the mapper
+    and persisted ledger already do; never shift it using the host timezone.
+    Validate every returned row and identity before excluding out-of-range rows.
+    See https://docs.pierre.finance/api-reference/rest/get-transactions.
+    """
+
     def __init__(self, scope: CertifiedLedgerScope):
         self.scope = scope
 
@@ -38,8 +48,10 @@ class PierreImportPipeline:
                 or payload.get("partial") or payload.get("errors")):
             raise ValueError("Incomplete provider response")
         raw_rows = payload["data"]
-        if "total" in payload and payload["total"] != len(raw_rows):
-            raise ValueError("Incomplete provider response")
+        for count_field in ("total", "count"):
+            if count_field in payload and (type(payload[count_field]) is not int
+                                          or payload[count_field] != len(raw_rows)):
+                raise ValueError("Incomplete provider response")
         allowed = {(a.provider, a.external_id) for a in self.scope.certificate.accounts}
         # Never collapse a colliding set with last-wins dict construction.
         accounts_by_external_id = {}
@@ -78,9 +90,6 @@ class PierreImportPipeline:
                 transaction["account_provider"] = account["provider"]
                 transaction["provider"] = account["provider"]
                 transaction["amount"] = amount
-                tx_date = transaction["date"].date()
-                if not start <= tx_date <= end:
-                    raise ValueError("Date outside requested interval")
             except (InvalidOperation, TypeError, OverflowError) as error:
                 raise ValueError("Invalid transaction") from error
             # Omitted or null optional identity/RAW fields cannot erase prior data.
@@ -109,8 +118,14 @@ class PierreImportPipeline:
                 transaction.pop("extra_json")
             key = transaction["external_id"]
             row = (account, transaction, category)
-            if key in prepared and prepared[key] != row:
-                raise ValueError("Conflicting duplicate provider identity")
+            if key in prepared:
+                # Aware datetimes may compare equal as instants while carrying
+                # different civil dates/times. Those cannot be last-wins inputs
+                # to either period selection or the existing naive ledger date.
+                previous = prepared[key]
+                if (previous != row or previous[1]["date"].replace(tzinfo=None)
+                        != transaction["date"].replace(tzinfo=None)):
+                    raise ValueError("Conflicting duplicate provider identity")
             prepared[key] = row
 
         db = self.scope.db
@@ -134,6 +149,13 @@ class PierreImportPipeline:
                     raise LedgerScopeDenied(DENIED)
                 if existing is not None:
                     transaction["provider"] = existing.provider
+            # Filter only after validating the complete provider response AND
+            # existing identity bindings, including rows outside the interval.
+            # Excluded rows never reach any account/category/transaction upsert.
+            validated_count = len(prepared)
+            prepared = {key: row for key, row in prepared.items()
+                        if start <= row[1]["date"].date() <= end}
+            out_of_range = validated_count - len(prepared)
             inserted = updated = skipped = 0
             effects = []
             for account, transaction, category in prepared.values():
@@ -182,6 +204,12 @@ class PierreImportPipeline:
                 provider_metadata={
                     "certificate_id": str(self.scope.certificate.certificate_id), "certificate_version": 1,
                     "connection_id": str(self.scope.certificate.connection_id),
+                    "date_filter": {
+                        "basis": "raw.date/civil-date-as-supplied", "inclusive": True,
+                        "start": start.isoformat(), "end": end.isoformat(),
+                        "received_rows": len(raw_rows), "validated_unique_transactions": validated_count,
+                        "selected_transactions": len(prepared), "excluded_out_of_range": out_of_range,
+                    },
                     "effects": effects,
                     "effect_identity_digest": sha256(canonical(effects)).hexdigest(),
                 },
@@ -196,6 +224,6 @@ class PierreImportPipeline:
             "accounts": len({(r[1]["account_provider"], r[1]["account_external_id"]) for r in prepared.values()}),
             "categories": len({r[2]["name"] for r in prepared.values()}),
             "transactions": inserted + updated, "inserted": inserted, "updated": updated,
-            "skipped": skipped, "run_id": run_id, "duration_seconds": duration,
+            "skipped": skipped, "out_of_range": out_of_range, "run_id": run_id, "duration_seconds": duration,
             "date_range_start": start, "date_range_end": end,
         }

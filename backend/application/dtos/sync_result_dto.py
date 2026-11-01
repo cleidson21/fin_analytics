@@ -14,5 +14,6 @@ class SyncResultDTO(BaseModel):
     accounts_synced: int = Field(0, description="Contas sincronizadas")
     date_range_start: Optional[date] = None
     date_range_end: Optional[date] = None
+    out_of_range: int = Field(0, description="Validated unique transactions outside the requested period")
     duration_seconds: Optional[float] = None
     error_message: Optional[str] = None
